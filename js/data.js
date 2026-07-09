@@ -1,0 +1,331 @@
+window.AppData = (function () {
+  const WORK_CATEGORIES = ["一般叫修", "緊急叫修", "保養清潔", "其他"];
+  const REPAIR_ITEMS = ["室內機", "室外機", "風管", "出風口", "控制面板", "跳代碼", "空氣門"];
+  const REPAIR_REASONS = ["不冷", "異音", "溫控故障", "跳機", "異味", "漏水", "代碼", "其他"];
+  const ASSIGNEES = ["A組", "B組", "C組", "D組", "晉詮人員", "協力廠商", "案件待辦"];
+  const PROCESS_STATUSES = ["待料", "待報價", "尚未完成", "轉原廠", "轉汰換", "案件完成"];
+  const FILTER_STATUSES = ["待料", "待報價", "待汰換", "轉原廠", "其他"];
+  const REGIONS = ["北區", "中區", "南區", "東區"];
+  const PROCESS_LARGE = ["人工", "零件", "材料", "特殊工"];
+  const PROCESS_MEDIUM = ["分離式", "冰水機", "其他"];
+  const PROCESS_SMALL = ["更換零件", "清洗", "檢測", "管路處理", "其他"];
+
+  const CUSTOMERS = [
+    {
+      name: "星巴克",
+      stores: [
+        { name: "台北信義店", address: "台北市信義區信義路五段7號", serviceLevel: "A", region: "北區" },
+        { name: "台中公益店", address: "台中市西區公益路150號", serviceLevel: "B", region: "中區" },
+      ],
+    },
+    {
+      name: "屈臣氏",
+      stores: [
+        { name: "高雄夢時代店", address: "高雄市前鎮區中華五路789號", serviceLevel: "A", region: "南區" },
+        { name: "花蓮中山店", address: "花蓮市中山路100號", serviceLevel: "C", region: "東區" },
+      ],
+    },
+    {
+      name: "萊爾富",
+      stores: [
+        { name: "新北板橋店", address: "新北市板橋區文化路一段188號", serviceLevel: "B", region: "北區" },
+        { name: "台南中正店", address: "台南市中西區中正路50號", serviceLevel: "B", region: "南區" },
+      ],
+    },
+  ];
+
+  const REQUESTERS = ["王小明", "陳美玲", "林志豪", "黃雅婷"];
+
+  const SEED_CASES = [
+    {
+      id: "20260708001",
+      repairDate: "2026-07-08",
+      workCategory: "緊急叫修",
+      customerName: "星巴克",
+      storeName: "台北信義店",
+      storeAddress: "台北市信義區信義路五段7號",
+      serviceLevel: "A",
+      region: "北區",
+      requester: "王小明",
+      repairItem: "室內機",
+      repairReason: "不冷",
+      faultDescription: "出風無冷意",
+      assignee: "A組",
+      estimatedDate: "2026-07-07",
+      estimatedTime: "09:00-12:00",
+      actualReason: "",
+      processMethods: [],
+      remarks: "",
+      processStatus: "待料",
+      equipmentScanned: false,
+      equipment: null,
+      closed: false,
+    },
+    {
+      id: "20260708002",
+      repairDate: "2026-07-08",
+      workCategory: "一般叫修",
+      customerName: "屈臣氏",
+      storeName: "高雄夢時代店",
+      storeAddress: "高雄市前鎮區中華五路789號",
+      serviceLevel: "A",
+      region: "南區",
+      requester: "陳美玲",
+      repairItem: "室外機",
+      repairReason: "異音",
+      faultDescription: "室外機運轉異音",
+      assignee: "B組",
+      estimatedDate: "2026-07-07",
+      estimatedTime: "13:00-17:00",
+      actualReason: "",
+      processMethods: [],
+      remarks: "",
+      processStatus: "待報價",
+      equipmentScanned: false,
+      equipment: null,
+      closed: false,
+    },
+    {
+      id: "20260708003",
+      repairDate: "2026-07-08",
+      workCategory: "保養清潔",
+      customerName: "萊爾富",
+      storeName: "新北板橋店",
+      storeAddress: "新北市板橋區文化路一段188號",
+      serviceLevel: "B",
+      region: "北區",
+      requester: "林志豪",
+      repairItem: "風管",
+      repairReason: "異味",
+      faultDescription: "風管需定期保養",
+      assignee: "C組",
+      estimatedDate: "2026-07-05",
+      estimatedTime: "09:00-12:00",
+      actualReason: "風管清洗完成",
+      processMethods: [{ large: "人工", medium: "分離式", small: "清洗", qty: 1 }],
+      remarks: "已保養完成",
+      processStatus: "案件完成",
+      equipmentScanned: true,
+      equipment: { customer: "萊爾富", store: "新北板橋店", area: "賣場", io: "室內", model: "FXFQ25" },
+      closed: false,
+    },
+    {
+      id: "20260708004",
+      repairDate: "2026-07-08",
+      workCategory: "一般叫修",
+      customerName: "星巴克",
+      storeName: "台中公益店",
+      storeAddress: "台中市西區公益路150號",
+      serviceLevel: "B",
+      region: "中區",
+      requester: "黃雅婷",
+      repairItem: "控制面板",
+      repairReason: "溫控故障",
+      faultDescription: "面板無法設定溫度",
+      assignee: "D組",
+      estimatedDate: "2026-07-10",
+      estimatedTime: "09:00-12:00",
+      actualReason: "",
+      processMethods: [],
+      remarks: "建議汰換設備",
+      processStatus: "轉汰換",
+      equipmentScanned: false,
+      equipment: null,
+      closed: false,
+    },
+    {
+      id: "20260708005",
+      repairDate: "2026-07-07",
+      workCategory: "一般叫修",
+      customerName: "屈臣氏",
+      storeName: "花蓮中山店",
+      storeAddress: "花蓮市中山路100號",
+      serviceLevel: "C",
+      region: "東區",
+      requester: "王小明",
+      repairItem: "跳代碼",
+      repairReason: "代碼",
+      faultDescription: "顯示 E1 錯誤代碼",
+      assignee: "晉詮人員",
+      estimatedDate: "2026-07-08",
+      estimatedTime: "14:00-17:00",
+      actualReason: "",
+      processMethods: [],
+      remarks: "需原廠支援",
+      processStatus: "轉原廠",
+      equipmentScanned: false,
+      equipment: null,
+      closed: false,
+    },
+    {
+      id: "20260708006",
+      repairDate: "2026-07-07",
+      workCategory: "其他",
+      customerName: "萊爾富",
+      storeName: "台南中正店",
+      storeAddress: "台南市中西區中正路50號",
+      serviceLevel: "B",
+      region: "南區",
+      requester: "陳美玲",
+      repairItem: "出風口",
+      repairReason: "其他",
+      faultDescription: "出風口需調整",
+      assignee: "協力廠商",
+      estimatedDate: "2026-07-10",
+      estimatedTime: "09:00-12:00",
+      actualReason: "",
+      processMethods: [],
+      remarks: "",
+      processStatus: "尚未完成",
+      equipmentScanned: false,
+      equipment: null,
+      closed: false,
+    },
+    {
+      id: "20260707001",
+      repairDate: "2026-07-07",
+      workCategory: "一般叫修",
+      customerName: "星巴克",
+      storeName: "台北信義店",
+      storeAddress: "台北市信義區信義路五段7號",
+      serviceLevel: "A",
+      region: "北區",
+      requester: "林志豪",
+      repairItem: "空氣門",
+      repairReason: "漏水",
+      faultDescription: "冷凝水外漏",
+      assignee: "案件待辦",
+      estimatedDate: "",
+      estimatedTime: "",
+      actualReason: "",
+      processMethods: [],
+      remarks: "",
+      processStatus: "待料",
+      equipmentScanned: false,
+      equipment: null,
+      closed: false,
+    },
+    {
+      id: "20260706001",
+      repairDate: "2026-07-06",
+      workCategory: "保養清潔",
+      customerName: "屈臣氏",
+      storeName: "高雄夢時代店",
+      storeAddress: "高雄市前鎮區中華五路789號",
+      serviceLevel: "A",
+      region: "南區",
+      requester: "黃雅婷",
+      repairItem: "室內機",
+      repairReason: "不冷",
+      faultDescription: "已結案保養案件",
+      assignee: "A組",
+      estimatedDate: "2026-06-30",
+      estimatedTime: "09:00-12:00",
+      actualReason: "濾網清洗完成",
+      processMethods: [{ large: "人工", medium: "分離式", small: "清洗", qty: 1 }],
+      remarks: "已結案",
+      processStatus: "案件完成",
+      equipmentScanned: true,
+      equipment: { customer: "屈臣氏", store: "高雄夢時代店", area: "賣場", io: "室內", model: "FXFQ20" },
+      closed: true,
+    },
+    {
+      id: "20260708007",
+      repairDate: "2026-07-08",
+      workCategory: "緊急叫修",
+      customerName: "萊爾富",
+      storeName: "台南中正店",
+      storeAddress: "台南市中西區中正路50號",
+      serviceLevel: "B",
+      region: "南區",
+      requester: "王小明",
+      repairItem: "室外機",
+      repairReason: "跳機",
+      faultDescription: "緊急叫修已完成",
+      assignee: "B組",
+      estimatedDate: "2026-07-06",
+      estimatedTime: "09:00-12:00",
+      actualReason: "壓縮機重啟後正常",
+      processMethods: [{ large: "人工", medium: "分離式", small: "檢測", qty: 1 }],
+      remarks: "緊急案件已處理完成",
+      processStatus: "案件完成",
+      equipmentScanned: true,
+      equipment: { customer: "萊爾富", store: "台南中正店", area: "賣場", io: "室外", model: "RXQ10" },
+      closed: false,
+    },
+    {
+      id: "20260708008",
+      repairDate: "2026-07-08",
+      workCategory: "一般叫修",
+      customerName: "星巴克",
+      storeName: "台中公益店",
+      storeAddress: "台中市西區公益路150號",
+      serviceLevel: "B",
+      region: "中區",
+      requester: "陳美玲",
+      repairItem: "室內機",
+      repairReason: "不冷",
+      faultDescription: "冷媒不足待補充",
+      assignee: "C組",
+      estimatedDate: "2026-07-10",
+      estimatedTime: "13:00-17:00",
+      actualReason: "",
+      processMethods: [],
+      remarks: "",
+      processStatus: "待料",
+      equipmentScanned: false,
+      equipment: null,
+      closed: false,
+    },
+  ];
+
+  function createCaseStore(seed) {
+    let cases = seed.map((c) => structuredClone(c));
+
+    return {
+      getAll() {
+        return cases.slice();
+      },
+      getById(id) {
+        return cases.find((c) => c.id === id) || null;
+      },
+      add(caseData) {
+        cases = [caseData, ...cases];
+        return caseData;
+      },
+      update(id, patch) {
+        cases = cases.map((c) => (c.id === id ? { ...c, ...patch } : c));
+        return this.getById(id);
+      },
+      close(id) {
+        return this.update(id, { closed: true });
+      },
+      nextId(dateStr) {
+        const prefix = dateStr.replaceAll("-", "");
+        const seqs = cases
+          .filter((c) => String(c.id).startsWith(prefix))
+          .map((c) => Number(String(c.id).slice(8)))
+          .filter((n) => !Number.isNaN(n));
+        const next = (seqs.length ? Math.max(...seqs) : 0) + 1;
+        return prefix + String(next).padStart(3, "0");
+      },
+    };
+  }
+
+  return {
+    WORK_CATEGORIES,
+    REPAIR_ITEMS,
+    REPAIR_REASONS,
+    ASSIGNEES,
+    PROCESS_STATUSES,
+    FILTER_STATUSES,
+    REGIONS,
+    PROCESS_LARGE,
+    PROCESS_MEDIUM,
+    PROCESS_SMALL,
+    CUSTOMERS,
+    REQUESTERS,
+    SEED_CASES,
+    createCaseStore,
+  };
+})();
