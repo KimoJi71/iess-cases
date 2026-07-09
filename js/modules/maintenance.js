@@ -2,7 +2,10 @@ window.MaintenanceModule = (function () {
   const store = AppData.createCaseStore(AppData.SEED_CASES);
   let root = null;
   let filterStatus = null;
-  let today = () => new Date().toISOString().slice(0, 10);
+  let today = () => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  };
 
   const lightTitles = {
     red: "緊急叫修",
@@ -80,11 +83,11 @@ window.MaintenanceModule = (function () {
 
     return cases.map((c) => `
       <tr>
-        <td>
+        <td><div class="row-actions">
           <button type="button" class="btn" data-action="edit" data-id="${escapeHtml(c.id)}">編輯</button>
           <button type="button" class="btn" data-action="close" data-id="${escapeHtml(c.id)}">案件結案</button>
           <button type="button" class="btn" data-action="copy" data-id="${escapeHtml(c.id)}">複製 URL</button>
-        </td>
+        </div></td>
         <td>${renderLight(c)}</td>
         <td>${escapeHtml(c.repairDate)}</td>
         <td>${escapeHtml(c.id)}</td>
@@ -114,14 +117,9 @@ window.MaintenanceModule = (function () {
     const actionBtn = e.target.closest("[data-action]");
     if (actionBtn && root.contains(actionBtn)) {
       const { action, id } = actionBtn.dataset;
-      if (action === "edit" || action === "close" || action === "copy") {
+      if (action === "create" || action === "edit" || action === "close" || action === "copy") {
         console.log(action, id);
-        return;
       }
-    }
-
-    if (e.target.closest("[data-action='create']")) {
-      console.log("create");
     }
   }
 

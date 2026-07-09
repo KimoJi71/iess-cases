@@ -154,9 +154,10 @@ body {
 .data-table tbody tr:last-child td {
   border-bottom: 0;
 }
-.data-table td:first-child {
+.row-actions {
   display: flex;
   gap: 6px;
+  flex-wrap: wrap;
 }
 .light {
   display: inline-block;
