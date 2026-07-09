@@ -193,6 +193,10 @@ body {
   overflow: auto;
   width: min(720px, 100%);
 }
+.modal-wide {
+  max-width: 900px;
+  width: min(900px, 100%);
+}
 .modal-header {
   align-items: flex-start;
   border-bottom: 1px solid var(--border);
@@ -212,6 +216,70 @@ body {
 .case-form {
   display: flex;
   flex-direction: column;
+}
+.form-section {
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  margin: 0;
+  padding: 0;
+}
+.form-section h3,
+.form-section legend {
+  color: var(--text);
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0;
+  padding: 18px 24px 0;
+}
+.form-section legend {
+  width: 100%;
+}
+.form-section:disabled {
+  opacity: 0.58;
+}
+.form-section:disabled input,
+.form-section:disabled select,
+.form-section:disabled textarea,
+.form-section:disabled button {
+  cursor: not-allowed;
+}
+.section-title-row {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  padding: 18px 24px 0;
+}
+.section-title-row h3 {
+  padding: 0;
+}
+.equipment-section {
+  padding-bottom: 20px;
+}
+.scan-hint {
+  color: var(--text-muted);
+  margin: 12px 24px 0;
+}
+.equipment-summary {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  margin: 14px 24px 0;
+}
+.equipment-summary div {
+  background: #0f1728;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px;
+}
+.equipment-summary dt {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.equipment-summary dd {
+  margin: 0;
 }
 .form-grid {
   display: grid;
@@ -261,6 +329,32 @@ body {
 .form-full {
   grid-column: 1 / -1;
 }
+.field-label {
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+.process-methods .section-title-row {
+  padding: 0;
+}
+.process-row {
+  align-items: end;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) 110px auto;
+  margin-top: 10px;
+}
+.process-remove {
+  min-height: 38px;
+}
+.process-empty {
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  color: var(--text-muted);
+  margin-top: 10px;
+  padding: 12px;
+  text-align: center;
+}
 .modal-actions {
   border-top: 1px solid var(--border);
   display: flex;
@@ -280,6 +374,10 @@ body {
     padding: 12px;
   }
   .form-grid {
+    grid-template-columns: 1fr;
+  }
+  .equipment-summary,
+  .process-row {
     grid-template-columns: 1fr;
   }
 }
