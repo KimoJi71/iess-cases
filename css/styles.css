@@ -71,19 +71,109 @@ body {
 }
 
 /* Placeholder blocks for later tasks */
-.toolbar {}
-.filter-btn {}
-.btn {}
-.btn-primary {}
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.toolbar-left {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.toolbar-right {
+  display: flex;
+  justify-content: flex-end;
+}
+.filter-btn {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 7px 12px;
+}
+.filter-btn:hover,
+.filter-btn.active {
+  background: var(--bg-elevated);
+  color: var(--text);
+  border-color: var(--accent);
+}
+.btn {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  padding: 6px 10px;
+}
+.btn:hover {
+  border-color: var(--accent);
+}
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
 .btn-danger {}
-.table-wrap {}
-.data-table {}
-.light {}
-.light-red {}
-.light-yellow {}
-.light-green {}
+.table-wrap {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow-x: auto;
+}
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  color: var(--text);
+  font-size: 14px;
+  white-space: nowrap;
+}
+.data-table th,
+.data-table td {
+  border-bottom: 1px solid var(--border);
+  padding: 10px 12px;
+  text-align: left;
+  vertical-align: middle;
+}
+.data-table th {
+  background: #0f1728;
+  color: var(--text-muted);
+  font-weight: 600;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+.data-table tbody tr:hover {
+  background: rgba(59, 130, 246, 0.08);
+}
+.data-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+.data-table td:first-child {
+  display: flex;
+  gap: 6px;
+}
+.light {
+  display: inline-block;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  vertical-align: middle;
+}
+.light-red { background: var(--danger); }
+.light-yellow { background: var(--warn); }
+.light-green { background: var(--ok); }
 .modal-backdrop {}
 .modal {}
 .form-grid {}
 .toast {}
-.empty-state {}
+.empty-state {
+  color: var(--text-muted);
+  padding: 32px;
+  text-align: center;
+}
