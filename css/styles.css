@@ -362,7 +362,21 @@ body {
   justify-content: flex-end;
   padding: 16px 24px 20px;
 }
-.toast {}
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  padding: 10px 20px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-elevated);
+  color: var(--text);
+  font-size: 14px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+}
 .empty-state {
   color: var(--text-muted);
   padding: 32px;

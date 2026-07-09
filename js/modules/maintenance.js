@@ -384,6 +384,30 @@ window.MaintenanceModule = (function () {
     `;
   }
 
+  function confirmClose(id) {
+    if (!confirm("確定要將此案件結案？結案後將自列表移除。")) return;
+    store.close(id);
+    render();
+  }
+
+  async function copyCaseUrl(id) {
+    const url = `https://demo.local/cases/${id}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      showToast("已複製");
+    } catch {
+      prompt("複製以下網址：", url);
+    }
+  }
+
+  function showToast(message) {
+    const el = document.getElementById("toast");
+    el.textContent = message;
+    el.hidden = false;
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(() => { el.hidden = true; }, 1600);
+  }
+
   function renderRows(cases) {
     if (!cases.length) {
       return `<tr><td colspan="14" class="empty-state">無資料</td></tr>`;
@@ -473,8 +497,13 @@ window.MaintenanceModule = (function () {
         render();
         return;
       }
-      if (action === "close" || action === "copy") {
-        console.log(action, id);
+      if (action === "close") {
+        confirmClose(id);
+        return;
+      }
+      if (action === "copy") {
+        copyCaseUrl(id);
+        return;
       }
     }
   }
