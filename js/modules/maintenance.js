@@ -393,10 +393,10 @@ window.MaintenanceModule = (function () {
     const url = `https://demo.local/cases/${id}`;
     try {
       await navigator.clipboard.writeText(url);
-      showToast("已複製");
     } catch {
       prompt("複製以下網址：", url);
     }
+    showToast("已複製");
   }
 
   function showToast(message) {
