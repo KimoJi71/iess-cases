@@ -354,7 +354,7 @@ window.MaintenanceModule = (function () {
                 </label>
                 <div class="form-full process-methods">
                   <div class="section-title-row">
-                    <span class="field-label">處理方式動態列</span>
+                    <span class="field-label">處理方式</span>
                     <button type="button" class="btn" data-action="add-process-row">新增列</button>
                   </div>
                   <div data-process-rows>
@@ -591,8 +591,8 @@ window.MaintenanceModule = (function () {
     const c = store.getById(caseId);
     if (!c) return;
     const equipment = {
-      customer: c.customerName,
-      store: c.storeName,
+      customer: editDraft?.customerName || c.customerName,
+      store: editDraft?.storeName || c.storeName,
       area: "賣場空調區",
       io: "室內",
       model: "AC-DEMO-100",
@@ -617,6 +617,14 @@ window.MaintenanceModule = (function () {
     if (!editingId || !editDraft) return false;
     syncEditDraftFromForm(form);
     if (!validateCaseBasics(editDraft)) return false;
+
+    if (editDraft.equipmentScanned && editDraft.equipment) {
+      editDraft.equipment = {
+        ...editDraft.equipment,
+        customer: editDraft.customerName,
+        store: editDraft.storeName,
+      };
+    }
 
     store.update(editingId, {
       workCategory: editDraft.workCategory,
