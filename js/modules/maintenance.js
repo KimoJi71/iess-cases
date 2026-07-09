@@ -2,6 +2,7 @@ window.MaintenanceModule = (function () {
   const store = AppData.createCaseStore(AppData.SEED_CASES);
   let root = null;
   let filterStatus = null;
+  let modalMode = null;
   let today = () => {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -76,6 +77,152 @@ window.MaintenanceModule = (function () {
     return `<span class="light light-${light}" title="${escapeHtml(lightTitles[light])}"></span>`;
   }
 
+  function renderOptions(items, selected = "") {
+    return items.map((item) => `
+      <option value="${escapeHtml(item)}" ${item === selected ? "selected" : ""}>${escapeHtml(item)}</option>
+    `).join("");
+  }
+
+  function renderPlaceholderOptions(items, placeholder) {
+    return `
+      <option value="">${escapeHtml(placeholder)}</option>
+      ${renderOptions(items)}
+    `;
+  }
+
+  function getCustomer(customerName) {
+    return AppData.CUSTOMERS.find((c) => c.name === customerName) || null;
+  }
+
+  function getStore(customerName, storeName) {
+    return getCustomer(customerName)?.stores.find((s) => s.name === storeName) || null;
+  }
+
+  function renderStoreOptions(customerName) {
+    const stores = getCustomer(customerName)?.stores || [];
+    return renderPlaceholderOptions(stores.map((store) => store.name), "請選擇門市");
+  }
+
+  function setFieldValue(form, name, value) {
+    const field = form.elements[name];
+    if (field) field.value = value || "";
+  }
+
+  function onCustomerChange(customerName, form) {
+    const storeSelect = form.elements.storeName;
+    if (storeSelect) storeSelect.innerHTML = renderStoreOptions(customerName);
+    setFieldValue(form, "storeAddress", "");
+    setFieldValue(form, "serviceLevel", "");
+    setFieldValue(form, "region", "");
+  }
+
+  function onStoreChange(customerName, storeName, form) {
+    const storeData = getStore(customerName, storeName);
+    setFieldValue(form, "storeAddress", storeData?.address || "");
+    setFieldValue(form, "serviceLevel", storeData?.serviceLevel || "");
+    setFieldValue(form, "region", storeData?.region || "");
+  }
+
+  function updateRepairReasonRequirement(form) {
+    const isOther = form.elements.repairReason?.value === "其他";
+    const textarea = form.elements.faultDescription;
+    const marker = form.querySelector("[data-required-marker]");
+    if (textarea) textarea.required = isOther;
+    if (marker) marker.hidden = !isOther;
+  }
+
+  function renderCreateModal() {
+    return `
+      <div class="modal-backdrop" role="presentation">
+        <section class="modal" role="dialog" aria-modal="true" aria-labelledby="create-case-title">
+          <form class="case-form" data-create-case-form novalidate>
+            <div class="modal-header">
+              <div>
+                <h2 id="create-case-title">新增叫修單</h2>
+                <p>建立新的維修叫修案件，門市資料會依客戶與門市自動帶入。</p>
+              </div>
+              <button type="button" class="btn" data-action="dismiss-create" aria-label="關閉">關閉</button>
+            </div>
+
+            <div class="form-grid">
+              <label>
+                <span>工項分類 <strong>*</strong></span>
+                <select name="workCategory" required>
+                  ${renderPlaceholderOptions(AppData.WORK_CATEGORIES, "請選擇工項分類")}
+                </select>
+              </label>
+              <label>
+                <span>客戶名稱 <strong>*</strong></span>
+                <select name="customerName" required>
+                  ${renderPlaceholderOptions(AppData.CUSTOMERS.map((c) => c.name), "請選擇客戶")}
+                </select>
+              </label>
+              <label>
+                <span>門市名稱 <strong>*</strong></span>
+                <select name="storeName" required>
+                  <option value="">請先選擇客戶</option>
+                </select>
+              </label>
+              <label>
+                <span>門市地址</span>
+                <input type="text" name="storeAddress" readonly />
+              </label>
+              <label>
+                <span>服務等級</span>
+                <input type="text" name="serviceLevel" readonly />
+              </label>
+              <label>
+                <span>行政區域</span>
+                <input type="text" name="region" readonly />
+              </label>
+              <label>
+                <span>叫修人員</span>
+                <select name="requester">
+                  ${renderPlaceholderOptions(AppData.REQUESTERS, "請選擇叫修人員")}
+                </select>
+              </label>
+              <label>
+                <span>叫修項目</span>
+                <select name="repairItem">
+                  ${renderPlaceholderOptions(AppData.REPAIR_ITEMS, "請選擇叫修項目")}
+                </select>
+              </label>
+              <label>
+                <span>叫修原因</span>
+                <select name="repairReason">
+                  ${renderPlaceholderOptions(AppData.REPAIR_REASONS, "請選擇叫修原因")}
+                </select>
+              </label>
+              <label>
+                <span>指派人員</span>
+                <select name="assignee">
+                  ${renderPlaceholderOptions(AppData.ASSIGNEES, "請選擇指派人員")}
+                </select>
+              </label>
+              <label>
+                <span>預計日期</span>
+                <input type="date" name="estimatedDate" />
+              </label>
+              <label>
+                <span>預計時段</span>
+                <input type="text" name="estimatedTime" placeholder="09:00-12:00" />
+              </label>
+              <label class="form-full">
+                <span>故障描述 <strong data-required-marker hidden>*</strong></span>
+                <textarea name="faultDescription" rows="4" placeholder="請輸入故障描述"></textarea>
+              </label>
+            </div>
+
+            <div class="modal-actions">
+              <button type="button" class="btn" data-action="dismiss-create">取消</button>
+              <button type="submit" class="btn btn-primary">儲存</button>
+            </div>
+          </form>
+        </section>
+      </div>
+    `;
+  }
+
   function renderRows(cases) {
     if (!cases.length) {
       return `<tr><td colspan="14" class="empty-state">無資料</td></tr>`;
@@ -106,6 +253,12 @@ window.MaintenanceModule = (function () {
   }
 
   function onRootClick(e) {
+    if (e.target.classList.contains("modal-backdrop") && root.contains(e.target)) {
+      modalMode = null;
+      render();
+      return;
+    }
+
     const filterBtn = e.target.closest(".filter-btn");
     if (filterBtn && root.contains(filterBtn)) {
       const status = filterBtn.dataset.filter;
@@ -117,22 +270,124 @@ window.MaintenanceModule = (function () {
     const actionBtn = e.target.closest("[data-action]");
     if (actionBtn && root.contains(actionBtn)) {
       const { action, id } = actionBtn.dataset;
-      if (action === "create" || action === "edit" || action === "close" || action === "copy") {
+      if (action === "create") {
+        modalMode = "create";
+        render();
+        return;
+      }
+      if (action === "dismiss-create") {
+        modalMode = null;
+        render();
+        return;
+      }
+      if (action === "edit" || action === "close" || action === "copy") {
         console.log(action, id);
       }
     }
   }
 
+  function onRootChange(e) {
+    const form = e.target.closest("[data-create-case-form]");
+    if (!form || !root.contains(form)) return;
+
+    if (e.target.name === "customerName") {
+      onCustomerChange(e.target.value, form);
+      return;
+    }
+    if (e.target.name === "storeName") {
+      onStoreChange(form.elements.customerName.value, e.target.value, form);
+      return;
+    }
+    if (e.target.name === "repairReason") {
+      updateRepairReasonRequirement(form);
+    }
+  }
+
+  function getCreateFormData(form) {
+    return {
+      workCategory: form.elements.workCategory.value,
+      customerName: form.elements.customerName.value,
+      storeName: form.elements.storeName.value,
+      storeAddress: form.elements.storeAddress.value,
+      serviceLevel: form.elements.serviceLevel.value,
+      region: form.elements.region.value,
+      requester: form.elements.requester.value,
+      repairItem: form.elements.repairItem.value,
+      repairReason: form.elements.repairReason.value,
+      faultDescription: form.elements.faultDescription.value,
+      assignee: form.elements.assignee.value,
+      estimatedDate: form.elements.estimatedDate.value,
+      estimatedTime: form.elements.estimatedTime.value,
+    };
+  }
+
+  function saveNewCase(formData) {
+    const repairReason = formData.repairReason;
+    const faultDescription = formData.faultDescription.trim();
+    if (!formData.workCategory || !formData.customerName || !formData.storeName) {
+      alert("請至少選擇工項分類、客戶名稱與門市名稱");
+      return false;
+    }
+    if (repairReason === "其他" && !faultDescription) {
+      alert("叫修原因為「其他」時，故障描述為必填");
+      return false;
+    }
+
+    const repairDate = today();
+    const id = store.nextId(repairDate);
+    store.add({
+      id,
+      repairDate,
+      workCategory: formData.workCategory,
+      customerName: formData.customerName,
+      storeName: formData.storeName,
+      storeAddress: formData.storeAddress,
+      serviceLevel: formData.serviceLevel,
+      region: formData.region,
+      requester: formData.requester,
+      repairItem: formData.repairItem,
+      repairReason,
+      faultDescription,
+      assignee: formData.assignee,
+      estimatedDate: formData.estimatedDate,
+      estimatedTime: formData.estimatedTime,
+      actualReason: "",
+      processMethods: [],
+      remarks: "",
+      processStatus: "尚未完成",
+      equipmentScanned: false,
+      equipment: null,
+      closed: false,
+    });
+    modalMode = null;
+    render();
+    return true;
+  }
+
+  function onRootSubmit(e) {
+    const form = e.target.closest("[data-create-case-form]");
+    if (!form || !root.contains(form)) return;
+    e.preventDefault();
+    saveNewCase(getCreateFormData(form));
+  }
+
   function mount(container) {
     if (root) root.removeEventListener("click", onRootClick);
+    if (root) root.removeEventListener("change", onRootChange);
+    if (root) root.removeEventListener("submit", onRootSubmit);
     root = container;
     root.addEventListener("click", onRootClick);
+    root.addEventListener("change", onRootChange);
+    root.addEventListener("submit", onRootSubmit);
     render();
   }
 
   function unmount() {
     if (root) root.removeEventListener("click", onRootClick);
+    if (root) root.removeEventListener("change", onRootChange);
+    if (root) root.removeEventListener("submit", onRootSubmit);
     root = null;
+    modalMode = null;
   }
 
   function render() {
@@ -174,6 +429,7 @@ window.MaintenanceModule = (function () {
             </tbody>
           </table>
         </div>
+        ${modalMode === "create" ? renderCreateModal() : ""}
       </section>
     `;
   }
