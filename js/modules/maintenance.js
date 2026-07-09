@@ -12,7 +12,7 @@ window.MaintenanceModule = (function () {
 
   const lightTitles = {
     red: "緊急叫修",
-    yellow: "逾期未完成",
+    yellow: "超過預計日期尚未完成",
     green: "案件完成",
   };
 
@@ -36,8 +36,7 @@ window.MaintenanceModule = (function () {
 
   function getCaseStatus(c) {
     if (c.processStatus === "案件完成") return "已完成";
-    const assigned =
-      c.assignee && c.assignee !== "案件待辦" && c.estimatedDate && c.estimatedTime;
+    const assigned = c.assignee && c.estimatedDate && c.estimatedTime;
     return assigned ? "已派工" : "未派工";
   }
 
