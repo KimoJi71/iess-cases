@@ -1,14 +1,19 @@
 :root {
-  --bg: #0b1220;
-  --bg-panel: #121a2b;
-  --bg-elevated: #1a2438;
-  --border: #2a3650;
-  --text: #e8eefc;
-  --text-muted: #9aa8c7;
-  --accent: #3b82f6;
+  --bg: #f3f5f8;
+  --bg-panel: #ffffff;
+  --bg-elevated: #eef2f7;
+  --border: #d7dee8;
+  --text: #1f2937;
+  --text-muted: #6b7280;
+  --accent: #2563eb;
   --danger: #ef4444;
   --warn: #f59e0b;
   --ok: #22c55e;
+  --header-bg: #1e293b;
+  --sidebar-bg: #243044;
+  --nav-text: #cbd5e1;
+  --nav-text-active: #ffffff;
+  --input-bg: #ffffff;
   --header-h: 56px;
   --sidebar-w: 200px;
 }
@@ -28,13 +33,14 @@ body {
   align-items: center;
   gap: 24px;
   padding: 0 20px;
-  background: #070d18;
-  border-bottom: 1px solid var(--border);
+  background: var(--header-bg);
+  border-bottom: 1px solid #334155;
+  color: var(--nav-text-active);
   position: sticky;
   top: 0;
   z-index: 20;
 }
-.brand { font-weight: 700; letter-spacing: 0.04em; }
+.brand { font-weight: 700; letter-spacing: 0.04em; color: var(--nav-text-active); }
 .primary-nav, .secondary-nav { display: flex; gap: 8px; }
 .primary-nav { flex: 1; }
 .secondary-nav { flex-direction: column; padding: 12px; }
@@ -42,23 +48,23 @@ body {
 .nav-btn {
   background: transparent;
   border: 1px solid transparent;
-  color: var(--text-muted);
+  color: var(--nav-text);
   padding: 8px 14px;
   border-radius: 6px;
   cursor: pointer;
 }
 .nav-btn.active {
-  color: var(--text);
-  background: var(--bg-elevated);
-  border-color: var(--border);
+  color: var(--nav-text-active);
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.18);
 }
 .nav-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
 .app-body { display: flex; flex: 1; min-height: 0; }
 .app-sidebar {
   width: var(--sidebar-w);
-  background: var(--bg-panel);
-  border-right: 1px solid var(--border);
+  background: var(--sidebar-bg);
+  border-right: 1px solid #334155;
   position: sticky;
   top: var(--header-h);
   height: calc(100vh - var(--header-h));
@@ -68,6 +74,7 @@ body {
   padding: 20px;
   overflow: auto;
   min-width: 0;
+  background: var(--bg);
 }
 
 /* Placeholder blocks for later tasks */
@@ -97,12 +104,12 @@ body {
 }
 .filter-btn:hover,
 .filter-btn.active {
-  background: var(--bg-elevated);
-  color: var(--text);
+  background: #eff6ff;
+  color: var(--accent);
   border-color: var(--accent);
 }
 .btn {
-  background: var(--bg-elevated);
+  background: var(--bg-panel);
   border: 1px solid var(--border);
   border-radius: 6px;
   color: var(--text);
@@ -129,6 +136,7 @@ body {
   border: 1px solid var(--border);
   border-radius: 10px;
   overflow-x: auto;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
 }
 .data-table {
   width: 100%;
@@ -145,7 +153,7 @@ body {
   vertical-align: middle;
 }
 .data-table th {
-  background: #0f1728;
+  background: #f8fafc;
   color: var(--text-muted);
   font-weight: 600;
   position: sticky;
@@ -153,15 +161,23 @@ body {
   z-index: 1;
 }
 .data-table tbody tr:hover {
-  background: rgba(59, 130, 246, 0.08);
+  background: #f8fafc;
 }
 .data-table tbody tr:last-child td {
   border-bottom: 0;
 }
+.data-table th:first-child,
+.data-table td:first-child {
+  min-width: 260px;
+}
 .row-actions {
   display: flex;
   gap: 6px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+.row-actions .btn {
+  flex-shrink: 0;
 }
 .light {
   display: inline-block;
@@ -175,7 +191,7 @@ body {
 .light-green { background: var(--ok); }
 .modal-backdrop {
   align-items: center;
-  background: rgba(2, 6, 23, 0.72);
+  background: rgba(15, 23, 42, 0.45);
   display: flex;
   inset: 0;
   justify-content: center;
@@ -187,7 +203,7 @@ body {
   background: var(--bg-panel);
   border: 1px solid var(--border);
   border-radius: 14px;
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 24px 80px rgba(15, 23, 42, 0.18);
   max-height: calc(100vh - 48px);
   max-width: 720px;
   overflow: auto;
@@ -267,7 +283,7 @@ body {
   margin: 14px 24px 0;
 }
 .equipment-summary div {
-  background: #0f1728;
+  background: #f8fafc;
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 10px;
@@ -303,7 +319,7 @@ body {
 .form-grid input,
 .form-grid select,
 .form-grid textarea {
-  background: #0f1728;
+  background: var(--input-bg);
   border: 1px solid var(--border);
   border-radius: 8px;
   color: var(--text);
@@ -316,7 +332,7 @@ body {
 .form-grid select:focus,
 .form-grid textarea:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.18);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16);
   outline: none;
 }
 .form-grid input[readonly] {
@@ -333,6 +349,36 @@ body {
   color: var(--text-muted);
   font-size: 13px;
   font-weight: 600;
+}
+.time-range {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.time-range-inputs {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+}
+.time-range-inputs input[type="time"] {
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font: inherit;
+  min-height: 38px;
+  padding: 8px 10px;
+  width: 100%;
+}
+.time-range-inputs input[type="time"]:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16);
+  outline: none;
+}
+.time-range-sep {
+  color: var(--text-muted);
+  flex-shrink: 0;
+  font-size: 13px;
 }
 .process-methods .section-title-row {
   padding: 0;
@@ -371,10 +417,10 @@ body {
   padding: 10px 20px;
   border: 1px solid var(--border);
   border-radius: 8px;
-  background: var(--bg-elevated);
-  color: var(--text);
+  background: var(--header-bg);
+  color: #fff;
   font-size: 14px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.2);
   pointer-events: none;
 }
 .empty-state {

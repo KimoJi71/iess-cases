@@ -159,12 +159,24 @@ window.MaintenanceModule = (function () {
     render();
   }
 
+  function parseEstimatedTime(value) {
+    const match = String(value || "").match(/^(\d{2}:\d{2})\s*-\s*(\d{2}:\d{2})$/);
+    if (!match) return { start: "", end: "" };
+    return { start: match[1], end: match[2] };
+  }
+
+  function formatEstimatedTime(start, end) {
+    if (start && end) return `${start}-${end}`;
+    return "";
+  }
+
   function renderCaseInfoFields(values = {}) {
     const hasCustomer = Boolean(values.customerName);
     const storeOptions = hasCustomer
       ? renderStoreOptions(values.customerName, values.storeName)
       : `<option value="">請先選擇客戶</option>`;
     const repairReasonIsOther = values.repairReason === "其他";
+    const estimatedTime = parseEstimatedTime(values.estimatedTime);
 
     return `
       <div class="form-grid">
@@ -226,10 +238,14 @@ window.MaintenanceModule = (function () {
           <span>預計日期</span>
           <input type="date" name="estimatedDate" value="${escapeHtml(values.estimatedDate)}" />
         </label>
-        <label>
-          <span>預計時段</span>
-          <input type="text" name="estimatedTime" value="${escapeHtml(values.estimatedTime)}" placeholder="09:00-12:00" />
-        </label>
+        <div class="time-range">
+          <span class="field-label">預計時段</span>
+          <div class="time-range-inputs">
+            <input type="time" name="estimatedTimeStart" value="${escapeHtml(estimatedTime.start)}" />
+            <span class="time-range-sep">至</span>
+            <input type="time" name="estimatedTimeEnd" value="${escapeHtml(estimatedTime.end)}" />
+          </div>
+        </div>
         <label class="form-full">
           <span>故障描述 <strong data-required-marker ${repairReasonIsOther ? "" : "hidden"}>*</strong></span>
           <textarea name="faultDescription" rows="4" placeholder="請輸入故障描述">${escapeHtml(values.faultDescription)}</textarea>
@@ -559,7 +575,10 @@ window.MaintenanceModule = (function () {
       faultDescription: form.elements.faultDescription.value,
       assignee: form.elements.assignee.value,
       estimatedDate: form.elements.estimatedDate.value,
-      estimatedTime: form.elements.estimatedTime.value,
+      estimatedTime: formatEstimatedTime(
+        form.elements.estimatedTimeStart.value,
+        form.elements.estimatedTimeEnd.value
+      ),
     };
   }
 
@@ -616,28 +635,19 @@ window.MaintenanceModule = (function () {
   }
 
   function scanEquipment(caseId) {
-    const c = store.getById(caseId);
-    if (!c) return;
+    if (!editDraft || editingId !== caseId) return;
     const equipment = {
-      customer: editDraft?.customerName || c.customerName,
-      store: editDraft?.storeName || c.storeName,
+      customer: editDraft.customerName,
+      store: editDraft.storeName,
       area: "賣場空調區",
       io: "室內",
       model: "AC-DEMO-100",
     };
-    store.update(caseId, {
+    editDraft = {
+      ...editDraft,
       equipmentScanned: true,
       equipment,
-    });
-    if (editDraft && editingId === caseId) {
-      editDraft = {
-        ...editDraft,
-        equipmentScanned: true,
-        equipment,
-      };
-    }
-    modalMode = "edit";
-    editingId = caseId;
+    };
     render();
   }
 
@@ -713,6 +723,8 @@ window.MaintenanceModule = (function () {
   function render() {
     if (!root) return;
     const cases = getVisibleCases();
+    const previousModal = root.querySelector(".modal");
+    const previousScrollTop = previousModal ? previousModal.scrollTop : 0;
 
     root.innerHTML = `
       <section class="maintenance-module">
@@ -753,6 +765,11 @@ window.MaintenanceModule = (function () {
         ${modalMode === "edit" ? renderEditModal() : ""}
       </section>
     `;
+
+    if (previousScrollTop > 0) {
+      const nextModal = root.querySelector(".modal");
+      if (nextModal) nextModal.scrollTop = previousScrollTop;
+    }
   }
 
   return { mount, unmount };
