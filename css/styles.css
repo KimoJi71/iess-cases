@@ -472,6 +472,40 @@ body {
   padding: 32px;
   text-align: center;
 }
+.detail-grid {
+  display: grid;
+  gap: 14px 16px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding: 18px 24px;
+}
+.detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.detail-full {
+  grid-column: 1 / -1;
+}
+.detail-label {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+.detail-value {
+  font-size: 14px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.detail-empty {
+  color: var(--text-muted);
+  margin: 6px 0 0;
+}
+.detail-table {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-top: 8px;
+  white-space: normal;
+}
 
 @media (max-width: 720px) {
   .modal-backdrop {

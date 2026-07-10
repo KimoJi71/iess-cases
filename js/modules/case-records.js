@@ -55,6 +55,118 @@ window.CaseRecordsModule = (function () {
     `).join("");
   }
 
+  function detailItem(label, value, full = false) {
+    return `
+      <div class="detail-item${full ? " detail-full" : ""}">
+        <span class="detail-label">${escapeHtml(label)}</span>
+        <span class="detail-value">${escapeHtml(value || "—")}</span>
+      </div>
+    `;
+  }
+
+  function renderEquipmentSection(c) {
+    if (!c.equipment) {
+      return `<p class="detail-empty">尚無設備資料</p>`;
+    }
+    const eq = c.equipment;
+    return `
+      <div class="detail-grid">
+        ${detailItem("客戶名稱", eq.customer)}
+        ${detailItem("門市名稱", eq.store)}
+        ${detailItem("設備區域", eq.area)}
+        ${detailItem("內／外", eq.io)}
+        ${detailItem("型號", eq.model)}
+      </div>
+    `;
+  }
+
+  function renderProcessSection(c) {
+    const methods = c.processMethods || [];
+    const methodsHtml = methods.length
+      ? `
+        <div class="detail-full">
+          <span class="detail-label">處理方式</span>
+          <table class="data-table detail-table">
+            <thead>
+              <tr><th>大分類</th><th>中分類</th><th>小分類</th><th>數量</th></tr>
+            </thead>
+            <tbody>
+              ${methods.map((m) => `
+                <tr>
+                  <td>${escapeHtml(m.large)}</td>
+                  <td>${escapeHtml(m.medium)}</td>
+                  <td>${escapeHtml(m.small)}</td>
+                  <td>${escapeHtml(m.qty)}</td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        </div>
+      `
+      : `
+        <div class="detail-full">
+          <span class="detail-label">處理方式</span>
+          <p class="detail-empty">無處理方式</p>
+        </div>
+      `;
+
+    return `
+      <div class="detail-grid">
+        ${detailItem("實際維修原因", c.actualReason, true)}
+        ${methodsHtml}
+        ${detailItem("備註", c.remarks, true)}
+        ${detailItem("處理狀態", c.processStatus)}
+      </div>
+    `;
+  }
+
+  function renderDetailModal(c) {
+    if (!c) return "";
+    return `
+      <div class="modal-backdrop" role="presentation">
+        <section class="modal modal-wide" role="dialog" aria-modal="true" aria-labelledby="detail-title">
+          <div class="modal-header">
+            <div>
+              <h2 id="detail-title">案件明細 ${escapeHtml(c.id)}</h2>
+              <p>檢視案件內容（唯讀，不可編輯）。</p>
+            </div>
+            <button type="button" class="btn" data-action="dismiss-detail" aria-label="關閉">關閉</button>
+          </div>
+
+          <section class="form-section">
+            <h3>案件資料</h3>
+            <div class="detail-grid">
+              ${detailItem("案件編號", c.id)}
+              ${detailItem("工項分類", c.workCategory)}
+              ${detailItem("叫修人員", c.requester)}
+              ${detailItem("客戶名稱", c.customerName)}
+              ${detailItem("門市名稱", c.storeName)}
+              ${detailItem("服務等級", c.serviceLevel)}
+              ${detailItem("門市地址", c.storeAddress, true)}
+              ${detailItem("叫修項目", c.repairItem)}
+              ${detailItem("叫修原因", c.repairReason)}
+              ${detailItem("故障描述", c.faultDescription, true)}
+            </div>
+          </section>
+
+          <section class="form-section">
+            <h3>設備資料</h3>
+            ${renderEquipmentSection(c)}
+          </section>
+
+          <section class="form-section">
+            <h3>處理資料</h3>
+            ${renderProcessSection(c)}
+          </section>
+
+          <div class="modal-actions">
+            <button type="button" class="btn btn-primary" data-action="dismiss-detail">關閉</button>
+          </div>
+        </section>
+      </div>
+    `;
+  }
+
   function onRootClick(e) {
     if (e.target.classList.contains("modal-backdrop") && root.contains(e.target)) {
       viewingId = null;
@@ -143,6 +255,7 @@ window.CaseRecordsModule = (function () {
             </tbody>
           </table>
         </div>
+        ${viewingId ? renderDetailModal(store.getById(viewingId)) : ""}
       </section>
     `;
   }
