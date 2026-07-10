@@ -107,6 +107,37 @@ body {
   display: flex;
   justify-content: flex-end;
 }
+.filter-fields {
+  align-items: flex-end;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 0;
+}
+.filter-fields label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.filter-fields span {
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+.filter-fields input[type="date"] {
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font: inherit;
+  min-height: 38px;
+  padding: 8px 10px;
+}
+.filter-fields input[type="date"]:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16);
+  outline: none;
+}
 .filter-btn {
   background: var(--bg-panel);
   border: 1px solid var(--border);
