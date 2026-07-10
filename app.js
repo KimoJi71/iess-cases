@@ -64,6 +64,7 @@ const PROCESS_METHOD_CATEGORIES = {
 const MAINTENANCE_STATUS_OPTIONS = ['待排程', '已排程', '保養中', '已完工', '逾期'];
 const DISTRICT_OPTIONS = ['北區', '中區', '南區', '東區'];
 const SERVICE_LEVEL_OPTIONS = ['保修(一年一次)', '保修(一年兩次)', '保養(一年一次)', '維修(無簽約客戶)'];
+const MAINTENANCE_INTERVAL_OPTIONS = ['每季', '每半年', '每年'];
 
 // 工程立案專用選項
 const PROJECT_WORK_CATEGORIES = ['新開', '汰換', '撤店', '整裝', '加裝'];
@@ -77,6 +78,55 @@ let DYNAMIC_PROJECT_TAGS = [...PROJECT_TOPIC_TAGS];
 
 // 現勘表收集專用選項
 const SURVEY_TYPES = ['環境與施工', '設備與零件', '配管工程', '配電工程', '風管工程', '拆除工程', '汰換工程'];
+
+// 設備與零件 現勘表選項
+const EQUIP_CATEGORY_OPTIONS = ['分離式', '冰水', '空氣門'];
+// 品牌／設備名稱／型號：實務上抓「設備清單」資料，此處以示範資料呈現
+const EQUIP_BRAND_OPTIONS = ['日立', '大金', '三菱重工', '國際牌', 'LG', '其他'];
+const EQUIP_NAME_OPTIONS = ['分離式冷氣', '箱型冷氣', '吊隱式冷氣', '冰水主機', '空氣門'];
+const EQUIP_MODEL_OPTIONS = ['RAS-100', 'RAS-50', 'FXYP100', 'PA-063', '其他'];
+// 零配件（多選 + 填數量），日立集中控制器於原表重複，此處取唯一值
+const SURVEY_PARTS = ['日立集中控制器', '日立受光器', '得意溫控', '空氣門繼電器', '空氣門磁簧開關'];
+
+// 配管工程 現勘表選項（多選 + 填數字）
+// 銅管工程
+const PIPING_COPPER_SIZES = ['2分5分', '3分5分', '4分', '1英吋', '1.1英吋']; // 長度 米
+const PIPING_COPPER_FITTINGS = ['分歧管282', '分歧管452']; // 數量 個
+// 排水工程
+const PIPING_PVC_DRAIN = ['6分', '1英吋']; // 長度 米
+const PIPING_DRAIN_INSULATION = ['6分x1/2', '1英吋x1/2']; // 長度 米
+// 冰水管工程
+const PIPING_CHILLED_FITTINGS = ['二通閥', '三通閥', '水流板', '水流開關', '溫度表', '水壓表', 'Y型過濾器']; // 數量 個
+const PIPING_CHILLED_PIPE = ['6分', '1英吋', '2英吋', '3英吋']; // 長度 米
+const PIPING_CHILLED_INSULATION = ['6分x2/3', '1英吋x1']; // 長度 米
+// 管路保護
+const PIPING_PROTECT_MATERIALS = ['膠帶', 'ABS管槽', '白鐵']; // 單選（ABS管槽需再選層數尺寸）
+const PIPING_ABS_SIZES = ['80mm', '100mm', '140mm']; // ABS管槽 第二層尺寸
+const PIPING_CHANNEL_FITTINGS = [
+  { label: '管槽', unit: '米', qtyLabel: '長度' },
+  { label: '軟管', unit: '支', qtyLabel: '數量' },
+  { label: '彎頭', unit: '個', qtyLabel: '數量' }
+]; // 多選 + 填數字（單位不同）
+const PIPING_PROTECT_COLORS = ['黑色', '白色']; // 單選
+
+// 配電工程 現勘表選項（多選 + 填數字，單位：米，填長度）
+const WIRING_CONTROL_SIGNAL = ['隔離控制線1.25mm²*2C', '隔離訊號線1.25mm²*2C']; // 控制及訊號線材／米
+const WIRING_POWER_CABLE = ['電纜線2.0mm²*3C', '電纜線5.5mm²*3C', '電纜線8.0mm²*4C', '電纜線14mm²*4C']; // 電源線線材／米
+
+// 風管工程 現勘表選項
+const DUCT_INSULATED_HOSE = ['4"', '6"', '8"', '10"', '12"']; // 保溫軟管(玻璃棉)／米（多選 + 填長度）
+const DUCT_UNINSULATED_HOSE = ['4"', '6"', '8"', '10"', '12"']; // 無保溫軟管(鋁箔)／米（多選 + 填長度）
+const DUCT_BOX_MATERIALS = ['PU貼鋁皮', '鐵製']; // 集風箱／出線型箱 材質（單選）
+const DUCT_BOX_PIPES = ['4"風管', '6"風管', '8"風管', '10"風管', '12"風管']; // 集風箱／出線型箱 風管管徑（多選 + 孔數 + 數量）
+const DUCT_TEE_PIPES = ['4"', '6"', '8"', '10"', '12"']; // 三通風箱 風管管徑（多選 + 數量）
+const DUCT_VENT_OUTLETS = [
+  { label: '輕鋼架-格柵出風口(60*60cm)' },
+  { label: '格柵出風口(45*45cm)(含框)' },
+  { label: '擴散出風口(45*45cm)(含框)' },
+  { label: '線型出風口', dim: true }
+]; // 出風口型式（多選 + 數量，線型另填寬高）
+const DUCT_RETURN_OUTLETS = ['輕鋼架-抽取式回風口(60*60cm)(框+網)', '輕鋼架-一體成型回風口(60*60cm)(框+網)', '回風板(尺寸120*45cm)', '回風板(尺寸140*45cm)']; // 回風口（多選 + 數量）
+const DUCT_CUSTOM_BOX_OPTIONS = ['特製風箱(NAS附圖)', '請風管廠商前來丈量安裝']; // 特製風箱（單選 + 其他）
 
 // 客戶名稱對應服務等級的映射表
 const CUSTOMER_SERVICE_LEVEL_MAP = {
@@ -93,6 +143,66 @@ const todayDate = today.toISOString().split('T')[0];
 const yesterdayDate = new Date(Date.now() - 86400000).toISOString().split('T')[0];
 const twoDaysAgoDate = new Date(Date.now() - 86400000 * 2).toISOString().split('T')[0];
 const currentMonthStr = today.toISOString().slice(0, 7);
+
+// --- 初始模擬客戶列表 (客戶建檔) ---
+const INITIAL_CUSTOMERS = [{
+  id: 'CUST1',
+  name: '屈臣氏',
+  taxId: '12345678',
+  principal: '王大明',
+  serviceLevel: '保修(一年一次)',
+  maintenanceInterval: '每半年',
+  phone: '02-2712-3456',
+  fax: '02-2712-3457',
+  address: '台北市信義區松高路11號',
+  remarks: '全台門市統一窗口。',
+  createdDate: todayDate,
+  contacts: [{
+    id: 101,
+    title: '設備課長',
+    name: '林志明',
+    phone: '0912-345-678',
+    email: 'lin@watsons.example.com'
+  }, {
+    id: 102,
+    title: '採購專員',
+    name: '陳怡君',
+    phone: '0922-111-222',
+    email: 'chen@watsons.example.com'
+  }]
+}, {
+  id: 'CUST2',
+  name: '星巴克',
+  taxId: '23456789',
+  principal: '李美玲',
+  serviceLevel: '保修(一年兩次)',
+  maintenanceInterval: '每季',
+  phone: '02-8780-1234',
+  fax: '02-8780-1235',
+  address: '台北市大安區復興南路一段39號',
+  remarks: '',
+  createdDate: yesterdayDate,
+  contacts: [{
+    id: 201,
+    title: '營運經理',
+    name: '張偉',
+    phone: '0933-555-666',
+    email: 'chang@starbucks.example.com'
+  }]
+}, {
+  id: 'CUST3',
+  name: '萊爾富',
+  taxId: '34567890',
+  principal: '吳建宏',
+  serviceLevel: '保養(一年一次)',
+  maintenanceInterval: '每年',
+  phone: '03-322-8888',
+  fax: '03-322-8889',
+  address: '桃園市中壢區中央西路二段100號',
+  remarks: '保養以桃竹苗門市優先排程。',
+  createdDate: twoDaysAgoDate,
+  contacts: []
+}];
 
 // --- 初始模擬案件列表 (維修) ---
 const INITIAL_CASES = [{
@@ -3556,6 +3666,10 @@ const SurveyForm = ({
     surveyType: SURVEY_TYPES[0],
     surveyData: {} // 儲存各類型動態題目答案
   });
+  // 室外機施工內容 - 可隱藏題目的顯示切換
+  const [showOutdoorHideable, setShowOutdoorHideable] = useState(true);
+  // 沿用設備 - 可隱藏題目的顯示切換
+  const [showReuseEquipment, setShowReuseEquipment] = useState(true);
   const handleChange = e => {
     const {
       name,
@@ -3614,6 +3728,477 @@ const SurveyForm = ({
       };
     });
   };
+
+  // 室內機洗孔需求動態清單處理 (可增加多筆)
+  const handleHoleChange = (index, value) => {
+    setFormData(prev => {
+      const currentSurveyData = prev.surveyData || {};
+      const holes = [...(currentSurveyData.indoorUnitHoles || [])];
+      holes[index] = {
+        ...holes[index],
+        diameter: value
+      };
+      return {
+        ...prev,
+        surveyData: {
+          ...currentSurveyData,
+          indoorUnitHoles: holes
+        }
+      };
+    });
+  };
+  const addHole = () => {
+    setFormData(prev => {
+      const currentSurveyData = prev.surveyData || {};
+      const holes = [...(currentSurveyData.indoorUnitHoles || []), {
+        diameter: ''
+      }];
+      return {
+        ...prev,
+        surveyData: {
+          ...currentSurveyData,
+          indoorUnitHoles: holes
+        }
+      };
+    });
+  };
+  const removeHole = index => {
+    setFormData(prev => {
+      const currentSurveyData = prev.surveyData || {};
+      const holes = (currentSurveyData.indoorUnitHoles || []).filter((_, i) => i !== index);
+      return {
+        ...prev,
+        surveyData: {
+          ...currentSurveyData,
+          indoorUnitHoles: holes
+        }
+      };
+    });
+  };
+  // 設備清單動態處理 (可增加多筆設備)
+  const handleEquipmentChange = (index, field, value) => {
+    setFormData(prev => {
+      const currentSurveyData = prev.surveyData || {};
+      const list = [...(currentSurveyData.equipmentList || [])];
+      list[index] = {
+        ...list[index],
+        [field]: value
+      };
+      return {
+        ...prev,
+        surveyData: {
+          ...currentSurveyData,
+          equipmentList: list
+        }
+      };
+    });
+  };
+  const addEquipment = () => {
+    setFormData(prev => {
+      const currentSurveyData = prev.surveyData || {};
+      const list = [...(currentSurveyData.equipmentList || []), {
+        category: '',
+        brand: '',
+        name: '',
+        model: '',
+        area: ''
+      }];
+      return {
+        ...prev,
+        surveyData: {
+          ...currentSurveyData,
+          equipmentList: list
+        }
+      };
+    });
+  };
+  const removeEquipment = index => {
+    setFormData(prev => {
+      const currentSurveyData = prev.surveyData || {};
+      const list = (currentSurveyData.equipmentList || []).filter((_, i) => i !== index);
+      return {
+        ...prev,
+        surveyData: {
+          ...currentSurveyData,
+          equipmentList: list
+        }
+      };
+    });
+  };
+  // 零配件數量處理
+  const handlePartQtyChange = (partKey, value) => {
+    setFormData(prev => {
+      const currentSurveyData = prev.surveyData || {};
+      return {
+        ...prev,
+        surveyData: {
+          ...currentSurveyData,
+          partsQty: {
+            ...(currentSurveyData.partsQty || {}),
+            [partKey]: value
+          }
+        }
+      };
+    });
+  };
+  // 配管工程 各多選群組的數量／長度對照表處理（依 mapName 分開儲存）
+  const handleQtyMapChange = (mapName, key, value) => {
+    setFormData(prev => {
+      const currentSurveyData = prev.surveyData || {};
+      return {
+        ...prev,
+        surveyData: {
+          ...currentSurveyData,
+          [mapName]: {
+            ...(currentSurveyData[mapName] || {}),
+            [key]: value
+          }
+        }
+      };
+    });
+  };
+  // 配管工程「多選 + 填數字」單一列
+  const renderPipingQtyRow = (checkName, mapName, opt) => {
+    const selected = formData.surveyData?.[checkName] || [];
+    const checked = selected.includes(opt.label);
+    return /*#__PURE__*/React.createElement("div", {
+      key: opt.label,
+      className: "flex items-center justify-between bg-white p-3 rounded border border-gray-200"
+    }, /*#__PURE__*/React.createElement("label", {
+      className: "flex items-center gap-2 cursor-pointer"
+    }, /*#__PURE__*/React.createElement("input", {
+      type: "checkbox",
+      name: checkName,
+      value: opt.label,
+      checked: checked,
+      onChange: handleSurveyChange,
+      className: "w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
+    }), /*#__PURE__*/React.createElement("span", {
+      className: "text-sm text-gray-700 font-medium"
+    }, opt.label)), /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center gap-2"
+    }, /*#__PURE__*/React.createElement("input", {
+      type: "number",
+      value: formData.surveyData?.[mapName]?.[opt.label] || '',
+      onChange: e => handleQtyMapChange(mapName, opt.label, e.target.value),
+      disabled: !checked,
+      placeholder: opt.qtyLabel,
+      className: "w-24 p-1.5 border rounded-md text-sm outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-100 disabled:opacity-50"
+    }), /*#__PURE__*/React.createElement("span", {
+      className: "text-sm text-gray-500 whitespace-nowrap"
+    }, opt.unit)));
+  };
+  // 配管工程「多選 + 填數字」的「其他」自填列
+  const renderPipingOtherRow = (checkName, mapName, unit, qtyLabel) => {
+    const selected = formData.surveyData?.[checkName] || [];
+    const checked = selected.includes('其他');
+    return /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center justify-between bg-white p-3 rounded border border-gray-200"
+    }, /*#__PURE__*/React.createElement("label", {
+      className: "flex items-center gap-2 cursor-pointer flex-1"
+    }, /*#__PURE__*/React.createElement("input", {
+      type: "checkbox",
+      name: checkName,
+      value: "其他",
+      checked: checked,
+      onChange: handleSurveyChange,
+      className: "w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500 shrink-0"
+    }), /*#__PURE__*/React.createElement("span", {
+      className: "text-sm text-gray-700 font-medium shrink-0"
+    }, "其他："), /*#__PURE__*/React.createElement("input", {
+      type: "text",
+      name: `${checkName}_other`,
+      value: formData.surveyData?.[`${checkName}_other`] || '',
+      onChange: handleSurveyChange,
+      disabled: !checked,
+      placeholder: "請註明",
+      className: "flex-1 max-w-xs p-1 border-b-2 border-gray-300 outline-none focus:border-indigo-500 bg-transparent text-sm disabled:opacity-50"
+    })), /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center gap-2"
+    }, /*#__PURE__*/React.createElement("input", {
+      type: "number",
+      value: formData.surveyData?.[mapName]?.['其他'] || '',
+      onChange: e => handleQtyMapChange(mapName, '其他', e.target.value),
+      disabled: !checked,
+      placeholder: qtyLabel,
+      className: "w-24 p-1.5 border rounded-md text-sm outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-100 disabled:opacity-50"
+    }), /*#__PURE__*/React.createElement("span", {
+      className: "text-sm text-gray-500 whitespace-nowrap"
+    }, unit)));
+  };
+  // 配管工程「多選 + 填數字」子題卡片（同一單位）
+  const renderPipingCheckQtyGroup = (subtitle, note, checkName, mapName, options, unit, qtyLabel) => /*#__PURE__*/React.createElement("div", {
+    className: "bg-white p-4 rounded-lg border border-gray-200"
+  }, /*#__PURE__*/React.createElement("h4", {
+    className: "text-base font-bold text-indigo-700 mb-1"
+  }, subtitle), note && /*#__PURE__*/React.createElement("p", {
+    className: "text-xs text-gray-400 mb-3"
+  }, note), /*#__PURE__*/React.createElement("div", {
+    className: "space-y-2 mt-2"
+  }, options.map(o => renderPipingQtyRow(checkName, mapName, typeof o === 'string' ? {
+    label: o,
+    unit,
+    qtyLabel
+  } : o)), renderPipingOtherRow(checkName, mapName, unit, qtyLabel)));
+  // 配管工程 單選子題卡片
+  const renderPipingSingleSelect = (subtitle, name, options, extra) => {
+    const cur = formData.surveyData?.[name] || '';
+    return /*#__PURE__*/React.createElement("div", {
+      className: "bg-white p-4 rounded-lg border border-gray-200"
+    }, /*#__PURE__*/React.createElement("h4", {
+      className: "text-base font-bold text-indigo-700 mb-3"
+    }, subtitle), /*#__PURE__*/React.createElement("div", {
+      className: "flex flex-wrap gap-x-6 gap-y-3"
+    }, options.map(opt => /*#__PURE__*/React.createElement("label", {
+      key: opt,
+      className: "flex items-center gap-2 cursor-pointer"
+    }, /*#__PURE__*/React.createElement("input", {
+      type: "radio",
+      name: name,
+      value: opt,
+      checked: cur === opt,
+      onChange: handleSurveyChange,
+      className: "w-4 h-4 text-indigo-600 border-gray-300 focus:ring-indigo-500"
+    }), /*#__PURE__*/React.createElement("span", {
+      className: "text-sm text-gray-700 font-medium"
+    }, opt))), /*#__PURE__*/React.createElement("label", {
+      className: "flex items-center gap-2 cursor-pointer"
+    }, /*#__PURE__*/React.createElement("input", {
+      type: "radio",
+      name: name,
+      value: "其他",
+      checked: cur === '其他',
+      onChange: handleSurveyChange,
+      className: "w-4 h-4 text-indigo-600 border-gray-300 focus:ring-indigo-500"
+    }), /*#__PURE__*/React.createElement("span", {
+      className: "text-sm text-gray-700 font-medium"
+    }, "其他："), /*#__PURE__*/React.createElement("input", {
+      type: "text",
+      name: `${name}_other`,
+      value: formData.surveyData?.[`${name}_other`] || '',
+      onChange: handleSurveyChange,
+      disabled: cur !== '其他',
+      placeholder: "請註明",
+      className: "w-32 p-1 border-b-2 border-gray-300 outline-none focus:border-indigo-500 bg-transparent text-sm disabled:opacity-50"
+    }))), extra);
+  };
+  // 風管工程 集風箱／出線型箱「風管管徑 + 孔數 + 數量」多選列
+  const renderDuctPipeRow = (checkName, holeMap, qtyMap, opt) => {
+    const selected = formData.surveyData?.[checkName] || [];
+    const checked = selected.includes(opt);
+    return /*#__PURE__*/React.createElement("div", {
+      key: opt,
+      className: "flex items-center justify-between bg-white p-3 rounded border border-gray-200"
+    }, /*#__PURE__*/React.createElement("label", {
+      className: "flex items-center gap-2 cursor-pointer"
+    }, /*#__PURE__*/React.createElement("input", {
+      type: "checkbox",
+      name: checkName,
+      value: opt,
+      checked: checked,
+      onChange: handleSurveyChange,
+      className: "w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
+    }), /*#__PURE__*/React.createElement("span", {
+      className: "text-sm text-gray-700 font-medium"
+    }, opt)), /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center gap-2"
+    }, /*#__PURE__*/React.createElement("input", {
+      type: "number",
+      value: formData.surveyData?.[holeMap]?.[opt] || '',
+      onChange: e => handleQtyMapChange(holeMap, opt, e.target.value),
+      disabled: !checked,
+      placeholder: "孔數",
+      className: "w-20 p-1.5 border rounded-md text-sm outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-100 disabled:opacity-50"
+    }), /*#__PURE__*/React.createElement("span", {
+      className: "text-sm text-gray-500 whitespace-nowrap"
+    }, "孔"), /*#__PURE__*/React.createElement("input", {
+      type: "number",
+      value: formData.surveyData?.[qtyMap]?.[opt] || '',
+      onChange: e => handleQtyMapChange(qtyMap, opt, e.target.value),
+      disabled: !checked,
+      placeholder: "數量",
+      className: "w-20 p-1.5 border rounded-md text-sm outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-100 disabled:opacity-50"
+    }), /*#__PURE__*/React.createElement("span", {
+      className: "text-sm text-gray-500 whitespace-nowrap"
+    }, "個")));
+  };
+  // 風管工程 集風箱／出線型箱 卡片（材質單選 + 法蘭內徑 + 風管管徑孔數/數量多選）
+  const renderDuctBox = (title, prefix) => /*#__PURE__*/React.createElement("div", {
+    className: "bg-indigo-50/30 p-8 rounded-lg border border-indigo-100 shadow-sm"
+  }, /*#__PURE__*/React.createElement("h3", {
+    className: "text-xl font-bold text-indigo-800 border-b-2 border-indigo-200 pb-3 mb-6 flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement(Wrench, {
+    className: "h-6 w-6"
+  }), " " + title), /*#__PURE__*/React.createElement("div", {
+    className: "space-y-6"
+  }, renderPipingSingleSelect('材質（單選）', `${prefix}Material`, DUCT_BOX_MATERIALS), /*#__PURE__*/React.createElement("div", {
+    className: "bg-white p-4 rounded-lg border border-gray-200"
+  }, /*#__PURE__*/React.createElement("h4", {
+    className: "text-base font-bold text-indigo-700 mb-3"
+  }, "法蘭內徑"), /*#__PURE__*/React.createElement("div", {
+    className: "flex flex-wrap items-center gap-3"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-sm text-gray-700 font-medium"
+  }, "寬"), /*#__PURE__*/React.createElement("input", {
+    type: "number",
+    name: `${prefix}FlangeWidth`,
+    value: formData.surveyData?.[`${prefix}FlangeWidth`] || '',
+    onChange: handleSurveyChange,
+    placeholder: "寬",
+    className: "w-24 p-1.5 border rounded-md text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "text-sm text-gray-500"
+  }, "cm"), /*#__PURE__*/React.createElement("span", {
+    className: "text-sm text-gray-700 font-medium ml-4"
+  }, "高"), /*#__PURE__*/React.createElement("input", {
+    type: "number",
+    name: `${prefix}FlangeHeight`,
+    value: formData.surveyData?.[`${prefix}FlangeHeight`] || '',
+    onChange: handleSurveyChange,
+    placeholder: "高",
+    className: "w-24 p-1.5 border rounded-md text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "text-sm text-gray-500"
+  }, "cm"))), /*#__PURE__*/React.createElement("div", {
+    className: "bg-white p-4 rounded-lg border border-gray-200"
+  }, /*#__PURE__*/React.createElement("h4", {
+    className: "text-base font-bold text-indigo-700 mb-1"
+  }, "風管管徑、孔數與數量"), /*#__PURE__*/React.createElement("p", {
+    className: "text-xs text-gray-400 mb-3"
+  }, "請勾選風管管徑並填寫孔數與數量（個）"), /*#__PURE__*/React.createElement("div", {
+    className: "space-y-2 mt-2"
+  }, DUCT_BOX_PIPES.map(o => renderDuctPipeRow(`${prefix}Pipes`, `${prefix}PipesHoles`, `${prefix}PipesQty`, o))))));
+  // 風管工程 三通風箱 卡片（材質單選 + 風管管徑數量多選，無孔數／無其他列）
+  const renderDuctTeeBox = (title, prefix) => /*#__PURE__*/React.createElement("div", {
+    className: "bg-indigo-50/30 p-8 rounded-lg border border-indigo-100 shadow-sm"
+  }, /*#__PURE__*/React.createElement("h3", {
+    className: "text-xl font-bold text-indigo-800 border-b-2 border-indigo-200 pb-3 mb-6 flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement(Wrench, {
+    className: "h-6 w-6"
+  }), " " + title), /*#__PURE__*/React.createElement("div", {
+    className: "space-y-6"
+  }, renderPipingSingleSelect('材質（單選）', `${prefix}Material`, DUCT_BOX_MATERIALS), /*#__PURE__*/React.createElement("div", {
+    className: "bg-white p-4 rounded-lg border border-gray-200"
+  }, /*#__PURE__*/React.createElement("h4", {
+    className: "text-base font-bold text-indigo-700 mb-1"
+  }, "風管管徑、數量"), /*#__PURE__*/React.createElement("p", {
+    className: "text-xs text-gray-400 mb-3"
+  }, "請勾選風管管徑並填寫數量（個）"), /*#__PURE__*/React.createElement("div", {
+    className: "space-y-2 mt-2"
+  }, DUCT_TEE_PIPES.map(o => renderPipingQtyRow(`${prefix}Pipes`, `${prefix}PipesQty`, {
+    label: o,
+    unit: '個',
+    qtyLabel: '數量'
+  }))))));
+  // 風管工程 出風口 單一型式列（勾選 + 數量個，線型另填寬高 cm）
+  const renderVentOutletRow = opt => {
+    const selected = formData.surveyData?.ventOutlets || [];
+    const checked = selected.includes(opt.label);
+    return /*#__PURE__*/React.createElement("div", {
+      key: opt.label,
+      className: "bg-white p-3 rounded border border-gray-200"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center justify-between"
+    }, /*#__PURE__*/React.createElement("label", {
+      className: "flex items-center gap-2 cursor-pointer"
+    }, /*#__PURE__*/React.createElement("input", {
+      type: "checkbox",
+      name: "ventOutlets",
+      value: opt.label,
+      checked: checked,
+      onChange: handleSurveyChange,
+      className: "w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
+    }), /*#__PURE__*/React.createElement("span", {
+      className: "text-sm text-gray-700 font-medium"
+    }, opt.label)), /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center gap-2"
+    }, /*#__PURE__*/React.createElement("input", {
+      type: "number",
+      value: formData.surveyData?.ventOutletsQty?.[opt.label] || '',
+      onChange: e => handleQtyMapChange('ventOutletsQty', opt.label, e.target.value),
+      disabled: !checked,
+      placeholder: "數量",
+      className: "w-24 p-1.5 border rounded-md text-sm outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-100 disabled:opacity-50"
+    }), /*#__PURE__*/React.createElement("span", {
+      className: "text-sm text-gray-500 whitespace-nowrap"
+    }, "個"))), opt.dim && /*#__PURE__*/React.createElement("div", {
+      className: "flex flex-wrap items-center gap-3 mt-3 ml-6"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "text-sm text-gray-700 font-medium"
+    }, "寬"), /*#__PURE__*/React.createElement("input", {
+      type: "number",
+      name: "ventLinearWidth",
+      value: formData.surveyData?.ventLinearWidth || '',
+      onChange: handleSurveyChange,
+      disabled: !checked,
+      placeholder: "寬",
+      className: "w-24 p-1.5 border rounded-md text-sm outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-100 disabled:opacity-50"
+    }), /*#__PURE__*/React.createElement("span", {
+      className: "text-sm text-gray-500"
+    }, "cm"), /*#__PURE__*/React.createElement("span", {
+      className: "text-sm text-gray-700 font-medium ml-4"
+    }, "高"), /*#__PURE__*/React.createElement("input", {
+      type: "number",
+      name: "ventLinearHeight",
+      value: formData.surveyData?.ventLinearHeight || '',
+      onChange: handleSurveyChange,
+      disabled: !checked,
+      placeholder: "高",
+      className: "w-24 p-1.5 border rounded-md text-sm outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-100 disabled:opacity-50"
+    }), /*#__PURE__*/React.createElement("span", {
+      className: "text-sm text-gray-500"
+    }, "cm")));
+  };
+  // 風管工程 出風口 卡片（多選型式 + 數量，線型另填寬高，含其他）
+  const renderVentOutletBox = () => /*#__PURE__*/React.createElement("div", {
+    className: "bg-indigo-50/30 p-8 rounded-lg border border-indigo-100 shadow-sm"
+  }, /*#__PURE__*/React.createElement("h3", {
+    className: "text-xl font-bold text-indigo-800 border-b-2 border-indigo-200 pb-3 mb-6 flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement(Wrench, {
+    className: "h-6 w-6"
+  }), " 出風口"), /*#__PURE__*/React.createElement("div", {
+    className: "space-y-6"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "bg-white p-4 rounded-lg border border-gray-200"
+  }, /*#__PURE__*/React.createElement("h4", {
+    className: "text-base font-bold text-indigo-700 mb-1"
+  }, "出風口型式、數量"), /*#__PURE__*/React.createElement("p", {
+    className: "text-xs text-gray-400 mb-3"
+  }, "請勾選出風口型式並填寫數量（個），線型出風口另填寬、高（cm）"), /*#__PURE__*/React.createElement("div", {
+    className: "space-y-2 mt-2"
+  }, DUCT_VENT_OUTLETS.map(renderVentOutletRow), renderPipingOtherRow('ventOutlets', 'ventOutletsQty', '個', '數量')))));
+  // 風管工程 回風口 卡片（多選型式 + 數量，無其他列）
+  const renderReturnOutletBox = () => /*#__PURE__*/React.createElement("div", {
+    className: "bg-indigo-50/30 p-8 rounded-lg border border-indigo-100 shadow-sm"
+  }, /*#__PURE__*/React.createElement("h3", {
+    className: "text-xl font-bold text-indigo-800 border-b-2 border-indigo-200 pb-3 mb-6 flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement(Wrench, {
+    className: "h-6 w-6"
+  }), " 回風口"), /*#__PURE__*/React.createElement("div", {
+    className: "space-y-6"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "bg-white p-4 rounded-lg border border-gray-200"
+  }, /*#__PURE__*/React.createElement("h4", {
+    className: "text-base font-bold text-indigo-700 mb-1"
+  }, "回風口型式、數量"), /*#__PURE__*/React.createElement("p", {
+    className: "text-xs text-gray-400 mb-3"
+  }, "請勾選回風口型式並填寫數量（個）"), /*#__PURE__*/React.createElement("div", {
+    className: "space-y-2 mt-2"
+  }, DUCT_RETURN_OUTLETS.map(o => renderPipingQtyRow('returnOutlets', 'returnOutletsQty', {
+    label: o,
+    unit: '個',
+    qtyLabel: '數量'
+  }))))));
+  // 風管工程 特製風箱 卡片（單選 + 其他）
+  const renderCustomBox = () => /*#__PURE__*/React.createElement("div", {
+    className: "bg-indigo-50/30 p-8 rounded-lg border border-indigo-100 shadow-sm"
+  }, /*#__PURE__*/React.createElement("h3", {
+    className: "text-xl font-bold text-indigo-800 border-b-2 border-indigo-200 pb-3 mb-6 flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement(Wrench, {
+    className: "h-6 w-6"
+  }), " 特製風箱"), /*#__PURE__*/React.createElement("div", {
+    className: "space-y-6"
+  }, renderPipingSingleSelect('特製風箱（單選）', 'customBox', DUCT_CUSTOM_BOX_OPTIONS)));
   const handleSubmit = e => {
     e.preventDefault();
     if (!formData.customerName || !formData.storeName || !formData.storeAddress) {
@@ -4051,7 +4636,902 @@ const SurveyForm = ({
     className: "w-4 h-4 text-indigo-600 focus:ring-indigo-500"
   }), /*#__PURE__*/React.createElement("span", {
     className: "text-sm text-gray-700 font-medium"
-  }, opt)))))))) : /*#__PURE__*/React.createElement("div", {
+  }, opt))))))), /*#__PURE__*/React.createElement("div", {
+    className: "bg-indigo-50/30 p-8 rounded-lg border border-indigo-100 shadow-sm"
+  }, /*#__PURE__*/React.createElement("h3", {
+    className: "text-xl font-bold text-indigo-800 border-b-2 border-indigo-200 pb-3 mb-6 flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement(Wrench, {
+    className: "h-6 w-6"
+  }), " 室內機施工內容"), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6"
+  },
+  /* 室內機安裝位置 — 點選(多選) */
+  /*#__PURE__*/React.createElement("div", {
+    className: "md:col-span-2 bg-white p-4 rounded border border-gray-200"
+  }, /*#__PURE__*/React.createElement("label", {
+    className: "block text-sm font-bold text-gray-700 mb-3"
+  }, "室內機安裝位置 (點選 - 多選)"), /*#__PURE__*/React.createElement("div", {
+    className: "flex flex-wrap gap-x-6 gap-y-3"
+  }, ['露明(開放區域)', '輕鋼架', '暗架天花'].map(opt => /*#__PURE__*/React.createElement("label", {
+    key: opt,
+    className: "flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-1 rounded transition-colors"
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "checkbox",
+    name: "indoorUnitLocation",
+    value: opt,
+    checked: (formData.surveyData?.indoorUnitLocation || []).includes(opt),
+    onChange: handleSurveyChange,
+    className: "w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "text-sm text-gray-700 font-medium"
+  }, opt))))),
+  /* 室內機安裝高度 — 數字填寫 */
+  /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+    className: "block text-sm font-bold text-gray-700 mb-1"
+  }, "室內機安裝高度 (/cm)"), /*#__PURE__*/React.createElement("div", {
+    className: "relative"
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "number",
+    name: "indoorUnitHeight",
+    value: formData.surveyData?.indoorUnitHeight || '',
+    onChange: handleSurveyChange,
+    placeholder: "填寫高度",
+    className: "w-full p-2.5 pr-10 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "absolute right-3 top-2.5 text-gray-400 text-sm"
+  }, "/cm"))),
+  /* 室內機架1.5"角鋼需求 — 數字填寫 */
+  /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+    className: "block text-sm font-bold text-gray-700 mb-1"
+  }, "室內機架1.5\" 角鋼需求"), /*#__PURE__*/React.createElement("div", {
+    className: "relative"
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "number",
+    name: "indoorUnitAngleSteel",
+    value: formData.surveyData?.indoorUnitAngleSteel || '',
+    onChange: handleSurveyChange,
+    placeholder: "填寫數量",
+    className: "w-full p-2.5 pr-10 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "absolute right-3 top-2.5 text-gray-400 text-sm"
+  }, "支"))),
+  /* 室內機定位方式 — 下拉選單(多選) + 其他 */
+  /*#__PURE__*/React.createElement("div", {
+    className: "md:col-span-2 bg-white p-4 rounded border border-gray-200"
+  }, /*#__PURE__*/React.createElement("label", {
+    className: "block text-sm font-bold text-gray-700 mb-3"
+  }, "室內機定位方式 (下拉選單 - 多選)"), /*#__PURE__*/React.createElement("div", {
+    className: "flex flex-wrap gap-x-6 gap-y-4 items-center"
+  }, ['升降機', '鷹架', '自走車', '起重工人'].map(opt => /*#__PURE__*/React.createElement("label", {
+    key: opt,
+    className: "flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-1 rounded transition-colors"
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "checkbox",
+    name: "indoorUnitPositioning",
+    value: opt,
+    checked: (formData.surveyData?.indoorUnitPositioning || []).includes(opt),
+    onChange: handleSurveyChange,
+    className: "w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "text-sm text-gray-700 font-medium"
+  }, opt))), /*#__PURE__*/React.createElement("label", {
+    className: "flex items-center gap-2 cursor-pointer p-1"
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "checkbox",
+    name: "indoorUnitPositioning",
+    value: "其他",
+    checked: (formData.surveyData?.indoorUnitPositioning || []).includes('其他'),
+    onChange: handleSurveyChange,
+    className: "w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "text-sm text-gray-700 font-medium"
+  }, "其他："), /*#__PURE__*/React.createElement("input", {
+    type: "text",
+    name: "indoorUnitPositioning_other",
+    value: formData.surveyData?.indoorUnitPositioning_other || '',
+    onChange: handleSurveyChange,
+    disabled: !(formData.surveyData?.indoorUnitPositioning || []).includes('其他'),
+    className: "w-40 p-1 border-b-2 border-gray-300 outline-none focus:border-indigo-500 bg-transparent disabled:opacity-50 text-sm font-medium",
+    placeholder: "請註明"
+  })))),
+  /* 室內機吊掛方式 — 下拉選單(多選) */
+  /*#__PURE__*/React.createElement("div", {
+    className: "md:col-span-2 bg-white p-4 rounded border border-gray-200"
+  }, /*#__PURE__*/React.createElement("label", {
+    className: "block text-sm font-bold text-gray-700 mb-3"
+  }, "室內機吊掛方式 (下拉選單 - 多選)"), /*#__PURE__*/React.createElement("div", {
+    className: "flex flex-wrap gap-x-6 gap-y-3"
+  }, ['膨脹螺絲', '萬向接頭', 'C型鋼扣3/4'].map(opt => /*#__PURE__*/React.createElement("label", {
+    key: opt,
+    className: "flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-1 rounded transition-colors"
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "checkbox",
+    name: "indoorUnitHanging",
+    value: opt,
+    checked: (formData.surveyData?.indoorUnitHanging || []).includes(opt),
+    onChange: handleSurveyChange,
+    className: "w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "text-sm text-gray-700 font-medium"
+  }, opt))))),
+  /* 室內機洗孔需求 — 數字填寫 (可增加多筆) */
+  /*#__PURE__*/React.createElement("div", {
+    className: "md:col-span-2 bg-white p-4 rounded border border-gray-200"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between mb-3"
+  }, /*#__PURE__*/React.createElement("label", {
+    className: "block text-sm font-bold text-gray-700"
+  }, "室內機洗孔需求 (數字填寫)"), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: addHole,
+    className: "flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-800"
+  }, /*#__PURE__*/React.createElement(Plus, {
+    className: "h-4 w-4"
+  }), "增加洗孔")), (formData.surveyData?.indoorUnitHoles || []).length === 0 ? /*#__PURE__*/React.createElement("p", {
+    className: "text-sm text-gray-400"
+  }, "尚未新增洗孔，請點選「增加洗孔」") : /*#__PURE__*/React.createElement("div", {
+    className: "space-y-2"
+  }, (formData.surveyData?.indoorUnitHoles || []).map((hole, index) => /*#__PURE__*/React.createElement("div", {
+    key: index,
+    className: "flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-sm text-gray-500 w-10 shrink-0"
+  }, "#", index + 1), /*#__PURE__*/React.createElement("span", {
+    className: "text-sm text-gray-700 font-medium shrink-0"
+  }, "孔徑"), /*#__PURE__*/React.createElement("div", {
+    className: "relative w-40"
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "number",
+    value: hole.diameter || '',
+    onChange: e => handleHoleChange(index, e.target.value),
+    placeholder: "填寫",
+    className: "w-full p-2 pr-10 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "absolute right-3 top-2 text-gray-400 text-sm"
+  }, "cm")), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: () => removeHole(index),
+    className: "text-red-500 hover:text-red-700 p-1"
+  }, /*#__PURE__*/React.createElement(Trash2, {
+    className: "h-4 w-4"
+  }))))))))
+  /* ===== 室外機施工內容 ===== */
+  , /*#__PURE__*/React.createElement("div", {
+    className: "bg-indigo-50/30 p-8 rounded-lg border border-indigo-100 shadow-sm"
+  }, /*#__PURE__*/React.createElement("h3", {
+    className: "text-xl font-bold text-indigo-800 border-b-2 border-indigo-200 pb-3 mb-6 flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement(Wrench, {
+    className: "h-6 w-6"
+  }), " 室外機施工內容"), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6"
+  },
+  /* 室外機搬運 — 下拉選單(多選) + 其他 */
+  /*#__PURE__*/React.createElement("div", {
+    className: "md:col-span-2 bg-white p-4 rounded border border-gray-200"
+  }, /*#__PURE__*/React.createElement("label", {
+    className: "block text-sm font-bold text-gray-700 mb-3"
+  }, "室外機搬運 (下拉選單 - 多選)"), /*#__PURE__*/React.createElement("div", {
+    className: "flex flex-wrap gap-x-6 gap-y-4 items-center"
+  }, ['卡吊', '附鐵籠', '全吊', '鷹架', '堆高機', '升降機', '小金剛', '起重工人', '樓梯種類'].map(opt => /*#__PURE__*/React.createElement("label", {
+    key: opt,
+    className: "flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-1 rounded transition-colors"
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "checkbox",
+    name: "outdoorUnitTransport",
+    value: opt,
+    checked: (formData.surveyData?.outdoorUnitTransport || []).includes(opt),
+    onChange: handleSurveyChange,
+    className: "w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "text-sm text-gray-700 font-medium"
+  }, opt))), /*#__PURE__*/React.createElement("label", {
+    className: "flex items-center gap-2 cursor-pointer p-1"
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "checkbox",
+    name: "outdoorUnitTransport",
+    value: "其他",
+    checked: (formData.surveyData?.outdoorUnitTransport || []).includes('其他'),
+    onChange: handleSurveyChange,
+    className: "w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "text-sm text-gray-700 font-medium"
+  }, "其他："), /*#__PURE__*/React.createElement("input", {
+    type: "text",
+    name: "outdoorUnitTransport_other",
+    value: formData.surveyData?.outdoorUnitTransport_other || '',
+    onChange: handleSurveyChange,
+    disabled: !(formData.surveyData?.outdoorUnitTransport || []).includes('其他'),
+    className: "w-40 p-1 border-b-2 border-gray-300 outline-none focus:border-indigo-500 bg-transparent disabled:opacity-50 text-sm font-medium",
+    placeholder: "請註明"
+  })))),
+  /* 室外機定位 — 下拉選單(多選) */
+  /*#__PURE__*/React.createElement("div", {
+    className: "md:col-span-2 bg-white p-4 rounded border border-gray-200"
+  }, /*#__PURE__*/React.createElement("label", {
+    className: "block text-sm font-bold text-gray-700 mb-3"
+  }, "室外機定位 (下拉選單 - 多選)"), /*#__PURE__*/React.createElement("div", {
+    className: "flex flex-wrap gap-x-6 gap-y-3"
+  }, ['彈簧基座', '水泥基座', '橡膠墊片'].map(opt => /*#__PURE__*/React.createElement("label", {
+    key: opt,
+    className: "flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-1 rounded transition-colors"
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "checkbox",
+    name: "outdoorUnitPositioning",
+    value: opt,
+    checked: (formData.surveyData?.outdoorUnitPositioning || []).includes(opt),
+    onChange: handleSurveyChange,
+    className: "w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "text-sm text-gray-700 font-medium"
+  }, opt))))),
+  /* 吊車需求 — 單選 + 其他 */
+  /*#__PURE__*/React.createElement("div", {
+    className: "md:col-span-2 bg-white p-4 rounded border border-gray-200"
+  }, /*#__PURE__*/React.createElement("label", {
+    className: "block text-sm font-bold text-gray-700 mb-3"
+  }, "吊車需求 (單選)"), /*#__PURE__*/React.createElement("div", {
+    className: "flex flex-wrap gap-x-6 gap-y-3 items-center"
+  }, ['裝新機', '拆舊機', '拆+裝同時處理', '拆+裝分開處理'].map(opt => /*#__PURE__*/React.createElement("label", {
+    key: opt,
+    className: "flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-1 rounded transition-colors"
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "radio",
+    name: "craneRequirement",
+    value: opt,
+    checked: formData.surveyData?.craneRequirement === opt,
+    onChange: handleSurveyChange,
+    className: "w-4 h-4 text-indigo-600 focus:ring-indigo-500"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "text-sm text-gray-700 font-medium"
+  }, opt))), /*#__PURE__*/React.createElement("label", {
+    className: "flex items-center gap-2 cursor-pointer p-1"
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "radio",
+    name: "craneRequirement",
+    value: "其他",
+    checked: formData.surveyData?.craneRequirement === '其他',
+    onChange: handleSurveyChange,
+    className: "w-4 h-4 text-indigo-600 focus:ring-indigo-500"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "text-sm text-gray-700 font-medium"
+  }, "其他："), /*#__PURE__*/React.createElement("input", {
+    type: "text",
+    name: "craneRequirement_other",
+    value: formData.surveyData?.craneRequirement_other || '',
+    onChange: handleSurveyChange,
+    disabled: formData.surveyData?.craneRequirement !== '其他',
+    className: "w-40 p-1 border-b-2 border-gray-300 outline-none focus:border-indigo-500 bg-transparent disabled:opacity-50 text-sm font-medium",
+    placeholder: "請註明"
+  })))),
+  /* 室外機架類型 — 單選 + 噸 + 數量/組 */
+  /*#__PURE__*/React.createElement("div", {
+    className: "md:col-span-2 bg-white p-4 rounded border border-gray-200"
+  }, /*#__PURE__*/React.createElement("label", {
+    className: "block text-sm font-bold text-gray-700 mb-3"
+  }, "室外機架類型 (單選)"), /*#__PURE__*/React.createElement("div", {
+    className: "flex flex-wrap gap-x-6 gap-y-3"
+  }, ['鍍鋅', '白鐵', 'ABS', '沿用(需噴漆)'].map(opt => /*#__PURE__*/React.createElement("label", {
+    key: opt,
+    className: "flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-1 rounded transition-colors"
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "radio",
+    name: "outdoorRackType",
+    value: opt,
+    checked: formData.surveyData?.outdoorRackType === opt,
+    onChange: handleSurveyChange,
+    className: "w-4 h-4 text-indigo-600 focus:ring-indigo-500"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "text-sm text-gray-700 font-medium"
+  }, opt))), /*#__PURE__*/React.createElement("div", {
+    className: "flex flex-wrap gap-6 mt-4 pt-4 border-t border-gray-100"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-sm font-medium text-gray-700 shrink-0"
+  }, "角鋼重量"), /*#__PURE__*/React.createElement("div", {
+    className: "relative w-32"
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "number",
+    name: "outdoorRackTons",
+    value: formData.surveyData?.outdoorRackTons || '',
+    onChange: handleSurveyChange,
+    placeholder: "填數字",
+    className: "w-full p-2 pr-10 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "absolute right-3 top-2 text-gray-400 text-sm"
+  }, "噸"))), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-sm font-medium text-gray-700 shrink-0"
+  }, "數量"), /*#__PURE__*/React.createElement("div", {
+    className: "relative w-32"
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "number",
+    name: "outdoorRackQty",
+    value: formData.surveyData?.outdoorRackQty || '',
+    onChange: handleSurveyChange,
+    placeholder: "填數字",
+    className: "w-full p-2 pr-10 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "absolute right-3 top-2 text-gray-400 text-sm"
+  }, "組")))))),
+  /* 選配題目（需可隱藏）顯示切換 */
+  /*#__PURE__*/React.createElement("div", {
+    className: "md:col-span-2 flex items-center justify-between bg-amber-50 border border-amber-200 p-3 rounded"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-sm font-medium text-amber-800"
+  }, "選配題目（可隱藏）"), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: () => setShowOutdoorHideable(v => !v),
+    className: "text-sm font-medium text-indigo-600 hover:text-indigo-800"
+  }, showOutdoorHideable ? '隱藏' : '顯示')),
+  showOutdoorHideable && /*#__PURE__*/React.createElement("div", {
+    className: "md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6"
+  },
+  /* 室外機是否加大 — 單選 */
+  /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+    className: "block text-sm font-bold text-gray-700 mb-2"
+  }, "室外機是否加大"), /*#__PURE__*/React.createElement("div", {
+    className: "flex gap-8 mt-1"
+  }, ['是', '否'].map(opt => /*#__PURE__*/React.createElement("label", {
+    key: opt,
+    className: "flex items-center gap-2 cursor-pointer"
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "radio",
+    name: "outdoorUnitEnlarged",
+    value: opt,
+    checked: formData.surveyData?.outdoorUnitEnlarged === opt,
+    onChange: handleSurveyChange,
+    className: "w-4 h-4 text-indigo-600 focus:ring-indigo-500"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "text-sm text-gray-700 font-medium"
+  }, opt))))),
+  /* 2" 角鋼增加數量 — 填寫 */
+  /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+    className: "block text-sm font-bold text-gray-700 mb-1"
+  }, "2\" 角鋼增加數量（3支以上）"), /*#__PURE__*/React.createElement("div", {
+    className: "relative"
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "number",
+    name: "outdoorAngleSteelExtra",
+    value: formData.surveyData?.outdoorAngleSteelExtra || '',
+    onChange: handleSurveyChange,
+    placeholder: "填寫數量",
+    className: "w-full p-2.5 pr-10 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "absolute right-3 top-2.5 text-gray-400 text-sm"
+  }, "支"))))))) : formData.surveyType === '設備與零件' ? /*#__PURE__*/React.createElement("div", {
+    className: "mt-8 space-y-8"
+  },
+  /* ===== 新增設備（可增加多個設備） ===== */
+  /*#__PURE__*/React.createElement("div", {
+    className: "bg-indigo-50/30 p-8 rounded-lg border border-indigo-100 shadow-sm"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex justify-between items-center border-b-2 border-indigo-200 pb-3 mb-6"
+  }, /*#__PURE__*/React.createElement("h3", {
+    className: "text-xl font-bold text-indigo-800 flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement(Wrench, {
+    className: "h-6 w-6"
+  }), " 新增設備"), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: addEquipment,
+    className: "flex items-center gap-1 px-3 py-1.5 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700 transition-colors shadow-sm"
+  }, /*#__PURE__*/React.createElement(Plus, {
+    className: "h-4 w-4"
+  }), "增加設備")), (formData.surveyData?.equipmentList || []).length === 0 ? /*#__PURE__*/React.createElement("div", {
+    className: "text-center text-gray-400 text-sm py-6 border-2 border-dashed border-gray-200 rounded-lg"
+  }, "尚未新增設備，請點選「增加設備」") : /*#__PURE__*/React.createElement("div", {
+    className: "space-y-4"
+  }, (formData.surveyData?.equipmentList || []).map((eq, index) => /*#__PURE__*/React.createElement("div", {
+    key: index,
+    className: "bg-white p-4 rounded-lg border border-gray-200"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex justify-between items-center mb-3"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-sm font-bold text-indigo-700"
+  }, "設備 #", index + 1), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: () => removeEquipment(index),
+    className: "text-red-500 hover:text-red-700 p-1"
+  }, /*#__PURE__*/React.createElement(Trash2, {
+    className: "h-4 w-4"
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-cols-1 md:grid-cols-2 gap-4"
+  },
+  /* 設備分類 — 下拉單選 */
+  /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+    className: "block text-sm font-bold text-gray-700 mb-1"
+  }, "設備分類"), /*#__PURE__*/React.createElement("select", {
+    value: eq.category || '',
+    onChange: e => handleEquipmentChange(index, 'category', e.target.value),
+    className: "w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+  }, /*#__PURE__*/React.createElement("option", {
+    value: "",
+    disabled: true
+  }, "請選擇(單選)"), EQUIP_CATEGORY_OPTIONS.map(o => /*#__PURE__*/React.createElement("option", {
+    key: o,
+    value: o
+  }, o)))),
+  /* 品牌 — 抓設備清單資料 */
+  /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+    className: "block text-sm font-bold text-gray-700 mb-1"
+  }, "品牌"), /*#__PURE__*/React.createElement("select", {
+    value: eq.brand || '',
+    onChange: e => handleEquipmentChange(index, 'brand', e.target.value),
+    className: "w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+  }, /*#__PURE__*/React.createElement("option", {
+    value: "",
+    disabled: true
+  }, "抓設備清單資料"), EQUIP_BRAND_OPTIONS.map(o => /*#__PURE__*/React.createElement("option", {
+    key: o,
+    value: o
+  }, o)))),
+  /* 設備名稱 — 抓設備清單資料 */
+  /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+    className: "block text-sm font-bold text-gray-700 mb-1"
+  }, "設備名稱"), /*#__PURE__*/React.createElement("select", {
+    value: eq.name || '',
+    onChange: e => handleEquipmentChange(index, 'name', e.target.value),
+    className: "w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+  }, /*#__PURE__*/React.createElement("option", {
+    value: "",
+    disabled: true
+  }, "抓設備清單資料"), EQUIP_NAME_OPTIONS.map(o => /*#__PURE__*/React.createElement("option", {
+    key: o,
+    value: o
+  }, o)))),
+  /* 型號 — 抓設備清單資料 */
+  /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+    className: "block text-sm font-bold text-gray-700 mb-1"
+  }, "型號"), /*#__PURE__*/React.createElement("select", {
+    value: eq.model || '',
+    onChange: e => handleEquipmentChange(index, 'model', e.target.value),
+    className: "w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+  }, /*#__PURE__*/React.createElement("option", {
+    value: "",
+    disabled: true
+  }, "抓設備清單資料"), EQUIP_MODEL_OPTIONS.map(o => /*#__PURE__*/React.createElement("option", {
+    key: o,
+    value: o
+  }, o)))),
+  /* 設備區域 — 填寫 */
+  /*#__PURE__*/React.createElement("div", {
+    className: "md:col-span-2"
+  }, /*#__PURE__*/React.createElement("label", {
+    className: "block text-sm font-bold text-gray-700 mb-1"
+  }, "設備區域"), /*#__PURE__*/React.createElement("input", {
+    type: "text",
+    value: eq.area || '',
+    onChange: e => handleEquipmentChange(index, 'area', e.target.value),
+    placeholder: "填寫",
+    className: "w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500"
+  }))))))),
+  /* ===== 零配件（多選 + 填數量） ===== */
+  /*#__PURE__*/React.createElement("div", {
+    className: "bg-indigo-50/30 p-8 rounded-lg border border-indigo-100 shadow-sm"
+  }, /*#__PURE__*/React.createElement("h3", {
+    className: "text-xl font-bold text-indigo-800 border-b-2 border-indigo-200 pb-3 mb-2 flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement(Wrench, {
+    className: "h-6 w-6"
+  }), " 零配件"), /*#__PURE__*/React.createElement("p", {
+    className: "text-sm text-gray-500 mb-4"
+  }, "請勾選需要的零配件並填寫數量（組）"), /*#__PURE__*/React.createElement("div", {
+    className: "space-y-3"
+  }, SURVEY_PARTS.map(part => /*#__PURE__*/React.createElement("div", {
+    key: part,
+    className: "flex items-center justify-between bg-white p-3 rounded border border-gray-200"
+  }, /*#__PURE__*/React.createElement("label", {
+    className: "flex items-center gap-2 cursor-pointer"
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "checkbox",
+    name: "parts",
+    value: part,
+    checked: (formData.surveyData?.parts || []).includes(part),
+    onChange: handleSurveyChange,
+    className: "w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "text-sm text-gray-700 font-medium"
+  }, part)), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "number",
+    value: formData.surveyData?.partsQty?.[part] || '',
+    onChange: e => handlePartQtyChange(part, e.target.value),
+    disabled: !(formData.surveyData?.parts || []).includes(part),
+    placeholder: "數量",
+    className: "w-24 p-1.5 border rounded-md text-sm outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-100 disabled:opacity-50"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "text-sm text-gray-500"
+  }, "組")))),
+  /* 其他 — 自填名稱 + 數量 */
+  /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between bg-white p-3 rounded border border-gray-200"
+  }, /*#__PURE__*/React.createElement("label", {
+    className: "flex items-center gap-2 cursor-pointer flex-1"
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "checkbox",
+    name: "parts",
+    value: "其他",
+    checked: (formData.surveyData?.parts || []).includes('其他'),
+    onChange: handleSurveyChange,
+    className: "w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500 shrink-0"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "text-sm text-gray-700 font-medium shrink-0"
+  }, "其他："), /*#__PURE__*/React.createElement("input", {
+    type: "text",
+    name: "parts_other",
+    value: formData.surveyData?.parts_other || '',
+    onChange: handleSurveyChange,
+    disabled: !(formData.surveyData?.parts || []).includes('其他'),
+    placeholder: "請註明",
+    className: "flex-1 max-w-xs p-1 border-b-2 border-gray-300 outline-none focus:border-indigo-500 bg-transparent text-sm disabled:opacity-50"
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "number",
+    value: formData.surveyData?.partsQty?.['其他'] || '',
+    onChange: e => handlePartQtyChange('其他', e.target.value),
+    disabled: !(formData.surveyData?.parts || []).includes('其他'),
+    placeholder: "數量",
+    className: "w-24 p-1.5 border rounded-md text-sm outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-100 disabled:opacity-50"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "text-sm text-gray-500"
+  }, "組"))))),
+  /* ===== 沿用設備（需可隱藏） ===== */
+  /*#__PURE__*/React.createElement("div", {
+    className: "bg-indigo-50/30 p-8 rounded-lg border border-indigo-100 shadow-sm"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex justify-between items-center border-b-2 border-indigo-200 pb-3 mb-6"
+  }, /*#__PURE__*/React.createElement("h3", {
+    className: "text-xl font-bold text-indigo-800 flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement(Wrench, {
+    className: "h-6 w-6"
+  }), " 沿用設備"), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: () => setShowReuseEquipment(v => !v),
+    className: "flex items-center gap-1 px-3 py-1.5 text-sm rounded-md border border-indigo-300 text-indigo-700 hover:bg-indigo-50 transition-colors"
+  }, showReuseEquipment ? '隱藏' : '顯示')), showReuseEquipment && /*#__PURE__*/React.createElement("div", {
+    className: "space-y-4"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+    className: "block text-sm font-bold text-gray-700 mb-1"
+  }, "沿用設備"), /*#__PURE__*/React.createElement("input", {
+    type: "text",
+    name: "reuseEquipment",
+    value: formData.surveyData?.reuseEquipment || '',
+    onChange: handleSurveyChange,
+    placeholder: "填寫",
+    className: "w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500"
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+    className: "block text-sm font-bold text-gray-700 mb-1"
+  }, "備註"), /*#__PURE__*/React.createElement("p", {
+    className: "text-xs text-gray-400 mb-1"
+  }, "現場舊機沿用（廠牌、型號、出廠年份、數量）及處理說明"), /*#__PURE__*/React.createElement("textarea", {
+    name: "reuseEquipmentNote",
+    rows: 4,
+    value: formData.surveyData?.reuseEquipmentNote || '',
+    onChange: handleSurveyChange,
+    placeholder: "請填寫...",
+    className: "w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500"
+  }))))) : formData.surveyType === '配管工程' ? /*#__PURE__*/React.createElement("div", {
+    className: "mt-8 space-y-8"
+  },
+  /* ===== 銅管工程 ===== */
+  /*#__PURE__*/React.createElement("div", {
+    className: "bg-indigo-50/30 p-8 rounded-lg border border-indigo-100 shadow-sm"
+  }, /*#__PURE__*/React.createElement("h3", {
+    className: "text-xl font-bold text-indigo-800 border-b-2 border-indigo-200 pb-3 mb-6 flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement(Wrench, {
+    className: "h-6 w-6"
+  }), " 銅管工程"), /*#__PURE__*/React.createElement("div", {
+    className: "space-y-6"
+  }, renderPipingCheckQtyGroup('銅管尺寸與長度', '請勾選管徑規格並填寫長度（米）', 'copperSizes', 'copperSizesQty', PIPING_COPPER_SIZES, '米', '長度'), renderPipingCheckQtyGroup('銅管配件', '請勾選配件並填寫數量（個）', 'copperFittings', 'copperFittingsQty', PIPING_COPPER_FITTINGS, '個', '數量'))),
+  /* ===== 排水工程 ===== */
+  /*#__PURE__*/React.createElement("div", {
+    className: "bg-indigo-50/30 p-8 rounded-lg border border-indigo-100 shadow-sm"
+  }, /*#__PURE__*/React.createElement("h3", {
+    className: "text-xl font-bold text-indigo-800 border-b-2 border-indigo-200 pb-3 mb-6 flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement(Wrench, {
+    className: "h-6 w-6"
+  }), " 排水工程"), /*#__PURE__*/React.createElement("div", {
+    className: "space-y-6"
+  }, renderPipingCheckQtyGroup('PVC排水管', '請勾選管徑並填寫長度（米）', 'pvcDrain', 'pvcDrainQty', PIPING_PVC_DRAIN, '米', '長度'), renderPipingCheckQtyGroup('排水保溫', '請勾選規格並填寫長度（米）', 'drainInsulation', 'drainInsulationQty', PIPING_DRAIN_INSULATION, '米', '長度'))),
+  /* ===== 冰水管工程 ===== */
+  /*#__PURE__*/React.createElement("div", {
+    className: "bg-indigo-50/30 p-8 rounded-lg border border-indigo-100 shadow-sm"
+  }, /*#__PURE__*/React.createElement("h3", {
+    className: "text-xl font-bold text-indigo-800 border-b-2 border-indigo-200 pb-3 mb-6 flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement(Wrench, {
+    className: "h-6 w-6"
+  }), " 冰水管工程"), /*#__PURE__*/React.createElement("div", {
+    className: "space-y-6"
+  }, renderPipingCheckQtyGroup('冰水管配件', '請勾選配件並填寫數量（個）', 'chilledFittings', 'chilledFittingsQty', PIPING_CHILLED_FITTINGS, '個', '數量'), renderPipingCheckQtyGroup('冰水管', '請勾選管徑並填寫長度（米）', 'chilledPipe', 'chilledPipeQty', PIPING_CHILLED_PIPE, '米', '長度'), renderPipingCheckQtyGroup('冰水保溫管', '請勾選規格並填寫長度（米）', 'chilledInsulation', 'chilledInsulationQty', PIPING_CHILLED_INSULATION, '米', '長度'))),
+  /* ===== 管路保護 ===== */
+  /*#__PURE__*/React.createElement("div", {
+    className: "bg-indigo-50/30 p-8 rounded-lg border border-indigo-100 shadow-sm"
+  }, /*#__PURE__*/React.createElement("h3", {
+    className: "text-xl font-bold text-indigo-800 border-b-2 border-indigo-200 pb-3 mb-6 flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement(Wrench, {
+    className: "h-6 w-6"
+  }), " 管路保護"), /*#__PURE__*/React.createElement("div", {
+    className: "space-y-6"
+  }, renderPipingSingleSelect('管路保護材質（單選）', 'protectMaterial', PIPING_PROTECT_MATERIALS, formData.surveyData?.protectMaterial === 'ABS管槽' ? /*#__PURE__*/React.createElement("div", {
+    className: "mt-4 ml-6 p-3 bg-indigo-50 rounded border border-indigo-100"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "text-xs font-bold text-indigo-700 mb-2"
+  }, "ABS管槽 第二層尺寸（單選）"), /*#__PURE__*/React.createElement("div", {
+    className: "flex flex-wrap gap-x-6 gap-y-2"
+  }, PIPING_ABS_SIZES.map(sz => /*#__PURE__*/React.createElement("label", {
+    key: sz,
+    className: "flex items-center gap-2 cursor-pointer"
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "radio",
+    name: "absSize",
+    value: sz,
+    checked: (formData.surveyData?.absSize || '') === sz,
+    onChange: handleSurveyChange,
+    className: "w-4 h-4 text-indigo-600 border-gray-300 focus:ring-indigo-500"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "text-sm text-gray-700 font-medium"
+  }, sz))))) : null), renderPipingCheckQtyGroup('管槽配件', '請勾選配件並填寫數量／長度', 'channelFittings', 'channelFittingsQty', PIPING_CHANNEL_FITTINGS, '個', '數量'), renderPipingSingleSelect('管路保護顏色（單選）', 'protectColor', PIPING_PROTECT_COLORS)))) : formData.surveyType === '配電工程' ? /*#__PURE__*/React.createElement("div", {
+    className: "mt-8 space-y-8"
+  },
+  /* ===== 控制及訊號線材 ===== */
+  /*#__PURE__*/React.createElement("div", {
+    className: "bg-indigo-50/30 p-8 rounded-lg border border-indigo-100 shadow-sm"
+  }, /*#__PURE__*/React.createElement("h3", {
+    className: "text-xl font-bold text-indigo-800 border-b-2 border-indigo-200 pb-3 mb-6 flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement(Wrench, {
+    className: "h-6 w-6"
+  }), " 控制及訊號線材／米"), /*#__PURE__*/React.createElement("div", {
+    className: "space-y-6"
+  }, renderPipingCheckQtyGroup('控制及訊號線材', '請勾選線材規格並填寫長度（米）', 'controlSignalWire', 'controlSignalWireQty', WIRING_CONTROL_SIGNAL, '米', '長度'))),
+  /* ===== 電源線線材 ===== */
+  /*#__PURE__*/React.createElement("div", {
+    className: "bg-indigo-50/30 p-8 rounded-lg border border-indigo-100 shadow-sm"
+  }, /*#__PURE__*/React.createElement("h3", {
+    className: "text-xl font-bold text-indigo-800 border-b-2 border-indigo-200 pb-3 mb-6 flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement(Wrench, {
+    className: "h-6 w-6"
+  }), " 電源線線材／米"), /*#__PURE__*/React.createElement("div", {
+    className: "space-y-6"
+  }, renderPipingCheckQtyGroup('電源線線材', '請勾選線材規格並填寫長度（米）', 'powerCableWire', 'powerCableWireQty', WIRING_POWER_CABLE, '米', '長度')))) : formData.surveyType === '風管工程' ? /*#__PURE__*/React.createElement("div", {
+    className: "mt-8 space-y-8"
+  },
+  /* ===== 保溫軟管(玻璃棉) ===== */
+  /*#__PURE__*/React.createElement("div", {
+    className: "bg-indigo-50/30 p-8 rounded-lg border border-indigo-100 shadow-sm"
+  }, /*#__PURE__*/React.createElement("h3", {
+    className: "text-xl font-bold text-indigo-800 border-b-2 border-indigo-200 pb-3 mb-6 flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement(Wrench, {
+    className: "h-6 w-6"
+  }), " 保溫軟管(玻璃棉)／米"), /*#__PURE__*/React.createElement("div", {
+    className: "space-y-6"
+  }, renderPipingCheckQtyGroup('保溫軟管(玻璃棉)', '請勾選管徑並填寫長度（米）', 'insulatedHose', 'insulatedHoseQty', DUCT_INSULATED_HOSE, '米', '長度'))),
+  /* ===== 無保溫軟管(鋁箔) ===== */
+  /*#__PURE__*/React.createElement("div", {
+    className: "bg-indigo-50/30 p-8 rounded-lg border border-indigo-100 shadow-sm"
+  }, /*#__PURE__*/React.createElement("h3", {
+    className: "text-xl font-bold text-indigo-800 border-b-2 border-indigo-200 pb-3 mb-6 flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement(Wrench, {
+    className: "h-6 w-6"
+  }), " 無保溫軟管(鋁箔)／米"), /*#__PURE__*/React.createElement("div", {
+    className: "space-y-6"
+  }, renderPipingCheckQtyGroup('無保溫軟管(鋁箔)', '請勾選管徑並填寫長度（米）', 'uninsulatedHose', 'uninsulatedHoseQty', DUCT_UNINSULATED_HOSE, '米', '長度'))),
+  /* ===== 集風箱 ===== */
+  renderDuctBox('集風箱（管徑、數量）', 'collectBox'),
+  /* ===== 出／線型箱 ===== */
+  renderDuctBox('出／線型箱', 'outletBox'),
+  /* ===== 回風箱 ===== */
+  renderDuctBox('回風箱', 'returnBox'),
+  /* ===== 強制回風箱 ===== */
+  renderDuctBox('強制回風箱', 'forcedReturnBox'),
+  /* ===== 三通風箱 ===== */
+  renderDuctTeeBox('三通風箱', 'teeBox'),
+  /* ===== 出風口 ===== */
+  renderVentOutletBox(),
+  /* ===== 回風口 ===== */
+  renderReturnOutletBox(),
+  /* ===== 特製風箱 ===== */
+  renderCustomBox()) : formData.surveyType === '拆除工程' ? /*#__PURE__*/React.createElement("div", {
+    className: "mt-8 space-y-8"
+  },
+  /* ===== 舊設備拆除 ===== */
+  /*#__PURE__*/React.createElement("div", {
+    className: "bg-indigo-50/30 p-8 rounded-lg border border-indigo-100 shadow-sm"
+  }, /*#__PURE__*/React.createElement("h3", {
+    className: "text-xl font-bold text-indigo-800 border-b-2 border-indigo-200 pb-3 mb-6 flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement(Wrench, {
+    className: "h-6 w-6"
+  }), " 舊設備拆除"), /*#__PURE__*/React.createElement("div", {
+    className: "space-y-6"
+  },
+  /* 設備拆除/台 */
+  /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+    className: "block text-sm font-bold text-gray-700 mb-2"
+  }, "設備拆除／台"), /*#__PURE__*/React.createElement("input", {
+    type: "text",
+    name: "demoEquip",
+    value: formData.surveyData?.demoEquip || '',
+    onChange: handleSurveyChange,
+    className: "w-full p-2.5 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 bg-white shadow-sm",
+    placeholder: "請填寫數量"
+  }), /*#__PURE__*/React.createElement("p", {
+    className: "text-xs text-gray-500 mt-1.5"
+  }, "備註：品牌、主機、內機、空氣門、水塔、泵浦、送風機、冰水機")),
+  /* 風管拆除/台 */
+  /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+    className: "block text-sm font-bold text-gray-700 mb-2"
+  }, "風管拆除／台"), /*#__PURE__*/React.createElement("input", {
+    type: "text",
+    name: "demoDuct",
+    value: formData.surveyData?.demoDuct || '',
+    onChange: handleSurveyChange,
+    className: "w-full p-2.5 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 bg-white shadow-sm",
+    placeholder: "請填寫數量"
+  })),
+  /* 管路拆除/米 */
+  /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+    className: "block text-sm font-bold text-gray-700 mb-2"
+  }, "管路拆除／米"), /*#__PURE__*/React.createElement("input", {
+    type: "text",
+    name: "demoPipe",
+    value: formData.surveyData?.demoPipe || '',
+    onChange: handleSurveyChange,
+    className: "w-full p-2.5 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 bg-white shadow-sm",
+    placeholder: "請填寫長度（米）"
+  })),
+  /* 其他拆除項目、數量說明 */
+  /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+    className: "block text-sm font-bold text-gray-700 mb-2"
+  }, "其他拆除項目、數量說明"), /*#__PURE__*/React.createElement("textarea", {
+    name: "demoOther",
+    value: formData.surveyData?.demoOther || '',
+    onChange: handleSurveyChange,
+    rows: 3,
+    className: "w-full p-2.5 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 bg-white shadow-sm",
+    placeholder: "請填寫"
+  })))),
+  /* ===== 舊機處理方式 ===== */
+  /*#__PURE__*/React.createElement("div", {
+    className: "bg-indigo-50/30 p-8 rounded-lg border border-indigo-100 shadow-sm"
+  }, /*#__PURE__*/React.createElement("h3", {
+    className: "text-xl font-bold text-indigo-800 border-b-2 border-indigo-200 pb-3 mb-6 flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement(Wrench, {
+    className: "h-6 w-6"
+  }), " 舊機處理方式"), /*#__PURE__*/React.createElement("div", {
+    className: "space-y-6"
+  },
+  /* 品牌、規格 */
+  /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+    className: "block text-sm font-bold text-gray-700 mb-2"
+  }, "品牌、規格"), /*#__PURE__*/React.createElement("input", {
+    type: "text",
+    name: "oldMachineSpec",
+    value: formData.surveyData?.oldMachineSpec || '',
+    onChange: handleSurveyChange,
+    className: "w-full p-2.5 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 bg-white shadow-sm",
+    placeholder: "請填寫品牌、規格"
+  })),
+  /* 處理方式（單選） */
+  /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+    className: "block text-sm font-bold text-gray-700 mb-2"
+  }, "處理方式（單選）"), /*#__PURE__*/React.createElement("div", {
+    className: "flex flex-wrap gap-6 bg-white p-4 rounded border border-gray-200"
+  }, ['協力商直接報廢', '載回晉詮', '回收補助'].map(opt => /*#__PURE__*/React.createElement("label", {
+    key: opt,
+    className: "flex items-center gap-2 cursor-pointer"
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "radio",
+    name: "oldMachineMethod",
+    value: opt,
+    checked: formData.surveyData?.oldMachineMethod === opt,
+    onChange: handleSurveyChange,
+    className: "w-4 h-4 text-indigo-600 focus:ring-indigo-500"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "text-sm text-gray-700 font-medium"
+  }, opt))))))),
+  /* ===== 廢棄物(舊風管)清運處理說明 ===== */
+  /*#__PURE__*/React.createElement("div", {
+    className: "bg-indigo-50/30 p-8 rounded-lg border border-indigo-100 shadow-sm"
+  }, /*#__PURE__*/React.createElement("h3", {
+    className: "text-xl font-bold text-indigo-800 border-b-2 border-indigo-200 pb-3 mb-6 flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement(Wrench, {
+    className: "h-6 w-6"
+  }), " 廢棄物(舊風管)清運處理說明"), /*#__PURE__*/React.createElement("div", {
+    className: "flex flex-wrap gap-x-6 gap-y-3 bg-white p-4 rounded border border-gray-200"
+  }, ['裝潢處理', '晉詮處理', '協力商處理', '業主處理'].map(opt => /*#__PURE__*/React.createElement("label", {
+    key: opt,
+    className: "flex items-center gap-2 cursor-pointer"
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "radio",
+    name: "wasteDisposal",
+    value: opt,
+    checked: formData.surveyData?.wasteDisposal === opt,
+    onChange: handleSurveyChange,
+    className: "w-4 h-4 text-indigo-600 focus:ring-indigo-500"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "text-sm text-gray-700 font-medium"
+  }, opt))), /*#__PURE__*/React.createElement("label", {
+    className: "flex items-center gap-2 cursor-pointer"
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "radio",
+    name: "wasteDisposal",
+    value: "其他",
+    checked: formData.surveyData?.wasteDisposal === '其他',
+    onChange: handleSurveyChange,
+    className: "w-4 h-4 text-indigo-600 focus:ring-indigo-500"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "text-sm text-gray-700 font-medium shrink-0"
+  }, "其他："), /*#__PURE__*/React.createElement("input", {
+    type: "text",
+    name: "wasteDisposal_other",
+    value: formData.surveyData?.wasteDisposal_other || '',
+    onChange: handleSurveyChange,
+    disabled: formData.surveyData?.wasteDisposal !== '其他',
+    className: "p-1.5 border-b-2 border-gray-300 outline-none focus:border-indigo-500 bg-transparent disabled:opacity-50 text-sm font-medium",
+    placeholder: "請註明"
+  }))))) : formData.surveyType === '汰換工程' ? /*#__PURE__*/React.createElement("div", {
+    className: "mt-8 space-y-8"
+  },
+  /* ===== 裝潢區開孔尺寸說明 ===== */
+  /*#__PURE__*/React.createElement("div", {
+    className: "bg-indigo-50/30 p-8 rounded-lg border border-indigo-100 shadow-sm"
+  }, /*#__PURE__*/React.createElement("h3", {
+    className: "text-xl font-bold text-indigo-800 border-b-2 border-indigo-200 pb-3 mb-6 flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement(Wrench, {
+    className: "h-6 w-6"
+  }), " 裝潢區開孔尺寸說明"), /*#__PURE__*/React.createElement("textarea", {
+    name: "renovationHoleSize",
+    value: formData.surveyData?.renovationHoleSize || '',
+    onChange: handleSurveyChange,
+    rows: 3,
+    className: "w-full p-2.5 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 bg-white shadow-sm",
+    placeholder: "請填寫"
+  })),
+  /* ===== 是否更新汰換 ===== */
+  /*#__PURE__*/React.createElement("div", {
+    className: "bg-indigo-50/30 p-8 rounded-lg border border-indigo-100 shadow-sm"
+  }, /*#__PURE__*/React.createElement("h3", {
+    className: "text-xl font-bold text-indigo-800 border-b-2 border-indigo-200 pb-3 mb-6 flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement(Wrench, {
+    className: "h-6 w-6"
+  }), " 是否更新汰換（單選）"), /*#__PURE__*/React.createElement("div", {
+    className: "divide-y divide-indigo-100/70 bg-white rounded border border-gray-200"
+  }, ['控制/訊號線', '室外機電源線', '室內機電源線', '銅管', '冰水管', '排水管', '保溫管', '軟管', '集風箱', '出/線型風箱', '回風箱', '強制回風箱', '三通風箱', '出風口', '回風口'].map(item => /*#__PURE__*/React.createElement("div", {
+    key: item,
+    className: "flex items-center justify-between px-4 py-2.5"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-sm text-gray-700 font-medium"
+  }, item), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-6"
+  }, ['是', '否'].map(opt => /*#__PURE__*/React.createElement("label", {
+    key: opt,
+    className: "flex items-center gap-2 cursor-pointer"
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "radio",
+    name: "replace_" + item,
+    value: opt,
+    checked: formData.surveyData?.['replace_' + item] === opt,
+    onChange: handleSurveyChange,
+    className: "w-4 h-4 text-indigo-600 focus:ring-indigo-500"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "text-sm text-gray-700 font-medium"
+  }, opt)))))))),
+  /* ===== 備註 ===== */
+  /*#__PURE__*/React.createElement("div", {
+    className: "bg-indigo-50/30 p-8 rounded-lg border border-indigo-100 shadow-sm"
+  }, /*#__PURE__*/React.createElement("h3", {
+    className: "text-xl font-bold text-indigo-800 border-b-2 border-indigo-200 pb-3 mb-6 flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement(Wrench, {
+    className: "h-6 w-6"
+  }), " 備註"), /*#__PURE__*/React.createElement("textarea", {
+    name: "replaceRemark",
+    value: formData.surveyData?.replaceRemark || '',
+    onChange: handleSurveyChange,
+    rows: 3,
+    className: "w-full p-2.5 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 bg-white shadow-sm",
+    placeholder: "請填寫"
+  }))) : /*#__PURE__*/React.createElement("div", {
     className: "mt-8 border-2 border-dashed border-gray-300 rounded-xl p-16 flex flex-col items-center justify-center bg-gray-50/50"
   }, /*#__PURE__*/React.createElement(FileText, {
     className: "h-16 w-16 text-gray-300 mb-4"
@@ -4074,18 +5554,543 @@ const SurveyForm = ({
 };
 
 // ==========================================
+//           9. 客戶建檔 (客戶管理) 相關元件
+// ==========================================
+
+const CustomerList = ({
+  cases,
+  setCases,
+  setEditingCase,
+  setView,
+  showToast
+}) => {
+  const [keyword, setKeyword] = useState('');
+  const [appliedKeyword, setAppliedKeyword] = useState('');
+  const [deleteModal, setDeleteModal] = useState({
+    show: false,
+    id: null
+  });
+  const dragProps = useDragScroll();
+  const filteredCustomers = useMemo(() => {
+    const kw = appliedKeyword.trim().toLowerCase();
+    let list = cases;
+    if (kw) {
+      list = cases.filter(c => [c.name, c.taxId, c.principal, c.phone, c.address].filter(Boolean).some(v => String(v).toLowerCase().includes(kw)));
+    }
+    return [...list].sort((a, b) => new Date(b.createdDate) - new Date(a.createdDate));
+  }, [cases, appliedKeyword]);
+  const handleSearch = () => setAppliedKeyword(keyword);
+  const handleKeyDown = e => {
+    if (e.key === 'Enter') handleSearch();
+  };
+  const handleDelete = id => {
+    setCases(cases.filter(c => c.id !== id));
+    setDeleteModal({
+      show: false,
+      id: null
+    });
+    showToast('客戶已刪除');
+  };
+  return /*#__PURE__*/React.createElement("div", {
+    className: "bg-white p-6 rounded-lg shadow-sm border border-gray-100"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex flex-wrap items-end gap-3"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+    className: "block text-xs text-gray-500 mb-1"
+  }, "\u95DC\u9375\u5B57"), /*#__PURE__*/React.createElement("input", {
+    type: "text",
+    value: keyword,
+    onChange: e => setKeyword(e.target.value),
+    onKeyDown: handleKeyDown,
+    placeholder: "\u5BA2\u6236\u540D\u7A31 / \u7D71\u4E00\u7DE8\u865F / \u8CA0\u8CAC\u4EBA",
+    className: "w-64 p-2.5 border rounded-md outline-none focus:border-blue-500"
+  })), /*#__PURE__*/React.createElement("button", {
+    onClick: handleSearch,
+    className: "flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-md shadow-sm transition-colors"
+  }, /*#__PURE__*/React.createElement(Search, {
+    className: "h-4 w-4"
+  }), " \u641C\u5C0B")), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setView('customer-add'),
+    className: "flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-md shadow-sm transition-colors",
+    title: "\u65B0\u589E\u5BA2\u6236"
+  }, /*#__PURE__*/React.createElement(Plus, {
+    className: "h-5 w-5"
+  }), " \u65B0\u589E\u5BA2\u6236")), /*#__PURE__*/React.createElement("div", _extends({}, dragProps, {
+    className: "overflow-x-auto border rounded-lg cursor-grab active:cursor-grabbing"
+  }), /*#__PURE__*/React.createElement("table", {
+    className: "w-full text-left text-sm text-gray-600 whitespace-nowrap select-none"
+  }, /*#__PURE__*/React.createElement("thead", {
+    className: "bg-gray-50 text-gray-700 border-b"
+  }, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", {
+    className: "p-3 font-semibold text-center w-24"
+  }, "\u64CD\u4F5C"), /*#__PURE__*/React.createElement("th", {
+    className: "p-3 font-semibold"
+  }, "\u5BA2\u6236\u540D\u7A31"), /*#__PURE__*/React.createElement("th", {
+    className: "p-3 font-semibold"
+  }, "\u7D71\u4E00\u7DE8\u865F"), /*#__PURE__*/React.createElement("th", {
+    className: "p-3 font-semibold"
+  }, "\u8CA0\u8CAC\u4EBA"), /*#__PURE__*/React.createElement("th", {
+    className: "p-3 font-semibold"
+  }, "\u670D\u52D9\u7B49\u7D1A"), /*#__PURE__*/React.createElement("th", {
+    className: "p-3 font-semibold"
+  }, "\u4FDD\u990A\u5340\u9593"), /*#__PURE__*/React.createElement("th", {
+    className: "p-3 font-semibold"
+  }, "\u516C\u53F8\u96FB\u8A71"), /*#__PURE__*/React.createElement("th", {
+    className: "p-3 font-semibold text-center"
+  }, "\u627F\u8FA6\u7B46\u6578"), /*#__PURE__*/React.createElement("th", {
+    className: "p-3 font-semibold"
+  }, "\u65B0\u589E\u65E5\u671F"))), /*#__PURE__*/React.createElement("tbody", {
+    className: "divide-y divide-gray-100"
+  }, filteredCustomers.length === 0 ? /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("td", {
+    colSpan: 9,
+    className: "p-10 text-center text-gray-400 text-base"
+  }, "\u7121\u8CC7\u6599")) : filteredCustomers.map(c => /*#__PURE__*/React.createElement("tr", {
+    key: c.id,
+    className: "hover:bg-blue-50/50 transition-colors"
+  }, /*#__PURE__*/React.createElement("td", {
+    className: "p-3"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-center space-x-2"
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      setEditingCase(c);
+      setView('customer-edit');
+    },
+    className: "p-1.5 text-blue-600 hover:bg-blue-100 rounded",
+    title: "\u7DE8\u8F2F"
+  }, /*#__PURE__*/React.createElement(Edit, {
+    className: "h-4 w-4"
+  })), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setDeleteModal({
+      show: true,
+      id: c.id
+    }),
+    className: "p-1.5 text-red-600 hover:bg-red-100 rounded",
+    title: "\u522A\u9664"
+  }, /*#__PURE__*/React.createElement(Trash2, {
+    className: "h-4 w-4"
+  })))), /*#__PURE__*/React.createElement("td", {
+    className: "p-3 font-medium text-gray-800"
+  }, c.name), /*#__PURE__*/React.createElement("td", {
+    className: "p-3"
+  }, c.taxId || '—'), /*#__PURE__*/React.createElement("td", {
+    className: "p-3"
+  }, c.principal || '—'), /*#__PURE__*/React.createElement("td", {
+    className: "p-3"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200"
+  }, c.serviceLevel)), /*#__PURE__*/React.createElement("td", {
+    className: "p-3"
+  }, c.maintenanceInterval || '—'), /*#__PURE__*/React.createElement("td", {
+    className: "p-3"
+  }, c.phone || '—'), /*#__PURE__*/React.createElement("td", {
+    className: "p-3 text-center"
+  }, (c.contacts || []).length), /*#__PURE__*/React.createElement("td", {
+    className: "p-3 text-gray-500"
+  }, c.createdDate)))))), deleteModal.show && /*#__PURE__*/React.createElement("div", {
+    className: "fixed inset-0 bg-black/40 flex items-center justify-center z-50"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "bg-white rounded-lg shadow-xl p-6 w-96 max-w-full m-4"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center space-x-3 text-red-600 mb-4"
+  }, /*#__PURE__*/React.createElement(AlertCircle, {
+    className: "h-6 w-6"
+  }), /*#__PURE__*/React.createElement("h3", {
+    className: "text-lg font-bold text-gray-800"
+  }, "\u78BA\u8A8D\u522A\u9664")), /*#__PURE__*/React.createElement("p", {
+    className: "text-gray-600 mb-6"
+  }, "\u78BA\u5B9A\u8981\u522A\u9664\u6B64\u5BA2\u6236\u55CE\uFF1F\u522A\u9664\u5F8C\u5C07\u7121\u6CD5\u5FA9\u539F\u3002"), /*#__PURE__*/React.createElement("div", {
+    className: "flex justify-end space-x-3"
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => setDeleteModal({
+      show: false,
+      id: null
+    }),
+    className: "px-4 py-2 border rounded-md text-gray-600 hover:bg-gray-50 transition-colors"
+  }, "\u53D6\u6D88"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => handleDelete(deleteModal.id),
+    className: "px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+  }, "\u78BA\u8A8D\u522A\u9664")))));
+};
+const CustomerForm = ({
+  cases,
+  setCases,
+  targetCase,
+  setView,
+  showToast
+}) => {
+  const isEdit = !!targetCase;
+  const [formData, setFormData] = useState(() => ({
+    name: targetCase?.name || '',
+    taxId: targetCase?.taxId || '',
+    principal: targetCase?.principal || '',
+    serviceLevel: targetCase?.serviceLevel || '保修(一年一次)',
+    maintenanceInterval: targetCase?.maintenanceInterval || '每半年',
+    phone: targetCase?.phone || '',
+    fax: targetCase?.fax || '',
+    address: targetCase?.address || '',
+    remarks: targetCase?.remarks || ''
+  }));
+  const [contacts, setContacts] = useState(() => targetCase?.contacts ? targetCase.contacts.map(ct => ({
+    ...ct
+  })) : []);
+  const [contactModal, setContactModal] = useState({
+    show: false
+  });
+  const [currentContact, setCurrentContact] = useState({
+    id: null,
+    title: '',
+    name: '',
+    phone: '',
+    email: ''
+  });
+  const handleChange = e => {
+    const {
+      name,
+      value
+    } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+  const handleContactChange = e => {
+    const {
+      name,
+      value
+    } = e.target;
+    setCurrentContact(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+  const openAddContact = () => {
+    setCurrentContact({
+      id: null,
+      title: '',
+      name: '',
+      phone: '',
+      email: ''
+    });
+    setContactModal({
+      show: true
+    });
+  };
+  const openEditContact = ct => {
+    setCurrentContact({
+      ...ct
+    });
+    setContactModal({
+      show: true
+    });
+  };
+  const handleSaveContact = () => {
+    if (!currentContact.name.trim()) {
+      showToast('承辦姓名為必填', 'error');
+      return;
+    }
+    if (currentContact.id) {
+      setContacts(contacts.map(ct => ct.id === currentContact.id ? {
+        ...currentContact
+      } : ct));
+    } else {
+      setContacts([...contacts, {
+        ...currentContact,
+        id: Date.now()
+      }]);
+    }
+    setContactModal({
+      show: false
+    });
+    showToast('承辦資料暫存成功');
+  };
+  const handleDeleteContact = id => {
+    setContacts(contacts.filter(ct => ct.id !== id));
+  };
+  const handleSubmit = e => {
+    e.preventDefault();
+    if (!formData.name.trim()) {
+      showToast('客戶名稱為必填', 'error');
+      return;
+    }
+    if (isEdit) {
+      setCases(cases.map(c => c.id === targetCase.id ? {
+        ...c,
+        ...formData,
+        contacts
+      } : c));
+      showToast('客戶資料更新成功');
+    } else {
+      const newCustomer = {
+        id: `CUST${Date.now()}`,
+        ...formData,
+        contacts,
+        createdDate: todayDate
+      };
+      setCases([newCustomer, ...cases]);
+      showToast('客戶新增成功');
+    }
+    setView('customer-list');
+  };
+  return /*#__PURE__*/React.createElement("div", {
+    className: "max-w-5xl mx-auto bg-white p-8 rounded-lg shadow-sm border border-gray-100 relative"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex justify-between items-center mb-6 pb-4 border-b"
+  }, /*#__PURE__*/React.createElement("h2", {
+    className: "text-2xl font-bold flex items-center gap-2"
+  }, isEdit ? /*#__PURE__*/React.createElement(Edit, {
+    className: "text-blue-600"
+  }) : /*#__PURE__*/React.createElement(Plus, {
+    className: "text-blue-600"
+  }), isEdit ? ' 編輯客戶' : ' 新增客戶'), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setView('customer-list'),
+    className: "p-2 hover:bg-gray-100 rounded-full"
+  }, /*#__PURE__*/React.createElement(X, {
+    className: "h-5 w-5"
+  }))), /*#__PURE__*/React.createElement("form", {
+    onSubmit: handleSubmit,
+    className: "space-y-6"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-cols-1 md:grid-cols-3 gap-6"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "col-span-full font-semibold text-lg text-blue-800 border-b pb-2 mb-2"
+  }, "\u57FA\u672C\u8CC7\u6599"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+    className: "block text-sm mb-1"
+  }, "\u5BA2\u6236\u540D\u7A31 ", /*#__PURE__*/React.createElement("span", {
+    className: "text-red-500"
+  }, "*")), /*#__PURE__*/React.createElement("input", {
+    type: "text",
+    name: "name",
+    value: formData.name,
+    onChange: handleChange,
+    required: true,
+    className: "w-full p-2.5 border rounded-md outline-none focus:border-blue-500"
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+    className: "block text-sm mb-1"
+  }, "\u7D71\u4E00\u7DE8\u865F"), /*#__PURE__*/React.createElement("input", {
+    type: "text",
+    name: "taxId",
+    value: formData.taxId,
+    onChange: handleChange,
+    className: "w-full p-2.5 border rounded-md outline-none focus:border-blue-500"
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+    className: "block text-sm mb-1"
+  }, "\u8CA0\u8CAC\u4EBA"), /*#__PURE__*/React.createElement("input", {
+    type: "text",
+    name: "principal",
+    value: formData.principal,
+    onChange: handleChange,
+    className: "w-full p-2.5 border rounded-md outline-none focus:border-blue-500"
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+    className: "block text-sm mb-1"
+  }, "\u670D\u52D9\u7B49\u7D1A"), /*#__PURE__*/React.createElement("select", {
+    name: "serviceLevel",
+    value: formData.serviceLevel,
+    onChange: handleChange,
+    className: "w-full p-2.5 border rounded-md outline-none"
+  }, SERVICE_LEVEL_OPTIONS.map(opt => /*#__PURE__*/React.createElement("option", {
+    key: opt,
+    value: opt
+  }, opt)))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+    className: "block text-sm mb-1"
+  }, "\u4FDD\u990A\u5340\u9593"), /*#__PURE__*/React.createElement("select", {
+    name: "maintenanceInterval",
+    value: formData.maintenanceInterval,
+    onChange: handleChange,
+    className: "w-full p-2.5 border rounded-md outline-none"
+  }, MAINTENANCE_INTERVAL_OPTIONS.map(opt => /*#__PURE__*/React.createElement("option", {
+    key: opt,
+    value: opt
+  }, opt)))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+    className: "block text-sm mb-1"
+  }, "\u516C\u53F8\u96FB\u8A71"), /*#__PURE__*/React.createElement("input", {
+    type: "text",
+    name: "phone",
+    value: formData.phone,
+    onChange: handleChange,
+    className: "w-full p-2.5 border rounded-md outline-none focus:border-blue-500"
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+    className: "block text-sm mb-1"
+  }, "\u516C\u53F8\u50B3\u771F"), /*#__PURE__*/React.createElement("input", {
+    type: "text",
+    name: "fax",
+    value: formData.fax,
+    onChange: handleChange,
+    className: "w-full p-2.5 border rounded-md outline-none focus:border-blue-500"
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "col-span-full md:col-span-2"
+  }, /*#__PURE__*/React.createElement("label", {
+    className: "block text-sm mb-1"
+  }, "\u516C\u53F8\u5730\u5740"), /*#__PURE__*/React.createElement("input", {
+    type: "text",
+    name: "address",
+    value: formData.address,
+    onChange: handleChange,
+    className: "w-full p-2.5 border rounded-md outline-none focus:border-blue-500"
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "col-span-full"
+  }, /*#__PURE__*/React.createElement("label", {
+    className: "block text-sm mb-1"
+  }, "\u5099\u8A3B\u8AAA\u660E"), /*#__PURE__*/React.createElement("textarea", {
+    name: "remarks",
+    value: formData.remarks,
+    onChange: handleChange,
+    rows: 3,
+    className: "w-full p-2.5 border rounded-md outline-none focus:border-blue-500"
+  }))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between border-b pb-2 mb-4"
+  }, /*#__PURE__*/React.createElement("h3", {
+    className: "font-semibold text-lg text-blue-800"
+  }, "\u627F\u8FA6\u8CC7\u6599 ", /*#__PURE__*/React.createElement("span", {
+    className: "text-sm font-normal text-gray-400"
+  }, "(\u53EF\u591A\u7B46)")), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: openAddContact,
+    className: "flex items-center gap-1.5 text-sm bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 px-3 py-1.5 rounded-md transition-colors"
+  }, /*#__PURE__*/React.createElement(Plus, {
+    className: "h-4 w-4"
+  }), " \u52A0\u5165\u627F\u8FA6\u8CC7\u6599")), contacts.length === 0 ? /*#__PURE__*/React.createElement("div", {
+    className: "text-center text-gray-400 py-6 border border-dashed rounded-md"
+  }, "\u5C1A\u672A\u52A0\u5165\u627F\u8FA6\u8CC7\u6599") : /*#__PURE__*/React.createElement("div", {
+    className: "overflow-x-auto border rounded-lg"
+  }, /*#__PURE__*/React.createElement("table", {
+    className: "w-full text-left text-sm text-gray-600"
+  }, /*#__PURE__*/React.createElement("thead", {
+    className: "bg-gray-50 text-gray-700 border-b"
+  }, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", {
+    className: "p-3 font-semibold"
+  }, "\u627F\u8FA6\u8077\u7A31"), /*#__PURE__*/React.createElement("th", {
+    className: "p-3 font-semibold"
+  }, "\u627F\u8FA6\u59D3\u540D"), /*#__PURE__*/React.createElement("th", {
+    className: "p-3 font-semibold"
+  }, "\u627F\u8FA6\u96FB\u8A71"), /*#__PURE__*/React.createElement("th", {
+    className: "p-3 font-semibold"
+  }, "\u627F\u8FA6Mail"), /*#__PURE__*/React.createElement("th", {
+    className: "p-3 font-semibold text-center w-24"
+  }, "\u64CD\u4F5C"))), /*#__PURE__*/React.createElement("tbody", {
+    className: "divide-y divide-gray-100"
+  }, contacts.map(ct => /*#__PURE__*/React.createElement("tr", {
+    key: ct.id,
+    className: "hover:bg-blue-50/50"
+  }, /*#__PURE__*/React.createElement("td", {
+    className: "p-3"
+  }, ct.title || '—'), /*#__PURE__*/React.createElement("td", {
+    className: "p-3 font-medium text-gray-800"
+  }, ct.name), /*#__PURE__*/React.createElement("td", {
+    className: "p-3"
+  }, ct.phone || '—'), /*#__PURE__*/React.createElement("td", {
+    className: "p-3"
+  }, ct.email || '—'), /*#__PURE__*/React.createElement("td", {
+    className: "p-3"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-center space-x-2"
+  }, /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: () => openEditContact(ct),
+    className: "p-1.5 text-blue-600 hover:bg-blue-100 rounded",
+    title: "\u7DE8\u8F2F\u627F\u8FA6\u8CC7\u6599"
+  }, /*#__PURE__*/React.createElement(Edit, {
+    className: "h-4 w-4"
+  })), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: () => handleDeleteContact(ct.id),
+    className: "p-1.5 text-red-600 hover:bg-red-100 rounded",
+    title: "\u522A\u9664\u627F\u8FA6\u8CC7\u6599"
+  }, /*#__PURE__*/React.createElement(Trash2, {
+    className: "h-4 w-4"
+  })))))))))), /*#__PURE__*/React.createElement("div", {
+    className: "flex justify-end gap-3 pt-4 border-t"
+  }, /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: () => setView('customer-list'),
+    className: "px-6 py-2.5 border rounded-md text-gray-600 hover:bg-gray-50 transition-colors"
+  }, "\u53D6\u6D88"), /*#__PURE__*/React.createElement("button", {
+    type: "submit",
+    className: "flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md shadow-sm transition-colors"
+  }, /*#__PURE__*/React.createElement(Save, {
+    className: "h-5 w-5"
+  }), " \u5132\u5B58"))), contactModal.show && /*#__PURE__*/React.createElement("div", {
+    className: "fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "bg-white rounded-lg shadow-xl p-6 w-full max-w-md"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex justify-between items-center mb-4 pb-3 border-b"
+  }, /*#__PURE__*/React.createElement("h3", {
+    className: "text-lg font-bold text-gray-800"
+  }, currentContact.id ? '編輯承辦資料' : '新增承辦資料'), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setContactModal({
+      show: false
+    }),
+    className: "p-1.5 hover:bg-gray-100 rounded-full"
+  }, /*#__PURE__*/React.createElement(X, {
+    className: "h-5 w-5"
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "space-y-4"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+    className: "block text-sm mb-1"
+  }, "\u627F\u8FA6\u8077\u7A31"), /*#__PURE__*/React.createElement("input", {
+    type: "text",
+    name: "title",
+    value: currentContact.title,
+    onChange: handleContactChange,
+    className: "w-full p-2.5 border rounded-md outline-none focus:border-blue-500"
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+    className: "block text-sm mb-1"
+  }, "\u627F\u8FA6\u59D3\u540D ", /*#__PURE__*/React.createElement("span", {
+    className: "text-red-500"
+  }, "*")), /*#__PURE__*/React.createElement("input", {
+    type: "text",
+    name: "name",
+    value: currentContact.name,
+    onChange: handleContactChange,
+    className: "w-full p-2.5 border rounded-md outline-none focus:border-blue-500"
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+    className: "block text-sm mb-1"
+  }, "\u627F\u8FA6\u96FB\u8A71"), /*#__PURE__*/React.createElement("input", {
+    type: "text",
+    name: "phone",
+    value: currentContact.phone,
+    onChange: handleContactChange,
+    className: "w-full p-2.5 border rounded-md outline-none focus:border-blue-500"
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+    className: "block text-sm mb-1"
+  }, "\u627F\u8FA6Mail"), /*#__PURE__*/React.createElement("input", {
+    type: "email",
+    name: "email",
+    value: currentContact.email,
+    onChange: handleContactChange,
+    className: "w-full p-2.5 border rounded-md outline-none focus:border-blue-500"
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "flex justify-end gap-3 mt-6"
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => setContactModal({
+      show: false
+    }),
+    className: "px-4 py-2 border rounded-md text-gray-600 hover:bg-gray-50 transition-colors"
+  }, "\u53D6\u6D88"), /*#__PURE__*/React.createElement("button", {
+    onClick: handleSaveContact,
+    className: "flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+  }, /*#__PURE__*/React.createElement(Save, {
+    className: "h-4 w-4"
+  }), " \u5132\u5B58\u8A2D\u5099")))));
+};
+
+// ==========================================
 //           8. 主應用程式框架
 // ==========================================
 
 function JinChuanWarRoom() {
   const [currentTopMenu, setCurrentTopMenu] = useState('戰情室');
-  const [expandedSidebar, setExpandedSidebar] = useState(['維修服務', '工程服務']);
+  const [expandedSidebar, setExpandedSidebar] = useState(['維修服務', '工程服務', '客戶建檔']);
   const [currentSubMenu, setCurrentSubMenu] = useState('現勘表收集');
   const [view, setView] = useState('survey-list');
   const [cases, setCases] = useState(INITIAL_CASES);
   const [maintenanceCases, setMaintenanceCases] = useState(INITIAL_MAINTENANCE_CASES);
   const [projectCases, setProjectCases] = useState(INITIAL_PROJECT_CASES);
   const [surveyCases, setSurveyCases] = useState(INITIAL_SURVEY_CASES);
+  const [customers, setCustomers] = useState(INITIAL_CUSTOMERS);
   const [editingCase, setEditingCase] = useState(null);
   const [viewingCase, setViewingCase] = useState(null);
   const [statusFilter, setStatusFilter] = useState('全部');
@@ -4103,6 +6108,7 @@ function JinChuanWarRoom() {
     if (currentSubMenu === '案件銷案審核') setView('review-list');
     if (currentSubMenu === '工程立案') setView('project-list');
     if (currentSubMenu === '現勘表收集') setView('survey-list');
+    if (currentSubMenu === '客戶管理') setView('customer-list');
   }, [currentSubMenu]);
   const showToast = (message, type = 'success') => {
     setToast({
@@ -4156,9 +6162,6 @@ function JinChuanWarRoom() {
       label: '案件銷案審核'
     }]
   }, {
-    id: '保養服務',
-    icon: Settings
-  }, {
     id: '工程服務',
     icon: Home,
     children: [{
@@ -4167,6 +6170,13 @@ function JinChuanWarRoom() {
     }, {
       id: '現勘表收集',
       label: '現勘表收集'
+    }]
+  }, {
+    id: '客戶建檔',
+    icon: User,
+    children: [{
+      id: '客戶管理',
+      label: '客戶管理'
     }]
   }].map(menu => /*#__PURE__*/React.createElement("div", {
     key: menu.id,
@@ -4200,7 +6210,7 @@ function JinChuanWarRoom() {
     className: "flex items-center justify-center h-64 text-gray-400"
   }, /*#__PURE__*/React.createElement("p", {
     className: "text-xl"
-  }, "\u6B64\u70BA\u300C", currentTopMenu, "\u300D\u6A21\u7D44\uFF0C\u6B63\u5728\u958B\u767C\u4E2D...")) : !['案件處理', '叫修案件紀錄', '案件銷案審核', '保養計劃進度', '工程立案', '現勘表收集'].includes(currentSubMenu) ? /*#__PURE__*/React.createElement("div", {
+  }, "\u6B64\u70BA\u300C", currentTopMenu, "\u300D\u6A21\u7D44\uFF0C\u6B63\u5728\u958B\u767C\u4E2D...")) : !['案件處理', '叫修案件紀錄', '案件銷案審核', '保養計劃進度', '工程立案', '現勘表收集', '客戶管理'].includes(currentSubMenu) ? /*#__PURE__*/React.createElement("div", {
     className: "flex items-center justify-center h-64 text-gray-400"
   }, /*#__PURE__*/React.createElement("p", {
     className: "text-xl"
@@ -4291,6 +6301,23 @@ function JinChuanWarRoom() {
   }), view === 'survey-edit' && /*#__PURE__*/React.createElement(SurveyForm, {
     cases: surveyCases,
     setCases: setSurveyCases,
+    targetCase: editingCase,
+    setView: setView,
+    showToast: showToast
+  }), view === 'customer-list' && /*#__PURE__*/React.createElement(CustomerList, {
+    cases: customers,
+    setCases: setCustomers,
+    setEditingCase: setEditingCase,
+    setView: setView,
+    showToast: showToast
+  }), view === 'customer-add' && /*#__PURE__*/React.createElement(CustomerForm, {
+    cases: customers,
+    setCases: setCustomers,
+    setView: setView,
+    showToast: showToast
+  }), view === 'customer-edit' && /*#__PURE__*/React.createElement(CustomerForm, {
+    cases: customers,
+    setCases: setCustomers,
     targetCase: editingCase,
     setView: setView,
     showToast: showToast
