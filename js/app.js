@@ -8,8 +8,8 @@
           id: "maintenance",
           label: "維修服務",
           children: [
-            { id: "maintenance-cases", label: "叫修案件", module: "MaintenanceModule" },
-            { id: "case-records", label: "叫修案件紀錄", module: "CaseRecordsModule" },
+            { id: "maintenance-cases", label: "案件處理", icon: "🔧", module: "MaintenanceModule" },
+            { id: "case-records", label: "叫修案件紀錄", icon: "📋", module: "CaseRecordsModule" },
           ],
         },
       ],
@@ -56,7 +56,9 @@
       <div class="tertiary-nav" aria-label="第三層功能">
         ${secondary.children.map((child) => `
           <button type="button" class="nav-btn nav-btn-sub ${child.id === currentTertiary ? "active" : ""}"
-            data-tertiary="${child.id}">${child.label}</button>
+            data-tertiary="${child.id}">
+            ${child.icon ? `<span class="nav-icon" aria-hidden="true">${child.icon}</span>` : ""}${child.label}
+          </button>
         `).join("")}
       </div>
     `;
