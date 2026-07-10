@@ -137,6 +137,9 @@ window.CaseRecordsModule = (function () {
             <h3>案件資料</h3>
             <div class="detail-grid">
               ${detailItem("案件編號", c.id)}
+              ${detailItem("叫修日期", c.repairDate)}
+              ${detailItem("再次叫修日期", c.reRepairDate)}
+              ${detailItem("完工日期", c.completionDate)}
               ${detailItem("工項分類", c.workCategory)}
               ${detailItem("叫修人員", c.requester)}
               ${detailItem("客戶名稱", c.customerName)}
