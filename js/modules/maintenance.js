@@ -141,6 +141,8 @@ window.MaintenanceModule = (function () {
   function cloneForEdit(c) {
     return structuredClone({
       ...c,
+      reRepairDate: c.reRepairDate || "",
+      completionDate: c.completionDate || "",
       processMethods: c.processMethods || [],
       equipmentScanned: Boolean(c.equipmentScanned),
       equipment: c.equipment || null,
@@ -180,6 +182,18 @@ window.MaintenanceModule = (function () {
 
     return `
       <div class="form-grid">
+        <label>
+          <span>叫修日期</span>
+          <input type="text" name="repairDate" value="${escapeHtml(values.repairDate || "—")}" readonly />
+        </label>
+        <label>
+          <span>再次叫修日期</span>
+          <input type="text" name="reRepairDate" value="${escapeHtml(values.reRepairDate || "—")}" readonly />
+        </label>
+        <label>
+          <span>完工日期</span>
+          <input type="text" name="completionDate" value="${escapeHtml(values.completionDate || "—")}" readonly />
+        </label>
         <label>
           <span>工項分類 <strong>*</strong></span>
           <select name="workCategory" required>
@@ -608,6 +622,8 @@ window.MaintenanceModule = (function () {
     store.add({
       id,
       repairDate,
+      reRepairDate: "",
+      completionDate: "",
       workCategory: formData.workCategory,
       customerName: formData.customerName,
       storeName: formData.storeName,
@@ -664,6 +680,13 @@ window.MaintenanceModule = (function () {
       };
     }
 
+    const withDates = AppData.applyProcessStatusDates(
+      editDraft,
+      editDraft.processStatus,
+      today()
+    );
+    editDraft = withDates;
+
     store.update(editingId, {
       workCategory: editDraft.workCategory,
       customerName: editDraft.customerName,
@@ -684,6 +707,8 @@ window.MaintenanceModule = (function () {
       actualReason: editDraft.actualReason.trim(),
       remarks: editDraft.remarks.trim(),
       processStatus: editDraft.processStatus,
+      reRepairDate: editDraft.reRepairDate || "",
+      completionDate: editDraft.completionDate || "",
     });
     closeModal();
     render();
