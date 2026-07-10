@@ -60,6 +60,19 @@ body {
 }
 .nav-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
+.tertiary-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 4px 0 8px 12px;
+  padding-left: 8px;
+  border-left: 1px solid #334155;
+}
+.nav-btn-sub {
+  font-size: 13px;
+  padding: 6px 12px;
+}
+
 .app-body { display: flex; flex: 1; min-height: 0; }
 .app-sidebar {
   width: var(--sidebar-w);
