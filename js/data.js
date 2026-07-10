@@ -40,6 +40,8 @@ window.AppData = (function () {
     {
       id: "20260708001",
       repairDate: "2026-07-08",
+      reRepairDate: "2026-07-08",
+      completionDate: "",
       workCategory: "緊急叫修",
       customerName: "星巴克",
       storeName: "台北信義店",
@@ -64,6 +66,8 @@ window.AppData = (function () {
     {
       id: "20260708002",
       repairDate: "2026-07-08",
+      reRepairDate: "2026-07-08",
+      completionDate: "",
       workCategory: "一般叫修",
       customerName: "屈臣氏",
       storeName: "高雄夢時代店",
@@ -88,6 +92,8 @@ window.AppData = (function () {
     {
       id: "20260708003",
       repairDate: "2026-07-08",
+      reRepairDate: "2026-07-06",
+      completionDate: "2026-07-08",
       workCategory: "保養清潔",
       customerName: "萊爾富",
       storeName: "新北板橋店",
@@ -112,6 +118,8 @@ window.AppData = (function () {
     {
       id: "20260708004",
       repairDate: "2026-07-08",
+      reRepairDate: "",
+      completionDate: "",
       workCategory: "一般叫修",
       customerName: "星巴克",
       storeName: "台中公益店",
@@ -136,6 +144,8 @@ window.AppData = (function () {
     {
       id: "20260708005",
       repairDate: "2026-07-07",
+      reRepairDate: "",
+      completionDate: "",
       workCategory: "一般叫修",
       customerName: "屈臣氏",
       storeName: "花蓮中山店",
@@ -160,6 +170,8 @@ window.AppData = (function () {
     {
       id: "20260708006",
       repairDate: "2026-07-07",
+      reRepairDate: "2026-07-07",
+      completionDate: "",
       workCategory: "其他",
       customerName: "萊爾富",
       storeName: "台南中正店",
@@ -184,6 +196,8 @@ window.AppData = (function () {
     {
       id: "20260707001",
       repairDate: "2026-07-07",
+      reRepairDate: "2026-07-07",
+      completionDate: "",
       workCategory: "一般叫修",
       customerName: "星巴克",
       storeName: "台北信義店",
@@ -208,6 +222,8 @@ window.AppData = (function () {
     {
       id: "20260706001",
       repairDate: "2026-07-06",
+      reRepairDate: "",
+      completionDate: "2026-07-06",
       workCategory: "保養清潔",
       customerName: "屈臣氏",
       storeName: "高雄夢時代店",
@@ -232,6 +248,8 @@ window.AppData = (function () {
     {
       id: "20260708007",
       repairDate: "2026-07-08",
+      reRepairDate: "",
+      completionDate: "2026-07-08",
       workCategory: "緊急叫修",
       customerName: "萊爾富",
       storeName: "台南中正店",
@@ -256,6 +274,8 @@ window.AppData = (function () {
     {
       id: "20260708008",
       repairDate: "2026-07-08",
+      reRepairDate: "2026-07-08",
+      completionDate: "",
       workCategory: "一般叫修",
       customerName: "星巴克",
       storeName: "台中公益店",
@@ -280,6 +300,8 @@ window.AppData = (function () {
     {
       id: "20260710001",
       repairDate: "2026-07-10",
+      reRepairDate: "2026-07-10",
+      completionDate: "",
       workCategory: "緊急叫修",
       customerName: "星巴克",
       storeName: "台北信義店",
@@ -304,6 +326,8 @@ window.AppData = (function () {
     {
       id: "20260710002",
       repairDate: "2026-07-10",
+      reRepairDate: "",
+      completionDate: "2026-07-10",
       workCategory: "一般叫修",
       customerName: "屈臣氏",
       storeName: "花蓮中山店",
@@ -328,6 +352,8 @@ window.AppData = (function () {
     {
       id: "20260710003",
       repairDate: "2026-07-10",
+      reRepairDate: "2026-07-09",
+      completionDate: "2026-07-10",
       workCategory: "保養清潔",
       customerName: "萊爾富",
       storeName: "新北板橋店",
@@ -355,6 +381,8 @@ window.AppData = (function () {
     {
       id: "20260710004",
       repairDate: "2026-07-10",
+      reRepairDate: "2026-07-10",
+      completionDate: "",
       workCategory: "一般叫修",
       customerName: "萊爾富",
       storeName: "台南中正店",
@@ -377,6 +405,19 @@ window.AppData = (function () {
       closed: false,
     },
   ];
+
+  const RE_REPAIR_STATUSES = ["待料", "待報價", "尚未完成"];
+
+  function applyProcessStatusDates(caseData, processStatus, todayStr) {
+    if (RE_REPAIR_STATUSES.includes(processStatus)) {
+      return { ...caseData, reRepairDate: todayStr };
+    }
+    if (processStatus === "案件完成") {
+      return { ...caseData, completionDate: todayStr };
+    }
+    // 轉汰換、轉原廠、其他：不寫入日期
+    return caseData;
+  }
 
   function createCaseStore(seed) {
     let cases = seed.map((c) => structuredClone(c));
@@ -425,6 +466,7 @@ window.AppData = (function () {
     CUSTOMERS,
     REQUESTERS,
     SEED_CASES,
+    applyProcessStatusDates,
     createCaseStore,
   };
 })();
