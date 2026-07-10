@@ -167,6 +167,27 @@ window.CaseRecordsModule = (function () {
     `;
   }
 
+  function applyDateRange() {
+    const form = root.querySelector("[data-records-filter]");
+    if (!form) return;
+    let start = form.elements.startDate.value || null;
+    let end = form.elements.endDate.value || null;
+    // 若使用者把結束日期選在開始日期之前，自動對調避免查不到資料
+    if (start && end && start > end) {
+      [start, end] = [end, start];
+    }
+    startDate = start;
+    endDate = end;
+    render();
+  }
+
+  function onRootChange(e) {
+    if (!root.contains(e.target)) return;
+    if (e.target.name === "startDate" || e.target.name === "endDate") {
+      applyDateRange();
+    }
+  }
+
   function onRootClick(e) {
     if (e.target.classList.contains("modal-backdrop") && root.contains(e.target)) {
       viewingId = null;
@@ -179,10 +200,7 @@ window.CaseRecordsModule = (function () {
     const { action, id } = actionBtn.dataset;
 
     if (action === "search") {
-      const form = root.querySelector("[data-records-filter]");
-      startDate = form.elements.startDate.value || null;
-      endDate = form.elements.endDate.value || null;
-      render();
+      applyDateRange();
       return;
     }
     if (action === "view") {
@@ -197,17 +215,24 @@ window.CaseRecordsModule = (function () {
   }
 
   function mount(container) {
-    if (root) root.removeEventListener("click", onRootClick);
+    if (root) {
+      root.removeEventListener("click", onRootClick);
+      root.removeEventListener("change", onRootChange);
+    }
     root = container;
     startDate = today();
     endDate = today();
     viewingId = null;
     root.addEventListener("click", onRootClick);
+    root.addEventListener("change", onRootChange);
     render();
   }
 
   function unmount() {
-    if (root) root.removeEventListener("click", onRootClick);
+    if (root) {
+      root.removeEventListener("click", onRootClick);
+      root.removeEventListener("change", onRootChange);
+    }
     root = null;
     viewingId = null;
   }
@@ -230,6 +255,7 @@ window.CaseRecordsModule = (function () {
             </label>
             <button type="button" class="btn btn-primary" data-action="search">搜尋</button>
           </form>
+          <span class="result-count">共 ${cases.length} 筆</span>
         </div>
         <div class="table-wrap">
           <table class="data-table">
