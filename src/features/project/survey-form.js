@@ -1,0 +1,1815 @@
+/*
+ * features/project/survey-form.js — 專案管理：現勘表（新增／編輯）
+ * props: { cases, setCases, setView, showToast, targetCase }
+ */
+(function () {
+  'use strict';
+  var h = IESS.h, Fragment = IESS.Fragment, Icons = IESS.Icons, stateful = IESS.stateful;
+
+  function SurveyForm(props) {
+    var cases = props.cases;
+    var setCases = props.setCases;
+    var setView = props.setView;
+    var showToast = props.showToast;
+    var targetCase = props.targetCase;
+
+    var isEdit = !!targetCase;
+    var formData = targetCase
+      ? Object.assign({}, targetCase)
+      : {
+          customerName: '',
+          storeName: '',
+          storeAddress: '',
+          fillDate: todayDate,
+          surveyType: SURVEY_TYPES[0],
+          surveyData: {} // 儲存各類型動態題目答案
+        };
+    // 室外機施工內容 - 可隱藏題目的顯示切換
+    var showOutdoorHideable = true;
+    // 沿用設備 - 可隱藏題目的顯示切換
+    var showReuseEquipment = true;
+
+    return stateful(function (rerender) {
+      // ===== 事件處理器（對應原 useState/setFormData） =====
+      function handleChange(e) {
+        var name = e.target.name;
+        var value = e.target.value;
+        formData[name] = value;
+        if (name === 'storeName') {
+          var addressMap = {
+            '台北信義店': '台北市信義區松智路X號',
+            '台中旗艦店': '台中市西屯區台灣大道X號',
+            '高雄左營店': '高雄市左營區博愛路X號',
+            '站前店': '台中市中區建國路X號',
+            '中山店': '台北市中山區中山北路X號'
+          };
+          formData.storeAddress = addressMap[value] || '自動帶入地址';
+        }
+        rerender();
+      }
+      // 專門處理動態問卷題目的輸入變更
+      function handleSurveyChange(e) {
+        var name = e.target.name;
+        var value = e.target.value;
+        var type = e.target.type;
+        var checked = e.target.checked;
+        var sd = formData.surveyData || (formData.surveyData = {});
+        if (type === 'checkbox') {
+          var currentArr = sd[name] || [];
+          sd[name] = checked ? currentArr.concat([value]) : currentArr.filter(function (item) { return item !== value; });
+        } else {
+          sd[name] = value;
+        }
+        rerender();
+      }
+      // 室內機洗孔需求動態清單處理 (可增加多筆)
+      function handleHoleChange(index, value) {
+        var sd = formData.surveyData || (formData.surveyData = {});
+        var holes = (sd.indoorUnitHoles || []).slice();
+        holes[index] = Object.assign({}, holes[index], { diameter: value });
+        sd.indoorUnitHoles = holes;
+        rerender();
+      }
+      function addHole() {
+        var sd = formData.surveyData || (formData.surveyData = {});
+        sd.indoorUnitHoles = (sd.indoorUnitHoles || []).concat([{ diameter: '' }]);
+        rerender();
+      }
+      function removeHole(index) {
+        var sd = formData.surveyData || (formData.surveyData = {});
+        sd.indoorUnitHoles = (sd.indoorUnitHoles || []).filter(function (_, i) { return i !== index; });
+        rerender();
+      }
+      // 設備清單動態處理 (可增加多筆設備)
+      function handleEquipmentChange(index, field, value) {
+        var sd = formData.surveyData || (formData.surveyData = {});
+        var list = (sd.equipmentList || []).slice();
+        list[index] = Object.assign({}, list[index]);
+        list[index][field] = value;
+        sd.equipmentList = list;
+        rerender();
+      }
+      function addEquipment() {
+        var sd = formData.surveyData || (formData.surveyData = {});
+        sd.equipmentList = (sd.equipmentList || []).concat([{
+          category: '',
+          brand: '',
+          name: '',
+          model: '',
+          area: ''
+        }]);
+        rerender();
+      }
+      function removeEquipment(index) {
+        var sd = formData.surveyData || (formData.surveyData = {});
+        sd.equipmentList = (sd.equipmentList || []).filter(function (_, i) { return i !== index; });
+        rerender();
+      }
+      // 零配件數量處理
+      function handlePartQtyChange(partKey, value) {
+        var sd = formData.surveyData || (formData.surveyData = {});
+        var qty = Object.assign({}, sd.partsQty || {});
+        qty[partKey] = value;
+        sd.partsQty = qty;
+        rerender();
+      }
+      // 配管工程 各多選群組的數量／長度對照表處理（依 mapName 分開儲存）
+      function handleQtyMapChange(mapName, key, value) {
+        var sd = formData.surveyData || (formData.surveyData = {});
+        var m = Object.assign({}, sd[mapName] || {});
+        m[key] = value;
+        sd[mapName] = m;
+        rerender();
+      }
+
+        const renderPipingQtyRow = (checkName, mapName, opt) => {
+          const selected = formData.surveyData?.[checkName] || [];
+          const checked = selected.includes(opt.label);
+          return h("div", {
+            key: opt.label,
+            className: "flex items-center justify-between bg-white p-3 rounded border border-gray-200"
+          }, h("label", {
+            className: "flex items-center gap-2 cursor-pointer"
+          }, h("input", {
+            type: "checkbox",
+            name: checkName,
+            value: opt.label,
+            checked: checked,
+            onChange: handleSurveyChange,
+            className: "w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
+          }), h("span", {
+            className: "text-sm text-gray-700 font-medium"
+          }, opt.label)), h("div", {
+            className: "flex items-center gap-2"
+          }, h("input", {
+            type: "number",
+            value: formData.surveyData?.[mapName]?.[opt.label] || '',
+            onChange: e => handleQtyMapChange(mapName, opt.label, e.target.value),
+            disabled: !checked,
+            placeholder: opt.qtyLabel,
+            className: "w-24 p-1.5 border rounded-md text-sm outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-100 disabled:opacity-50"
+          }), h("span", {
+            className: "text-sm text-gray-500 whitespace-nowrap"
+          }, opt.unit)));
+        };
+        // 配管工程「多選 + 填數字」的「其他」自填列
+        const renderPipingOtherRow = (checkName, mapName, unit, qtyLabel) => {
+          const selected = formData.surveyData?.[checkName] || [];
+          const checked = selected.includes('其他');
+          return h("div", {
+            className: "flex items-center justify-between bg-white p-3 rounded border border-gray-200"
+          }, h("label", {
+            className: "flex items-center gap-2 cursor-pointer flex-1"
+          }, h("input", {
+            type: "checkbox",
+            name: checkName,
+            value: "其他",
+            checked: checked,
+            onChange: handleSurveyChange,
+            className: "w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500 shrink-0"
+          }), h("span", {
+            className: "text-sm text-gray-700 font-medium shrink-0"
+          }, "其他："), h("input", {
+            type: "text",
+            name: `${checkName}_other`,
+            value: formData.surveyData?.[`${checkName}_other`] || '',
+            onChange: handleSurveyChange,
+            disabled: !checked,
+            placeholder: "請註明",
+            className: "flex-1 max-w-xs p-1 border-b-2 border-gray-300 outline-none focus:border-indigo-500 bg-transparent text-sm disabled:opacity-50"
+          })), h("div", {
+            className: "flex items-center gap-2"
+          }, h("input", {
+            type: "number",
+            value: formData.surveyData?.[mapName]?.['其他'] || '',
+            onChange: e => handleQtyMapChange(mapName, '其他', e.target.value),
+            disabled: !checked,
+            placeholder: qtyLabel,
+            className: "w-24 p-1.5 border rounded-md text-sm outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-100 disabled:opacity-50"
+          }), h("span", {
+            className: "text-sm text-gray-500 whitespace-nowrap"
+          }, unit)));
+        };
+        // 配管工程「多選 + 填數字」子題卡片（同一單位）
+        const renderPipingCheckQtyGroup = (subtitle, note, checkName, mapName, options, unit, qtyLabel) => h("div", {
+          className: "bg-white p-4 rounded-lg border border-gray-200"
+        }, h("h4", {
+          className: "text-base font-bold text-indigo-700 mb-1"
+        }, subtitle), note && h("p", {
+          className: "text-xs text-gray-400 mb-3"
+        }, note), h("div", {
+          className: "space-y-2 mt-2"
+        }, options.map(o => renderPipingQtyRow(checkName, mapName, typeof o === 'string' ? {
+          label: o,
+          unit,
+          qtyLabel
+        } : o)), renderPipingOtherRow(checkName, mapName, unit, qtyLabel)));
+        // 配管工程 單選子題卡片
+        const renderPipingSingleSelect = (subtitle, name, options, extra) => {
+          const cur = formData.surveyData?.[name] || '';
+          return h("div", {
+            className: "bg-white p-4 rounded-lg border border-gray-200"
+          }, h("h4", {
+            className: "text-base font-bold text-indigo-700 mb-3"
+          }, subtitle), h("div", {
+            className: "flex flex-wrap gap-x-6 gap-y-3"
+          }, options.map(opt => h("label", {
+            key: opt,
+            className: "flex items-center gap-2 cursor-pointer"
+          }, h("input", {
+            type: "radio",
+            name: name,
+            value: opt,
+            checked: cur === opt,
+            onChange: handleSurveyChange,
+            className: "w-4 h-4 text-indigo-600 border-gray-300 focus:ring-indigo-500"
+          }), h("span", {
+            className: "text-sm text-gray-700 font-medium"
+          }, opt))), h("label", {
+            className: "flex items-center gap-2 cursor-pointer"
+          }, h("input", {
+            type: "radio",
+            name: name,
+            value: "其他",
+            checked: cur === '其他',
+            onChange: handleSurveyChange,
+            className: "w-4 h-4 text-indigo-600 border-gray-300 focus:ring-indigo-500"
+          }), h("span", {
+            className: "text-sm text-gray-700 font-medium"
+          }, "其他："), h("input", {
+            type: "text",
+            name: `${name}_other`,
+            value: formData.surveyData?.[`${name}_other`] || '',
+            onChange: handleSurveyChange,
+            disabled: cur !== '其他',
+            placeholder: "請註明",
+            className: "w-32 p-1 border-b-2 border-gray-300 outline-none focus:border-indigo-500 bg-transparent text-sm disabled:opacity-50"
+          }))), extra);
+        };
+        // 風管工程 集風箱／出線型箱「風管管徑 + 孔數 + 數量」多選列
+        const renderDuctPipeRow = (checkName, holeMap, qtyMap, opt) => {
+          const selected = formData.surveyData?.[checkName] || [];
+          const checked = selected.includes(opt);
+          return h("div", {
+            key: opt,
+            className: "flex items-center justify-between bg-white p-3 rounded border border-gray-200"
+          }, h("label", {
+            className: "flex items-center gap-2 cursor-pointer"
+          }, h("input", {
+            type: "checkbox",
+            name: checkName,
+            value: opt,
+            checked: checked,
+            onChange: handleSurveyChange,
+            className: "w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
+          }), h("span", {
+            className: "text-sm text-gray-700 font-medium"
+          }, opt)), h("div", {
+            className: "flex items-center gap-2"
+          }, h("input", {
+            type: "number",
+            value: formData.surveyData?.[holeMap]?.[opt] || '',
+            onChange: e => handleQtyMapChange(holeMap, opt, e.target.value),
+            disabled: !checked,
+            placeholder: "孔數",
+            className: "w-20 p-1.5 border rounded-md text-sm outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-100 disabled:opacity-50"
+          }), h("span", {
+            className: "text-sm text-gray-500 whitespace-nowrap"
+          }, "孔"), h("input", {
+            type: "number",
+            value: formData.surveyData?.[qtyMap]?.[opt] || '',
+            onChange: e => handleQtyMapChange(qtyMap, opt, e.target.value),
+            disabled: !checked,
+            placeholder: "數量",
+            className: "w-20 p-1.5 border rounded-md text-sm outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-100 disabled:opacity-50"
+          }), h("span", {
+            className: "text-sm text-gray-500 whitespace-nowrap"
+          }, "個")));
+        };
+        // 風管工程 集風箱／出線型箱 卡片（材質單選 + 法蘭內徑 + 風管管徑孔數/數量多選）
+        const renderDuctBox = (title, prefix) => h("div", {
+          className: "bg-indigo-50/30 p-8 rounded-lg border border-indigo-100 shadow-sm"
+        }, h("h3", {
+          className: "text-xl font-bold text-indigo-800 border-b-2 border-indigo-200 pb-3 mb-6 flex items-center gap-2"
+        }, Icons.Wrench({
+          className: "h-6 w-6"
+        }), " " + title), h("div", {
+          className: "space-y-6"
+        }, renderPipingSingleSelect('材質（單選）', `${prefix}Material`, DUCT_BOX_MATERIALS), h("div", {
+          className: "bg-white p-4 rounded-lg border border-gray-200"
+        }, h("h4", {
+          className: "text-base font-bold text-indigo-700 mb-3"
+        }, "法蘭內徑"), h("div", {
+          className: "flex flex-wrap items-center gap-3"
+        }, h("span", {
+          className: "text-sm text-gray-700 font-medium"
+        }, "寬"), h("input", {
+          type: "number",
+          name: `${prefix}FlangeWidth`,
+          value: formData.surveyData?.[`${prefix}FlangeWidth`] || '',
+          onChange: handleSurveyChange,
+          placeholder: "寬",
+          className: "w-24 p-1.5 border rounded-md text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+        }), h("span", {
+          className: "text-sm text-gray-500"
+        }, "cm"), h("span", {
+          className: "text-sm text-gray-700 font-medium ml-4"
+        }, "高"), h("input", {
+          type: "number",
+          name: `${prefix}FlangeHeight`,
+          value: formData.surveyData?.[`${prefix}FlangeHeight`] || '',
+          onChange: handleSurveyChange,
+          placeholder: "高",
+          className: "w-24 p-1.5 border rounded-md text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+        }), h("span", {
+          className: "text-sm text-gray-500"
+        }, "cm"))), h("div", {
+          className: "bg-white p-4 rounded-lg border border-gray-200"
+        }, h("h4", {
+          className: "text-base font-bold text-indigo-700 mb-1"
+        }, "風管管徑、孔數與數量"), h("p", {
+          className: "text-xs text-gray-400 mb-3"
+        }, "請勾選風管管徑並填寫孔數與數量（個）"), h("div", {
+          className: "space-y-2 mt-2"
+        }, DUCT_BOX_PIPES.map(o => renderDuctPipeRow(`${prefix}Pipes`, `${prefix}PipesHoles`, `${prefix}PipesQty`, o))))));
+        // 風管工程 三通風箱 卡片（材質單選 + 風管管徑數量多選，無孔數／無其他列）
+        const renderDuctTeeBox = (title, prefix) => h("div", {
+          className: "bg-indigo-50/30 p-8 rounded-lg border border-indigo-100 shadow-sm"
+        }, h("h3", {
+          className: "text-xl font-bold text-indigo-800 border-b-2 border-indigo-200 pb-3 mb-6 flex items-center gap-2"
+        }, Icons.Wrench({
+          className: "h-6 w-6"
+        }), " " + title), h("div", {
+          className: "space-y-6"
+        }, renderPipingSingleSelect('材質（單選）', `${prefix}Material`, DUCT_BOX_MATERIALS), h("div", {
+          className: "bg-white p-4 rounded-lg border border-gray-200"
+        }, h("h4", {
+          className: "text-base font-bold text-indigo-700 mb-1"
+        }, "風管管徑、數量"), h("p", {
+          className: "text-xs text-gray-400 mb-3"
+        }, "請勾選風管管徑並填寫數量（個）"), h("div", {
+          className: "space-y-2 mt-2"
+        }, DUCT_TEE_PIPES.map(o => renderPipingQtyRow(`${prefix}Pipes`, `${prefix}PipesQty`, {
+          label: o,
+          unit: '個',
+          qtyLabel: '數量'
+        }))))));
+        // 風管工程 出風口 單一型式列（勾選 + 數量個，線型另填寬高 cm）
+        const renderVentOutletRow = opt => {
+          const selected = formData.surveyData?.ventOutlets || [];
+          const checked = selected.includes(opt.label);
+          return h("div", {
+            key: opt.label,
+            className: "bg-white p-3 rounded border border-gray-200"
+          }, h("div", {
+            className: "flex items-center justify-between"
+          }, h("label", {
+            className: "flex items-center gap-2 cursor-pointer"
+          }, h("input", {
+            type: "checkbox",
+            name: "ventOutlets",
+            value: opt.label,
+            checked: checked,
+            onChange: handleSurveyChange,
+            className: "w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
+          }), h("span", {
+            className: "text-sm text-gray-700 font-medium"
+          }, opt.label)), h("div", {
+            className: "flex items-center gap-2"
+          }, h("input", {
+            type: "number",
+            value: formData.surveyData?.ventOutletsQty?.[opt.label] || '',
+            onChange: e => handleQtyMapChange('ventOutletsQty', opt.label, e.target.value),
+            disabled: !checked,
+            placeholder: "數量",
+            className: "w-24 p-1.5 border rounded-md text-sm outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-100 disabled:opacity-50"
+          }), h("span", {
+            className: "text-sm text-gray-500 whitespace-nowrap"
+          }, "個"))), opt.dim && h("div", {
+            className: "flex flex-wrap items-center gap-3 mt-3 ml-6"
+          }, h("span", {
+            className: "text-sm text-gray-700 font-medium"
+          }, "寬"), h("input", {
+            type: "number",
+            name: "ventLinearWidth",
+            value: formData.surveyData?.ventLinearWidth || '',
+            onChange: handleSurveyChange,
+            disabled: !checked,
+            placeholder: "寬",
+            className: "w-24 p-1.5 border rounded-md text-sm outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-100 disabled:opacity-50"
+          }), h("span", {
+            className: "text-sm text-gray-500"
+          }, "cm"), h("span", {
+            className: "text-sm text-gray-700 font-medium ml-4"
+          }, "高"), h("input", {
+            type: "number",
+            name: "ventLinearHeight",
+            value: formData.surveyData?.ventLinearHeight || '',
+            onChange: handleSurveyChange,
+            disabled: !checked,
+            placeholder: "高",
+            className: "w-24 p-1.5 border rounded-md text-sm outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-100 disabled:opacity-50"
+          }), h("span", {
+            className: "text-sm text-gray-500"
+          }, "cm")));
+        };
+        // 風管工程 出風口 卡片（多選型式 + 數量，線型另填寬高，含其他）
+        const renderVentOutletBox = () => h("div", {
+          className: "bg-indigo-50/30 p-8 rounded-lg border border-indigo-100 shadow-sm"
+        }, h("h3", {
+          className: "text-xl font-bold text-indigo-800 border-b-2 border-indigo-200 pb-3 mb-6 flex items-center gap-2"
+        }, Icons.Wrench({
+          className: "h-6 w-6"
+        }), " 出風口"), h("div", {
+          className: "space-y-6"
+        }, h("div", {
+          className: "bg-white p-4 rounded-lg border border-gray-200"
+        }, h("h4", {
+          className: "text-base font-bold text-indigo-700 mb-1"
+        }, "出風口型式、數量"), h("p", {
+          className: "text-xs text-gray-400 mb-3"
+        }, "請勾選出風口型式並填寫數量（個），線型出風口另填寬、高（cm）"), h("div", {
+          className: "space-y-2 mt-2"
+        }, DUCT_VENT_OUTLETS.map(renderVentOutletRow), renderPipingOtherRow('ventOutlets', 'ventOutletsQty', '個', '數量')))));
+        // 風管工程 回風口 卡片（多選型式 + 數量，無其他列）
+        const renderReturnOutletBox = () => h("div", {
+          className: "bg-indigo-50/30 p-8 rounded-lg border border-indigo-100 shadow-sm"
+        }, h("h3", {
+          className: "text-xl font-bold text-indigo-800 border-b-2 border-indigo-200 pb-3 mb-6 flex items-center gap-2"
+        }, Icons.Wrench({
+          className: "h-6 w-6"
+        }), " 回風口"), h("div", {
+          className: "space-y-6"
+        }, h("div", {
+          className: "bg-white p-4 rounded-lg border border-gray-200"
+        }, h("h4", {
+          className: "text-base font-bold text-indigo-700 mb-1"
+        }, "回風口型式、數量"), h("p", {
+          className: "text-xs text-gray-400 mb-3"
+        }, "請勾選回風口型式並填寫數量（個）"), h("div", {
+          className: "space-y-2 mt-2"
+        }, DUCT_RETURN_OUTLETS.map(o => renderPipingQtyRow('returnOutlets', 'returnOutletsQty', {
+          label: o,
+          unit: '個',
+          qtyLabel: '數量'
+        }))))));
+        // 風管工程 特製風箱 卡片（單選 + 其他）
+        const renderCustomBox = () => h("div", {
+          className: "bg-indigo-50/30 p-8 rounded-lg border border-indigo-100 shadow-sm"
+        }, h("h3", {
+          className: "text-xl font-bold text-indigo-800 border-b-2 border-indigo-200 pb-3 mb-6 flex items-center gap-2"
+        }, Icons.Wrench({
+          className: "h-6 w-6"
+        }), " 特製風箱"), h("div", {
+          className: "space-y-6"
+        }, renderPipingSingleSelect('特製風箱（單選）', 'customBox', DUCT_CUSTOM_BOX_OPTIONS)));
+        const handleSubmit = e => {
+          e.preventDefault();
+          if (!formData.customerName || !formData.storeName || !formData.storeAddress) {
+            showToast('客戶名稱、門市名稱與門市地址皆為必填', 'error');
+            return;
+          }
+          const fileName = `${formData.customerName}_${formData.storeName}_${formData.surveyType}_${formData.fillDate.replace(/-/g, '')}`;
+          if (isEdit) {
+            setCases(cases.map(c => c.id === formData.id ? {
+              ...formData,
+              fileName
+            } : c));
+            showToast('現勘表更新成功');
+          } else {
+            const newCase = {
+              id: `S${Date.now()}`,
+              ...formData,
+              fileName
+            };
+            setCases([newCase, ...cases]);
+            showToast('現勘表建立成功');
+          }
+          setView('survey-list');
+        };
+        return h("div", {
+          className: "max-w-5xl mx-auto bg-white rounded-lg shadow-sm border border-gray-100 relative"
+        }, PageHeader({
+          title: isEdit ? '編輯現勘表' : '新增現勘表',
+          onClose: () => setView('survey-list'),
+          wrapperClass: 'flex justify-between items-center p-6 border-b border-gray-200 sticky top-0 z-10 bg-white rounded-t-lg'
+        }), h("form", {
+          onSubmit: handleSubmit,
+          className: "p-6"
+        }, h("div", {
+          className: "space-y-6"
+        }, h("div", {
+          className: "grid grid-cols-1 md:grid-cols-2 gap-6 bg-gray-50 p-6 rounded-lg border border-gray-200"
+        }, h("div", null, h("label", {
+          className: "block text-sm font-medium text-gray-700 mb-1"
+        }, "\u5BA2\u6236\u540D\u7A31 ", h("span", {
+          className: "text-red-500"
+        }, "*")), h("select", {
+          required: true,
+          name: "customerName",
+          value: formData.customerName,
+          onChange: handleChange,
+          className: "w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+        }, h("option", {
+          value: "",
+          disabled: true
+        }, "\u8ACB\u9078\u64C7"), CUSTOMER_OPTIONS.map(opt => h("option", {
+          key: opt,
+          value: opt
+        }, opt)))), h("div", null, h("label", {
+          className: "block text-sm font-medium text-gray-700 mb-1"
+        }, "\u9580\u5E02\u540D\u7A31 ", h("span", {
+          className: "text-red-500"
+        }, "*")), h("select", {
+          required: true,
+          name: "storeName",
+          value: formData.storeName,
+          onChange: handleChange,
+          className: "w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+        }, h("option", {
+          value: "",
+          disabled: true
+        }, "\u8ACB\u9078\u64C7"), STORE_OPTIONS.map(opt => h("option", {
+          key: opt,
+          value: opt
+        }, opt)))), h("div", {
+          className: "col-span-full"
+        }, h("label", {
+          className: "block text-sm font-medium text-gray-700 mb-1"
+        }, "\u9580\u5E02\u5730\u5740 ", h("span", {
+          className: "text-red-500"
+        }, "*")), h("input", {
+          type: "text",
+          required: true,
+          disabled: true,
+          name: "storeAddress",
+          value: formData.storeAddress,
+          placeholder: "\u9078\u64C7\u9580\u5E02\u5F8C\u81EA\u52D5\u5E36\u5165",
+          className: "w-full p-2 bg-gray-50 border rounded-md text-gray-500 cursor-not-allowed outline-none"
+        })), h("div", null, h("label", {
+          className: "block text-sm font-medium text-gray-700 mb-1"
+        }, "\u586B\u55AE\u65E5\u671F"), h("input", {
+          type: "date",
+          name: "fillDate",
+          value: formData.fillDate,
+          onChange: handleChange,
+          required: true,
+          className: "w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+        })), h("div", null, h("label", {
+          className: "block text-sm font-medium text-blue-700 mb-1"
+        }, "\u73FE\u52D8\u8868\u985E\u578B"), h("select", {
+          name: "surveyType",
+          value: formData.surveyType,
+          onChange: handleChange,
+          className: "w-full p-2 border-2 border-blue-300 rounded-md outline-none focus:border-blue-500 bg-white font-bold text-blue-900 shadow-sm"
+        }, SURVEY_TYPES.map(opt => h("option", {
+          key: opt,
+          value: opt
+        }, opt))))), formData.surveyType === '環境與施工' ? h("div", {
+          className: "mt-8 space-y-8"
+        }, h("div", {
+          className: "bg-indigo-50/30 p-8 rounded-lg border border-indigo-100 shadow-sm"
+        }, h("h3", {
+          className: "text-xl font-bold text-indigo-800 border-b-2 border-indigo-200 pb-3 mb-6 flex items-center gap-2"
+        }, Icons.FileText({
+          className: "h-6 w-6"
+        }), " \u74B0\u5883\u8207\u65BD\u5DE5 - \u73FE\u52D8\u660E\u7D30"), h("div", {
+          className: "grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6"
+        }, h("div", null, h("label", {
+          className: "block text-sm font-bold text-gray-700 mb-2"
+        }, "\u5DE5\u7A0B\u985E\u578B"), h("select", {
+          name: "projectType",
+          value: formData.surveyData?.projectType || '',
+          onChange: handleSurveyChange,
+          className: "w-full p-2.5 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 bg-white shadow-sm"
+        }, h("option", {
+          value: ""
+        }, "\u8ACB\u9078\u64C7(\u55AE\u9078)"), ['新開', '加裝', '移機', '撤店', '拆機', '維修汰換', '整裝汰換', '整裝沿用', '其他'].map(opt => h("option", {
+          key: opt,
+          value: opt
+        }, opt)))), h("div", {
+          className: "md:col-span-2 bg-white p-4 rounded border border-gray-200"
+        }, h("label", {
+          className: "block text-sm font-bold text-gray-700 mb-3"
+        }, "\u5DE5\u7A0B\u5DE5\u7A2E (\u4E0B\u62C9\u9078\u55AE - \u591A\u9078)"), h("div", {
+          className: "flex flex-wrap gap-x-6 gap-y-3"
+        }, ['分離式工程', '冰水機工程', '風管工程', '保養工程', '其他'].map(opt => h("label", {
+          key: opt,
+          className: "flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-1 rounded transition-colors"
+        }, h("input", {
+          type: "checkbox",
+          name: "projectTrades",
+          value: opt,
+          checked: (formData.surveyData?.projectTrades || []).includes(opt),
+          onChange: handleSurveyChange,
+          className: "w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
+        }), h("span", {
+          className: "text-sm text-gray-700 font-medium"
+        }, opt))))), h("div", null, h("label", {
+          className: "block text-sm font-bold text-gray-700 mb-2"
+        }, "\u5730\u6BB5\u5340\u57DF"), h("select", {
+          name: "locationArea",
+          value: formData.surveyData?.locationArea || '',
+          onChange: handleSurveyChange,
+          className: "w-full p-2.5 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 bg-white shadow-sm"
+        }, h("option", {
+          value: ""
+        }, "\u8ACB\u9078\u64C7(\u55AE\u9078)"), ['街邊店', '軍營', '醫院', '高鐵、捷運、機場', '電子廠、科技園區', '百貨', '其他'].map(opt => h("option", {
+          key: opt,
+          value: opt
+        }, opt)))), h("div", null, h("label", {
+          className: "block text-sm font-bold text-gray-700 mb-2"
+        }, "\u5DE5\u55AE\u7533\u8ACB"), h("div", {
+          className: "flex gap-8 mt-2"
+        }, ['是', '否'].map(opt => h("label", {
+          key: opt,
+          className: "flex items-center gap-2 cursor-pointer"
+        }, h("input", {
+          type: "radio",
+          name: "workOrderApplied",
+          value: opt,
+          checked: formData.surveyData?.workOrderApplied === opt,
+          onChange: handleSurveyChange,
+          className: "w-4 h-4 text-indigo-600 focus:ring-indigo-500"
+        }), h("span", {
+          className: "text-sm text-gray-700 font-medium"
+        }, opt))))), h("div", {
+          className: "md:col-span-2 bg-white p-4 rounded border border-gray-200"
+        }, h("label", {
+          className: "block text-sm font-bold text-gray-700 mb-3"
+        }, "\u7279\u6B8A\u74B0\u5883\u8655\u7406 (\u591A\u9078)"), h("div", {
+          className: "flex flex-wrap gap-x-6 gap-y-3"
+        }, ['防鹽害處理', '防硫處理', '沼氣處理'].map(opt => h("label", {
+          key: opt,
+          className: "flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-1 rounded transition-colors"
+        }, h("input", {
+          type: "checkbox",
+          name: "specialEnv",
+          value: opt,
+          checked: (formData.surveyData?.specialEnv || []).includes(opt),
+          onChange: handleSurveyChange,
+          className: "w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
+        }), h("span", {
+          className: "text-sm text-gray-700 font-medium"
+        }, opt))))), h("div", {
+          className: "col-span-full border-t border-indigo-100/50 my-2"
+        }), h("div", {
+          className: "md:col-span-2"
+        }, h("label", {
+          className: "block text-sm font-bold text-gray-700 mb-2"
+        }, "\u5BA4\u5167\u65BD\u4F5C\u5340\u57DF (\u55AE\u9078)"), h("div", {
+          className: "flex items-center gap-6"
+        }, h("label", {
+          className: "flex items-center gap-2 cursor-pointer shrink-0"
+        }, h("input", {
+          type: "radio",
+          name: "indoorWorkArea",
+          value: "\u5168\u5340",
+          checked: formData.surveyData?.indoorWorkArea === '全區',
+          onChange: handleSurveyChange,
+          className: "w-4 h-4 text-indigo-600 focus:ring-indigo-500"
+        }), h("span", {
+          className: "text-sm text-gray-700 font-medium"
+        }, "\u5168\u5340")), h("label", {
+          className: "flex items-center gap-2 cursor-pointer w-full max-w-sm"
+        }, h("input", {
+          type: "radio",
+          name: "indoorWorkArea",
+          value: "\u5176\u4ED6",
+          checked: formData.surveyData?.indoorWorkArea === '其他',
+          onChange: handleSurveyChange,
+          className: "w-4 h-4 text-indigo-600 focus:ring-indigo-500"
+        }), h("span", {
+          className: "text-sm text-gray-700 font-medium shrink-0"
+        }, "\u5176\u4ED6\uFF1A"), h("input", {
+          type: "text",
+          name: "indoorWorkArea_other",
+          value: formData.surveyData?.indoorWorkArea_other || '',
+          onChange: handleSurveyChange,
+          disabled: formData.surveyData?.indoorWorkArea !== '其他',
+          className: "flex-1 p-1.5 border-b-2 border-gray-300 outline-none focus:border-indigo-500 bg-transparent disabled:opacity-50 text-sm font-medium",
+          placeholder: "\u8ACB\u8A3B\u660E"
+        })))), h("div", {
+          className: "md:col-span-2"
+        }, h("label", {
+          className: "block text-sm font-bold text-gray-700 mb-2"
+        }, "\u73FE\u5834\u63D0\u4F9B\u96FB\u6E90 (\u55AE\u9078)"), h("div", {
+          className: "flex flex-wrap gap-6 bg-white p-4 rounded border border-gray-200"
+        }, ['單相110V', '單相220V', '三相220V', '三相380V'].map(opt => h("label", {
+          key: opt,
+          className: "flex items-center gap-2 cursor-pointer"
+        }, h("input", {
+          type: "radio",
+          name: "onSitePower",
+          value: opt,
+          checked: formData.surveyData?.onSitePower === opt,
+          onChange: handleSurveyChange,
+          className: "w-4 h-4 text-indigo-600 focus:ring-indigo-500"
+        }), h("span", {
+          className: "text-sm text-gray-700 font-medium"
+        }, opt))))), h("div", null, h("label", {
+          className: "block text-sm font-bold text-gray-700 mb-1"
+        }, "\u96FB\u7BB1\u4F4D\u7F6E"), h("input", {
+          type: "text",
+          name: "electricBoxLocation",
+          value: formData.surveyData?.electricBoxLocation || '',
+          onChange: handleSurveyChange,
+          placeholder: "\u586B\u5BEB\u4F4D\u7F6E",
+          className: "w-full p-2.5 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm"
+        })), h("div", {
+          className: "md:col-span-2 bg-white p-4 rounded border border-gray-200"
+        }, h("label", {
+          className: "block text-sm font-bold text-gray-700 mb-3"
+        }, "\u73FE\u5834\u5DF2\u9810\u7559\u8AAA\u660E (\u591A\u9078)"), h("div", {
+          className: "flex flex-wrap gap-x-6 gap-y-4 items-center"
+        }, ['主機電源線', '無熔絲開關', '溫控位置', '空氣門電源', '排水位置', '冰水幹管'].map(opt => h("label", {
+          key: opt,
+          className: "flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-1 rounded transition-colors"
+        }, h("input", {
+          type: "checkbox",
+          name: "reservedItems",
+          value: opt,
+          checked: (formData.surveyData?.reservedItems || []).includes(opt),
+          onChange: handleSurveyChange,
+          className: "w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
+        }), h("span", {
+          className: "text-sm text-gray-700 font-medium"
+        }, opt))), h("label", {
+          className: "flex items-center gap-2 cursor-pointer p-1"
+        }, h("input", {
+          type: "checkbox",
+          name: "reservedItems",
+          value: "\u5176\u4ED6",
+          checked: (formData.surveyData?.reservedItems || []).includes('其他'),
+          onChange: handleSurveyChange,
+          className: "w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
+        }), h("span", {
+          className: "text-sm text-gray-700 font-medium"
+        }, "\u5176\u4ED6\uFF1A"), h("input", {
+          type: "text",
+          name: "reservedItems_other",
+          value: formData.surveyData?.reservedItems_other || '',
+          onChange: handleSurveyChange,
+          disabled: !(formData.surveyData?.reservedItems || []).includes('其他'),
+          className: "w-40 p-1 border-b-2 border-gray-300 outline-none focus:border-indigo-500 bg-transparent disabled:opacity-50 text-sm font-medium",
+          placeholder: "\u8ACB\u8A3B\u660E"
+        })))), h("div", {
+          className: "col-span-full border-t border-indigo-100/50 my-2"
+        }), h("div", null, h("label", {
+          className: "block text-sm font-bold text-gray-700 mb-1"
+        }, "\u6A13\u677F\u9AD8\u5EA6 (/cm)"), h("div", {
+          className: "relative"
+        }, h("input", {
+          type: "number",
+          name: "floorHeight",
+          value: formData.surveyData?.floorHeight || '',
+          onChange: handleSurveyChange,
+          placeholder: "\u586B\u5BEB\u9AD8\u5EA6",
+          className: "w-full p-2.5 pr-10 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm"
+        }), h("span", {
+          className: "absolute right-3 top-2.5 text-gray-400 text-sm"
+        }, "/cm"))), h("div", null, h("label", {
+          className: "block text-sm font-bold text-gray-700 mb-1"
+        }, "\u5929\u82B1\u677F\u53CA\u6697\u67B6\u9AD8\u5EA6 (/cm)"), h("div", {
+          className: "relative"
+        }, h("input", {
+          type: "number",
+          name: "ceilingHeight",
+          value: formData.surveyData?.ceilingHeight || '',
+          onChange: handleSurveyChange,
+          placeholder: "\u586B\u5BEB\u9AD8\u5EA6",
+          className: "w-full p-2.5 pr-10 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm"
+        }), h("span", {
+          className: "absolute right-3 top-2.5 text-gray-400 text-sm"
+        }, "/cm"))), h("div", null, h("label", {
+          className: "block text-sm font-bold text-gray-700 mb-1"
+        }, "\u4E3B\u6A11\u9AD8\u5EA6 (/cm)"), h("div", {
+          className: "relative"
+        }, h("input", {
+          type: "number",
+          name: "mainBeamHeight",
+          value: formData.surveyData?.mainBeamHeight || '',
+          onChange: handleSurveyChange,
+          placeholder: "\u586B\u5BEB\u9AD8\u5EA6",
+          className: "w-full p-2.5 pr-10 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm"
+        }), h("span", {
+          className: "absolute right-3 top-2.5 text-gray-400 text-sm"
+        }, "/cm"))), h("div", null, h("label", {
+          className: "block text-sm font-bold text-gray-700 mb-1"
+        }, "\u526F\u6A11\u9AD8\u5EA6 (/cm)"), h("div", {
+          className: "relative"
+        }, h("input", {
+          type: "number",
+          name: "subBeamHeight",
+          value: formData.surveyData?.subBeamHeight || '',
+          onChange: handleSurveyChange,
+          placeholder: "\u586B\u5BEB\u9AD8\u5EA6",
+          className: "w-full p-2.5 pr-10 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm"
+        }), h("span", {
+          className: "absolute right-3 top-2.5 text-gray-400 text-sm"
+        }, "/cm"))), h("div", {
+          className: "md:col-span-2"
+        }, h("label", {
+          className: "block text-sm font-bold text-gray-700 mb-2"
+        }, "\u7279\u6B8A\u65BD\u5DE5"), h("div", {
+          className: "flex gap-4 items-center"
+        }, h("select", {
+          name: "specialConstruction",
+          value: formData.surveyData?.specialConstruction || '',
+          onChange: handleSurveyChange,
+          className: "w-64 p-2.5 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 bg-white shadow-sm"
+        }, h("option", {
+          value: ""
+        }, "\u8ACB\u9078\u64C7(\u55AE\u9078)"), h("option", {
+          value: "\u4E09\u6A13\u4EE5\u4E0A\u5916\u7246\u914D\u7BA1"
+        }, "\u4E09\u6A13\u4EE5\u4E0A\u5916\u7246\u914D\u7BA1"), h("option", {
+          value: "\u5BA4\u5167\u6A13\u677F\u9AD8\u5EA66\u7C73\u4EE5\u4E0A"
+        }, "\u5BA4\u5167\u6A13\u677F\u9AD8\u5EA66\u7C73\u4EE5\u4E0A"), h("option", {
+          value: "\u5176\u4ED6"
+        }, "\u5176\u4ED6")), formData.surveyData?.specialConstruction === '其他' && h("input", {
+          type: "text",
+          name: "specialConstruction_other",
+          value: formData.surveyData?.specialConstruction_other || '',
+          onChange: handleSurveyChange,
+          placeholder: "\u8ACB\u8A3B\u660E\u7279\u6B8A\u65BD\u5DE5\u5167\u5BB9",
+          className: "flex-1 p-2.5 border-b-2 border-gray-300 outline-none focus:border-indigo-500 bg-transparent font-medium"
+        }))), h("div", {
+          className: "col-span-full border-t border-indigo-100/50 my-2"
+        }), h("div", null, h("label", {
+          className: "block text-sm font-bold text-gray-700 mb-1"
+        }, "\u5DF2\u5055\u540C\u73FE\u52D8\u5EE0\u5546"), h("input", {
+          type: "text",
+          name: "coSurveyContractor",
+          value: formData.surveyData?.coSurveyContractor || '',
+          onChange: handleSurveyChange,
+          placeholder: "\u586B\u5BEB",
+          className: "w-full p-2.5 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm"
+        })), h("div", null, h("label", {
+          className: "block text-sm font-bold text-gray-700 mb-1"
+        }, "\u696D\u4E3B\u5DE5\u52D9\u806F\u7E6B\u8CC7\u8A0A"), h("input", {
+          type: "text",
+          name: "ownerContact",
+          value: formData.surveyData?.ownerContact || '',
+          onChange: handleSurveyChange,
+          placeholder: "\u586B\u5BEB",
+          className: "w-full p-2.5 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm"
+        })), h("div", {
+          className: "md:col-span-2"
+        }, h("label", {
+          className: "block text-sm font-bold text-gray-700 mb-1"
+        }, "\u914D\u5408\u6C34\u96FB/\u88DD\u6F62\u806F\u7E6B\u8CC7\u8A0A"), h("input", {
+          type: "text",
+          name: "decoratorContact",
+          value: formData.surveyData?.decoratorContact || '',
+          onChange: handleSurveyChange,
+          placeholder: "\u586B\u5BEB",
+          className: "w-full p-2.5 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm"
+        })), h("div", {
+          className: "md:col-span-2"
+        }, h("label", {
+          className: "block text-sm font-bold text-gray-700 mb-1"
+        }, "\u5099\u8A3B"), h("textarea", {
+          name: "remarks",
+          value: formData.surveyData?.remarks || '',
+          onChange: handleSurveyChange,
+          rows: "3",
+          placeholder: "\u586B\u5BEB",
+          className: "w-full p-2.5 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 resize-none shadow-sm"
+        })), h("div", {
+          className: "md:col-span-2"
+        }, h("label", {
+          className: "block text-sm font-bold text-gray-700 mb-2"
+        }, "\u7167\u7247\u662F\u5426\u4E0A\u50B3 NSA"), h("div", {
+          className: "flex gap-8 mt-1"
+        }, ['是', '否'].map(opt => h("label", {
+          key: opt,
+          className: "flex items-center gap-2 cursor-pointer"
+        }, h("input", {
+          type: "radio",
+          name: "photosUploadedNSA",
+          value: opt,
+          checked: formData.surveyData?.photosUploadedNSA === opt,
+          onChange: handleSurveyChange,
+          className: "w-4 h-4 text-indigo-600 focus:ring-indigo-500"
+        }), h("span", {
+          className: "text-sm text-gray-700 font-medium"
+        }, opt))))))), h("div", {
+          className: "bg-indigo-50/30 p-8 rounded-lg border border-indigo-100 shadow-sm"
+        }, h("h3", {
+          className: "text-xl font-bold text-indigo-800 border-b-2 border-indigo-200 pb-3 mb-6 flex items-center gap-2"
+        }, Icons.Wrench({
+          className: "h-6 w-6"
+        }), " 室內機施工內容"), h("div", {
+          className: "grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6"
+        },
+        /* 室內機安裝位置 — 點選(多選) */
+        h("div", {
+          className: "md:col-span-2 bg-white p-4 rounded border border-gray-200"
+        }, h("label", {
+          className: "block text-sm font-bold text-gray-700 mb-3"
+        }, "室內機安裝位置 (點選 - 多選)"), h("div", {
+          className: "flex flex-wrap gap-x-6 gap-y-3"
+        }, ['露明(開放區域)', '輕鋼架', '暗架天花'].map(opt => h("label", {
+          key: opt,
+          className: "flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-1 rounded transition-colors"
+        }, h("input", {
+          type: "checkbox",
+          name: "indoorUnitLocation",
+          value: opt,
+          checked: (formData.surveyData?.indoorUnitLocation || []).includes(opt),
+          onChange: handleSurveyChange,
+          className: "w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
+        }), h("span", {
+          className: "text-sm text-gray-700 font-medium"
+        }, opt))))),
+        /* 室內機安裝高度 — 數字填寫 */
+        h("div", null, h("label", {
+          className: "block text-sm font-bold text-gray-700 mb-1"
+        }, "室內機安裝高度 (/cm)"), h("div", {
+          className: "relative"
+        }, h("input", {
+          type: "number",
+          name: "indoorUnitHeight",
+          value: formData.surveyData?.indoorUnitHeight || '',
+          onChange: handleSurveyChange,
+          placeholder: "填寫高度",
+          className: "w-full p-2.5 pr-10 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm"
+        }), h("span", {
+          className: "absolute right-3 top-2.5 text-gray-400 text-sm"
+        }, "/cm"))),
+        /* 室內機架1.5"角鋼需求 — 數字填寫 */
+        h("div", null, h("label", {
+          className: "block text-sm font-bold text-gray-700 mb-1"
+        }, "室內機架1.5\" 角鋼需求"), h("div", {
+          className: "relative"
+        }, h("input", {
+          type: "number",
+          name: "indoorUnitAngleSteel",
+          value: formData.surveyData?.indoorUnitAngleSteel || '',
+          onChange: handleSurveyChange,
+          placeholder: "填寫數量",
+          className: "w-full p-2.5 pr-10 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm"
+        }), h("span", {
+          className: "absolute right-3 top-2.5 text-gray-400 text-sm"
+        }, "支"))),
+        /* 室內機定位方式 — 下拉選單(多選) + 其他 */
+        h("div", {
+          className: "md:col-span-2 bg-white p-4 rounded border border-gray-200"
+        }, h("label", {
+          className: "block text-sm font-bold text-gray-700 mb-3"
+        }, "室內機定位方式 (下拉選單 - 多選)"), h("div", {
+          className: "flex flex-wrap gap-x-6 gap-y-4 items-center"
+        }, ['升降機', '鷹架', '自走車', '起重工人'].map(opt => h("label", {
+          key: opt,
+          className: "flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-1 rounded transition-colors"
+        }, h("input", {
+          type: "checkbox",
+          name: "indoorUnitPositioning",
+          value: opt,
+          checked: (formData.surveyData?.indoorUnitPositioning || []).includes(opt),
+          onChange: handleSurveyChange,
+          className: "w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
+        }), h("span", {
+          className: "text-sm text-gray-700 font-medium"
+        }, opt))), h("label", {
+          className: "flex items-center gap-2 cursor-pointer p-1"
+        }, h("input", {
+          type: "checkbox",
+          name: "indoorUnitPositioning",
+          value: "其他",
+          checked: (formData.surveyData?.indoorUnitPositioning || []).includes('其他'),
+          onChange: handleSurveyChange,
+          className: "w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
+        }), h("span", {
+          className: "text-sm text-gray-700 font-medium"
+        }, "其他："), h("input", {
+          type: "text",
+          name: "indoorUnitPositioning_other",
+          value: formData.surveyData?.indoorUnitPositioning_other || '',
+          onChange: handleSurveyChange,
+          disabled: !(formData.surveyData?.indoorUnitPositioning || []).includes('其他'),
+          className: "w-40 p-1 border-b-2 border-gray-300 outline-none focus:border-indigo-500 bg-transparent disabled:opacity-50 text-sm font-medium",
+          placeholder: "請註明"
+        })))),
+        /* 室內機吊掛方式 — 下拉選單(多選) */
+        h("div", {
+          className: "md:col-span-2 bg-white p-4 rounded border border-gray-200"
+        }, h("label", {
+          className: "block text-sm font-bold text-gray-700 mb-3"
+        }, "室內機吊掛方式 (下拉選單 - 多選)"), h("div", {
+          className: "flex flex-wrap gap-x-6 gap-y-3"
+        }, ['膨脹螺絲', '萬向接頭', 'C型鋼扣3/4'].map(opt => h("label", {
+          key: opt,
+          className: "flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-1 rounded transition-colors"
+        }, h("input", {
+          type: "checkbox",
+          name: "indoorUnitHanging",
+          value: opt,
+          checked: (formData.surveyData?.indoorUnitHanging || []).includes(opt),
+          onChange: handleSurveyChange,
+          className: "w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
+        }), h("span", {
+          className: "text-sm text-gray-700 font-medium"
+        }, opt))))),
+        /* 室內機洗孔需求 — 數字填寫 (可增加多筆) */
+        h("div", {
+          className: "md:col-span-2 bg-white p-4 rounded border border-gray-200"
+        }, h("div", {
+          className: "flex items-center justify-between mb-3"
+        }, h("label", {
+          className: "block text-sm font-bold text-gray-700"
+        }, "室內機洗孔需求 (數字填寫)"), h("button", {
+          type: "button",
+          onClick: addHole,
+          className: "flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-800"
+        }, Icons.Plus({
+          className: "h-4 w-4"
+        }), "增加洗孔")), (formData.surveyData?.indoorUnitHoles || []).length === 0 ? h("p", {
+          className: "text-sm text-gray-400"
+        }, "尚未新增洗孔，請點選「增加洗孔」") : h("div", {
+          className: "space-y-2"
+        }, (formData.surveyData?.indoorUnitHoles || []).map((hole, index) => h("div", {
+          key: index,
+          className: "flex items-center gap-2"
+        }, h("span", {
+          className: "text-sm text-gray-500 w-10 shrink-0"
+        }, "#", index + 1), h("span", {
+          className: "text-sm text-gray-700 font-medium shrink-0"
+        }, "孔徑"), h("div", {
+          className: "relative w-40"
+        }, h("input", {
+          type: "number",
+          value: hole.diameter || '',
+          onChange: e => handleHoleChange(index, e.target.value),
+          placeholder: "填寫",
+          className: "w-full p-2 pr-10 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm"
+        }), h("span", {
+          className: "absolute right-3 top-2 text-gray-400 text-sm"
+        }, "cm")), h("button", {
+          type: "button",
+          onClick: () => removeHole(index),
+          className: "text-red-500 hover:text-red-700 p-1"
+        }, Icons.Trash2({
+          className: "h-4 w-4"
+        }))))))))
+        /* ===== 室外機施工內容 ===== */
+        , h("div", {
+          className: "bg-indigo-50/30 p-8 rounded-lg border border-indigo-100 shadow-sm"
+        }, h("h3", {
+          className: "text-xl font-bold text-indigo-800 border-b-2 border-indigo-200 pb-3 mb-6 flex items-center gap-2"
+        }, Icons.Wrench({
+          className: "h-6 w-6"
+        }), " 室外機施工內容"), h("div", {
+          className: "grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6"
+        },
+        /* 室外機搬運 — 下拉選單(多選) + 其他 */
+        h("div", {
+          className: "md:col-span-2 bg-white p-4 rounded border border-gray-200"
+        }, h("label", {
+          className: "block text-sm font-bold text-gray-700 mb-3"
+        }, "室外機搬運 (下拉選單 - 多選)"), h("div", {
+          className: "flex flex-wrap gap-x-6 gap-y-4 items-center"
+        }, ['卡吊', '附鐵籠', '全吊', '鷹架', '堆高機', '升降機', '小金剛', '起重工人', '樓梯種類'].map(opt => h("label", {
+          key: opt,
+          className: "flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-1 rounded transition-colors"
+        }, h("input", {
+          type: "checkbox",
+          name: "outdoorUnitTransport",
+          value: opt,
+          checked: (formData.surveyData?.outdoorUnitTransport || []).includes(opt),
+          onChange: handleSurveyChange,
+          className: "w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
+        }), h("span", {
+          className: "text-sm text-gray-700 font-medium"
+        }, opt))), h("label", {
+          className: "flex items-center gap-2 cursor-pointer p-1"
+        }, h("input", {
+          type: "checkbox",
+          name: "outdoorUnitTransport",
+          value: "其他",
+          checked: (formData.surveyData?.outdoorUnitTransport || []).includes('其他'),
+          onChange: handleSurveyChange,
+          className: "w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
+        }), h("span", {
+          className: "text-sm text-gray-700 font-medium"
+        }, "其他："), h("input", {
+          type: "text",
+          name: "outdoorUnitTransport_other",
+          value: formData.surveyData?.outdoorUnitTransport_other || '',
+          onChange: handleSurveyChange,
+          disabled: !(formData.surveyData?.outdoorUnitTransport || []).includes('其他'),
+          className: "w-40 p-1 border-b-2 border-gray-300 outline-none focus:border-indigo-500 bg-transparent disabled:opacity-50 text-sm font-medium",
+          placeholder: "請註明"
+        })))),
+        /* 室外機定位 — 下拉選單(多選) */
+        h("div", {
+          className: "md:col-span-2 bg-white p-4 rounded border border-gray-200"
+        }, h("label", {
+          className: "block text-sm font-bold text-gray-700 mb-3"
+        }, "室外機定位 (下拉選單 - 多選)"), h("div", {
+          className: "flex flex-wrap gap-x-6 gap-y-3"
+        }, ['彈簧基座', '水泥基座', '橡膠墊片'].map(opt => h("label", {
+          key: opt,
+          className: "flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-1 rounded transition-colors"
+        }, h("input", {
+          type: "checkbox",
+          name: "outdoorUnitPositioning",
+          value: opt,
+          checked: (formData.surveyData?.outdoorUnitPositioning || []).includes(opt),
+          onChange: handleSurveyChange,
+          className: "w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
+        }), h("span", {
+          className: "text-sm text-gray-700 font-medium"
+        }, opt))))),
+        /* 吊車需求 — 單選 + 其他 */
+        h("div", {
+          className: "md:col-span-2 bg-white p-4 rounded border border-gray-200"
+        }, h("label", {
+          className: "block text-sm font-bold text-gray-700 mb-3"
+        }, "吊車需求 (單選)"), h("div", {
+          className: "flex flex-wrap gap-x-6 gap-y-3 items-center"
+        }, ['裝新機', '拆舊機', '拆+裝同時處理', '拆+裝分開處理'].map(opt => h("label", {
+          key: opt,
+          className: "flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-1 rounded transition-colors"
+        }, h("input", {
+          type: "radio",
+          name: "craneRequirement",
+          value: opt,
+          checked: formData.surveyData?.craneRequirement === opt,
+          onChange: handleSurveyChange,
+          className: "w-4 h-4 text-indigo-600 focus:ring-indigo-500"
+        }), h("span", {
+          className: "text-sm text-gray-700 font-medium"
+        }, opt))), h("label", {
+          className: "flex items-center gap-2 cursor-pointer p-1"
+        }, h("input", {
+          type: "radio",
+          name: "craneRequirement",
+          value: "其他",
+          checked: formData.surveyData?.craneRequirement === '其他',
+          onChange: handleSurveyChange,
+          className: "w-4 h-4 text-indigo-600 focus:ring-indigo-500"
+        }), h("span", {
+          className: "text-sm text-gray-700 font-medium"
+        }, "其他："), h("input", {
+          type: "text",
+          name: "craneRequirement_other",
+          value: formData.surveyData?.craneRequirement_other || '',
+          onChange: handleSurveyChange,
+          disabled: formData.surveyData?.craneRequirement !== '其他',
+          className: "w-40 p-1 border-b-2 border-gray-300 outline-none focus:border-indigo-500 bg-transparent disabled:opacity-50 text-sm font-medium",
+          placeholder: "請註明"
+        })))),
+        /* 室外機架類型 — 單選 + 噸 + 數量/組 */
+        h("div", {
+          className: "md:col-span-2 bg-white p-4 rounded border border-gray-200"
+        }, h("label", {
+          className: "block text-sm font-bold text-gray-700 mb-3"
+        }, "室外機架類型 (單選)"), h("div", {
+          className: "flex flex-wrap gap-x-6 gap-y-3"
+        }, ['鍍鋅', '白鐵', 'ABS', '沿用(需噴漆)'].map(opt => h("label", {
+          key: opt,
+          className: "flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-1 rounded transition-colors"
+        }, h("input", {
+          type: "radio",
+          name: "outdoorRackType",
+          value: opt,
+          checked: formData.surveyData?.outdoorRackType === opt,
+          onChange: handleSurveyChange,
+          className: "w-4 h-4 text-indigo-600 focus:ring-indigo-500"
+        }), h("span", {
+          className: "text-sm text-gray-700 font-medium"
+        }, opt))), h("div", {
+          className: "flex flex-wrap gap-6 mt-4 pt-4 border-t border-gray-100"
+        }, h("div", {
+          className: "flex items-center gap-2"
+        }, h("span", {
+          className: "text-sm font-medium text-gray-700 shrink-0"
+        }, "角鋼重量"), h("div", {
+          className: "relative w-32"
+        }, h("input", {
+          type: "number",
+          name: "outdoorRackTons",
+          value: formData.surveyData?.outdoorRackTons || '',
+          onChange: handleSurveyChange,
+          placeholder: "填數字",
+          className: "w-full p-2 pr-10 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm"
+        }), h("span", {
+          className: "absolute right-3 top-2 text-gray-400 text-sm"
+        }, "噸"))), h("div", {
+          className: "flex items-center gap-2"
+        }, h("span", {
+          className: "text-sm font-medium text-gray-700 shrink-0"
+        }, "數量"), h("div", {
+          className: "relative w-32"
+        }, h("input", {
+          type: "number",
+          name: "outdoorRackQty",
+          value: formData.surveyData?.outdoorRackQty || '',
+          onChange: handleSurveyChange,
+          placeholder: "填數字",
+          className: "w-full p-2 pr-10 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm"
+        }), h("span", {
+          className: "absolute right-3 top-2 text-gray-400 text-sm"
+        }, "組")))))),
+        /* 選配題目（需可隱藏）顯示切換 */
+        h("div", {
+          className: "md:col-span-2 flex items-center justify-between bg-amber-50 border border-amber-200 p-3 rounded"
+        }, h("span", {
+          className: "text-sm font-medium text-amber-800"
+        }, "選配題目（可隱藏）"), h("button", {
+          type: "button",
+          onClick: () => (showOutdoorHideable = !showOutdoorHideable, rerender()),
+          className: "text-sm font-medium text-indigo-600 hover:text-indigo-800"
+        }, showOutdoorHideable ? '隱藏' : '顯示')),
+        showOutdoorHideable && h("div", {
+          className: "md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6"
+        },
+        /* 室外機是否加大 — 單選 */
+        h("div", null, h("label", {
+          className: "block text-sm font-bold text-gray-700 mb-2"
+        }, "室外機是否加大"), h("div", {
+          className: "flex gap-8 mt-1"
+        }, ['是', '否'].map(opt => h("label", {
+          key: opt,
+          className: "flex items-center gap-2 cursor-pointer"
+        }, h("input", {
+          type: "radio",
+          name: "outdoorUnitEnlarged",
+          value: opt,
+          checked: formData.surveyData?.outdoorUnitEnlarged === opt,
+          onChange: handleSurveyChange,
+          className: "w-4 h-4 text-indigo-600 focus:ring-indigo-500"
+        }), h("span", {
+          className: "text-sm text-gray-700 font-medium"
+        }, opt))))),
+        /* 2" 角鋼增加數量 — 填寫 */
+        h("div", null, h("label", {
+          className: "block text-sm font-bold text-gray-700 mb-1"
+        }, "2\" 角鋼增加數量（3支以上）"), h("div", {
+          className: "relative"
+        }, h("input", {
+          type: "number",
+          name: "outdoorAngleSteelExtra",
+          value: formData.surveyData?.outdoorAngleSteelExtra || '',
+          onChange: handleSurveyChange,
+          placeholder: "填寫數量",
+          className: "w-full p-2.5 pr-10 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm"
+        }), h("span", {
+          className: "absolute right-3 top-2.5 text-gray-400 text-sm"
+        }, "支"))))))) : formData.surveyType === '設備與零件' ? h("div", {
+          className: "mt-8 space-y-8"
+        },
+        /* ===== 新增設備（可增加多個設備） ===== */
+        h("div", {
+          className: "bg-indigo-50/30 p-8 rounded-lg border border-indigo-100 shadow-sm"
+        }, h("div", {
+          className: "flex justify-between items-center border-b-2 border-indigo-200 pb-3 mb-6"
+        }, h("h3", {
+          className: "text-xl font-bold text-indigo-800 flex items-center gap-2"
+        }, Icons.Wrench({
+          className: "h-6 w-6"
+        }), " 新增設備"), h("button", {
+          type: "button",
+          onClick: addEquipment,
+          className: "flex items-center gap-1 px-3 py-1.5 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700 transition-colors shadow-sm"
+        }, Icons.Plus({
+          className: "h-4 w-4"
+        }), "增加設備")), (formData.surveyData?.equipmentList || []).length === 0 ? h("div", {
+          className: "text-center text-gray-400 text-sm py-6 border-2 border-dashed border-gray-200 rounded-lg"
+        }, "尚未新增設備，請點選「增加設備」") : h("div", {
+          className: "space-y-4"
+        }, (formData.surveyData?.equipmentList || []).map((eq, index) => h("div", {
+          key: index,
+          className: "bg-white p-4 rounded-lg border border-gray-200"
+        }, h("div", {
+          className: "flex justify-between items-center mb-3"
+        }, h("span", {
+          className: "text-sm font-bold text-indigo-700"
+        }, "設備 #", index + 1), h("button", {
+          type: "button",
+          onClick: () => removeEquipment(index),
+          className: "text-red-500 hover:text-red-700 p-1"
+        }, Icons.Trash2({
+          className: "h-4 w-4"
+        }))), h("div", {
+          className: "grid grid-cols-1 md:grid-cols-2 gap-4"
+        },
+        /* 設備分類 — 下拉單選 */
+        h("div", null, h("label", {
+          className: "block text-sm font-bold text-gray-700 mb-1"
+        }, "設備分類"), h("select", {
+          value: eq.category || '',
+          onChange: e => handleEquipmentChange(index, 'category', e.target.value),
+          className: "w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+        }, h("option", {
+          value: "",
+          disabled: true
+        }, "請選擇(單選)"), EQUIP_CATEGORY_OPTIONS.map(o => h("option", {
+          key: o,
+          value: o
+        }, o)))),
+        /* 品牌 — 抓設備清單資料 */
+        h("div", null, h("label", {
+          className: "block text-sm font-bold text-gray-700 mb-1"
+        }, "品牌"), h("select", {
+          value: eq.brand || '',
+          onChange: e => handleEquipmentChange(index, 'brand', e.target.value),
+          className: "w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+        }, h("option", {
+          value: "",
+          disabled: true
+        }, "抓設備清單資料"), EQUIP_BRAND_OPTIONS.map(o => h("option", {
+          key: o,
+          value: o
+        }, o)))),
+        /* 設備名稱 — 抓設備清單資料 */
+        h("div", null, h("label", {
+          className: "block text-sm font-bold text-gray-700 mb-1"
+        }, "設備名稱"), h("select", {
+          value: eq.name || '',
+          onChange: e => handleEquipmentChange(index, 'name', e.target.value),
+          className: "w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+        }, h("option", {
+          value: "",
+          disabled: true
+        }, "抓設備清單資料"), EQUIP_NAME_OPTIONS.map(o => h("option", {
+          key: o,
+          value: o
+        }, o)))),
+        /* 型號 — 抓設備清單資料 */
+        h("div", null, h("label", {
+          className: "block text-sm font-bold text-gray-700 mb-1"
+        }, "型號"), h("select", {
+          value: eq.model || '',
+          onChange: e => handleEquipmentChange(index, 'model', e.target.value),
+          className: "w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+        }, h("option", {
+          value: "",
+          disabled: true
+        }, "抓設備清單資料"), EQUIP_MODEL_OPTIONS.map(o => h("option", {
+          key: o,
+          value: o
+        }, o)))),
+        /* 設備區域 — 填寫 */
+        h("div", {
+          className: "md:col-span-2"
+        }, h("label", {
+          className: "block text-sm font-bold text-gray-700 mb-1"
+        }, "設備區域"), h("input", {
+          type: "text",
+          value: eq.area || '',
+          onChange: e => handleEquipmentChange(index, 'area', e.target.value),
+          placeholder: "填寫",
+          className: "w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500"
+        }))))))),
+        /* ===== 零配件（多選 + 填數量） ===== */
+        h("div", {
+          className: "bg-indigo-50/30 p-8 rounded-lg border border-indigo-100 shadow-sm"
+        }, h("h3", {
+          className: "text-xl font-bold text-indigo-800 border-b-2 border-indigo-200 pb-3 mb-2 flex items-center gap-2"
+        }, Icons.Wrench({
+          className: "h-6 w-6"
+        }), " 零配件"), h("p", {
+          className: "text-sm text-gray-500 mb-4"
+        }, "請勾選需要的零配件並填寫數量（組）"), h("div", {
+          className: "space-y-3"
+        }, SURVEY_PARTS.map(part => h("div", {
+          key: part,
+          className: "flex items-center justify-between bg-white p-3 rounded border border-gray-200"
+        }, h("label", {
+          className: "flex items-center gap-2 cursor-pointer"
+        }, h("input", {
+          type: "checkbox",
+          name: "parts",
+          value: part,
+          checked: (formData.surveyData?.parts || []).includes(part),
+          onChange: handleSurveyChange,
+          className: "w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
+        }), h("span", {
+          className: "text-sm text-gray-700 font-medium"
+        }, part)), h("div", {
+          className: "flex items-center gap-2"
+        }, h("input", {
+          type: "number",
+          value: formData.surveyData?.partsQty?.[part] || '',
+          onChange: e => handlePartQtyChange(part, e.target.value),
+          disabled: !(formData.surveyData?.parts || []).includes(part),
+          placeholder: "數量",
+          className: "w-24 p-1.5 border rounded-md text-sm outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-100 disabled:opacity-50"
+        }), h("span", {
+          className: "text-sm text-gray-500"
+        }, "組")))),
+        /* 其他 — 自填名稱 + 數量 */
+        h("div", {
+          className: "flex items-center justify-between bg-white p-3 rounded border border-gray-200"
+        }, h("label", {
+          className: "flex items-center gap-2 cursor-pointer flex-1"
+        }, h("input", {
+          type: "checkbox",
+          name: "parts",
+          value: "其他",
+          checked: (formData.surveyData?.parts || []).includes('其他'),
+          onChange: handleSurveyChange,
+          className: "w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500 shrink-0"
+        }), h("span", {
+          className: "text-sm text-gray-700 font-medium shrink-0"
+        }, "其他："), h("input", {
+          type: "text",
+          name: "parts_other",
+          value: formData.surveyData?.parts_other || '',
+          onChange: handleSurveyChange,
+          disabled: !(formData.surveyData?.parts || []).includes('其他'),
+          placeholder: "請註明",
+          className: "flex-1 max-w-xs p-1 border-b-2 border-gray-300 outline-none focus:border-indigo-500 bg-transparent text-sm disabled:opacity-50"
+        })), h("div", {
+          className: "flex items-center gap-2"
+        }, h("input", {
+          type: "number",
+          value: formData.surveyData?.partsQty?.['其他'] || '',
+          onChange: e => handlePartQtyChange('其他', e.target.value),
+          disabled: !(formData.surveyData?.parts || []).includes('其他'),
+          placeholder: "數量",
+          className: "w-24 p-1.5 border rounded-md text-sm outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-100 disabled:opacity-50"
+        }), h("span", {
+          className: "text-sm text-gray-500"
+        }, "組"))))),
+        /* ===== 沿用設備（需可隱藏） ===== */
+        h("div", {
+          className: "bg-indigo-50/30 p-8 rounded-lg border border-indigo-100 shadow-sm"
+        }, h("div", {
+          className: "flex justify-between items-center border-b-2 border-indigo-200 pb-3 mb-6"
+        }, h("h3", {
+          className: "text-xl font-bold text-indigo-800 flex items-center gap-2"
+        }, Icons.Wrench({
+          className: "h-6 w-6"
+        }), " 沿用設備"), h("button", {
+          type: "button",
+          onClick: () => (showReuseEquipment = !showReuseEquipment, rerender()),
+          className: "flex items-center gap-1 px-3 py-1.5 text-sm rounded-md border border-indigo-300 text-indigo-700 hover:bg-indigo-50 transition-colors"
+        }, showReuseEquipment ? '隱藏' : '顯示')), showReuseEquipment && h("div", {
+          className: "space-y-4"
+        }, h("div", null, h("label", {
+          className: "block text-sm font-bold text-gray-700 mb-1"
+        }, "沿用設備"), h("input", {
+          type: "text",
+          name: "reuseEquipment",
+          value: formData.surveyData?.reuseEquipment || '',
+          onChange: handleSurveyChange,
+          placeholder: "填寫",
+          className: "w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500"
+        })), h("div", null, h("label", {
+          className: "block text-sm font-bold text-gray-700 mb-1"
+        }, "備註"), h("p", {
+          className: "text-xs text-gray-400 mb-1"
+        }, "現場舊機沿用（廠牌、型號、出廠年份、數量）及處理說明"), h("textarea", {
+          name: "reuseEquipmentNote",
+          rows: 4,
+          value: formData.surveyData?.reuseEquipmentNote || '',
+          onChange: handleSurveyChange,
+          placeholder: "請填寫...",
+          className: "w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500"
+        }))))) : formData.surveyType === '配管工程' ? h("div", {
+          className: "mt-8 space-y-8"
+        },
+        /* ===== 銅管工程 ===== */
+        h("div", {
+          className: "bg-indigo-50/30 p-8 rounded-lg border border-indigo-100 shadow-sm"
+        }, h("h3", {
+          className: "text-xl font-bold text-indigo-800 border-b-2 border-indigo-200 pb-3 mb-6 flex items-center gap-2"
+        }, Icons.Wrench({
+          className: "h-6 w-6"
+        }), " 銅管工程"), h("div", {
+          className: "space-y-6"
+        }, renderPipingCheckQtyGroup('銅管尺寸與長度', '請勾選管徑規格並填寫長度（米）', 'copperSizes', 'copperSizesQty', PIPING_COPPER_SIZES, '米', '長度'), renderPipingCheckQtyGroup('銅管配件', '請勾選配件並填寫數量（個）', 'copperFittings', 'copperFittingsQty', PIPING_COPPER_FITTINGS, '個', '數量'))),
+        /* ===== 排水工程 ===== */
+        h("div", {
+          className: "bg-indigo-50/30 p-8 rounded-lg border border-indigo-100 shadow-sm"
+        }, h("h3", {
+          className: "text-xl font-bold text-indigo-800 border-b-2 border-indigo-200 pb-3 mb-6 flex items-center gap-2"
+        }, Icons.Wrench({
+          className: "h-6 w-6"
+        }), " 排水工程"), h("div", {
+          className: "space-y-6"
+        }, renderPipingCheckQtyGroup('PVC排水管', '請勾選管徑並填寫長度（米）', 'pvcDrain', 'pvcDrainQty', PIPING_PVC_DRAIN, '米', '長度'), renderPipingCheckQtyGroup('排水保溫', '請勾選規格並填寫長度（米）', 'drainInsulation', 'drainInsulationQty', PIPING_DRAIN_INSULATION, '米', '長度'))),
+        /* ===== 冰水管工程 ===== */
+        h("div", {
+          className: "bg-indigo-50/30 p-8 rounded-lg border border-indigo-100 shadow-sm"
+        }, h("h3", {
+          className: "text-xl font-bold text-indigo-800 border-b-2 border-indigo-200 pb-3 mb-6 flex items-center gap-2"
+        }, Icons.Wrench({
+          className: "h-6 w-6"
+        }), " 冰水管工程"), h("div", {
+          className: "space-y-6"
+        }, renderPipingCheckQtyGroup('冰水管配件', '請勾選配件並填寫數量（個）', 'chilledFittings', 'chilledFittingsQty', PIPING_CHILLED_FITTINGS, '個', '數量'), renderPipingCheckQtyGroup('冰水管', '請勾選管徑並填寫長度（米）', 'chilledPipe', 'chilledPipeQty', PIPING_CHILLED_PIPE, '米', '長度'), renderPipingCheckQtyGroup('冰水保溫管', '請勾選規格並填寫長度（米）', 'chilledInsulation', 'chilledInsulationQty', PIPING_CHILLED_INSULATION, '米', '長度'))),
+        /* ===== 管路保護 ===== */
+        h("div", {
+          className: "bg-indigo-50/30 p-8 rounded-lg border border-indigo-100 shadow-sm"
+        }, h("h3", {
+          className: "text-xl font-bold text-indigo-800 border-b-2 border-indigo-200 pb-3 mb-6 flex items-center gap-2"
+        }, Icons.Wrench({
+          className: "h-6 w-6"
+        }), " 管路保護"), h("div", {
+          className: "space-y-6"
+        }, renderPipingSingleSelect('管路保護材質（單選）', 'protectMaterial', PIPING_PROTECT_MATERIALS, formData.surveyData?.protectMaterial === 'ABS管槽' ? h("div", {
+          className: "mt-4 ml-6 p-3 bg-indigo-50 rounded border border-indigo-100"
+        }, h("p", {
+          className: "text-xs font-bold text-indigo-700 mb-2"
+        }, "ABS管槽 第二層尺寸（單選）"), h("div", {
+          className: "flex flex-wrap gap-x-6 gap-y-2"
+        }, PIPING_ABS_SIZES.map(sz => h("label", {
+          key: sz,
+          className: "flex items-center gap-2 cursor-pointer"
+        }, h("input", {
+          type: "radio",
+          name: "absSize",
+          value: sz,
+          checked: (formData.surveyData?.absSize || '') === sz,
+          onChange: handleSurveyChange,
+          className: "w-4 h-4 text-indigo-600 border-gray-300 focus:ring-indigo-500"
+        }), h("span", {
+          className: "text-sm text-gray-700 font-medium"
+        }, sz))))) : null), renderPipingCheckQtyGroup('管槽配件', '請勾選配件並填寫數量／長度', 'channelFittings', 'channelFittingsQty', PIPING_CHANNEL_FITTINGS, '個', '數量'), renderPipingSingleSelect('管路保護顏色（單選）', 'protectColor', PIPING_PROTECT_COLORS)))) : formData.surveyType === '配電工程' ? h("div", {
+          className: "mt-8 space-y-8"
+        },
+        /* ===== 控制及訊號線材 ===== */
+        h("div", {
+          className: "bg-indigo-50/30 p-8 rounded-lg border border-indigo-100 shadow-sm"
+        }, h("h3", {
+          className: "text-xl font-bold text-indigo-800 border-b-2 border-indigo-200 pb-3 mb-6 flex items-center gap-2"
+        }, Icons.Wrench({
+          className: "h-6 w-6"
+        }), " 控制及訊號線材／米"), h("div", {
+          className: "space-y-6"
+        }, renderPipingCheckQtyGroup('控制及訊號線材', '請勾選線材規格並填寫長度（米）', 'controlSignalWire', 'controlSignalWireQty', WIRING_CONTROL_SIGNAL, '米', '長度'))),
+        /* ===== 電源線線材 ===== */
+        h("div", {
+          className: "bg-indigo-50/30 p-8 rounded-lg border border-indigo-100 shadow-sm"
+        }, h("h3", {
+          className: "text-xl font-bold text-indigo-800 border-b-2 border-indigo-200 pb-3 mb-6 flex items-center gap-2"
+        }, Icons.Wrench({
+          className: "h-6 w-6"
+        }), " 電源線線材／米"), h("div", {
+          className: "space-y-6"
+        }, renderPipingCheckQtyGroup('電源線線材', '請勾選線材規格並填寫長度（米）', 'powerCableWire', 'powerCableWireQty', WIRING_POWER_CABLE, '米', '長度')))) : formData.surveyType === '風管工程' ? h("div", {
+          className: "mt-8 space-y-8"
+        },
+        /* ===== 保溫軟管(玻璃棉) ===== */
+        h("div", {
+          className: "bg-indigo-50/30 p-8 rounded-lg border border-indigo-100 shadow-sm"
+        }, h("h3", {
+          className: "text-xl font-bold text-indigo-800 border-b-2 border-indigo-200 pb-3 mb-6 flex items-center gap-2"
+        }, Icons.Wrench({
+          className: "h-6 w-6"
+        }), " 保溫軟管(玻璃棉)／米"), h("div", {
+          className: "space-y-6"
+        }, renderPipingCheckQtyGroup('保溫軟管(玻璃棉)', '請勾選管徑並填寫長度（米）', 'insulatedHose', 'insulatedHoseQty', DUCT_INSULATED_HOSE, '米', '長度'))),
+        /* ===== 無保溫軟管(鋁箔) ===== */
+        h("div", {
+          className: "bg-indigo-50/30 p-8 rounded-lg border border-indigo-100 shadow-sm"
+        }, h("h3", {
+          className: "text-xl font-bold text-indigo-800 border-b-2 border-indigo-200 pb-3 mb-6 flex items-center gap-2"
+        }, Icons.Wrench({
+          className: "h-6 w-6"
+        }), " 無保溫軟管(鋁箔)／米"), h("div", {
+          className: "space-y-6"
+        }, renderPipingCheckQtyGroup('無保溫軟管(鋁箔)', '請勾選管徑並填寫長度（米）', 'uninsulatedHose', 'uninsulatedHoseQty', DUCT_UNINSULATED_HOSE, '米', '長度'))),
+        /* ===== 集風箱 ===== */
+        renderDuctBox('集風箱（管徑、數量）', 'collectBox'),
+        /* ===== 出／線型箱 ===== */
+        renderDuctBox('出／線型箱', 'outletBox'),
+        /* ===== 回風箱 ===== */
+        renderDuctBox('回風箱', 'returnBox'),
+        /* ===== 強制回風箱 ===== */
+        renderDuctBox('強制回風箱', 'forcedReturnBox'),
+        /* ===== 三通風箱 ===== */
+        renderDuctTeeBox('三通風箱', 'teeBox'),
+        /* ===== 出風口 ===== */
+        renderVentOutletBox(),
+        /* ===== 回風口 ===== */
+        renderReturnOutletBox(),
+        /* ===== 特製風箱 ===== */
+        renderCustomBox()) : formData.surveyType === '拆除工程' ? h("div", {
+          className: "mt-8 space-y-8"
+        },
+        /* ===== 舊設備拆除 ===== */
+        h("div", {
+          className: "bg-indigo-50/30 p-8 rounded-lg border border-indigo-100 shadow-sm"
+        }, h("h3", {
+          className: "text-xl font-bold text-indigo-800 border-b-2 border-indigo-200 pb-3 mb-6 flex items-center gap-2"
+        }, Icons.Wrench({
+          className: "h-6 w-6"
+        }), " 舊設備拆除"), h("div", {
+          className: "space-y-6"
+        },
+        /* 設備拆除/台 */
+        h("div", null, h("label", {
+          className: "block text-sm font-bold text-gray-700 mb-2"
+        }, "設備拆除／台"), h("input", {
+          type: "text",
+          name: "demoEquip",
+          value: formData.surveyData?.demoEquip || '',
+          onChange: handleSurveyChange,
+          className: "w-full p-2.5 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 bg-white shadow-sm",
+          placeholder: "請填寫數量"
+        }), h("p", {
+          className: "text-xs text-gray-500 mt-1.5"
+        }, "備註：品牌、主機、內機、空氣門、水塔、泵浦、送風機、冰水機")),
+        /* 風管拆除/台 */
+        h("div", null, h("label", {
+          className: "block text-sm font-bold text-gray-700 mb-2"
+        }, "風管拆除／台"), h("input", {
+          type: "text",
+          name: "demoDuct",
+          value: formData.surveyData?.demoDuct || '',
+          onChange: handleSurveyChange,
+          className: "w-full p-2.5 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 bg-white shadow-sm",
+          placeholder: "請填寫數量"
+        })),
+        /* 管路拆除/米 */
+        h("div", null, h("label", {
+          className: "block text-sm font-bold text-gray-700 mb-2"
+        }, "管路拆除／米"), h("input", {
+          type: "text",
+          name: "demoPipe",
+          value: formData.surveyData?.demoPipe || '',
+          onChange: handleSurveyChange,
+          className: "w-full p-2.5 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 bg-white shadow-sm",
+          placeholder: "請填寫長度（米）"
+        })),
+        /* 其他拆除項目、數量說明 */
+        h("div", null, h("label", {
+          className: "block text-sm font-bold text-gray-700 mb-2"
+        }, "其他拆除項目、數量說明"), h("textarea", {
+          name: "demoOther",
+          value: formData.surveyData?.demoOther || '',
+          onChange: handleSurveyChange,
+          rows: 3,
+          className: "w-full p-2.5 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 bg-white shadow-sm",
+          placeholder: "請填寫"
+        })))),
+        /* ===== 舊機處理方式 ===== */
+        h("div", {
+          className: "bg-indigo-50/30 p-8 rounded-lg border border-indigo-100 shadow-sm"
+        }, h("h3", {
+          className: "text-xl font-bold text-indigo-800 border-b-2 border-indigo-200 pb-3 mb-6 flex items-center gap-2"
+        }, Icons.Wrench({
+          className: "h-6 w-6"
+        }), " 舊機處理方式"), h("div", {
+          className: "space-y-6"
+        },
+        /* 品牌、規格 */
+        h("div", null, h("label", {
+          className: "block text-sm font-bold text-gray-700 mb-2"
+        }, "品牌、規格"), h("input", {
+          type: "text",
+          name: "oldMachineSpec",
+          value: formData.surveyData?.oldMachineSpec || '',
+          onChange: handleSurveyChange,
+          className: "w-full p-2.5 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 bg-white shadow-sm",
+          placeholder: "請填寫品牌、規格"
+        })),
+        /* 處理方式（單選） */
+        h("div", null, h("label", {
+          className: "block text-sm font-bold text-gray-700 mb-2"
+        }, "處理方式（單選）"), h("div", {
+          className: "flex flex-wrap gap-6 bg-white p-4 rounded border border-gray-200"
+        }, ['協力商直接報廢', '載回晉詮', '回收補助'].map(opt => h("label", {
+          key: opt,
+          className: "flex items-center gap-2 cursor-pointer"
+        }, h("input", {
+          type: "radio",
+          name: "oldMachineMethod",
+          value: opt,
+          checked: formData.surveyData?.oldMachineMethod === opt,
+          onChange: handleSurveyChange,
+          className: "w-4 h-4 text-indigo-600 focus:ring-indigo-500"
+        }), h("span", {
+          className: "text-sm text-gray-700 font-medium"
+        }, opt))))))),
+        /* ===== 廢棄物(舊風管)清運處理說明 ===== */
+        h("div", {
+          className: "bg-indigo-50/30 p-8 rounded-lg border border-indigo-100 shadow-sm"
+        }, h("h3", {
+          className: "text-xl font-bold text-indigo-800 border-b-2 border-indigo-200 pb-3 mb-6 flex items-center gap-2"
+        }, Icons.Wrench({
+          className: "h-6 w-6"
+        }), " 廢棄物(舊風管)清運處理說明"), h("div", {
+          className: "flex flex-wrap gap-x-6 gap-y-3 bg-white p-4 rounded border border-gray-200"
+        }, ['裝潢處理', '晉詮處理', '協力商處理', '業主處理'].map(opt => h("label", {
+          key: opt,
+          className: "flex items-center gap-2 cursor-pointer"
+        }, h("input", {
+          type: "radio",
+          name: "wasteDisposal",
+          value: opt,
+          checked: formData.surveyData?.wasteDisposal === opt,
+          onChange: handleSurveyChange,
+          className: "w-4 h-4 text-indigo-600 focus:ring-indigo-500"
+        }), h("span", {
+          className: "text-sm text-gray-700 font-medium"
+        }, opt))), h("label", {
+          className: "flex items-center gap-2 cursor-pointer"
+        }, h("input", {
+          type: "radio",
+          name: "wasteDisposal",
+          value: "其他",
+          checked: formData.surveyData?.wasteDisposal === '其他',
+          onChange: handleSurveyChange,
+          className: "w-4 h-4 text-indigo-600 focus:ring-indigo-500"
+        }), h("span", {
+          className: "text-sm text-gray-700 font-medium shrink-0"
+        }, "其他："), h("input", {
+          type: "text",
+          name: "wasteDisposal_other",
+          value: formData.surveyData?.wasteDisposal_other || '',
+          onChange: handleSurveyChange,
+          disabled: formData.surveyData?.wasteDisposal !== '其他',
+          className: "p-1.5 border-b-2 border-gray-300 outline-none focus:border-indigo-500 bg-transparent disabled:opacity-50 text-sm font-medium",
+          placeholder: "請註明"
+        }))))) : formData.surveyType === '汰換工程' ? h("div", {
+          className: "mt-8 space-y-8"
+        },
+        /* ===== 裝潢區開孔尺寸說明 ===== */
+        h("div", {
+          className: "bg-indigo-50/30 p-8 rounded-lg border border-indigo-100 shadow-sm"
+        }, h("h3", {
+          className: "text-xl font-bold text-indigo-800 border-b-2 border-indigo-200 pb-3 mb-6 flex items-center gap-2"
+        }, Icons.Wrench({
+          className: "h-6 w-6"
+        }), " 裝潢區開孔尺寸說明"), h("textarea", {
+          name: "renovationHoleSize",
+          value: formData.surveyData?.renovationHoleSize || '',
+          onChange: handleSurveyChange,
+          rows: 3,
+          className: "w-full p-2.5 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 bg-white shadow-sm",
+          placeholder: "請填寫"
+        })),
+        /* ===== 是否更新汰換 ===== */
+        h("div", {
+          className: "bg-indigo-50/30 p-8 rounded-lg border border-indigo-100 shadow-sm"
+        }, h("h3", {
+          className: "text-xl font-bold text-indigo-800 border-b-2 border-indigo-200 pb-3 mb-6 flex items-center gap-2"
+        }, Icons.Wrench({
+          className: "h-6 w-6"
+        }), " 是否更新汰換（單選）"), h("div", {
+          className: "divide-y divide-indigo-100/70 bg-white rounded border border-gray-200"
+        }, ['控制/訊號線', '室外機電源線', '室內機電源線', '銅管', '冰水管', '排水管', '保溫管', '軟管', '集風箱', '出/線型風箱', '回風箱', '強制回風箱', '三通風箱', '出風口', '回風口'].map(item => h("div", {
+          key: item,
+          className: "flex items-center justify-between px-4 py-2.5"
+        }, h("span", {
+          className: "text-sm text-gray-700 font-medium"
+        }, item), h("div", {
+          className: "flex items-center gap-6"
+        }, ['是', '否'].map(opt => h("label", {
+          key: opt,
+          className: "flex items-center gap-2 cursor-pointer"
+        }, h("input", {
+          type: "radio",
+          name: "replace_" + item,
+          value: opt,
+          checked: formData.surveyData?.['replace_' + item] === opt,
+          onChange: handleSurveyChange,
+          className: "w-4 h-4 text-indigo-600 focus:ring-indigo-500"
+        }), h("span", {
+          className: "text-sm text-gray-700 font-medium"
+        }, opt)))))))),
+        /* ===== 備註 ===== */
+        h("div", {
+          className: "bg-indigo-50/30 p-8 rounded-lg border border-indigo-100 shadow-sm"
+        }, h("h3", {
+          className: "text-xl font-bold text-indigo-800 border-b-2 border-indigo-200 pb-3 mb-6 flex items-center gap-2"
+        }, Icons.Wrench({
+          className: "h-6 w-6"
+        }), " 備註"), h("textarea", {
+          name: "replaceRemark",
+          value: formData.surveyData?.replaceRemark || '',
+          onChange: handleSurveyChange,
+          rows: 3,
+          className: "w-full p-2.5 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 bg-white shadow-sm",
+          placeholder: "請填寫"
+        }))) : h("div", {
+          className: "mt-8 border-2 border-dashed border-gray-300 rounded-xl p-16 flex flex-col items-center justify-center bg-gray-50/50"
+        }, Icons.FileText({
+          className: "h-16 w-16 text-gray-300 mb-4"
+        }), h("h3", {
+          className: "text-xl font-bold text-gray-700 mb-2"
+        }, "\u3010 ", formData.surveyType, " \u3011\u984C\u5EAB\u5340\u584A"), h("p", {
+          className: "text-gray-500 text-sm"
+        }, "\u8ACB\u7B49\u5019\u63D0\u4F9B\u8A73\u7D30\u984C\u76EE\u5F8C\uFF0C\u65BC\u6B64\u8655\u751F\u6210\u5C0D\u61C9\u7684\u554F\u5377\u8868\u55AE\u5167\u5BB9\u3002"))), h("div", {
+          className: "mt-8 pt-6 border-t flex justify-end gap-4"
+        }, h("button", {
+          type: "button",
+          onClick: () => setView('survey-list'),
+          className: "px-6 py-2.5 border rounded-md text-gray-600 hover:bg-gray-50 font-medium transition-colors"
+        }, "\u53D6\u6D88"), h("button", {
+          type: "submit",
+          className: "px-8 py-2.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center gap-2 font-bold shadow-sm transition-colors"
+        }, Icons.Save({
+          className: "h-5 w-5"
+        }), " \u5132\u5B58\u8868\u55AE"))));
+    });
+  }
+
+  window.SurveyForm = SurveyForm;
+})();

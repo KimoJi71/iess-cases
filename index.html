@@ -6,16 +6,47 @@
   <title>IESS 戰情室 Demo</title>
   <link rel="stylesheet" href="styles.css" />
   <script src="https://cdn.tailwindcss.com"></script>
-  <script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.development.js"></script>
-  <script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"></script>
-  <script>
-    // lucide-react UMD expects lowercase global `react`
-    window.react = window.React;
-  </script>
-  <script src="https://unpkg.com/lucide-react@0.454.0/dist/umd/lucide-react.min.js"></script>
 </head>
 <body class="h-full bg-slate-100">
   <div id="root"></div>
-  <script src="app.js"></script>
+
+  <!-- ===== core（基礎設施，需先載入） ===== -->
+  <script src="src/core/dom.js"></script>
+  <script src="src/core/icons.js"></script>
+  <script src="src/core/store.js"></script>
+  <script src="src/core/toast.js"></script>
+
+  <!-- ===== data（常數與假資料） ===== -->
+  <script src="src/data/options.js"></script>
+  <script src="src/data/seed.js"></script>
+
+  <!-- ===== shell（外框：頁首／側邊選單） ===== -->
+  <script src="src/shell/header.js"></script>
+  <script src="src/shell/sidebar.js"></script>
+  <script src="src/shell/page-header.js"></script>
+
+  <!-- ===== features / 維修服務 ===== -->
+  <script src="src/features/repair/case-list.js"></script>
+  <script src="src/features/repair/case-form.js"></script>
+  <script src="src/features/repair/case-record.js"></script>
+  <script src="src/features/repair/case-review.js"></script>
+  <script src="src/features/repair/case-view.js"></script>
+  <script src="src/features/repair/maintenance.js"></script>
+
+  <!-- ===== features / 工程服務 ===== -->
+  <script src="src/features/project/project-history.js"></script>
+  <script src="src/features/project/project-list.js"></script>
+  <script src="src/features/project/project-form.js"></script>
+  <script src="src/features/project/survey-list.js"></script>
+  <script src="src/features/project/survey-form.js"></script>
+
+  <!-- ===== features / 客戶建檔 ===== -->
+  <script src="src/features/customer/customer-list.js"></script>
+  <script src="src/features/customer/customer-form.js"></script>
+  <script src="src/features/customer/store-list.js"></script>
+  <script src="src/features/customer/store-form.js"></script>
+
+  <!-- ===== app 進入點（最後載入） ===== -->
+  <script src="src/app.js"></script>
 </body>
 </html>

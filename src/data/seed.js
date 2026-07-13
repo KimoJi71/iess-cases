@@ -1,0 +1,555 @@
+/*
+ * data/seed.js — 記憶體假資料（重整後重置）
+ *
+ * 各資料集的初始內容，對應原本的 INITIAL_* 常數。
+ * 依賴 data/options.js 內的日期常數（todayDate / yesterdayDate / twoDaysAgoDate）。
+ */
+
+// --- 初始模擬客戶列表 (客戶建檔) ---
+const INITIAL_CUSTOMERS = [{
+  id: 'CUST1',
+  name: '屈臣氏',
+  taxId: '12345678',
+  principal: '王大明',
+  serviceLevel: '保修(一年一次)',
+  maintenanceInterval: '每半年',
+  phone: '02-2712-3456',
+  fax: '02-2712-3457',
+  address: '台北市信義區松高路11號',
+  remarks: '全台門市統一窗口。',
+  createdDate: todayDate,
+  contacts: [{
+    id: 101,
+    title: '設備課長',
+    name: '林志明',
+    phone: '0912-345-678',
+    email: 'lin@watsons.example.com'
+  }, {
+    id: 102,
+    title: '採購專員',
+    name: '陳怡君',
+    phone: '0922-111-222',
+    email: 'chen@watsons.example.com'
+  }]
+}, {
+  id: 'CUST2',
+  name: '星巴克',
+  taxId: '23456789',
+  principal: '李美玲',
+  serviceLevel: '保修(一年兩次)',
+  maintenanceInterval: '每季',
+  phone: '02-8780-1234',
+  fax: '02-8780-1235',
+  address: '台北市大安區復興南路一段39號',
+  remarks: '',
+  createdDate: yesterdayDate,
+  contacts: [{
+    id: 201,
+    title: '營運經理',
+    name: '張偉',
+    phone: '0933-555-666',
+    email: 'chang@starbucks.example.com'
+  }]
+}, {
+  id: 'CUST3',
+  name: '萊爾富',
+  taxId: '34567890',
+  principal: '吳建宏',
+  serviceLevel: '保養(一年一次)',
+  maintenanceInterval: '每年',
+  phone: '03-322-8888',
+  fax: '03-322-8889',
+  address: '桃園市中壢區中央西路二段100號',
+  remarks: '保養以桃竹苗門市優先排程。',
+  createdDate: twoDaysAgoDate,
+  contacts: []
+}];
+
+// --- 初始模擬門市列表 (客戶建檔 - 門市管理) ---
+const INITIAL_STORES = [{
+  id: 'STORE1',
+  customerName: '屈臣氏',
+  storeCode: 'WT-001',
+  storeName: '台北信義店',
+  district: '北區',
+  serviceLevel: '保修(一年一次)',
+  companyPhone: '02-2712-3456',
+  companyFax: '02-2712-3457',
+  companyAddress: '台北市信義區松智路X號',
+  openDate: '2019-05-01',
+  closeDate: '',
+  storeStatus: '正常營業',
+  workOrderApply: '是',
+  lastRepairDate: yesterdayDate,
+  lastMaintenanceDate: '2026-01-15',
+  remarks: '一樓大廳需保持整潔，施工請走後門。',
+  indoorHeight: '3.2m',
+  outdoorHeight: '4.5m',
+  createdDate: todayDate,
+  contacts: [{
+    id: 1101,
+    title: '店長',
+    name: '林店長',
+    phone: '0912-345-678',
+    email: 'xinyi@watsons.example.com'
+  }],
+  photos: [{
+    id: 9101,
+    name: '信義店_外觀.jpg',
+    url: 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="128" height="96"><rect width="128" height="96" fill="#e0e7ff"/><rect x="8" y="56" width="112" height="32" fill="#818cf8"/><circle cx="98" cy="26" r="14" fill="#fbbf24"/><polygon points="8,56 44,28 80,56" fill="#6366f1"/><text x="64" y="82" font-size="11" fill="#312e81" text-anchor="middle" font-family="sans-serif">信義店</text></svg>')
+  }],
+  history: [{
+    id: 8101,
+    date: yesterdayDate,
+    type: '叫修',
+    description: '一號機不冷，已更換壓縮機電容。'
+  }, {
+    id: 8102,
+    date: '2026-01-15',
+    type: '保養',
+    description: '例行季保養，清洗濾網與排水管。'
+  }]
+}, {
+  id: 'STORE2',
+  customerName: '屈臣氏',
+  storeCode: 'WT-002',
+  storeName: '台中旗艦店',
+  district: '中區',
+  serviceLevel: '保修(一年一次)',
+  companyPhone: '04-2251-1234',
+  companyFax: '04-2251-1235',
+  companyAddress: '台中市西屯區台灣大道X號',
+  openDate: '2020-11-20',
+  closeDate: '',
+  storeStatus: '正常營業',
+  workOrderApply: '否',
+  lastRepairDate: '2026-05-10',
+  lastMaintenanceDate: '2026-03-02',
+  remarks: '',
+  indoorHeight: '3.5m',
+  outdoorHeight: '5.0m',
+  createdDate: yesterdayDate,
+  contacts: [],
+  photos: [],
+  history: []
+}, {
+  id: 'STORE3',
+  customerName: '星巴克',
+  storeCode: 'SB-011',
+  storeName: '站前店',
+  district: '中區',
+  serviceLevel: '保修(一年兩次)',
+  companyPhone: '04-2223-8888',
+  companyFax: '04-2223-8889',
+  companyAddress: '台中市中區建國路X號',
+  openDate: '2018-03-15',
+  closeDate: '',
+  storeStatus: '整裝',
+  workOrderApply: '是',
+  lastRepairDate: '2026-06-01',
+  lastMaintenanceDate: '2026-04-20',
+  remarks: '整裝期間僅開放夜間施工。',
+  indoorHeight: '2.8m',
+  outdoorHeight: '3.8m',
+  createdDate: yesterdayDate,
+  contacts: [{
+    id: 1301,
+    title: '營運經理',
+    name: '張偉',
+    phone: '0933-555-666',
+    email: 'chang@starbucks.example.com'
+  }],
+  photos: [],
+  history: [{
+    id: 8301,
+    date: '2026-06-01',
+    type: '叫修',
+    description: '吧台區冷氣異音，調整風扇軸承。'
+  }]
+}, {
+  id: 'STORE4',
+  customerName: '星巴克',
+  storeCode: 'SB-012',
+  storeName: '中山店',
+  district: '北區',
+  serviceLevel: '保修(一年兩次)',
+  companyPhone: '02-2521-6688',
+  companyFax: '02-2521-6689',
+  companyAddress: '台北市中山區中山北路X號',
+  openDate: '2021-09-01',
+  closeDate: '',
+  storeStatus: '正常營業',
+  workOrderApply: '否',
+  lastRepairDate: '',
+  lastMaintenanceDate: '2026-05-05',
+  remarks: '',
+  indoorHeight: '3.0m',
+  outdoorHeight: '4.0m',
+  createdDate: twoDaysAgoDate,
+  contacts: [],
+  photos: [],
+  history: []
+}, {
+  id: 'STORE5',
+  customerName: '萊爾富',
+  storeCode: 'HL-021',
+  storeName: '高雄左營店',
+  district: '南區',
+  serviceLevel: '保養(一年一次)',
+  companyPhone: '07-345-2222',
+  companyFax: '07-345-2223',
+  companyAddress: '高雄市左營區博愛路X號',
+  openDate: '2017-07-07',
+  closeDate: '2026-06-30',
+  storeStatus: '撤店',
+  workOrderApply: '否',
+  lastRepairDate: '2026-02-14',
+  lastMaintenanceDate: '2025-12-01',
+  remarks: '已於 2026/06/30 撤店，設備待回收。',
+  indoorHeight: '2.6m',
+  outdoorHeight: '3.5m',
+  createdDate: twoDaysAgoDate,
+  contacts: [],
+  photos: [],
+  history: [{
+    id: 8501,
+    date: '2026-02-14',
+    type: '叫修',
+    description: '冷媒不足，補充 R410A 並檢漏。'
+  }]
+}];
+
+// --- 初始模擬案件列表 (維修) ---
+const INITIAL_CASES = [{
+  id: 'C20260709001',
+  indicator: 'urgent',
+  repairDate: todayDate,
+  caseNumber: '20260709001',
+  customerName: '屈臣氏',
+  storeName: '台北信義店',
+  district: '北區',
+  workCategory: '緊急叫修',
+  repairItem: '室內機',
+  repairReason: '漏水',
+  faultDesc: '室內機狂滴水，影響營業',
+  actualReason: '',
+  assignee: 'A組',
+  processStatus: '待料件',
+  isClosed: false,
+  serviceLevel: '保修(一年一次)',
+  storeAddress: '台北市信義區松智路X號',
+  reporter: '林店長',
+  equipment: null,
+  processRecords: [],
+  reRepairDate: '',
+  completionDate: '',
+  expectedDate: todayDate,
+  isPerformanceIncluded: false
+}, {
+  id: 'C20260708002',
+  indicator: 'overdue',
+  repairDate: yesterdayDate,
+  caseNumber: '20260708002',
+  customerName: '星巴克',
+  storeName: '台中旗艦店',
+  district: '中區',
+  workCategory: '一般叫修',
+  repairItem: '室外機',
+  repairReason: '異音',
+  faultDesc: '室外機運轉聲音很大',
+  actualReason: '風扇軸承老化',
+  assignee: '協力廠商',
+  processStatus: '待報價',
+  isClosed: false,
+  serviceLevel: '保修(一年兩次)',
+  storeAddress: '台中市西屯區台灣大道X號',
+  reporter: '陳副理',
+  equipment: {
+    id: 'E1',
+    customerName: '星巴克',
+    storeName: '台中旗艦店',
+    area: '頂樓',
+    type: '外',
+    model: 'RAS-100'
+  },
+  processRecords: [],
+  reRepairDate: '',
+  completionDate: '',
+  expectedDate: yesterdayDate,
+  isPerformanceIncluded: false
+}, {
+  id: 'C20260707003',
+  indicator: 'normal',
+  repairDate: yesterdayDate,
+  caseNumber: '20260707003',
+  customerName: '萊爾富',
+  storeName: '高雄左營店',
+  district: '南區',
+  workCategory: '保養清潔',
+  repairItem: '風管',
+  repairReason: '異味',
+  faultDesc: '開冷氣有霉味',
+  actualReason: '風管內部積塵過多，導致霉味',
+  assignee: 'B組',
+  processStatus: '案件完成',
+  isClosed: false,
+  serviceLevel: '保養(一年一次)',
+  storeAddress: '高雄市左營區博愛路X號',
+  reporter: '張小姐',
+  equipment: {
+    id: 'E3',
+    customerName: '萊爾富',
+    storeName: '高雄左營店',
+    area: '賣場區',
+    type: '內',
+    model: 'FXYP100'
+  },
+  processRecords: [{
+    id: 1,
+    category1: '工資',
+    category2: '分離式',
+    category3: '保養工資',
+    qty: 1
+  }],
+  reRepairDate: yesterdayDate,
+  completionDate: todayDate,
+  expectedDate: todayDate,
+  isPerformanceIncluded: false
+}, {
+  id: 'C20260706004',
+  indicator: 'normal',
+  repairDate: twoDaysAgoDate,
+  caseNumber: '20260706004',
+  customerName: '全家便利商店',
+  storeName: '中山店',
+  district: '北區',
+  workCategory: '一般叫修',
+  repairItem: '室內機',
+  repairReason: '不冷',
+  faultDesc: '出風口沒有冷風',
+  actualReason: '濾網過髒導致風量不足',
+  assignee: '晉詮人員',
+  processStatus: '案件完成',
+  isClosed: true,
+  serviceLevel: '維修(無簽約客戶)',
+  storeAddress: '台北市中山區中山北路X號',
+  reporter: '李先生',
+  equipment: {
+    id: 'E4',
+    customerName: '全家便利商店',
+    storeName: '中山店',
+    area: '收銀台上方',
+    type: '內',
+    model: 'FXMQ125'
+  },
+  processRecords: [{
+    id: 1,
+    category1: '工資',
+    category2: '分離式',
+    category3: '檢修工資',
+    qty: 1
+  }, {
+    id: 2,
+    category1: '材料',
+    category2: '保養材料',
+    category3: '過濾網',
+    qty: 2
+  }],
+  reRepairDate: '',
+  completionDate: twoDaysAgoDate,
+  expectedDate: yesterdayDate,
+  isPerformanceIncluded: true
+}, {
+  id: 'C20260710005',
+  indicator: 'normal',
+  repairDate: todayDate,
+  caseNumber: '20260710005',
+  customerName: '統一超商',
+  storeName: '站前店',
+  district: '中區',
+  workCategory: '一般叫修',
+  repairItem: '室內機',
+  repairReason: '漏水',
+  faultDesc: '機台下方會漏水',
+  actualReason: '排水管阻塞',
+  assignee: 'C組',
+  processStatus: '案件完成',
+  isClosed: true,
+  serviceLevel: '維修(無簽約客戶)',
+  storeAddress: '台中市中區建國路X號',
+  reporter: '王專員',
+  equipment: {
+    id: 'E5',
+    customerName: '統一超商',
+    storeName: '站前店',
+    area: '休息區',
+    type: '內',
+    model: 'FXMQ80'
+  },
+  processRecords: [{
+    id: 1,
+    category1: '工資',
+    category2: '分離式',
+    category3: '檢修工資',
+    qty: 1
+  }],
+  reRepairDate: '',
+  completionDate: todayDate,
+  expectedDate: todayDate,
+  isPerformanceIncluded: false
+}];
+
+// --- 初始模擬保養計畫列表 ---
+const INITIAL_MAINTENANCE_CASES = [{
+  id: 'M2026070001',
+  caseNumber: '',
+  customerName: '屈臣氏',
+  storeName: '台北信義店',
+  district: '北區',
+  serviceLevel: '保修(一年一次)',
+  status: '待排程',
+  planDate: '',
+  assignee: '尚未指派',
+  isClosed: false,
+  storeAddress: '台北市信義區松智路X號'
+}, {
+  id: 'M2026070002',
+  caseNumber: `${todayDate.replace(/-/g, '')}002`,
+  customerName: '星巴克',
+  storeName: '台中旗艦店',
+  district: '中區',
+  serviceLevel: '保修(一年兩次)',
+  status: '已排程',
+  planDate: todayDate,
+  assignee: 'A組',
+  isClosed: false,
+  storeAddress: '台中市西屯區台灣大道X號'
+}, {
+  id: 'M2026070003',
+  caseNumber: `${yesterdayDate.replace(/-/g, '')}003`,
+  customerName: '萊爾富',
+  storeName: '高雄左營店',
+  district: '南區',
+  serviceLevel: '保養(一年一次)',
+  status: '已完工',
+  planDate: yesterdayDate,
+  assignee: '協力廠商',
+  isClosed: false,
+  storeAddress: '高雄市左營區博愛路X號'
+}];
+
+// --- 初始模擬工程立案列表 ---
+const INITIAL_PROJECT_CASES = [{
+  id: 'P20260710001',
+  projectNumber: `${todayDate.replace(/-/g, '')}001`,
+  creationDate: todayDate,
+  customerName: '全家便利商店',
+  storeName: '中山店',
+  workCategory: '新開',
+  currentStage: '現勘',
+  stageDate: todayDate,
+  stageAssignee: '工程A組',
+  isClosed: false,
+  history: [{
+    stage: '立案時間',
+    date: todayDate,
+    assignee: '管理員'
+  }, {
+    stage: '工程發包作業',
+    date: todayDate,
+    assignee: '採購部'
+  }, {
+    stage: '現勘',
+    date: todayDate,
+    assignee: '工程A組'
+  }],
+  comments: [{
+    id: 1,
+    author: '管理員',
+    timestamp: `${todayDate} 09:00`,
+    content: '工程已立案，請採購部協助後續。',
+    attachment: null
+  }, {
+    id: 2,
+    author: '採購部',
+    timestamp: `${todayDate} 10:30`,
+    content: '@工程A組 已安排發包，請確認 #現勘 時間。',
+    attachment: '發包明細.pdf'
+  }],
+  details: {
+    storeAddress: '台北市中山區中山北路X號',
+    serviceLevel: '維修(無簽約客戶)',
+    contactPerson: '李店長 0912-345-678',
+    suggestedContractor: '內部工程組',
+    entryDate: todayDate,
+    remarks: '需避開營業尖峰時段',
+    equipment: [{
+      id: 1,
+      category: '室內機',
+      name: '1F賣場空調',
+      brand: '大金',
+      type: '內',
+      model: 'FXMQ125',
+      area: '賣場區',
+      assetNumber: 'A-001',
+      serialNumber: '',
+      manufactureDate: '',
+      installDate: ''
+    }]
+  }
+}, {
+  id: 'P20260710002',
+  projectNumber: `${yesterdayDate.replace(/-/g, '')}002`,
+  creationDate: yesterdayDate,
+  customerName: '星巴克',
+  storeName: '台中旗艦店',
+  workCategory: '整裝',
+  currentStage: '設備訂貨作業',
+  stageDate: todayDate,
+  stageAssignee: '採購部',
+  isClosed: false,
+  history: [{
+    stage: '立案時間',
+    date: yesterdayDate,
+    assignee: '管理員'
+  }, {
+    stage: '工程發包作業',
+    date: yesterdayDate,
+    assignee: '採購部'
+  }, {
+    stage: '現勘',
+    date: todayDate,
+    assignee: '工程B組'
+  }, {
+    stage: '設備訂貨作業',
+    date: todayDate,
+    assignee: '採購部'
+  }],
+  comments: [],
+  details: {
+    storeAddress: '台中市西屯區台灣大道X號',
+    serviceLevel: '保修(一年兩次)',
+    contactPerson: '陳副理',
+    suggestedContractor: '機電維護商',
+    entryDate: yesterdayDate,
+    remarks: '',
+    equipment: []
+  }
+}];
+
+// --- 初始模擬現勘表列表 ---
+const INITIAL_SURVEY_CASES = [{
+  id: 'S20260710001',
+  fillDate: todayDate,
+  customerName: '全家便利商店',
+  storeName: '中山店',
+  surveyType: '環境與施工',
+  fileName: `全家便利商店_中山店_環境與施工_${todayDate.replace(/-/g, '')}`
+}, {
+  id: 'S20260709002',
+  fillDate: yesterdayDate,
+  customerName: '星巴克',
+  storeName: '台中旗艦店',
+  surveyType: '設備與零件',
+  fileName: `星巴克_台中旗艦店_設備與零件_${yesterdayDate.replace(/-/g, '')}`
+}];

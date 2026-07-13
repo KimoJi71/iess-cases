@@ -1,0 +1,81 @@
+/*
+ * shell/sidebar.js — 戰情室左側選單（可展開的功能群組）
+ * props: { currentSubMenu, expandedSidebar, setCurrentSubMenu, toggleExpand }
+ */
+(function () {
+  'use strict';
+  var h = IESS.h, Icons = IESS.Icons;
+
+  var MENU_TREE = [
+    {
+      id: '維修服務', icon: 'Wrench', children: [
+        { id: '案件處理', label: '案件處理' },
+        { id: '叫修案件紀錄', label: '叫修案件紀錄' },
+        { id: '保養計劃進度', label: '保養計劃進度' },
+        { id: '案件銷案審核', label: '案件銷案審核' }
+      ]
+    },
+    {
+      id: '工程服務', icon: 'Home', children: [
+        { id: '工程立案', label: '工程立案' },
+        { id: '現勘表收集', label: '現勘表收集' }
+      ]
+    },
+    {
+      id: '客戶建檔', icon: 'User', children: [
+        { id: '客戶管理', label: '客戶管理' },
+        { id: '門市管理', label: '門市管理' }
+      ]
+    }
+  ];
+
+  function Sidebar(props) {
+    var currentSubMenu = props.currentSubMenu;
+    var expandedSidebar = props.expandedSidebar;
+    var setCurrentSubMenu = props.setCurrentSubMenu;
+    var toggleExpand = props.toggleExpand;
+
+    return h('aside', {
+      className: 'w-56 bg-white border-r border-gray-200 shadow-sm flex flex-col shrink-0 z-0'
+    },
+      h('div', { className: 'p-4 border-b border-gray-100 bg-gray-50/50' },
+        h('h2', { className: 'text-base font-bold text-gray-700 tracking-wide' }, '戰情室 選單')
+      ),
+      h('nav', { className: 'flex-1 p-3 space-y-1 overflow-y-auto' },
+        MENU_TREE.map(function (menu) {
+          var Icon = Icons[menu.icon];
+          var isOpen = expandedSidebar.indexOf(menu.id) !== -1;
+          return h('div', { key: menu.id, className: 'mb-1' },
+            h('button', {
+              onClick: function () { toggleExpand(menu.id); },
+              className: 'w-full flex items-center justify-between px-3 py-3 rounded-md transition-all ' +
+                (isOpen ? 'bg-blue-50 text-blue-700 font-bold' : 'text-gray-600 hover:bg-gray-50 hover:text-blue-600')
+            },
+              h('div', { className: 'flex items-center space-x-3' },
+                Icon({ className: 'h-5 w-5 ' + (isOpen ? 'text-blue-600' : 'text-gray-400') }),
+                h('span', null, menu.id)
+              ),
+              Icons.ChevronDown({ className: 'h-4 w-4 transition-transform ' + (isOpen ? 'rotate-180' : '') })
+            ),
+            isOpen && h('div', {
+              className: 'mt-1 ml-4 pl-4 border-l-2 border-gray-100 space-y-1'
+            },
+              menu.children.map(function (sub) {
+                return h('button', {
+                  key: sub.id,
+                  onClick: function () { setCurrentSubMenu(sub.id); },
+                  className: 'w-full flex items-center px-3 py-2 rounded-md transition-all text-sm ' +
+                    (currentSubMenu === sub.id
+                      ? 'bg-blue-100/50 text-blue-700 font-bold'
+                      : 'text-gray-500 hover:bg-gray-50 hover:text-blue-600')
+                }, sub.label);
+              })
+            )
+          );
+        })
+      )
+    );
+  }
+
+  window.Sidebar = Sidebar;
+})();
