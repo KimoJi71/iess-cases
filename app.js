@@ -65,6 +65,8 @@ const MAINTENANCE_STATUS_OPTIONS = ['待排程', '已排程', '保養中', '已�
 const DISTRICT_OPTIONS = ['北區', '中區', '南區', '東區'];
 const SERVICE_LEVEL_OPTIONS = ['保修(一年一次)', '保修(一年兩次)', '保養(一年一次)', '維修(無簽約客戶)'];
 const MAINTENANCE_INTERVAL_OPTIONS = ['每季', '每半年', '每年'];
+const STORE_STATUS_OPTIONS = ['正常營業', '整裝', '撤店'];
+const WORK_ORDER_APPLY_OPTIONS = ['是', '否'];
 
 // 工程立案專用選項
 const PROJECT_WORK_CATEGORIES = ['新開', '汰換', '撤店', '整裝', '加裝'];
@@ -202,6 +204,160 @@ const INITIAL_CUSTOMERS = [{
   remarks: '保養以桃竹苗門市優先排程。',
   createdDate: twoDaysAgoDate,
   contacts: []
+}];
+
+// --- 初始模擬門市列表 (客戶建檔 - 門市管理) ---
+const INITIAL_STORES = [{
+  id: 'STORE1',
+  customerName: '屈臣氏',
+  storeCode: 'WT-001',
+  storeName: '台北信義店',
+  district: '北區',
+  serviceLevel: '保修(一年一次)',
+  companyPhone: '02-2712-3456',
+  companyFax: '02-2712-3457',
+  companyAddress: '台北市信義區松智路X號',
+  openDate: '2019-05-01',
+  closeDate: '',
+  storeStatus: '正常營業',
+  workOrderApply: '是',
+  lastRepairDate: yesterdayDate,
+  lastMaintenanceDate: '2026-01-15',
+  remarks: '一樓大廳需保持整潔，施工請走後門。',
+  indoorHeight: '3.2m',
+  outdoorHeight: '4.5m',
+  createdDate: todayDate,
+  contacts: [{
+    id: 1101,
+    title: '店長',
+    name: '林店長',
+    phone: '0912-345-678',
+    email: 'xinyi@watsons.example.com'
+  }],
+  photos: [{
+    id: 9101,
+    name: '信義店_外觀.jpg',
+    url: 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="128" height="96"><rect width="128" height="96" fill="#e0e7ff"/><rect x="8" y="56" width="112" height="32" fill="#818cf8"/><circle cx="98" cy="26" r="14" fill="#fbbf24"/><polygon points="8,56 44,28 80,56" fill="#6366f1"/><text x="64" y="82" font-size="11" fill="#312e81" text-anchor="middle" font-family="sans-serif">信義店</text></svg>')
+  }],
+  history: [{
+    id: 8101,
+    date: yesterdayDate,
+    type: '叫修',
+    description: '一號機不冷，已更換壓縮機電容。'
+  }, {
+    id: 8102,
+    date: '2026-01-15',
+    type: '保養',
+    description: '例行季保養，清洗濾網與排水管。'
+  }]
+}, {
+  id: 'STORE2',
+  customerName: '屈臣氏',
+  storeCode: 'WT-002',
+  storeName: '台中旗艦店',
+  district: '中區',
+  serviceLevel: '保修(一年一次)',
+  companyPhone: '04-2251-1234',
+  companyFax: '04-2251-1235',
+  companyAddress: '台中市西屯區台灣大道X號',
+  openDate: '2020-11-20',
+  closeDate: '',
+  storeStatus: '正常營業',
+  workOrderApply: '否',
+  lastRepairDate: '2026-05-10',
+  lastMaintenanceDate: '2026-03-02',
+  remarks: '',
+  indoorHeight: '3.5m',
+  outdoorHeight: '5.0m',
+  createdDate: yesterdayDate,
+  contacts: [],
+  photos: [],
+  history: []
+}, {
+  id: 'STORE3',
+  customerName: '星巴克',
+  storeCode: 'SB-011',
+  storeName: '站前店',
+  district: '中區',
+  serviceLevel: '保修(一年兩次)',
+  companyPhone: '04-2223-8888',
+  companyFax: '04-2223-8889',
+  companyAddress: '台中市中區建國路X號',
+  openDate: '2018-03-15',
+  closeDate: '',
+  storeStatus: '整裝',
+  workOrderApply: '是',
+  lastRepairDate: '2026-06-01',
+  lastMaintenanceDate: '2026-04-20',
+  remarks: '整裝期間僅開放夜間施工。',
+  indoorHeight: '2.8m',
+  outdoorHeight: '3.8m',
+  createdDate: yesterdayDate,
+  contacts: [{
+    id: 1301,
+    title: '營運經理',
+    name: '張偉',
+    phone: '0933-555-666',
+    email: 'chang@starbucks.example.com'
+  }],
+  photos: [],
+  history: [{
+    id: 8301,
+    date: '2026-06-01',
+    type: '叫修',
+    description: '吧台區冷氣異音，調整風扇軸承。'
+  }]
+}, {
+  id: 'STORE4',
+  customerName: '星巴克',
+  storeCode: 'SB-012',
+  storeName: '中山店',
+  district: '北區',
+  serviceLevel: '保修(一年兩次)',
+  companyPhone: '02-2521-6688',
+  companyFax: '02-2521-6689',
+  companyAddress: '台北市中山區中山北路X號',
+  openDate: '2021-09-01',
+  closeDate: '',
+  storeStatus: '正常營業',
+  workOrderApply: '否',
+  lastRepairDate: '',
+  lastMaintenanceDate: '2026-05-05',
+  remarks: '',
+  indoorHeight: '3.0m',
+  outdoorHeight: '4.0m',
+  createdDate: twoDaysAgoDate,
+  contacts: [],
+  photos: [],
+  history: []
+}, {
+  id: 'STORE5',
+  customerName: '萊爾富',
+  storeCode: 'HL-021',
+  storeName: '高雄左營店',
+  district: '南區',
+  serviceLevel: '保養(一年一次)',
+  companyPhone: '07-345-2222',
+  companyFax: '07-345-2223',
+  companyAddress: '高雄市左營區博愛路X號',
+  openDate: '2017-07-07',
+  closeDate: '2026-06-30',
+  storeStatus: '撤店',
+  workOrderApply: '否',
+  lastRepairDate: '2026-02-14',
+  lastMaintenanceDate: '2025-12-01',
+  remarks: '已於 2026/06/30 撤店，設備待回收。',
+  indoorHeight: '2.6m',
+  outdoorHeight: '3.5m',
+  createdDate: twoDaysAgoDate,
+  contacts: [],
+  photos: [],
+  history: [{
+    id: 8501,
+    date: '2026-02-14',
+    type: '叫修',
+    description: '冷媒不足，補充 R410A 並檢漏。'
+  }]
 }];
 
 // --- 初始模擬案件列表 (維修) ---
@@ -5627,24 +5783,10 @@ const CustomerList = ({
     className: "p-3 font-semibold text-center w-24"
   }, "\u64CD\u4F5C"), /*#__PURE__*/React.createElement("th", {
     className: "p-3 font-semibold"
-  }, "\u5BA2\u6236\u540D\u7A31"), /*#__PURE__*/React.createElement("th", {
-    className: "p-3 font-semibold"
-  }, "\u7D71\u4E00\u7DE8\u865F"), /*#__PURE__*/React.createElement("th", {
-    className: "p-3 font-semibold"
-  }, "\u8CA0\u8CAC\u4EBA"), /*#__PURE__*/React.createElement("th", {
-    className: "p-3 font-semibold"
-  }, "\u670D\u52D9\u7B49\u7D1A"), /*#__PURE__*/React.createElement("th", {
-    className: "p-3 font-semibold"
-  }, "\u4FDD\u990A\u5340\u9593"), /*#__PURE__*/React.createElement("th", {
-    className: "p-3 font-semibold"
-  }, "\u516C\u53F8\u96FB\u8A71"), /*#__PURE__*/React.createElement("th", {
-    className: "p-3 font-semibold text-center"
-  }, "\u627F\u8FA6\u7B46\u6578"), /*#__PURE__*/React.createElement("th", {
-    className: "p-3 font-semibold"
-  }, "\u65B0\u589E\u65E5\u671F"))), /*#__PURE__*/React.createElement("tbody", {
+  }, "\u5BA2\u6236\u540D\u7A31"))), /*#__PURE__*/React.createElement("tbody", {
     className: "divide-y divide-gray-100"
   }, filteredCustomers.length === 0 ? /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("td", {
-    colSpan: 9,
+    colSpan: 2,
     className: "p-10 text-center text-gray-400 text-base"
   }, "\u7121\u8CC7\u6599")) : filteredCustomers.map(c => /*#__PURE__*/React.createElement("tr", {
     key: c.id,
@@ -5673,23 +5815,7 @@ const CustomerList = ({
     className: "h-4 w-4"
   })))), /*#__PURE__*/React.createElement("td", {
     className: "p-3 font-medium text-gray-800"
-  }, c.name), /*#__PURE__*/React.createElement("td", {
-    className: "p-3"
-  }, c.taxId || '—'), /*#__PURE__*/React.createElement("td", {
-    className: "p-3"
-  }, c.principal || '—'), /*#__PURE__*/React.createElement("td", {
-    className: "p-3"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200"
-  }, c.serviceLevel)), /*#__PURE__*/React.createElement("td", {
-    className: "p-3"
-  }, c.maintenanceInterval || '—'), /*#__PURE__*/React.createElement("td", {
-    className: "p-3"
-  }, c.phone || '—'), /*#__PURE__*/React.createElement("td", {
-    className: "p-3 text-center"
-  }, (c.contacts || []).length), /*#__PURE__*/React.createElement("td", {
-    className: "p-3 text-gray-500"
-  }, c.createdDate)))))), deleteModal.show && /*#__PURE__*/React.createElement("div", {
+  }, c.name)))))), deleteModal.show && /*#__PURE__*/React.createElement("div", {
     className: "fixed inset-0 bg-black/40 flex items-center justify-center z-50"
   }, /*#__PURE__*/React.createElement("div", {
     className: "bg-white rounded-lg shadow-xl p-6 w-96 max-w-full m-4"
@@ -6078,19 +6204,739 @@ const CustomerForm = ({
 };
 
 // ==========================================
+//     10. 客戶建檔 (門市管理) 相關元件
+// ==========================================
+
+const StoreList = ({
+  stores,
+  setStores,
+  customers,
+  storeCustomer,
+  setStoreCustomer,
+  setEditingCase,
+  setView,
+  showToast
+}) => {
+  const [keyword, setKeyword] = useState('');
+  const [appliedKeyword, setAppliedKeyword] = useState('');
+  const [deleteModal, setDeleteModal] = useState({
+    show: false,
+    id: null
+  });
+  const [historyModal, setHistoryModal] = useState({
+    show: false,
+    store: null
+  });
+  const dragProps = useDragScroll();
+  const filteredStores = useMemo(() => {
+    if (!storeCustomer) return [];
+    const kw = appliedKeyword.trim().toLowerCase();
+    let list = stores.filter(s => s.customerName === storeCustomer);
+    if (kw) {
+      list = list.filter(s => [s.storeCode, s.storeName, s.district, s.companyPhone, s.serviceLevel].filter(Boolean).some(v => String(v).toLowerCase().includes(kw)));
+    }
+    return [...list].sort((a, b) => new Date(b.createdDate) - new Date(a.createdDate));
+  }, [stores, storeCustomer, appliedKeyword]);
+  const handleSearch = () => setAppliedKeyword(keyword);
+  const handleKeyDown = e => {
+    if (e.key === 'Enter') handleSearch();
+  };
+  const handleDelete = id => {
+    setStores(stores.filter(s => s.id !== id));
+    setDeleteModal({
+      show: false,
+      id: null
+    });
+    showToast('門市已刪除');
+  };
+  const statusBadge = status => {
+    const map = {
+      正常營業: 'bg-green-100 text-green-700',
+      整裝: 'bg-amber-100 text-amber-700',
+      撤店: 'bg-gray-200 text-gray-600'
+    };
+    return /*#__PURE__*/React.createElement("span", {
+      className: `px-2 py-0.5 rounded-full text-xs font-medium ${map[status] || 'bg-gray-100 text-gray-600'}`
+    }, status);
+  };
+  return /*#__PURE__*/React.createElement("div", {
+    className: "bg-white p-6 rounded-lg shadow-sm border border-gray-100"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex flex-wrap items-end gap-3"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+    className: "block text-xs text-gray-500 mb-1"
+  }, "客戶名稱 ", /*#__PURE__*/React.createElement("span", {
+    className: "text-red-500"
+  }, "*")), /*#__PURE__*/React.createElement("select", {
+    value: storeCustomer,
+    onChange: e => {
+      setStoreCustomer(e.target.value);
+      setAppliedKeyword('');
+      setKeyword('');
+    },
+    className: "w-56 p-2.5 border rounded-md outline-none focus:border-blue-500 bg-white"
+  }, /*#__PURE__*/React.createElement("option", {
+    value: ""
+  }, "請選擇客戶"), customers.map(c => /*#__PURE__*/React.createElement("option", {
+    key: c.id,
+    value: c.name
+  }, c.name)))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+    className: "block text-xs text-gray-500 mb-1"
+  }, "關鍵字"), /*#__PURE__*/React.createElement("input", {
+    type: "text",
+    value: keyword,
+    onChange: e => setKeyword(e.target.value),
+    onKeyDown: handleKeyDown,
+    placeholder: "門市店編 / 門市名稱 / 電話",
+    disabled: !storeCustomer,
+    className: "w-60 p-2.5 border rounded-md outline-none focus:border-blue-500 disabled:bg-gray-100"
+  })), /*#__PURE__*/React.createElement("button", {
+    onClick: handleSearch,
+    disabled: !storeCustomer,
+    className: "flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-md shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+  }, /*#__PURE__*/React.createElement(Search, {
+    className: "h-4 w-4"
+  }), " 搜尋")), /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      if (!storeCustomer) {
+        showToast('請先篩選客戶', 'error');
+        return;
+      }
+      setEditingCase(null);
+      setView('store-add');
+    },
+    className: "flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-md shadow-sm transition-colors",
+    title: "新增門市"
+  }, /*#__PURE__*/React.createElement(Plus, {
+    className: "h-5 w-5"
+  }), " 新增門市")), !storeCustomer ? /*#__PURE__*/React.createElement("div", {
+    className: "p-12 text-center text-gray-400 text-base border border-dashed rounded-lg"
+  }, "請先篩選客戶，才可查詢門市列表") : /*#__PURE__*/React.createElement("div", _extends({}, dragProps, {
+    className: "overflow-x-auto border rounded-lg cursor-grab active:cursor-grabbing"
+  }), /*#__PURE__*/React.createElement("table", {
+    className: "w-full text-left text-sm text-gray-600 whitespace-nowrap select-none"
+  }, /*#__PURE__*/React.createElement("thead", {
+    className: "bg-gray-50 text-gray-700 border-b"
+  }, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", {
+    className: "p-3 font-semibold text-center w-32"
+  }, "操作"), /*#__PURE__*/React.createElement("th", {
+    className: "p-3 font-semibold"
+  }, "門市區域"), /*#__PURE__*/React.createElement("th", {
+    className: "p-3 font-semibold"
+  }, "門市店編"), /*#__PURE__*/React.createElement("th", {
+    className: "p-3 font-semibold"
+  }, "門市名稱"), /*#__PURE__*/React.createElement("th", {
+    className: "p-3 font-semibold"
+  }, "門市電話"), /*#__PURE__*/React.createElement("th", {
+    className: "p-3 font-semibold"
+  }, "服務等級"), /*#__PURE__*/React.createElement("th", {
+    className: "p-3 font-semibold"
+  }, "門市狀態"))), /*#__PURE__*/React.createElement("tbody", {
+    className: "divide-y divide-gray-100"
+  }, filteredStores.length === 0 ? /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("td", {
+    colSpan: 7,
+    className: "p-10 text-center text-gray-400 text-base"
+  }, "無資料")) : filteredStores.map(s => /*#__PURE__*/React.createElement("tr", {
+    key: s.id,
+    className: "hover:bg-blue-50/50 transition-colors"
+  }, /*#__PURE__*/React.createElement("td", {
+    className: "p-3"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-center space-x-2"
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      setEditingCase(s);
+      setView('store-edit');
+    },
+    className: "p-1.5 text-blue-600 hover:bg-blue-100 rounded",
+    title: "編輯"
+  }, /*#__PURE__*/React.createElement(Edit, {
+    className: "h-4 w-4"
+  })), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setDeleteModal({
+      show: true,
+      id: s.id
+    }),
+    className: "p-1.5 text-red-600 hover:bg-red-100 rounded",
+    title: "刪除"
+  }, /*#__PURE__*/React.createElement(Trash2, {
+    className: "h-4 w-4"
+  })), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setHistoryModal({
+      show: true,
+      store: s
+    }),
+    className: "p-1.5 text-gray-500 hover:bg-gray-100 rounded",
+    title: "歷史紀錄"
+  }, /*#__PURE__*/React.createElement(Clock, {
+    className: "h-4 w-4"
+  })))), /*#__PURE__*/React.createElement("td", {
+    className: "p-3"
+  }, s.district || '—'), /*#__PURE__*/React.createElement("td", {
+    className: "p-3"
+  }, s.storeCode || '—'), /*#__PURE__*/React.createElement("td", {
+    className: "p-3 font-medium text-gray-800"
+  }, s.storeName), /*#__PURE__*/React.createElement("td", {
+    className: "p-3"
+  }, s.companyPhone || '—'), /*#__PURE__*/React.createElement("td", {
+    className: "p-3"
+  }, s.serviceLevel || '—'), /*#__PURE__*/React.createElement("td", {
+    className: "p-3"
+  }, statusBadge(s.storeStatus))))))), deleteModal.show && /*#__PURE__*/React.createElement("div", {
+    className: "fixed inset-0 bg-black/40 flex items-center justify-center z-50"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "bg-white rounded-lg shadow-xl p-6 w-96 max-w-full m-4"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center space-x-3 text-red-600 mb-4"
+  }, /*#__PURE__*/React.createElement(AlertCircle, {
+    className: "h-6 w-6"
+  }), /*#__PURE__*/React.createElement("h3", {
+    className: "text-lg font-bold text-gray-800"
+  }, "確認刪除")), /*#__PURE__*/React.createElement("p", {
+    className: "text-gray-600 mb-6"
+  }, "確定要刪除此門市嗎？刪除後將無法復原。"), /*#__PURE__*/React.createElement("div", {
+    className: "flex justify-end space-x-3"
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => setDeleteModal({
+      show: false,
+      id: null
+    }),
+    className: "px-4 py-2 border rounded-md text-gray-600 hover:bg-gray-50 transition-colors"
+  }, "取消"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => handleDelete(deleteModal.id),
+    className: "px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+  }, "確認刪除")))), historyModal.show && /*#__PURE__*/React.createElement("div", {
+    className: "fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[80vh] flex flex-col"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex justify-between items-center p-5 border-b"
+  }, /*#__PURE__*/React.createElement("h3", {
+    className: "text-lg font-bold text-gray-800 flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement(Clock, {
+    className: "h-5 w-5 text-blue-600"
+  }), historyModal.store?.storeName, " – 歷史紀錄"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setHistoryModal({
+      show: false,
+      store: null
+    }),
+    className: "p-1.5 hover:bg-gray-100 rounded-full"
+  }, /*#__PURE__*/React.createElement(X, {
+    className: "h-5 w-5"
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "p-5 overflow-y-auto"
+  }, !historyModal.store?.history || historyModal.store.history.length === 0 ? /*#__PURE__*/React.createElement("div", {
+    className: "text-center text-gray-400 py-10"
+  }, "尚無歷史紀錄") : /*#__PURE__*/React.createElement("ul", {
+    className: "space-y-3"
+  }, [...historyModal.store.history].sort((a, b) => new Date(b.date) - new Date(a.date)).map(h => /*#__PURE__*/React.createElement("li", {
+    key: h.id,
+    className: "flex gap-3 p-3 border rounded-lg bg-gray-50/50"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: `shrink-0 h-fit px-2 py-0.5 rounded-full text-xs font-medium ${h.type === '保養' ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700'}`
+  }, h.type), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "text-xs text-gray-400 mb-0.5"
+  }, h.date), /*#__PURE__*/React.createElement("div", {
+    className: "text-sm text-gray-700"
+  }, h.description)))))), /*#__PURE__*/React.createElement("div", {
+    className: "flex justify-end p-4 border-t"
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => setHistoryModal({
+      show: false,
+      store: null
+    }),
+    className: "px-5 py-2 border rounded-md text-gray-600 hover:bg-gray-50 transition-colors"
+  }, "關閉")))));
+};
+
+const StoreForm = ({
+  stores,
+  setStores,
+  customers,
+  targetCase,
+  storeCustomer,
+  setView,
+  showToast
+}) => {
+  const isEdit = !!targetCase;
+  const photoInputRef = useRef(null);
+  const customerName = isEdit ? targetCase.customerName : storeCustomer;
+  const autoServiceLevel = useMemo(() => {
+    const c = customers.find(c => c.name === customerName);
+    return c?.serviceLevel || targetCase?.serviceLevel || '';
+  }, [customers, customerName, targetCase]);
+  const [formData, setFormData] = useState(() => ({
+    storeCode: targetCase?.storeCode || '',
+    storeName: targetCase?.storeName || '',
+    district: targetCase?.district || DISTRICT_OPTIONS[0],
+    companyPhone: targetCase?.companyPhone || '',
+    companyFax: targetCase?.companyFax || '',
+    companyAddress: targetCase?.companyAddress || '',
+    openDate: targetCase?.openDate || '',
+    closeDate: targetCase?.closeDate || '',
+    storeStatus: targetCase?.storeStatus || STORE_STATUS_OPTIONS[0],
+    workOrderApply: targetCase?.workOrderApply || WORK_ORDER_APPLY_OPTIONS[1],
+    lastRepairDate: targetCase?.lastRepairDate || '',
+    lastMaintenanceDate: targetCase?.lastMaintenanceDate || '',
+    remarks: targetCase?.remarks || '',
+    indoorHeight: targetCase?.indoorHeight || '',
+    outdoorHeight: targetCase?.outdoorHeight || ''
+  }));
+  const [contacts, setContacts] = useState(() => targetCase?.contacts ? targetCase.contacts.map(ct => ({
+    ...ct
+  })) : []);
+  const [photos, setPhotos] = useState(() => targetCase?.photos ? targetCase.photos.map(p => ({
+    ...p
+  })) : []);
+  const [contactModal, setContactModal] = useState({
+    show: false
+  });
+  const [currentContact, setCurrentContact] = useState({
+    id: null,
+    title: '',
+    name: '',
+    phone: '',
+    email: ''
+  });
+  const handleChange = e => {
+    const {
+      name,
+      value
+    } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+  const handleContactChange = e => {
+    const {
+      name,
+      value
+    } = e.target;
+    setCurrentContact(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+  const openAddContact = () => {
+    setCurrentContact({
+      id: null,
+      title: '',
+      name: '',
+      phone: '',
+      email: ''
+    });
+    setContactModal({
+      show: true
+    });
+  };
+  const openEditContact = ct => {
+    setCurrentContact({
+      ...ct
+    });
+    setContactModal({
+      show: true
+    });
+  };
+  const handleSaveContact = () => {
+    if (!currentContact.name.trim()) {
+      showToast('承辦姓名為必填', 'error');
+      return;
+    }
+    if (currentContact.id) {
+      setContacts(contacts.map(ct => ct.id === currentContact.id ? {
+        ...currentContact
+      } : ct));
+    } else {
+      setContacts([...contacts, {
+        ...currentContact,
+        id: Date.now()
+      }]);
+    }
+    setContactModal({
+      show: false
+    });
+    showToast('承辦資料暫存成功');
+  };
+  const handleDeleteContact = id => {
+    setContacts(contacts.filter(ct => ct.id !== id));
+  };
+  const MAX_PHOTOS = 5;
+  const handlePhotoSelect = e => {
+    const files = Array.from(e.target.files || []);
+    const allowed = ['image/png', 'image/jpeg'];
+    let valid = files.filter(f => allowed.includes(f.type));
+    if (valid.length !== files.length) {
+      showToast('僅接受 png / jpg / jpeg 圖片檔案', 'error');
+    }
+    const remaining = MAX_PHOTOS - photos.length;
+    if (valid.length > remaining) {
+      valid = valid.slice(0, Math.max(0, remaining));
+      showToast(`門市照片最多只可上傳 ${MAX_PHOTOS} 張`, 'error');
+    }
+    valid.forEach((f, i) => {
+      const reader = new FileReader();
+      reader.onload = ev => {
+        setPhotos(prev => [...prev, {
+          id: Date.now() + i,
+          name: f.name,
+          url: ev.target.result
+        }]);
+      };
+      reader.readAsDataURL(f);
+    });
+    if (photoInputRef.current) photoInputRef.current.value = '';
+  };
+  const handleDeletePhoto = id => {
+    setPhotos(photos.filter(p => p.id !== id));
+  };
+  const handleSubmit = e => {
+    e.preventDefault();
+    if (!formData.storeName.trim()) {
+      showToast('門市名稱為必填', 'error');
+      return;
+    }
+    const payload = {
+      ...formData,
+      customerName,
+      serviceLevel: autoServiceLevel,
+      contacts,
+      photos
+    };
+    if (isEdit) {
+      setStores(stores.map(s => s.id === targetCase.id ? {
+        ...s,
+        ...payload
+      } : s));
+      showToast('門市資料更新成功');
+    } else {
+      const newStore = {
+        id: `STORE${Date.now()}`,
+        ...payload,
+        history: [],
+        createdDate: todayDate
+      };
+      setStores([newStore, ...stores]);
+      showToast('門市新增成功');
+    }
+    setView('store-list');
+  };
+  const inputCls = "w-full p-2.5 border rounded-md outline-none focus:border-blue-500";
+  const field = (label, name, opts = {}) => /*#__PURE__*/React.createElement("div", {
+    className: opts.wrap || null
+  }, /*#__PURE__*/React.createElement("label", {
+    className: "block text-sm mb-1"
+  }, label, opts.required && /*#__PURE__*/React.createElement("span", {
+    className: "text-red-500"
+  }, " *")), /*#__PURE__*/React.createElement("input", {
+    type: opts.type || 'text',
+    name: name,
+    value: formData[name],
+    onChange: handleChange,
+    required: opts.required,
+    className: inputCls
+  }));
+  return /*#__PURE__*/React.createElement("div", {
+    className: "max-w-5xl mx-auto bg-white p-8 rounded-lg shadow-sm border border-gray-100 relative"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex justify-between items-center mb-6 pb-4 border-b"
+  }, /*#__PURE__*/React.createElement("h2", {
+    className: "text-2xl font-bold flex items-center gap-2"
+  }, isEdit ? /*#__PURE__*/React.createElement(Edit, {
+    className: "text-blue-600"
+  }) : /*#__PURE__*/React.createElement(Plus, {
+    className: "text-blue-600"
+  }), isEdit ? ' 編輯門市' : ' 新增門市'), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setView('store-list'),
+    className: "p-2 hover:bg-gray-100 rounded-full"
+  }, /*#__PURE__*/React.createElement(X, {
+    className: "h-5 w-5"
+  }))), /*#__PURE__*/React.createElement("form", {
+    onSubmit: handleSubmit,
+    className: "space-y-6"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-cols-1 md:grid-cols-3 gap-6"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "col-span-full font-semibold text-lg text-blue-800 border-b pb-2 mb-2"
+  }, "基本資料"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+    className: "block text-sm mb-1"
+  }, "客戶名稱"), /*#__PURE__*/React.createElement("input", {
+    type: "text",
+    value: customerName || '',
+    disabled: true,
+    className: "w-full p-2.5 border rounded-md bg-gray-100 text-gray-600"
+  })), field('門市店編', 'storeCode'), field('門市名稱', 'storeName', {
+    required: true
+  }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+    className: "block text-sm mb-1"
+  }, "門市區域"), /*#__PURE__*/React.createElement("select", {
+    name: "district",
+    value: formData.district,
+    onChange: handleChange,
+    className: "w-full p-2.5 border rounded-md outline-none bg-white"
+  }, DISTRICT_OPTIONS.map(opt => /*#__PURE__*/React.createElement("option", {
+    key: opt,
+    value: opt
+  }, opt)))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+    className: "block text-sm mb-1"
+  }, "服務等級 ", /*#__PURE__*/React.createElement("span", {
+    className: "text-xs text-gray-400"
+  }, "(客戶帶入)")), /*#__PURE__*/React.createElement("input", {
+    type: "text",
+    value: autoServiceLevel || '—',
+    disabled: true,
+    className: "w-full p-2.5 border rounded-md bg-gray-100 text-gray-600"
+  })), field('公司電話', 'companyPhone'), field('公司傳真', 'companyFax'), field('公司地址', 'companyAddress', {
+    wrap: 'col-span-full md:col-span-2'
+  }), field('開幕日期', 'openDate', {
+    type: 'date'
+  }), field('撤店日期', 'closeDate', {
+    type: 'date'
+  }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+    className: "block text-sm mb-1"
+  }, "門市狀態"), /*#__PURE__*/React.createElement("select", {
+    name: "storeStatus",
+    value: formData.storeStatus,
+    onChange: handleChange,
+    className: "w-full p-2.5 border rounded-md outline-none bg-white"
+  }, STORE_STATUS_OPTIONS.map(opt => /*#__PURE__*/React.createElement("option", {
+    key: opt,
+    value: opt
+  }, opt)))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+    className: "block text-sm mb-1"
+  }, "工單申請"), /*#__PURE__*/React.createElement("select", {
+    name: "workOrderApply",
+    value: formData.workOrderApply,
+    onChange: handleChange,
+    className: "w-full p-2.5 border rounded-md outline-none bg-white"
+  }, WORK_ORDER_APPLY_OPTIONS.map(opt => /*#__PURE__*/React.createElement("option", {
+    key: opt,
+    value: opt
+  }, opt)))), field('最後叫修日期', 'lastRepairDate', {
+    type: 'date'
+  }), field('上次保養日期', 'lastMaintenanceDate', {
+    type: 'date'
+  }), field('室內高度', 'indoorHeight'), field('室外高度', 'outdoorHeight'), /*#__PURE__*/React.createElement("div", {
+    className: "col-span-full"
+  }, /*#__PURE__*/React.createElement("label", {
+    className: "block text-sm mb-1"
+  }, "備註說明"), /*#__PURE__*/React.createElement("textarea", {
+    name: "remarks",
+    value: formData.remarks,
+    onChange: handleChange,
+    rows: 3,
+    className: inputCls
+  }))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between border-b pb-2 mb-4"
+  }, /*#__PURE__*/React.createElement("h3", {
+    className: "font-semibold text-lg text-blue-800"
+  }, "承辦資料 ", /*#__PURE__*/React.createElement("span", {
+    className: "text-sm font-normal text-gray-400"
+  }, "(可多筆)")), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: openAddContact,
+    className: "flex items-center gap-1.5 text-sm bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 px-3 py-1.5 rounded-md transition-colors"
+  }, /*#__PURE__*/React.createElement(Plus, {
+    className: "h-4 w-4"
+  }), " 加入承辦資料")), contacts.length === 0 ? /*#__PURE__*/React.createElement("div", {
+    className: "text-center text-gray-400 py-6 border border-dashed rounded-md"
+  }, "尚未加入承辦資料") : /*#__PURE__*/React.createElement("div", {
+    className: "overflow-x-auto border rounded-lg"
+  }, /*#__PURE__*/React.createElement("table", {
+    className: "w-full text-left text-sm text-gray-600"
+  }, /*#__PURE__*/React.createElement("thead", {
+    className: "bg-gray-50 text-gray-700 border-b"
+  }, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", {
+    className: "p-3 font-semibold"
+  }, "承辦職稱"), /*#__PURE__*/React.createElement("th", {
+    className: "p-3 font-semibold"
+  }, "承辦姓名"), /*#__PURE__*/React.createElement("th", {
+    className: "p-3 font-semibold"
+  }, "承辦電話"), /*#__PURE__*/React.createElement("th", {
+    className: "p-3 font-semibold"
+  }, "承辦Mail"), /*#__PURE__*/React.createElement("th", {
+    className: "p-3 font-semibold text-center w-24"
+  }, "操作"))), /*#__PURE__*/React.createElement("tbody", {
+    className: "divide-y divide-gray-100"
+  }, contacts.map(ct => /*#__PURE__*/React.createElement("tr", {
+    key: ct.id,
+    className: "hover:bg-blue-50/50"
+  }, /*#__PURE__*/React.createElement("td", {
+    className: "p-3"
+  }, ct.title || '—'), /*#__PURE__*/React.createElement("td", {
+    className: "p-3 font-medium text-gray-800"
+  }, ct.name), /*#__PURE__*/React.createElement("td", {
+    className: "p-3"
+  }, ct.phone || '—'), /*#__PURE__*/React.createElement("td", {
+    className: "p-3"
+  }, ct.email || '—'), /*#__PURE__*/React.createElement("td", {
+    className: "p-3"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-center space-x-2"
+  }, /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: () => openEditContact(ct),
+    className: "p-1.5 text-blue-600 hover:bg-blue-100 rounded",
+    title: "編輯承辦資料"
+  }, /*#__PURE__*/React.createElement(Edit, {
+    className: "h-4 w-4"
+  })), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: () => handleDeleteContact(ct.id),
+    className: "p-1.5 text-red-600 hover:bg-red-100 rounded",
+    title: "刪除承辦資料"
+  }, /*#__PURE__*/React.createElement(Trash2, {
+    className: "h-4 w-4"
+  })))))))))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between border-b pb-2 mb-4"
+  }, /*#__PURE__*/React.createElement("h3", {
+    className: "font-semibold text-lg text-blue-800"
+  }, "檔案資料 ", /*#__PURE__*/React.createElement("span", {
+    className: "text-sm font-normal text-gray-400"
+  }, `(門市照片 png / jpg / jpeg，最多 ${MAX_PHOTOS} 張 ${photos.length}/${MAX_PHOTOS})`)), /*#__PURE__*/React.createElement("label", {
+    className: `flex items-center gap-1.5 text-sm border px-3 py-1.5 rounded-md transition-colors ${photos.length >= MAX_PHOTOS ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed' : 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 cursor-pointer'}`
+  }, /*#__PURE__*/React.createElement(Paperclip, {
+    className: "h-4 w-4"
+  }), " 上傳檔案", /*#__PURE__*/React.createElement("input", {
+    ref: photoInputRef,
+    type: "file",
+    accept: "image/png,image/jpeg,.png,.jpg,.jpeg",
+    multiple: true,
+    disabled: photos.length >= MAX_PHOTOS,
+    onChange: handlePhotoSelect,
+    className: "hidden"
+  }))), photos.length === 0 ? /*#__PURE__*/React.createElement("div", {
+    className: "text-center text-gray-400 py-6 border border-dashed rounded-md"
+  }, "尚未上傳門市照片") : /*#__PURE__*/React.createElement("div", {
+    className: "flex flex-wrap gap-3"
+  }, photos.map(p => /*#__PURE__*/React.createElement("div", {
+    key: p.id,
+    className: "relative w-32 group"
+  }, p.url ? /*#__PURE__*/React.createElement("img", {
+    src: p.url,
+    alt: p.name,
+    className: "w-32 h-24 object-cover rounded-md border border-gray-200 bg-gray-50"
+  }) : /*#__PURE__*/React.createElement("div", {
+    className: "w-32 h-24 flex items-center justify-center rounded-md border border-gray-200 bg-gray-100 text-gray-400"
+  }, /*#__PURE__*/React.createElement(FileText, {
+    className: "h-7 w-7"
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "mt-1 text-xs text-gray-600 truncate",
+    title: p.name
+  }, p.name), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: () => handleDeletePhoto(p.id),
+    className: "absolute -top-2 -right-2 p-1 bg-white border border-gray-200 rounded-full text-red-500 hover:bg-red-50 shadow-sm",
+    title: "刪除檔案"
+  }, /*#__PURE__*/React.createElement(X, {
+    className: "h-3.5 w-3.5"
+  })))))), /*#__PURE__*/React.createElement("div", {
+    className: "flex justify-end gap-3 pt-4 border-t"
+  }, /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: () => setView('store-list'),
+    className: "px-6 py-2.5 border rounded-md text-gray-600 hover:bg-gray-50 transition-colors"
+  }, "取消"), /*#__PURE__*/React.createElement("button", {
+    type: "submit",
+    className: "flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md shadow-sm transition-colors"
+  }, /*#__PURE__*/React.createElement(Save, {
+    className: "h-5 w-5"
+  }), " 儲存"))), contactModal.show && /*#__PURE__*/React.createElement("div", {
+    className: "fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "bg-white rounded-lg shadow-xl p-6 w-full max-w-md"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex justify-between items-center mb-4 pb-3 border-b"
+  }, /*#__PURE__*/React.createElement("h3", {
+    className: "text-lg font-bold text-gray-800"
+  }, currentContact.id ? '編輯承辦資料' : '新增承辦資料'), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setContactModal({
+      show: false
+    }),
+    className: "p-1.5 hover:bg-gray-100 rounded-full"
+  }, /*#__PURE__*/React.createElement(X, {
+    className: "h-5 w-5"
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "space-y-4"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+    className: "block text-sm mb-1"
+  }, "承辦職稱"), /*#__PURE__*/React.createElement("input", {
+    type: "text",
+    name: "title",
+    value: currentContact.title,
+    onChange: handleContactChange,
+    className: inputCls
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+    className: "block text-sm mb-1"
+  }, "承辦姓名 ", /*#__PURE__*/React.createElement("span", {
+    className: "text-red-500"
+  }, "*")), /*#__PURE__*/React.createElement("input", {
+    type: "text",
+    name: "name",
+    value: currentContact.name,
+    onChange: handleContactChange,
+    className: inputCls
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+    className: "block text-sm mb-1"
+  }, "承辦電話"), /*#__PURE__*/React.createElement("input", {
+    type: "text",
+    name: "phone",
+    value: currentContact.phone,
+    onChange: handleContactChange,
+    className: inputCls
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+    className: "block text-sm mb-1"
+  }, "承辦Mail"), /*#__PURE__*/React.createElement("input", {
+    type: "email",
+    name: "email",
+    value: currentContact.email,
+    onChange: handleContactChange,
+    className: inputCls
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "flex justify-end gap-3 mt-6"
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => setContactModal({
+      show: false
+    }),
+    className: "px-4 py-2 border rounded-md text-gray-600 hover:bg-gray-50 transition-colors"
+  }, "取消"), /*#__PURE__*/React.createElement("button", {
+    onClick: handleSaveContact,
+    className: "flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+  }, /*#__PURE__*/React.createElement(Save, {
+    className: "h-4 w-4"
+  }), " 儲存承辦")))));
+};
+
+// ==========================================
 //           8. 主應用程式框架
 // ==========================================
 
 function JinChuanWarRoom() {
-  const [currentTopMenu, setCurrentTopMenu] = useState('戰情室');
+  const [currentTopMenu, setCurrentTopMenu] = useState(() => {
+    try {
+      return localStorage.getItem('iess:currentTopMenu') || '戰情室';
+    } catch (e) {
+      return '戰情室';
+    }
+  });
   const [expandedSidebar, setExpandedSidebar] = useState(['維修服務', '工程服務', '客戶建檔']);
-  const [currentSubMenu, setCurrentSubMenu] = useState('現勘表收集');
+  const [currentSubMenu, setCurrentSubMenu] = useState(() => {
+    try {
+      return localStorage.getItem('iess:currentSubMenu') || '現勘表收集';
+    } catch (e) {
+      return '現勘表收集';
+    }
+  });
   const [view, setView] = useState('survey-list');
   const [cases, setCases] = useState(INITIAL_CASES);
   const [maintenanceCases, setMaintenanceCases] = useState(INITIAL_MAINTENANCE_CASES);
   const [projectCases, setProjectCases] = useState(INITIAL_PROJECT_CASES);
   const [surveyCases, setSurveyCases] = useState(INITIAL_SURVEY_CASES);
   const [customers, setCustomers] = useState(INITIAL_CUSTOMERS);
+  const [stores, setStores] = useState(INITIAL_STORES);
+  const [storeCustomer, setStoreCustomer] = useState('');
   const [editingCase, setEditingCase] = useState(null);
   const [viewingCase, setViewingCase] = useState(null);
   const [statusFilter, setStatusFilter] = useState('全部');
@@ -6109,7 +6955,18 @@ function JinChuanWarRoom() {
     if (currentSubMenu === '工程立案') setView('project-list');
     if (currentSubMenu === '現勘表收集') setView('survey-list');
     if (currentSubMenu === '客戶管理') setView('customer-list');
+    if (currentSubMenu === '門市管理') setView('store-list');
   }, [currentSubMenu]);
+
+  // 記住目前所在頁面，重整後停留在同一頁
+  useEffect(() => {
+    try {
+      localStorage.setItem('iess:currentTopMenu', currentTopMenu);
+      localStorage.setItem('iess:currentSubMenu', currentSubMenu);
+    } catch (e) {
+      /* localStorage 不可用時略過 */
+    }
+  }, [currentTopMenu, currentSubMenu]);
   const showToast = (message, type = 'success') => {
     setToast({
       show: true,
@@ -6177,6 +7034,9 @@ function JinChuanWarRoom() {
     children: [{
       id: '客戶管理',
       label: '客戶管理'
+    }, {
+      id: '門市管理',
+      label: '門市管理'
     }]
   }].map(menu => /*#__PURE__*/React.createElement("div", {
     key: menu.id,
@@ -6210,7 +7070,7 @@ function JinChuanWarRoom() {
     className: "flex items-center justify-center h-64 text-gray-400"
   }, /*#__PURE__*/React.createElement("p", {
     className: "text-xl"
-  }, "\u6B64\u70BA\u300C", currentTopMenu, "\u300D\u6A21\u7D44\uFF0C\u6B63\u5728\u958B\u767C\u4E2D...")) : !['案件處理', '叫修案件紀錄', '案件銷案審核', '保養計劃進度', '工程立案', '現勘表收集', '客戶管理'].includes(currentSubMenu) ? /*#__PURE__*/React.createElement("div", {
+  }, "\u6B64\u70BA\u300C", currentTopMenu, "\u300D\u6A21\u7D44\uFF0C\u6B63\u5728\u958B\u767C\u4E2D...")) : !['案件處理', '叫修案件紀錄', '案件銷案審核', '保養計劃進度', '工程立案', '現勘表收集', '客戶管理', '門市管理'].includes(currentSubMenu) ? /*#__PURE__*/React.createElement("div", {
     className: "flex items-center justify-center h-64 text-gray-400"
   }, /*#__PURE__*/React.createElement("p", {
     className: "text-xl"
@@ -6319,6 +7179,30 @@ function JinChuanWarRoom() {
     cases: customers,
     setCases: setCustomers,
     targetCase: editingCase,
+    setView: setView,
+    showToast: showToast
+  }), view === 'store-list' && /*#__PURE__*/React.createElement(StoreList, {
+    stores: stores,
+    setStores: setStores,
+    customers: customers,
+    storeCustomer: storeCustomer,
+    setStoreCustomer: setStoreCustomer,
+    setEditingCase: setEditingCase,
+    setView: setView,
+    showToast: showToast
+  }), view === 'store-add' && /*#__PURE__*/React.createElement(StoreForm, {
+    stores: stores,
+    setStores: setStores,
+    customers: customers,
+    storeCustomer: storeCustomer,
+    setView: setView,
+    showToast: showToast
+  }), view === 'store-edit' && /*#__PURE__*/React.createElement(StoreForm, {
+    stores: stores,
+    setStores: setStores,
+    customers: customers,
+    targetCase: editingCase,
+    storeCustomer: storeCustomer,
     setView: setView,
     showToast: showToast
   }))))));
