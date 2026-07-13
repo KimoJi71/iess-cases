@@ -1,5 +1,5 @@
 /*
- * features/permissions/account-list.js — 帳號設定：帳號列表
+ * features/permissions/account-list.js — 帳號管理：帳號列表
  * props: { accounts, setAccounts, setEditingCase, setView, showToast }
  */
 (function () {

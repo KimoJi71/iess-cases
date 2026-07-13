@@ -158,5 +158,5 @@ const PERMISSION_FUNCTIONS = [
   '人員動向',
   'GPS',
   '案件績效統計',
-  '帳號設定'
+  '帳號管理'
 ];

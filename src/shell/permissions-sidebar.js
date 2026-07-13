@@ -7,7 +7,7 @@
   var h = IESS.h, Icons = IESS.Icons;
 
   var MENU_ITEMS = [
-    { id: '帳號設定', icon: 'Settings' }
+    { id: '帳號管理', icon: 'Settings' }
   ];
 
   function PermissionsSidebar(props) {

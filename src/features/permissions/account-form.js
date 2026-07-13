@@ -1,5 +1,5 @@
 /*
- * features/permissions/account-form.js — 帳號設定：新增/編輯帳號表單
+ * features/permissions/account-form.js — 帳號管理：新增/編輯帳號表單
  * props: { accounts, setAccounts, setView, showToast, targetCase }
  */
 (function () {

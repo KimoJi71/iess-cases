@@ -1,5 +1,5 @@
 /*
- * features/permissions/account-permissions.js — 帳號設定：編輯權限
+ * features/permissions/account-permissions.js — 帳號管理：編輯權限
  * props: { accounts, setAccounts, targetCase, setView, showToast }
  */
 (function () {

@@ -40,7 +40,7 @@
   };
 
   var PERMISSIONS_SUBMENU_DEFAULT_VIEW = {
-    '帳號設定': 'account-list'
+    '帳號管理': 'account-list'
   };
 
   var WARROOM_SUBMENUS = Object.keys(WARROOM_SUBMENU_DEFAULT_VIEW);
@@ -52,7 +52,7 @@
   var initialSubMenu = readLS('iess:currentSubMenu', '現勘表收集');
   var initialSchedulingSubMenu = readLS('iess:schedulingSubMenu', '案件安排');
   var initialReportsSubMenu = readLS('iess:reportsSubMenu', '案件績效統計');
-  var initialPermissionsSubMenu = readLS('iess:permissionsSubMenu', '帳號設定');
+  var initialPermissionsSubMenu = readLS('iess:permissionsSubMenu', '帳號管理');
   var initialView = initialTopMenu === '案件排程'
     ? (SCHEDULING_SUBMENU_DEFAULT_VIEW[initialSchedulingSubMenu] || 'arrangement')
     : initialTopMenu === '報表統計'
