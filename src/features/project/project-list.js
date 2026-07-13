@@ -157,7 +157,9 @@
             className: 'flex flex-col items-center justify-center bg-blue-50/50 rounded p-1.5 border border-blue-100'
           }, h('span', {
             className: 'font-medium text-gray-800 text-xs mb-0.5'
-          }, stageData.date), h('span', {
+          }, stageData.date), stageData.timeStart && h('span', {
+            className: 'text-[10px] text-gray-500'
+          }, stageData.timeStart + (stageData.timeEnd ? ' ~ ' + stageData.timeEnd : '')), h('span', {
             className: 'text-blue-700 text-[11px] bg-blue-100 px-1.5 rounded truncate max-w-full',
             title: stageData.assignee
           }, stageData.assignee)) : h('div', {

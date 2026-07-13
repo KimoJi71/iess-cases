@@ -16,8 +16,8 @@
     try { localStorage.setItem(key, value); } catch (e) { /* localStorage 不可用時略過 */ }
   }
 
-  // 依子選單決定預設 view（對應原本的 useEffect 切換邏輯）
-  var SUBMENU_DEFAULT_VIEW = {
+  // 依子選單決定預設 view（戰情室）
+  var WARROOM_SUBMENU_DEFAULT_VIEW = {
     '案件處理': 'list',
     '叫修案件紀錄': 'record-list',
     '保養計劃進度': 'maintenance-list',
@@ -29,17 +29,54 @@
     '設備管理': 'equipment-list'
   };
 
-  var KNOWN_SUBMENUS = Object.keys(SUBMENU_DEFAULT_VIEW);
+  var SCHEDULING_SUBMENU_DEFAULT_VIEW = {
+    '案件安排': 'arrangement',
+    '人員動向': 'personnel-movement',
+    'GPS': 'gps'
+  };
 
+  var REPORTS_SUBMENU_DEFAULT_VIEW = {
+    '案件績效統計': 'case-performance'
+  };
+
+  var PERMISSIONS_SUBMENU_DEFAULT_VIEW = {
+    '帳號設定': 'account-list'
+  };
+
+  var WARROOM_SUBMENUS = Object.keys(WARROOM_SUBMENU_DEFAULT_VIEW);
+  var SCHEDULING_SUBMENUS = Object.keys(SCHEDULING_SUBMENU_DEFAULT_VIEW);
+  var REPORTS_SUBMENUS = Object.keys(REPORTS_SUBMENU_DEFAULT_VIEW);
+  var PERMISSIONS_SUBMENUS = Object.keys(PERMISSIONS_SUBMENU_DEFAULT_VIEW);
+
+  var initialTopMenu = readLS('iess:currentTopMenu', '戰情室');
   var initialSubMenu = readLS('iess:currentSubMenu', '現勘表收集');
+  var initialSchedulingSubMenu = readLS('iess:schedulingSubMenu', '案件安排');
+  var initialReportsSubMenu = readLS('iess:reportsSubMenu', '案件績效統計');
+  var initialPermissionsSubMenu = readLS('iess:permissionsSubMenu', '帳號設定');
+  var initialView = initialTopMenu === '案件排程'
+    ? (SCHEDULING_SUBMENU_DEFAULT_VIEW[initialSchedulingSubMenu] || 'arrangement')
+    : initialTopMenu === '報表統計'
+      ? (REPORTS_SUBMENU_DEFAULT_VIEW[initialReportsSubMenu] || 'case-performance')
+      : initialTopMenu === '系統權限'
+        ? (PERMISSIONS_SUBMENU_DEFAULT_VIEW[initialPermissionsSubMenu] || 'account-list')
+        : (WARROOM_SUBMENU_DEFAULT_VIEW[initialSubMenu] || 'survey-list');
 
   var store = IESS.createStore({
-    currentTopMenu: readLS('iess:currentTopMenu', '戰情室'),
+    currentTopMenu: initialTopMenu,
     currentSubMenu: initialSubMenu,
-    expandedSidebar: ['維修服務', '工程服務', '客戶建檔'],
-    view: SUBMENU_DEFAULT_VIEW[initialSubMenu] || 'survey-list',
+    schedulingSubMenu: initialSchedulingSubMenu,
+    reportsSubMenu: initialReportsSubMenu,
+    permissionsSubMenu: initialPermissionsSubMenu,
+    expandedSidebar: initialTopMenu === '案件排程'
+      ? []
+      : initialTopMenu === '報表統計'
+        ? []
+        : initialTopMenu === '系統權限'
+          ? []
+          : ['維修服務', '工程服務', '客戶建檔'],
+    view: initialView,
     cases: INITIAL_CASES,
-    maintenanceCases: INITIAL_MAINTENANCE_CASES,
+    maintenanceCases: ScheduleUtils.generateDueMaintenanceCases(INITIAL_CUSTOMERS, INITIAL_STORES, INITIAL_MAINTENANCE_CASES),
     projectCases: INITIAL_PROJECT_CASES,
     surveyCases: INITIAL_SURVEY_CASES,
     customers: INITIAL_CUSTOMERS,
@@ -48,6 +85,8 @@
     equipments: INITIAL_EQUIPMENTS,
     equipmentCustomer: '',
     equipmentStore: '',
+    personnelStatus: INITIAL_PERSONNEL_STATUS,
+    accounts: INITIAL_ACCOUNTS,
     editingCase: null,
     viewingCase: null,
     statusFilter: '全部'
@@ -78,16 +117,48 @@
   var setEquipments = makeSetter('equipments');
   var setEquipmentCustomer = makeSetter('equipmentCustomer');
   var setEquipmentStore = makeSetter('equipmentStore');
+  var setPersonnelStatus = makeSetter('personnelStatus');
+  var setAccounts = makeSetter('accounts');
 
   function setCurrentTopMenu(menu) {
-    store.set({ currentTopMenu: menu });
+    var s = store.get();
+    var nextView;
+    var nextExpanded = s.expandedSidebar.slice();
+    if (menu === '案件排程') {
+      nextView = SCHEDULING_SUBMENU_DEFAULT_VIEW[s.schedulingSubMenu] || 'arrangement';
+    } else if (menu === '報表統計') {
+      nextView = REPORTS_SUBMENU_DEFAULT_VIEW[s.reportsSubMenu] || 'case-performance';
+    } else if (menu === '系統權限') {
+      nextView = PERMISSIONS_SUBMENU_DEFAULT_VIEW[s.permissionsSubMenu] || 'account-list';
+    } else {
+      nextView = WARROOM_SUBMENU_DEFAULT_VIEW[s.currentSubMenu] || 'survey-list';
+    }
+    store.set({ currentTopMenu: menu, view: nextView, expandedSidebar: nextExpanded });
     writeLS('iess:currentTopMenu', menu);
   }
 
   function setCurrentSubMenu(sub) {
-    var defaultView = SUBMENU_DEFAULT_VIEW[sub];
+    var defaultView = WARROOM_SUBMENU_DEFAULT_VIEW[sub];
     store.set({ currentSubMenu: sub, view: defaultView || store.get().view });
     writeLS('iess:currentSubMenu', sub);
+  }
+
+  function setSchedulingSubMenu(sub) {
+    var defaultView = SCHEDULING_SUBMENU_DEFAULT_VIEW[sub];
+    store.set({ schedulingSubMenu: sub, view: defaultView || store.get().view });
+    writeLS('iess:schedulingSubMenu', sub);
+  }
+
+  function setReportsSubMenu(sub) {
+    var defaultView = REPORTS_SUBMENU_DEFAULT_VIEW[sub];
+    store.set({ reportsSubMenu: sub, view: defaultView || store.get().view });
+    writeLS('iess:reportsSubMenu', sub);
+  }
+
+  function setPermissionsSubMenu(sub) {
+    var defaultView = PERMISSIONS_SUBMENU_DEFAULT_VIEW[sub];
+    store.set({ permissionsSubMenu: sub, view: defaultView || store.get().view });
+    writeLS('iess:permissionsSubMenu', sub);
   }
 
   function toggleExpand(id) {
@@ -101,8 +172,8 @@
     });
   }
 
-  // --- 依 view 對應到功能元件 ---
-  function renderView(s) {
+  // --- 依 view 對應到功能元件（戰情室） ---
+  function renderWarroomView(s) {
     var v = s.view;
     switch (v) {
       case 'list':
@@ -249,16 +320,110 @@
     }
   }
 
-  function renderMain(s) {
-    if (s.currentTopMenu !== '戰情室') {
-      return h('div', { className: 'flex items-center justify-center h-64 text-gray-400' },
-        h('p', { className: 'text-xl' }, '此為「' + s.currentTopMenu + '」模組，正在開發中...'));
+  function renderSchedulingView(s) {
+    switch (s.view) {
+      case 'arrangement':
+        return h(CaseArrangement, {
+          maintenanceCases: s.maintenanceCases,
+          setMaintenanceCases: setMaintenanceCases,
+          cases: s.cases,
+          setCases: setCasesData,
+          projectCases: s.projectCases,
+          setProjectCases: setProjectCases,
+          personnelStatus: s.personnelStatus,
+          setPersonnelStatus: setPersonnelStatus,
+          customers: s.customers,
+          stores: s.stores,
+          showToast: showToast
+        });
+      case 'personnel-movement':
+        return h(PersonnelMovement, {
+          maintenanceCases: s.maintenanceCases,
+          cases: s.cases,
+          projectCases: s.projectCases,
+          showToast: showToast
+        });
+      case 'gps':
+        return h(GpsTracking);
+      default:
+        return null;
     }
-    if (KNOWN_SUBMENUS.indexOf(s.currentSubMenu) === -1) {
+  }
+
+  function renderReportsView(s) {
+    switch (s.view) {
+      case 'case-performance':
+        return h(CasePerformanceStats, { cases: s.cases });
+      default:
+        return null;
+    }
+  }
+
+  function renderPermissionsView(s) {
+    switch (s.view) {
+      case 'account-list':
+        return h(AccountList, {
+          accounts: s.accounts,
+          setAccounts: setAccounts,
+          setEditingCase: setEditingCase,
+          setView: setView,
+          showToast: showToast
+        });
+      case 'account-add':
+        return h(AccountForm, {
+          accounts: s.accounts,
+          setAccounts: setAccounts,
+          setView: setView,
+          showToast: showToast
+        });
+      case 'account-edit':
+        return h(AccountForm, {
+          accounts: s.accounts,
+          setAccounts: setAccounts,
+          targetCase: s.editingCase,
+          setView: setView,
+          showToast: showToast
+        });
+      case 'account-permissions':
+        return h(AccountPermissions, {
+          accounts: s.accounts,
+          setAccounts: setAccounts,
+          targetCase: s.editingCase,
+          setView: setView,
+          showToast: showToast
+        });
+      default:
+        return null;
+    }
+  }
+
+  function renderMain(s) {
+    if (s.currentTopMenu === '案件排程') {
+      if (SCHEDULING_SUBMENUS.indexOf(s.schedulingSubMenu) === -1) {
+        return h('div', { className: 'flex items-center justify-center h-64 text-gray-400' },
+          h('p', { className: 'text-xl' }, '此為「' + s.schedulingSubMenu + '」功能，請點選選單查看實作'));
+      }
+      return renderSchedulingView(s);
+    }
+    if (s.currentTopMenu === '報表統計') {
+      if (REPORTS_SUBMENUS.indexOf(s.reportsSubMenu) === -1) {
+        return h('div', { className: 'flex items-center justify-center h-64 text-gray-400' },
+          h('p', { className: 'text-xl' }, '此為「' + s.reportsSubMenu + '」功能，請點選選單查看實作'));
+      }
+      return renderReportsView(s);
+    }
+    if (s.currentTopMenu === '系統權限') {
+      if (PERMISSIONS_SUBMENUS.indexOf(s.permissionsSubMenu) === -1) {
+        return h('div', { className: 'flex items-center justify-center h-64 text-gray-400' },
+          h('p', { className: 'text-xl' }, '此為「' + s.permissionsSubMenu + '」功能，請點選選單查看實作'));
+      }
+      return renderPermissionsView(s);
+    }
+    if (WARROOM_SUBMENUS.indexOf(s.currentSubMenu) === -1) {
       return h('div', { className: 'flex items-center justify-center h-64 text-gray-400' },
         h('p', { className: 'text-xl' }, '此為「' + s.currentSubMenu + '」功能，請點選選單查看實作'));
     }
-    return renderView(s);
+    return renderWarroomView(s);
   }
 
   function App(s) {
@@ -270,6 +435,18 @@
           expandedSidebar: s.expandedSidebar,
           setCurrentSubMenu: setCurrentSubMenu,
           toggleExpand: toggleExpand
+        }),
+        s.currentTopMenu === '案件排程' && h(SchedulingSidebar, {
+          currentSubMenu: s.schedulingSubMenu,
+          setCurrentSubMenu: setSchedulingSubMenu
+        }),
+        s.currentTopMenu === '報表統計' && h(ReportsSidebar, {
+          currentSubMenu: s.reportsSubMenu,
+          setCurrentSubMenu: setReportsSubMenu
+        }),
+        s.currentTopMenu === '系統權限' && h(PermissionsSidebar, {
+          currentSubMenu: s.permissionsSubMenu,
+          setCurrentSubMenu: setPermissionsSubMenu
         }),
         h('main', { className: 'flex-1 overflow-y-auto p-6 w-full' },
           h('div', { className: 'max-w-[1600px] mx-auto w-full' }, renderMain(s))

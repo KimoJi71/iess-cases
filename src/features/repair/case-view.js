@@ -13,6 +13,11 @@
 
     var dragProps = useDragScroll();
 
+    function formatTimeRange(start, end) {
+      if (!start) return '';
+      return end && end !== start ? start + ' ~ ' + end : start;
+    }
+
     function ReadOnlyField(p) {
       var label = p.label;
       var value = p.value;
@@ -49,7 +54,14 @@
             h(ReadOnlyField, { label: '叫修項目', value: viewingCase && viewingCase.repairItem }),
             h(ReadOnlyField, { label: '叫修原因', value: viewingCase && viewingCase.repairReason }),
             h(ReadOnlyField, { label: '指派人員', value: viewingCase && viewingCase.assignee }),
-            h(ReadOnlyField, { label: '預計日期', value: viewingCase && viewingCase.expectedDate }),
+            h(ReadOnlyField, { label: '預計日期', value: viewingCase && (viewingCase.expectedDate || viewingCase.planDate) }),
+            h(ReadOnlyField, {
+              label: '預計時間',
+              value: viewingCase && formatTimeRange(
+                viewingCase.expectedTimeStart || viewingCase.planTimeStart,
+                viewingCase.expectedTimeEnd || viewingCase.planTimeEnd
+              )
+            }),
             h(ReadOnlyField, { label: '故障描述', value: viewingCase && viewingCase.faultDesc, fullWidth: true })
           )
         ),

@@ -36,8 +36,17 @@
         showToast('已刪除該筆現勘表資料');
       }
 
-      function handleExportPDF(fileName) {
-        showToast('「匯出 PDF」功能開發中... (' + fileName + ')');
+      function handleExportPDF(surveyCase) {
+        if (typeof exportSurveyPdf !== 'function') {
+          showToast('PDF 匯出功能尚未載入', 'error');
+          return;
+        }
+        showToast('正在產生 PDF…');
+        exportSurveyPdf(surveyCase, function (msg) {
+          showToast(msg || 'PDF 匯出失敗', 'error');
+        }).then(function () {
+          showToast('PDF 已下載：' + surveyCase.fileName);
+        }).catch(function () { /* onError 已提示 */ });
       }
 
       return h('div', {
@@ -131,9 +140,9 @@
                       title: '編輯'
                     }, Icons.Edit({ className: 'h-4 w-4' })),
                     h('button', {
-                      onClick: function () { handleExportPDF(c.fileName); },
+                      onClick: function () { handleExportPDF(c); },
                       className: 'p-1.5 text-emerald-600 hover:bg-emerald-100 rounded',
-                      title: '匯出 PDF'
+                      title: '下載 PDF'
                     }, Icons.Download({ className: 'h-4 w-4' })),
                     h('button', {
                       onClick: function () { deleteConfirmModal = { show: true, id: c.id }; rerender(); },
@@ -149,8 +158,13 @@
                   className: 'p-3'
                 }, c.storeName),
                 h('td', {
-                  className: 'p-3 font-medium text-blue-700'
-                }, c.fileName),
+                  className: 'p-3'
+                }, h('button', {
+                  type: 'button',
+                  onClick: function () { handleExportPDF(c); },
+                  className: 'font-medium text-blue-700 hover:text-blue-900 hover:underline text-left',
+                  title: '下載 PDF'
+                }, c.fileName)),
                 h('td', {
                   className: 'p-3'
                 }, c.fillDate)

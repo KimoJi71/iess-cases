@@ -4,7 +4,7 @@
  */
 (function () {
   'use strict';
-  var h = IESS.h, Fragment = IESS.Fragment, Icons = IESS.Icons, stateful = IESS.stateful;
+  var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful;
 
   function SurveyForm(props) {
     var cases = props.cases;
@@ -21,13 +21,13 @@
           storeName: '',
           storeAddress: '',
           fillDate: todayDate,
-          surveyType: SURVEY_TYPES[0],
           surveyData: {} // 儲存各類型動態題目答案
         };
     // 室外機施工內容 - 可隱藏題目的顯示切換
     var showOutdoorHideable = true;
     // 沿用設備 - 可隱藏題目的顯示切換
     var showReuseEquipment = true;
+    var activeSurveyTab = SURVEY_TYPES[0];
 
     return stateful(function (rerender) {
       // ===== 事件處理器（對應原 useState/setFormData） =====
@@ -469,7 +469,7 @@
             showToast('客戶名稱、門市名稱與門市地址皆為必填', 'error');
             return;
           }
-          const fileName = `${formData.customerName}_${formData.storeName}_${formData.surveyType}_${formData.fillDate.replace(/-/g, '')}`;
+          const fileName = `${formData.customerName}_${formData.storeName}_現勘表_${formData.fillDate.replace(/-/g, '')}`;
           if (isEdit) {
             setCases(cases.map(c => c.id === formData.id ? {
               ...formData,
@@ -555,18 +555,23 @@
           onChange: handleChange,
           required: true,
           className: "w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-        })), h("div", null, h("label", {
-          className: "block text-sm font-medium text-blue-700 mb-1"
-        }, "\u73FE\u52D8\u8868\u985E\u578B"), h("select", {
-          name: "surveyType",
-          value: formData.surveyType,
-          onChange: handleChange,
-          className: "w-full p-2 border-2 border-blue-300 rounded-md outline-none focus:border-blue-500 bg-white font-bold text-blue-900 shadow-sm"
-        }, SURVEY_TYPES.map(opt => h("option", {
-          key: opt,
-          value: opt
-        }, opt))))), formData.surveyType === '環境與施工' ? h("div", {
-          className: "mt-8 space-y-8"
+        }))), h("div", {
+          className: "mt-8"
+        }, h("div", {
+          className: "flex flex-wrap gap-1 border-b border-gray-200 mb-6 -mx-1"
+        }, SURVEY_TYPES.map(function (tab) {
+          var isActive = activeSurveyTab === tab;
+          return h("button", {
+            key: tab,
+            type: "button",
+            onClick: function () {
+              activeSurveyTab = tab;
+              rerender();
+            },
+            className: "px-3 py-2.5 text-sm font-medium rounded-t-md border-b-2 transition-colors whitespace-nowrap " + (isActive ? "border-blue-600 text-blue-700 bg-blue-50" : "border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50")
+          }, tab);
+        })), activeSurveyTab === '環境與施工' && h("div", {
+          className: "space-y-8"
         }, h("div", {
           className: "bg-indigo-50/30 p-8 rounded-lg border border-indigo-100 shadow-sm"
         }, h("h3", {
@@ -1257,8 +1262,8 @@
           className: "w-full p-2.5 pr-10 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm"
         }), h("span", {
           className: "absolute right-3 top-2.5 text-gray-400 text-sm"
-        }, "支"))))))) : formData.surveyType === '設備與零件' ? h("div", {
-          className: "mt-8 space-y-8"
+        }, "支"))))))), activeSurveyTab === '設備與零件' && h("div", {
+          className: "space-y-8"
         },
         /* ===== 新增設備（可增加多個設備） ===== */
         h("div", {
@@ -1469,8 +1474,8 @@
           onChange: handleSurveyChange,
           placeholder: "請填寫...",
           className: "w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500"
-        }))))) : formData.surveyType === '配管工程' ? h("div", {
-          className: "mt-8 space-y-8"
+        }))))), activeSurveyTab === '配管工程' && h("div", {
+          className: "space-y-8"
         },
         /* ===== 銅管工程 ===== */
         h("div", {
@@ -1529,8 +1534,8 @@
           className: "w-4 h-4 text-indigo-600 border-gray-300 focus:ring-indigo-500"
         }), h("span", {
           className: "text-sm text-gray-700 font-medium"
-        }, sz))))) : null), renderPipingCheckQtyGroup('管槽配件', '請勾選配件並填寫數量／長度', 'channelFittings', 'channelFittingsQty', PIPING_CHANNEL_FITTINGS, '個', '數量'), renderPipingSingleSelect('管路保護顏色（單選）', 'protectColor', PIPING_PROTECT_COLORS)))) : formData.surveyType === '配電工程' ? h("div", {
-          className: "mt-8 space-y-8"
+        }, sz))))) : null), renderPipingCheckQtyGroup('管槽配件', '請勾選配件並填寫數量／長度', 'channelFittings', 'channelFittingsQty', PIPING_CHANNEL_FITTINGS, '個', '數量'), renderPipingSingleSelect('管路保護顏色（單選）', 'protectColor', PIPING_PROTECT_COLORS)))), activeSurveyTab === '配電工程' && h("div", {
+          className: "space-y-8"
         },
         /* ===== 控制及訊號線材 ===== */
         h("div", {
@@ -1551,8 +1556,8 @@
           className: "h-6 w-6"
         }), " 電源線線材／米"), h("div", {
           className: "space-y-6"
-        }, renderPipingCheckQtyGroup('電源線線材', '請勾選線材規格並填寫長度（米）', 'powerCableWire', 'powerCableWireQty', WIRING_POWER_CABLE, '米', '長度')))) : formData.surveyType === '風管工程' ? h("div", {
-          className: "mt-8 space-y-8"
+        }, renderPipingCheckQtyGroup('電源線線材', '請勾選線材規格並填寫長度（米）', 'powerCableWire', 'powerCableWireQty', WIRING_POWER_CABLE, '米', '長度')))), activeSurveyTab === '風管工程' && h("div", {
+          className: "space-y-8"
         },
         /* ===== 保溫軟管(玻璃棉) ===== */
         h("div", {
@@ -1589,8 +1594,8 @@
         /* ===== 回風口 ===== */
         renderReturnOutletBox(),
         /* ===== 特製風箱 ===== */
-        renderCustomBox()) : formData.surveyType === '拆除工程' ? h("div", {
-          className: "mt-8 space-y-8"
+        renderCustomBox()), activeSurveyTab === '拆除工程' && h("div", {
+          className: "space-y-8"
         },
         /* ===== 舊設備拆除 ===== */
         h("div", {
@@ -1727,8 +1732,8 @@
           disabled: formData.surveyData?.wasteDisposal !== '其他',
           className: "p-1.5 border-b-2 border-gray-300 outline-none focus:border-indigo-500 bg-transparent disabled:opacity-50 text-sm font-medium",
           placeholder: "請註明"
-        }))))) : formData.surveyType === '汰換工程' ? h("div", {
-          className: "mt-8 space-y-8"
+        }))))), activeSurveyTab === '汰換工程' && h("div", {
+          className: "space-y-8"
         },
         /* ===== 裝潢區開孔尺寸說明 ===== */
         h("div", {
@@ -1788,15 +1793,7 @@
           rows: 3,
           className: "w-full p-2.5 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 bg-white shadow-sm",
           placeholder: "請填寫"
-        }))) : h("div", {
-          className: "mt-8 border-2 border-dashed border-gray-300 rounded-xl p-16 flex flex-col items-center justify-center bg-gray-50/50"
-        }, Icons.FileText({
-          className: "h-16 w-16 text-gray-300 mb-4"
-        }), h("h3", {
-          className: "text-xl font-bold text-gray-700 mb-2"
-        }, "\u3010 ", formData.surveyType, " \u3011\u984C\u5EAB\u5340\u584A"), h("p", {
-          className: "text-gray-500 text-sm"
-        }, "\u8ACB\u7B49\u5019\u63D0\u4F9B\u8A73\u7D30\u984C\u76EE\u5F8C\uFF0C\u65BC\u6B64\u8655\u751F\u6210\u5C0D\u61C9\u7684\u554F\u5377\u8868\u55AE\u5167\u5BB9\u3002"))), h("div", {
+        })))), h("div", {
           className: "mt-8 pt-6 border-t flex justify-end gap-4"
         }, h("button", {
           type: "button",
@@ -1807,7 +1804,7 @@
           className: "px-8 py-2.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center gap-2 font-bold shadow-sm transition-colors"
         }, Icons.Save({
           className: "h-5 w-5"
-        }), " \u5132\u5B58\u8868\u55AE"))));
+        }), " \u5132\u5B58\u8868\u55AE")))));
     });
   }
 

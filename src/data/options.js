@@ -124,3 +124,39 @@ const todayDate = today.toISOString().split('T')[0];
 const yesterdayDate = new Date(Date.now() - 86400000).toISOString().split('T')[0];
 const twoDaysAgoDate = new Date(Date.now() - 86400000 * 2).toISOString().split('T')[0];
 const currentMonthStr = today.toISOString().slice(0, 7);
+
+// 案件排程專用選項
+const SCHEDULE_ASSIGNEE_OPTIONS = ['A組', 'B組', 'C組', 'D組', '督導', '協力廠商', '案件待辦'];
+const SCHEDULE_WORK_CATEGORY_OPTIONS = ['保養', '保養清潔', '一般叫修', '緊急叫修', '新開', '汰換', '撤店', '整裝', '加裝'];
+
+// 報表統計專用選項
+const PERFORMANCE_ASSIGNEES = ['A組', 'B組', 'C組', 'D組', '晉詮人員', '協力廠商'];
+const PERFORMANCE_QUARTERLY_TARGETS = {
+  'A組': 5,
+  'B組': 4,
+  'C組': 3,
+  'D組': 3,
+  '晉詮人員': 2,
+  '協力廠商': 2
+};
+
+// 系統權限專用選項
+const ACCOUNT_ASSIGNEE_OPTIONS = ['A組', 'B組', 'C組', 'D組', '晉詮人員', '協力廠商', '督導', '管理員'];
+const PERMISSION_OPERATION_TYPES = ['view', 'edit', 'close'];
+const PERMISSION_OPERATION_LABELS = { view: '檢視', edit: '編輯', close: '結案' };
+const PERMISSION_FUNCTIONS = [
+  '案件處理',
+  '叫修案件紀錄',
+  '保養計劃進度',
+  '案件銷案審核',
+  '工程立案',
+  '現勘表收集',
+  '客戶管理',
+  '門市管理',
+  '設備管理',
+  '案件安排',
+  '人員動向',
+  'GPS',
+  '案件績效統計',
+  '帳號設定'
+];

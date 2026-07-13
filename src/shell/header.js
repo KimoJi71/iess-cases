@@ -10,7 +10,7 @@
     var currentTopMenu = props.currentTopMenu;
     var setCurrentTopMenu = props.setCurrentTopMenu;
 
-    var menus = ['首頁', '戰情室', '案件管理', '設備管理', '系統設定'];
+    var menus = ['戰情室', '案件排程', '報表統計', '系統權限'];
 
     return h('header', { className: 'bg-blue-900 text-white shadow-md shrink-0' },
       h('div', { className: 'flex items-center justify-between px-6 py-3' },

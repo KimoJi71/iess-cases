@@ -5,24 +5,33 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>IESS 戰情室 Demo</title>
   <link rel="stylesheet" href="styles.css" />
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css" rel="stylesheet" />
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/interaction@6.1.11/index.global.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 <body class="h-full bg-slate-100">
   <div id="root"></div>
 
   <!-- ===== core（基礎設施，需先載入） ===== -->
   <script src="src/core/dom.js"></script>
+  <script src="src/core/time-input.js"></script>
   <script src="src/core/icons.js"></script>
   <script src="src/core/store.js"></script>
   <script src="src/core/toast.js"></script>
 
   <!-- ===== data（常數與假資料） ===== -->
   <script src="src/data/options.js"></script>
+  <script src="src/features/permissions/account-utils.js"></script>
   <script src="src/data/seed.js"></script>
 
   <!-- ===== shell（外框：頁首／側邊選單） ===== -->
   <script src="src/shell/header.js"></script>
   <script src="src/shell/sidebar.js"></script>
+  <script src="src/shell/scheduling-sidebar.js"></script>
+  <script src="src/shell/reports-sidebar.js"></script>
+  <script src="src/shell/permissions-sidebar.js"></script>
   <script src="src/shell/page-header.js"></script>
 
   <!-- ===== features / 維修服務 ===== -->
@@ -37,6 +46,7 @@
   <script src="src/features/project/project-history.js"></script>
   <script src="src/features/project/project-list.js"></script>
   <script src="src/features/project/project-form.js"></script>
+  <script src="src/features/project/survey-pdf.js"></script>
   <script src="src/features/project/survey-list.js"></script>
   <script src="src/features/project/survey-form.js"></script>
 
@@ -50,6 +60,22 @@
   <script src="src/features/customer/store-history.js"></script>
   <script src="src/features/customer/equipment-list.js"></script>
   <script src="src/features/customer/equipment-form.js"></script>
+
+  <!-- ===== features / 案件排程 ===== -->
+  <script src="src/features/scheduling/calendar-bridge.js"></script>
+  <script src="src/features/scheduling/schedule-utils.js"></script>
+  <script src="src/features/scheduling/case-arrangement.js"></script>
+  <script src="src/features/scheduling/personnel-movement.js"></script>
+  <script src="src/features/scheduling/gps.js"></script>
+
+  <!-- ===== features / 報表統計 ===== -->
+  <script src="src/features/reports/performance-utils.js"></script>
+  <script src="src/features/reports/case-performance-stats.js"></script>
+
+  <!-- ===== features / 系統權限 ===== -->
+  <script src="src/features/permissions/account-list.js"></script>
+  <script src="src/features/permissions/account-form.js"></script>
+  <script src="src/features/permissions/account-permissions.js"></script>
 
   <!-- ===== app 進入點（最後載入） ===== -->
   <script src="src/app.js"></script>

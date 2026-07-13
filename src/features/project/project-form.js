@@ -5,7 +5,7 @@
  */
 (function () {
   'use strict';
-  var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful, useDragScroll = IESS.useDragScroll;
+  var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful, useDragScroll = IESS.useDragScroll, TimeInput24 = IESS.TimeInput24;
 
   function AddProjectForm(props) {
     var cases = props.cases;
@@ -487,7 +487,9 @@
       var existing = (formData.history || []).find(function (hh) { return hh.stage === s; });
       initialStages[s] = {
         date: (existing && existing.date) || '',
-        assignee: (existing && existing.assignee) || ''
+        assignee: (existing && existing.assignee) || '',
+        timeStart: (existing && existing.timeStart) || '',
+        timeEnd: (existing && existing.timeEnd) || ''
       };
     });
     var stagesData = initialStages;
@@ -515,7 +517,9 @@
             newHistory.push({
               stage: stage,
               date: stagesData[stage].date,
-              assignee: stagesData[stage].assignee
+              assignee: stagesData[stage].assignee,
+              timeStart: stagesData[stage].timeStart || '',
+              timeEnd: stagesData[stage].timeEnd || ''
             });
           }
         });
@@ -523,6 +527,14 @@
           history: newHistory,
           currentStage: newHistory.length > 0 ? newHistory[newHistory.length - 1].stage : '立案時間'
         });
+        var currentEntry = newHistory.length > 0 ? newHistory[newHistory.length - 1] : null;
+        if (currentEntry && currentEntry.date) {
+          updatedCase.planDate = currentEntry.date;
+          updatedCase.planTimeStart = currentEntry.timeStart || '';
+          updatedCase.planTimeEnd = currentEntry.timeEnd || '';
+          updatedCase.stageDate = currentEntry.date;
+          updatedCase.stageAssignee = currentEntry.assignee || updatedCase.stageAssignee;
+        }
         setCases(cases.map(function (c) { return c.id === updatedCase.id ? updatedCase : c; }));
         showToast('工程項目進度已成功更新');
         setView('project-list');
@@ -661,7 +673,7 @@
         }, idx + 1), h('span', {
           className: 'font-medium text-gray-800'
         }, stage)), h('div', {
-          className: 'flex-1 grid grid-cols-1 md:grid-cols-2 gap-4'
+          className: 'flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4'
         }, h('div', null, h('label', {
           className: 'block text-xs text-gray-500 mb-1'
         }, '作業日期'), h('input', {
@@ -669,6 +681,18 @@
           value: stagesData[stage].date,
           onChange: function (e) { handleStageChange(stage, 'date', e.target.value); },
           className: 'w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500'
+        })), h('div', null, h('label', {
+          className: 'block text-xs text-gray-500 mb-1'
+        }, '開始時間'), h(TimeInput24, {
+          value: stagesData[stage].timeStart,
+          onChange: function (e) { handleStageChange(stage, 'timeStart', e.target.value); },
+          className: 'w-full'
+        })), h('div', null, h('label', {
+          className: 'block text-xs text-gray-500 mb-1'
+        }, '結束時間'), h(TimeInput24, {
+          value: stagesData[stage].timeEnd,
+          onChange: function (e) { handleStageChange(stage, 'timeEnd', e.target.value); },
+          className: 'w-full'
         })), h('div', null, h('label', {
           className: 'block text-xs text-gray-500 mb-1'
         }, '負責人員'), h('select', {

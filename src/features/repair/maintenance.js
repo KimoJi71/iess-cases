@@ -7,7 +7,7 @@
 (function () {
   'use strict';
   var h = IESS.h, Fragment = IESS.Fragment, Icons = IESS.Icons,
-      stateful = IESS.stateful, useDragScroll = IESS.useDragScroll;
+      stateful = IESS.stateful, useDragScroll = IESS.useDragScroll, TimeInput24 = IESS.TimeInput24;
 
   function MaintenanceList(props) {
     var cases = props.cases;
@@ -46,14 +46,17 @@
 
       var filteredCases = cases.filter(function (c) {
         if (c.isClosed) return false;
-        var caseMonth = c.planDate ? c.planDate.slice(0, 7) : '';
-        if (caseMonth && (caseMonth < appliedFilters.start || caseMonth > appliedFilters.end)) return false;
         if (appliedFilters.customer !== '全部' && c.customerName !== appliedFilters.customer) return false;
         if (appliedFilters.district !== '全部' && c.district !== appliedFilters.district) return false;
         if (appliedFilters.status !== '全部' && c.status !== appliedFilters.status) return false;
+        var caseMonth = (c.planDate && c.planDate.slice(0, 7)) || c.dueMonth || '';
+        if (caseMonth && (caseMonth < appliedFilters.start || caseMonth > appliedFilters.end)) return false;
+        if (!caseMonth && c.status !== '待排程') return false;
         return true;
       }).sort(function (a, b) {
-        return new Date(b.planDate || '1970-01-01') - new Date(a.planDate || '1970-01-01');
+        var aDate = a.planDate || a.dueMonth || '1970-01-01';
+        var bDate = b.planDate || b.dueMonth || '1970-01-01';
+        return new Date(bDate) - new Date(aDate);
       });
 
       function handleCloseCase(id) {
@@ -146,12 +149,16 @@
         className: "p-3 font-semibold text-center"
       }, "保養狀態"), h("th", {
         className: "p-3 font-semibold"
+      }, "工項類別"), h("th", {
+        className: "p-3 font-semibold"
       }, "保養日期"), h("th", {
+        className: "p-3 font-semibold"
+      }, "保養時間"), h("th", {
         className: "p-3 font-semibold"
       }, "保養人員"))), h("tbody", {
         className: "divide-y divide-gray-100"
       }, filteredCases.length === 0 ? h("tr", null, h("td", {
-        colspan: "9",
+        colspan: "11",
         className: "text-center p-8 text-gray-400"
       }, "無符合條件之保養資料")) : filteredCases.map(function (c) {
         return h("tr", {
@@ -199,7 +206,12 @@
           className: "px-2 py-1 rounded-full text-xs font-medium " + (c.status === '已完工' ? 'bg-green-100 text-green-700' : c.status === '逾期' ? 'bg-red-100 text-red-700' : c.status === '待排程' ? 'bg-gray-100 text-gray-600' : 'bg-blue-100 text-blue-700')
         }, c.status)), h("td", {
           className: "p-3"
-        }, c.planDate || '未定'), h("td", {
+        }, c.workCategory || '保養'), h("td", {
+          className: "p-3"
+        }, c.planDate || (c.dueMonth ? c.dueMonth + '（待排程）' : '未定')), h("td", {
+          className: "p-3"
+        }, c.planTimeStart ? (c.planTimeEnd && c.planTimeEnd !== c.planTimeStart
+          ? c.planTimeStart + ' ~ ' + c.planTimeEnd : c.planTimeStart) : '-'), h("td", {
           className: "p-3"
         }, c.assignee));
       })))), closeConfirmModal.show && h("div", {
@@ -253,6 +265,9 @@
     return stateful(function (rerender) {
       function handleSubmit() {
         var updatedData = Object.assign({}, formData);
+        if (updatedData.planDate && updatedData.status === '待排程') {
+          updatedData.status = '已排程';
+        }
 
         // 如果原本沒有編號，且現在有了保養日期，就產生一組新編號
         if (!updatedData.caseNumber && updatedData.planDate) {
@@ -333,6 +348,22 @@
         return h("option", { key: opt, value: opt }, opt);
       })) : h(ReadOnlyField, {
         value: formData.assignee
+      })), h("div", null, h("span", {
+        className: "text-gray-500 block mb-1 text-xs"
+      }, "保養開始時間"), isEdit ? h(TimeInput24, {
+        value: formData.planTimeStart || '',
+        onChange: function (e) { formData = Object.assign({}, formData, { planTimeStart: e.target.value }); rerender(); },
+        className: "w-full"
+      }) : h(ReadOnlyField, {
+        value: formData.planTimeStart
+      })), h("div", null, h("span", {
+        className: "text-gray-500 block mb-1 text-xs"
+      }, "保養結束時間"), isEdit ? h(TimeInput24, {
+        value: formData.planTimeEnd || '',
+        onChange: function (e) { formData = Object.assign({}, formData, { planTimeEnd: e.target.value }); rerender(); },
+        className: "w-full"
+      }) : h(ReadOnlyField, {
+        value: formData.planTimeEnd
       })))), isEdit && h("div", {
         className: "mt-8 pt-6 border-t flex justify-end gap-4"
       }, h("button", {

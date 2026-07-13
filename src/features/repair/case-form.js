@@ -6,7 +6,7 @@
  */
 (function () {
   'use strict';
-  var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful, useDragScroll = IESS.useDragScroll;
+  var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful, useDragScroll = IESS.useDragScroll, TimeInput24 = IESS.TimeInput24;
 
   function AddCaseForm(props) {
     var cases = props.cases;
@@ -56,6 +56,9 @@
           equipment: null,
           reRepairDate: '',
           completionDate: '',
+          planDate: formData.expectedDate || '',
+          planTimeStart: formData.expectedTimeStart || '',
+          planTimeEnd: formData.expectedTimeEnd || '',
           isPerformanceIncluded: false
         });
         setCases([newCase].concat(cases));
@@ -201,6 +204,20 @@
         value: formData.expectedDate,
         onChange: handleChange,
         className: "w-full p-2.5 border rounded-md outline-none"
+      })), h("div", null, h("label", {
+        className: "block text-sm mb-1"
+      }, "預計開始時間"), h(TimeInput24, {
+        name: "expectedTimeStart",
+        value: formData.expectedTimeStart,
+        onChange: handleChange,
+        className: "w-full"
+      })), h("div", null, h("label", {
+        className: "block text-sm mb-1"
+      }, "預計結束時間"), h(TimeInput24, {
+        name: "expectedTimeEnd",
+        value: formData.expectedTimeEnd,
+        onChange: handleChange,
+        className: "w-full"
       })))), h("div", {
         className: "mt-8 pt-6 border-t flex justify-end gap-4"
       }, h("button", {
@@ -224,6 +241,9 @@
     var showToast = props.showToast;
 
     var formData = JSON.parse(JSON.stringify(editingCase));
+    if (!formData.expectedTimeStart) formData.expectedTimeStart = formData.planTimeStart || '';
+    if (!formData.expectedTimeEnd) formData.expectedTimeEnd = formData.planTimeEnd || '';
+    if (!formData.expectedDate) formData.expectedDate = formData.planDate || '';
     var newRecord = {
       category1: '工資',
       category2: '分離式',
@@ -297,6 +317,9 @@
         rerender();
       }
       function handleSubmit() {
+        formData.planDate = formData.expectedDate || formData.planDate || '';
+        formData.planTimeStart = formData.expectedTimeStart || formData.planTimeStart || '';
+        formData.planTimeEnd = formData.expectedTimeEnd || formData.planTimeEnd || '';
         setCases(cases.map(function (c) { return c.id === formData.id ? formData : c; }));
         showToast('案件資料已更新');
         setView('list');
@@ -424,6 +447,20 @@
         value: formData.expectedDate,
         onChange: handleChange,
         className: "w-full p-2 border rounded-md outline-none"
+      })), h("div", null, h("span", {
+        className: "text-gray-500 block mb-1"
+      }, "預計開始時間"), h(TimeInput24, {
+        name: "expectedTimeStart",
+        value: formData.expectedTimeStart || '',
+        onChange: handleChange,
+        className: "w-full"
+      })), h("div", null, h("span", {
+        className: "text-gray-500 block mb-1"
+      }, "預計結束時間"), h(TimeInput24, {
+        name: "expectedTimeEnd",
+        value: formData.expectedTimeEnd || '',
+        onChange: handleChange,
+        className: "w-full"
       })), h("div", {
         className: "col-span-full"
       }, h("span", {

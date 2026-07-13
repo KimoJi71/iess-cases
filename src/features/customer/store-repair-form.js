@@ -7,7 +7,7 @@
  */
 (function () {
   'use strict';
-  var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful;
+  var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful, TimeInput24 = IESS.TimeInput24;
 
   function StoreRepairForm(props) {
     var store = props.store || {};
@@ -171,7 +171,7 @@
               ),
               h('div', null,
                 h('label', { className: 'block text-sm mb-1' }, '預計時間'),
-                h('input', { type: 'time', name: 'expectedTime', value: formData.expectedTime, onChange: handleChange, className: inputCls })
+                h(TimeInput24, { name: 'expectedTime', value: formData.expectedTime, onChange: handleChange, className: 'w-full' })
               )
             )
           ),
