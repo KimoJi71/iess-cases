@@ -57,6 +57,15 @@ const EQUIP_CATEGORY_OPTIONS = ['分離式', '冰水', '空氣門'];
 const EQUIP_BRAND_OPTIONS = ['日立', '大金', '三菱重工', '國際牌', 'LG', '其他'];
 const EQUIP_NAME_OPTIONS = ['分離式冷氣', '箱型冷氣', '吊隱式冷氣', '冰水主機', '空氣門'];
 const EQUIP_MODEL_OPTIONS = ['RAS-100', 'RAS-50', 'FXYP100', 'PA-063', '其他'];
+const EQUIP_INDOOR_OUTDOOR_OPTIONS = ['室內機', '室外機', '無'];
+const EQUIP_VOLTAGE_OPTIONS = ['110V', '220V', '380V'];
+// 選型號時自動帶入：設備分類、品牌、匹數、室內外機、電壓（「其他」不帶入）
+const EQUIP_MODEL_CATALOG = {
+  'RAS-100': { category: '分離式', brand: '日立', horsepower: '3.5', indoorOutdoor: '室內機', voltage: '220V' },
+  'RAS-50': { category: '分離式', brand: '日立', horsepower: '2.0', indoorOutdoor: '室內機', voltage: '110V' },
+  'FXYP100': { category: '分離式', brand: '大金', horsepower: '4.0', indoorOutdoor: '室外機', voltage: '220V' },
+  'PA-063': { category: '冰水', brand: '三菱重工', horsepower: '5.0', indoorOutdoor: '無', voltage: '380V' }
+};
 // 零配件（多選 + 填數量），日立集中控制器於原表重複，此處取唯一值
 const SURVEY_PARTS = ['日立集中控制器', '日立受光器', '得意溫控', '空氣門繼電器', '空氣門磁簧開關'];
 

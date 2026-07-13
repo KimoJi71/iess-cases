@@ -287,6 +287,94 @@ const INITIAL_STORES = [{
   }]
 }];
 
+// --- 初始模擬設備列表 (客戶建檔 - 設備管理) ---
+const INITIAL_EQUIPMENTS = [{
+  id: 'E1',
+  customerName: '星巴克',
+  storeName: '站前店',
+  category: '分離式',
+  brand: '日立',
+  name: '頂樓主機 RAS-100',
+  model: 'RAS-100',
+  area: '頂樓',
+  manufactureDate: '2023-05-10',
+  installDate: '2023-06-01',
+  assetNumber: 'AST-SB-001',
+  serialNumber: 'SN-SB-001',
+  horsepower: '3.5',
+  indoorOutdoor: '室外機',
+  voltage: '220V',
+  createdDate: yesterdayDate
+}, {
+  id: 'E2',
+  customerName: '屈臣氏',
+  storeName: '台北信義店',
+  category: '分離式',
+  brand: '日立',
+  name: '一號機 RAS-100',
+  model: 'RAS-100',
+  area: '一樓大廳',
+  manufactureDate: '2022-03-15',
+  installDate: '2022-04-01',
+  assetNumber: 'AST-WT-001',
+  serialNumber: 'SN-WT-001',
+  horsepower: '3.5',
+  indoorOutdoor: '室內機',
+  voltage: '220V',
+  createdDate: todayDate
+}, {
+  id: 'E2b',
+  customerName: '屈臣氏',
+  storeName: '台北信義店',
+  category: '分離式',
+  brand: '日立',
+  name: '二號機 RAS-50',
+  model: 'RAS-50',
+  area: '倉庫',
+  manufactureDate: '2022-08-20',
+  installDate: '2022-09-01',
+  assetNumber: 'AST-WT-002',
+  serialNumber: 'SN-WT-002',
+  horsepower: '2.0',
+  indoorOutdoor: '室內機',
+  voltage: '110V',
+  createdDate: yesterdayDate
+}, {
+  id: 'E3',
+  customerName: '萊爾富',
+  storeName: '高雄左營店',
+  category: '分離式',
+  brand: '大金',
+  name: '賣場主機 FXYP100',
+  model: 'FXYP100',
+  area: '賣場區',
+  manufactureDate: '2021-11-01',
+  installDate: '2021-12-15',
+  assetNumber: 'AST-HF-001',
+  serialNumber: 'SN-HF-001',
+  horsepower: '4.0',
+  indoorOutdoor: '室外機',
+  voltage: '220V',
+  createdDate: twoDaysAgoDate
+}, {
+  id: 'E6',
+  customerName: '屈臣氏',
+  storeName: '台中旗艦店',
+  category: '冰水',
+  brand: '三菱重工',
+  name: '冰水主機 PA-063',
+  model: 'PA-063',
+  area: '機房',
+  manufactureDate: '2020-01-10',
+  installDate: '2020-03-01',
+  assetNumber: 'AST-WT-TC-001',
+  serialNumber: 'SN-WT-TC-001',
+  horsepower: '5.0',
+  indoorOutdoor: '無',
+  voltage: '380V',
+  createdDate: todayDate
+}];
+
 // --- 初始模擬案件列表 (維修) ---
 const INITIAL_CASES = [{
   id: 'C20260709001',

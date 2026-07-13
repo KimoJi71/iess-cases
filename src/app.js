@@ -25,7 +25,8 @@
     '工程立案': 'project-list',
     '現勘表收集': 'survey-list',
     '客戶管理': 'customer-list',
-    '門市管理': 'store-list'
+    '門市管理': 'store-list',
+    '設備管理': 'equipment-list'
   };
 
   var KNOWN_SUBMENUS = Object.keys(SUBMENU_DEFAULT_VIEW);
@@ -44,6 +45,9 @@
     customers: INITIAL_CUSTOMERS,
     stores: INITIAL_STORES,
     storeCustomer: '',
+    equipments: INITIAL_EQUIPMENTS,
+    equipmentCustomer: '',
+    equipmentStore: '',
     editingCase: null,
     viewingCase: null,
     statusFilter: '全部'
@@ -71,6 +75,9 @@
   var setSurveyCases = makeSetter('surveyCases');
   var setCustomers = makeSetter('customers');
   var setStores = makeSetter('stores');
+  var setEquipments = makeSetter('equipments');
+  var setEquipmentCustomer = makeSetter('equipmentCustomer');
+  var setEquipmentStore = makeSetter('equipmentStore');
 
   function setCurrentTopMenu(menu) {
     store.set({ currentTopMenu: menu });
@@ -202,6 +209,39 @@
         return h(StoreForm, {
           stores: s.stores, setStores: setStores, customers: s.customers,
           targetCase: s.editingCase, storeCustomer: s.storeCustomer,
+          setView: setView, showToast: showToast
+        });
+      case 'store-repair-add':
+        return h(StoreRepairForm, {
+          store: s.editingCase, cases: s.cases, setCases: setCasesData,
+          stores: s.stores, setStores: setStores,
+          setView: setView, showToast: showToast
+        });
+      case 'store-project-add':
+        return h(StoreProjectForm, {
+          store: s.editingCase, cases: s.projectCases, setCases: setProjectCases,
+          setView: setView, showToast: showToast
+        });
+      case 'equipment-list':
+        return h(EquipmentList, {
+          equipments: s.equipments, setEquipments: setEquipments,
+          customers: s.customers, stores: s.stores,
+          cases: s.cases, setCases: setCasesData,
+          equipmentCustomer: s.equipmentCustomer, setEquipmentCustomer: setEquipmentCustomer,
+          equipmentStore: s.equipmentStore, setEquipmentStore: setEquipmentStore,
+          setEditingCase: setEditingCase, setView: setView, showToast: showToast
+        });
+      case 'equipment-add':
+        return h(EquipmentForm, {
+          equipments: s.equipments, setEquipments: setEquipments,
+          equipmentCustomer: s.equipmentCustomer, equipmentStore: s.equipmentStore,
+          setView: setView, showToast: showToast
+        });
+      case 'equipment-edit':
+        return h(EquipmentForm, {
+          equipments: s.equipments, setEquipments: setEquipments,
+          targetCase: s.editingCase,
+          equipmentCustomer: s.equipmentCustomer, equipmentStore: s.equipmentStore,
           setView: setView, showToast: showToast
         });
       default:

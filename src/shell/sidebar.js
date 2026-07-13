@@ -24,7 +24,8 @@
     {
       id: '客戶建檔', icon: 'User', children: [
         { id: '客戶管理', label: '客戶管理' },
-        { id: '門市管理', label: '門市管理' }
+        { id: '門市管理', label: '門市管理' },
+        { id: '設備管理', label: '設備管理' }
       ]
     }
   ];

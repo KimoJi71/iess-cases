@@ -162,11 +162,38 @@
       }
 
       return h('div', { className: 'max-w-5xl mx-auto bg-white rounded-lg shadow-sm border border-gray-100 relative' },
-        PageHeader({
-          title: isEdit ? '編輯門市' : '新增門市',
-          onClose: function () { setView('store-list'); },
-          wrapperClass: 'flex justify-between items-center p-6 border-b border-gray-200 sticky top-0 z-10 bg-white rounded-t-lg'
-        }),
+        isEdit
+          ? h('div', { className: 'flex flex-wrap justify-between items-center gap-3 p-6 border-b border-gray-200 sticky top-0 z-10 bg-white rounded-t-lg' },
+              h('div', { className: 'flex items-center gap-3 min-w-0' },
+                h('h2', { className: 'text-2xl font-bold text-gray-800 whitespace-nowrap' }, '編輯門市'),
+                h('span', {
+                  className: 'text-base font-medium text-blue-700 bg-blue-50 px-3 py-1 rounded-full whitespace-nowrap'
+                }, (customerName || '') + ' / ' + (formData.storeName || targetCase.storeName || ''))
+              ),
+              h('div', { className: 'flex items-center gap-2 shrink-0' },
+                h('button', {
+                  type: 'button',
+                  onClick: function () { setView('store-repair-add'); },
+                  className: 'flex items-center gap-1.5 text-sm bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 px-3 py-2 rounded-md transition-colors'
+                }, Icons.Wrench({ className: 'h-4 w-4' }), ' 新增叫修單'),
+                h('button', {
+                  type: 'button',
+                  onClick: function () { setView('store-project-add'); },
+                  className: 'flex items-center gap-1.5 text-sm bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 px-3 py-2 rounded-md transition-colors'
+                }, Icons.FileText({ className: 'h-4 w-4' }), ' 新增立案單'),
+                h('button', {
+                  type: 'button',
+                  onClick: function () { setView('store-list'); },
+                  title: '關閉並返回列表',
+                  className: 'ml-1 p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors'
+                }, Icons.X({ className: 'h-6 w-6' }))
+              )
+            )
+          : PageHeader({
+              title: '新增門市',
+              onClose: function () { setView('store-list'); },
+              wrapperClass: 'flex justify-between items-center p-6 border-b border-gray-200 sticky top-0 z-10 bg-white rounded-t-lg'
+            }),
         h('form', { onSubmit: handleSubmit, className: 'p-6' },
           h('div', { className: 'space-y-6' },
           h('div', { className: 'grid grid-cols-1 md:grid-cols-3 gap-6' },
