@@ -13,6 +13,7 @@
     var storeCustomer = props.storeCustomer;
     var setStoreCustomer = props.setStoreCustomer;
     var setEditingCase = props.setEditingCase;
+    var setViewingCase = props.setViewingCase;
     var setView = props.setView;
     var showToast = props.showToast;
 
@@ -20,8 +21,12 @@
     var keyword = '';
     var appliedKeyword = '';
     var deleteModal = { show: false, id: null };
-    var historyModal = { show: false, store: null };
     var dragProps = useDragScroll();
+
+    function openHistory(store) {
+      setViewingCase(store);
+      setView('store-history');
+    }
 
     function getFilteredStores() {
       if (!storeCustomer) return [];
@@ -149,7 +154,7 @@
                               title: '刪除'
                             }, Icons.Trash2({ className: 'h-4 w-4' })),
                             h('button', {
-                              onClick: function () { historyModal = { show: true, store: s }; rerender(); },
+                              onClick: function () { openHistory(s); },
                               className: 'p-1.5 text-gray-500 hover:bg-gray-100 rounded',
                               title: '歷史紀錄'
                             }, Icons.Clock({ className: 'h-4 w-4' }))
@@ -184,45 +189,6 @@
                 onClick: function () { handleDelete(deleteModal.id); },
                 className: 'px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors'
               }, '確認刪除')
-            )
-          )
-        ),
-        historyModal.show && h('div', {
-          className: 'fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4'
-        },
-          h('div', { className: 'bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[80vh] flex flex-col' },
-            h('div', { className: 'flex justify-between items-center p-5 border-b' },
-              h('h3', { className: 'text-lg font-bold text-gray-800 flex items-center gap-2' },
-                Icons.Clock({ className: 'h-5 w-5 text-blue-600' }),
-                historyModal.store && historyModal.store.storeName, ' – 歷史紀錄'),
-              h('button', {
-                onClick: function () { historyModal = { show: false, store: null }; rerender(); },
-                className: 'p-1.5 hover:bg-gray-100 rounded-full'
-              }, Icons.X({ className: 'h-5 w-5' }))
-            ),
-            h('div', { className: 'p-5 overflow-y-auto' },
-              (!(historyModal.store && historyModal.store.history) || historyModal.store.history.length === 0)
-                ? h('div', { className: 'text-center text-gray-400 py-10' }, '尚無歷史紀錄')
-                : h('ul', { className: 'space-y-3' },
-                    historyModal.store.history.slice().sort(function (a, b) { return new Date(b.date) - new Date(a.date); }).map(function (rec) {
-                      return h('li', { key: rec.id, className: 'flex gap-3 p-3 border rounded-lg bg-gray-50/50' },
-                        h('span', {
-                          className: 'shrink-0 h-fit px-2 py-0.5 rounded-full text-xs font-medium ' +
-                            (rec.type === '保養' ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700')
-                        }, rec.type),
-                        h('div', null,
-                          h('div', { className: 'text-xs text-gray-400 mb-0.5' }, rec.date),
-                          h('div', { className: 'text-sm text-gray-700' }, rec.description)
-                        )
-                      );
-                    })
-                  )
-            ),
-            h('div', { className: 'flex justify-end p-4 border-t' },
-              h('button', {
-                onClick: function () { historyModal = { show: false, store: null }; rerender(); },
-                className: 'px-5 py-2 border rounded-md text-gray-600 hover:bg-gray-50 transition-colors'
-              }, '關閉')
             )
           )
         )

@@ -100,14 +100,37 @@ const INITIAL_STORES = [{
   }],
   history: [{
     id: 8101,
-    date: yesterdayDate,
-    type: '叫修',
-    description: '一號機不冷，已更換壓縮機電容。'
+    workCategory: '緊急叫修',
+    equipmentCategory: '分離式',
+    equipmentName: '一號機 RAS-100',
+    equipmentArea: '一樓大廳',
+    repairItem: '室內機',
+    repairReason: '不冷',
+    assignee: 'A組',
+    repairDate: yesterdayDate,
+    closeDate: yesterdayDate
   }, {
     id: 8102,
-    date: '2026-01-15',
-    type: '保養',
-    description: '例行季保養，清洗濾網與排水管。'
+    workCategory: '保養清潔',
+    equipmentCategory: '箱型',
+    equipmentName: '賣場主機 FXYP100',
+    equipmentArea: '賣場區',
+    repairItem: '濾網',
+    repairReason: '定期保養',
+    assignee: 'B組',
+    repairDate: '2026-01-15',
+    closeDate: '2026-01-16'
+  }, {
+    id: 8103,
+    workCategory: '一般叫修',
+    equipmentCategory: '分離式',
+    equipmentName: '二號機 RAS-80',
+    equipmentArea: '倉庫',
+    repairItem: '室外機',
+    repairReason: '異音',
+    assignee: '協力廠商',
+    repairDate: '2025-11-08',
+    closeDate: '2025-11-10'
   }]
 }, {
   id: 'STORE2',
@@ -131,7 +154,29 @@ const INITIAL_STORES = [{
   createdDate: yesterdayDate,
   contacts: [],
   photos: [],
-  history: []
+  history: [{
+    id: 8201,
+    workCategory: '一般叫修',
+    equipmentCategory: '箱型',
+    equipmentName: '賣場空調 RAS-140',
+    equipmentArea: '賣場區',
+    repairItem: '室外機',
+    repairReason: '異音',
+    assignee: '協力廠商',
+    repairDate: '2026-05-10',
+    closeDate: '2026-05-12'
+  }, {
+    id: 8202,
+    workCategory: '保養清潔',
+    equipmentCategory: '箱型',
+    equipmentName: '賣場空調 RAS-140',
+    equipmentArea: '賣場區',
+    repairItem: '濾網',
+    repairReason: '定期保養',
+    assignee: 'A組',
+    repairDate: '2026-03-02',
+    closeDate: '2026-03-02'
+  }]
 }, {
   id: 'STORE3',
   customerName: '星巴克',
@@ -162,9 +207,15 @@ const INITIAL_STORES = [{
   photos: [],
   history: [{
     id: 8301,
-    date: '2026-06-01',
-    type: '叫修',
-    description: '吧台區冷氣異音，調整風扇軸承。'
+    workCategory: '一般叫修',
+    equipmentCategory: '分離式',
+    equipmentName: '吧台冷氣 FXMQ80',
+    equipmentArea: '吧台區',
+    repairItem: '室內機',
+    repairReason: '異音',
+    assignee: 'C組',
+    repairDate: '2026-06-01',
+    closeDate: '2026-06-03'
   }]
 }, {
   id: 'STORE4',
@@ -213,9 +264,26 @@ const INITIAL_STORES = [{
   photos: [],
   history: [{
     id: 8501,
-    date: '2026-02-14',
-    type: '叫修',
-    description: '冷媒不足，補充 R410A 並檢漏。'
+    workCategory: '一般叫修',
+    equipmentCategory: '分離式',
+    equipmentName: '賣場主機 RAS-100',
+    equipmentArea: '賣場區',
+    repairItem: '室外機',
+    repairReason: '不冷',
+    assignee: 'B組',
+    repairDate: '2026-02-14',
+    closeDate: '2026-02-15'
+  }, {
+    id: 8502,
+    workCategory: '保養清潔',
+    equipmentCategory: '窗型',
+    equipmentName: '倉庫窗機 W-25',
+    equipmentArea: '倉庫',
+    repairItem: '濾網',
+    repairReason: '定期保養',
+    assignee: 'B組',
+    repairDate: '2025-12-01',
+    closeDate: '2025-12-01'
   }]
 }];
 

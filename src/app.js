@@ -186,7 +186,12 @@
         return h(StoreList, {
           stores: s.stores, setStores: setStores, customers: s.customers,
           storeCustomer: s.storeCustomer, setStoreCustomer: setStoreCustomer,
-          setEditingCase: setEditingCase, setView: setView, showToast: showToast
+          setEditingCase: setEditingCase, setViewingCase: setViewingCase,
+          setView: setView, showToast: showToast
+        });
+      case 'store-history':
+        return h(StoreHistory, {
+          store: s.viewingCase, setView: setView, showToast: showToast
         });
       case 'store-add':
         return h(StoreForm, {
