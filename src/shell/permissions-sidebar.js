@@ -7,7 +7,9 @@
   var h = IESS.h, Icons = IESS.Icons;
 
   var MENU_ITEMS = [
-    { id: '帳號管理', icon: 'Settings' }
+    { id: '帳號管理', icon: 'Settings' },
+    { id: '行政區域管理', icon: 'MapPin' },
+    { id: '指派人員管理', icon: 'User' }
   ];
 
   function PermissionsSidebar(props) {

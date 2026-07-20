@@ -18,6 +18,12 @@
     '加裝': '#7c3aed'
   };
 
+  function formatScheduleEventTitle(workCategory, assignee, customerName, storeName) {
+    var wc = workCategory || '其他';
+    var person = assignee || '未指派';
+    return '[' + wc + '] ' + person + ' ' + customerName + ' ' + storeName;
+  }
+
   function addMonthsToMonth(dateStr, months) {
     var d = new Date(dateStr);
     d.setMonth(d.getMonth() + months);
@@ -108,7 +114,18 @@
     return result;
   }
 
-  function getPendingCases(maintenanceCases, cases, projectCases, filters) {
+  function resolveStoreDistrict(stores, customerName, storeName) {
+    if (!stores) return '';
+    var store = stores.find(function (s) {
+      return s.customerName === customerName && s.storeName === storeName;
+    });
+    return store ? store.district : '';
+  }
+
+  function getPendingCases(maintenanceCases, cases, projectCases, filters, stores) {
+    if (!filters || !filters.workCategory || !filters.customer || !filters.district) {
+      return [];
+    }
     var items = [];
     maintenanceCases.forEach(function (c) {
       if (c.isClosed || c.status !== '待排程') return;
@@ -142,16 +159,15 @@
         sourceId: c.id,
         customerName: c.customerName,
         storeName: c.storeName,
-        district: '',
+        district: resolveStoreDistrict(stores, c.customerName, c.storeName),
         workCategory: c.workCategory,
         assignee: c.stageAssignee
       });
     });
     return items.filter(function (item) {
-      if (filters.workCategory !== '全部' && item.workCategory !== filters.workCategory) return false;
-      if (filters.customer !== '全部' && item.customerName !== filters.customer) return false;
-      if (filters.district !== '全部' && item.district !== filters.district) return false;
-      if (filters.assignee !== '全部' && item.assignee !== filters.assignee) return false;
+      if (item.workCategory !== filters.workCategory) return false;
+      if (item.customerName !== filters.customer) return false;
+      if (item.district !== filters.district) return false;
       return true;
     });
   }
@@ -203,9 +219,10 @@
     if (!sched.planDate || !sched.planTimeStart) return null;
     var endTime = sched.planTimeEnd || sched.planTimeStart;
     var wc = sched.workCategory || '其他';
+    var assignee = sched.assignee || '';
     return {
       id: sourceType + '-' + sourceId,
-      title: '[' + wc + '] ' + sched.assignee + ' ' + customerName + ' ' + storeName,
+      title: formatScheduleEventTitle(wc, assignee, customerName, storeName),
       start: sched.planDate + 'T' + formatTime24(sched.planTimeStart) + ':00',
       end: sched.planDate + 'T' + formatTime24(endTime) + ':00',
       backgroundColor: CATEGORY_COLORS[wc] || '#64748b',
@@ -214,7 +231,9 @@
         sourceType: sourceType,
         sourceId: sourceId,
         workCategory: wc,
-        assignee: sched.assignee
+        assignee: assignee,
+        customerName: customerName,
+        storeName: storeName
       }
     };
   }
@@ -364,6 +383,7 @@
     getRepairSchedule: getRepairSchedule,
     formatTimeRange: formatTimeRange,
     formatTime24: formatTime24,
+    formatScheduleEventTitle: formatScheduleEventTitle,
     CATEGORY_COLORS: CATEGORY_COLORS
   };
 })();

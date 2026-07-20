@@ -1,63 +1,60 @@
 /*
- * features/permissions/account-list.js — 帳號管理：帳號列表
- * props: { accounts, setAccounts, assignees, setAssignees, setEditingCase, setView, showToast }
+ * features/permissions/district-list.js — 行政區域管理：列表
+ * props: { districts, setDistricts, assignees, setAssignees, stores, setEditingCase, setView, showToast }
  */
 (function () {
   'use strict';
   var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful, useDragScroll = IESS.useDragScroll;
 
-  function enabledBadge(enabled) {
-    return h('span', {
-      className: 'px-2 py-0.5 rounded-full text-xs font-medium ' +
-        (enabled ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600')
-    }, AccountUtils.formatEnabled(enabled));
-  }
-
-  function AccountList(props) {
-    var accounts = props.accounts;
-    var setAccounts = props.setAccounts;
+  function DistrictList(props) {
+    var districts = props.districts;
+    var setDistricts = props.setDistricts;
     var assignees = props.assignees;
-    var setAssignees = props.setAssignees;
+    var stores = props.stores;
     var setEditingCase = props.setEditingCase;
     var setView = props.setView;
     var showToast = props.showToast;
 
     var keyword = '';
     var appliedKeyword = '';
-    var deleteModal = { show: false, id: null };
+    var deleteModal = { show: false, id: null, name: '' };
     var dragProps = useDragScroll();
 
-    function getFilteredAccounts() {
+    function getFilteredDistricts() {
       var kw = appliedKeyword.trim().toLowerCase();
-      var list = accounts;
+      var list = districts;
       if (kw) {
-        list = accounts.filter(function (a) {
-          return [a.name, a.username, a.email]
-            .filter(Boolean)
-            .some(function (v) { return String(v).toLowerCase().includes(kw); });
+        list = districts.filter(function (d) {
+          return d.name.toLowerCase().includes(kw);
         });
       }
-      return list.slice().sort(function (a, b) { return new Date(b.createdDate) - new Date(a.createdDate); });
+      return list.slice().sort(function (a, b) {
+        return a.name.localeCompare(b.name, 'zh-Hant');
+      });
     }
 
     return stateful(function (rerender) {
-      var filteredAccounts = getFilteredAccounts();
+      var filteredDistricts = getFilteredDistricts();
 
       function handleSearch() { appliedKeyword = keyword; rerender(); }
       function handleKeyDown(e) { if (e.key === 'Enter') handleSearch(); }
 
       function handleDelete(id) {
-        var target = accounts.find(function (a) { return a.id === id; });
-        if (target && target.username === 'admin') {
-          showToast('預設最高權限帳號 admin 不可刪除', 'error');
-          deleteModal = { show: false, id: null };
+        var target = districts.find(function (d) { return d.id === id; });
+        if (!target) {
+          deleteModal = { show: false, id: null, name: '' };
           rerender();
           return;
         }
-        setAccounts(accounts.filter(function (a) { return a.id !== id; }));
-        setAssignees(AssigneeUtils.removeMemberFromAll(assignees, id));
-        deleteModal = { show: false, id: null };
-        showToast('帳號已刪除');
+        if (DistrictUtils.isDistrictInUse(target.name, assignees, stores)) {
+          showToast('此行政區域已被指派人員或門市使用，無法刪除', 'error');
+          deleteModal = { show: false, id: null, name: '' };
+          rerender();
+          return;
+        }
+        setDistricts(districts.filter(function (d) { return d.id !== id; }));
+        deleteModal = { show: false, id: null, name: '' };
+        showToast('行政區域已刪除');
       }
 
       return h('div', { className: 'bg-white p-6 rounded-lg shadow-sm border border-gray-100' },
@@ -70,8 +67,8 @@
                 value: keyword,
                 onChange: function (e) { keyword = e.target.value; rerender(); },
                 onKeyDown: handleKeyDown,
-                placeholder: '姓名 / 帳號 / Email',
-                className: 'w-72 p-2.5 border rounded-md outline-none focus:border-blue-500'
+                placeholder: '行政區域名稱',
+                className: 'w-64 p-2.5 border rounded-md outline-none focus:border-blue-500'
               })
             ),
             h('button', {
@@ -80,10 +77,10 @@
             }, Icons.Search({ className: 'h-4 w-4' }), ' 搜尋')
           ),
           h('button', {
-            onClick: function () { setEditingCase(null); setView('account-add'); },
+            onClick: function () { setEditingCase(null); setView('district-add'); },
             className: 'flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-md shadow-sm transition-colors',
-            title: '新增帳號'
-          }, Icons.Plus({ className: 'h-5 w-5' }), ' 新增帳號')
+            title: '新增行政區域'
+          }, Icons.Plus({ className: 'h-5 w-5' }), ' 新增行政區域')
         ),
         h('div', Object.assign({}, dragProps, {
           className: 'overflow-x-auto border rounded-lg cursor-grab active:cursor-grabbing'
@@ -92,41 +89,32 @@
             h('thead', { className: 'bg-gray-50 text-gray-700 border-b' },
               h('tr', null,
                 h('th', { className: 'p-3 font-semibold text-center w-36' }, '操作'),
-                h('th', { className: 'p-3 font-semibold' }, '姓名'),
-                h('th', { className: 'p-3 font-semibold' }, '帳號'),
-                h('th', { className: 'p-3 font-semibold' }, 'Email'),
-                h('th', { className: 'p-3 font-semibold' }, '啟用狀態')
+                h('th', { className: 'p-3 font-semibold' }, '行政區域名稱')
               )
             ),
             h('tbody', { className: 'divide-y divide-gray-100' },
-              filteredAccounts.length === 0
-                ? h('tr', null, h('td', { colspan: 5, className: 'p-10 text-center text-gray-400 text-base' }, '無資料'))
-                : filteredAccounts.map(function (a) {
-                    return h('tr', { key: a.id, className: 'hover:bg-blue-50/50 transition-colors' },
+              filteredDistricts.length === 0
+                ? h('tr', null, h('td', { colspan: 2, className: 'p-10 text-center text-gray-400 text-base' }, '無資料'))
+                : filteredDistricts.map(function (d) {
+                    return h('tr', { key: d.id, className: 'hover:bg-blue-50/50 transition-colors' },
                       h('td', { className: 'p-3' },
                         h('div', { className: 'flex items-center justify-center space-x-2' },
                           h('button', {
-                            onClick: function () { setEditingCase(a); setView('account-edit'); },
+                            onClick: function () { setEditingCase(d); setView('district-edit'); },
                             className: 'p-1.5 text-blue-600 hover:bg-blue-100 rounded',
                             title: '編輯'
                           }, Icons.Edit({ className: 'h-4 w-4' })),
                           h('button', {
-                            onClick: function () { deleteModal = { show: true, id: a.id }; rerender(); },
+                            onClick: function () {
+                              deleteModal = { show: true, id: d.id, name: d.name };
+                              rerender();
+                            },
                             className: 'p-1.5 text-red-600 hover:bg-red-100 rounded',
-                            title: '刪除',
-                            disabled: a.username === 'admin'
-                          }, Icons.Trash2({ className: 'h-4 w-4 ' + (a.username === 'admin' ? 'opacity-30' : '') })),
-                          h('button', {
-                            onClick: function () { setEditingCase(a); setView('account-permissions'); },
-                            className: 'p-1.5 text-amber-600 hover:bg-amber-100 rounded',
-                            title: '權限設定'
-                          }, Icons.Settings({ className: 'h-4 w-4' }))
+                            title: '刪除'
+                          }, Icons.Trash2({ className: 'h-4 w-4' }))
                         )
                       ),
-                      h('td', { className: 'p-3 font-medium text-gray-800' }, a.name),
-                      h('td', { className: 'p-3' }, a.username),
-                      h('td', { className: 'p-3' }, a.email || '—'),
-                      h('td', { className: 'p-3' }, enabledBadge(a.enabled))
+                      h('td', { className: 'p-3 font-medium text-gray-800' }, d.name)
                     );
                   })
             )
@@ -140,10 +128,11 @@
               Icons.AlertCircle({ className: 'h-6 w-6' }),
               h('h3', { className: 'text-lg font-bold text-gray-800' }, '確認刪除')
             ),
-            h('p', { className: 'text-gray-600 mb-6' }, '確定要刪除此帳號嗎？刪除後將一併從相關成員名單中移除，且無法復原。'),
+            h('p', { className: 'text-gray-600 mb-6' },
+              '確定要刪除行政區域「' + deleteModal.name + '」嗎？若已被指派人員或門市使用則無法刪除。'),
             h('div', { className: 'flex justify-end space-x-3' },
               h('button', {
-                onClick: function () { deleteModal = { show: false, id: null }; rerender(); },
+                onClick: function () { deleteModal = { show: false, id: null, name: '' }; rerender(); },
                 className: 'px-4 py-2 border rounded-md text-gray-600 hover:bg-gray-50 transition-colors'
               }, '取消'),
               h('button', {
@@ -157,5 +146,5 @@
     });
   }
 
-  window.AccountList = AccountList;
+  window.DistrictList = DistrictList;
 })();

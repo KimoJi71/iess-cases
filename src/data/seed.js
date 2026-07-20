@@ -1006,14 +1006,31 @@ function _buildLimitedPermissions() {
   return perms;
 }
 
+const INITIAL_DISTRICTS = [
+  { id: 'DIST1', name: '北區', createdDate: todayDate },
+  { id: 'DIST2', name: '中區', createdDate: todayDate },
+  { id: 'DIST3', name: '南區', createdDate: todayDate },
+  { id: 'DIST4', name: '東區', createdDate: todayDate }
+];
+
+const INITIAL_ASSIGNEES = [
+  { id: 'ASG1', name: 'A組', districts: ['北區', '東區'], memberIds: ['ACC2'], createdDate: todayDate },
+  { id: 'ASG2', name: 'B組', districts: ['中區'], memberIds: ['ACC3'], createdDate: todayDate },
+  { id: 'ASG3', name: 'C組', districts: ['南區'], memberIds: [], createdDate: todayDate },
+  { id: 'ASG4', name: 'D組', districts: ['東區'], memberIds: [], createdDate: todayDate },
+  { id: 'ASG5', name: '晉詮人員', districts: ['北區', '中區', '南區', '東區'], memberIds: [], createdDate: todayDate },
+  { id: 'ASG6', name: '協力廠商', districts: ['北區', '南區'], memberIds: [], createdDate: todayDate },
+  { id: 'ASG7', name: '案件待辦', districts: ['北區', '中區', '南區', '東區'], memberIds: [], createdDate: todayDate },
+  { id: 'ASG8', name: '管理員', districts: ['北區', '中區', '南區', '東區'], memberIds: ['ACC1'], createdDate: todayDate },
+  { id: 'ASG9', name: '督導', districts: ['北區', '中區'], memberIds: [], createdDate: todayDate }
+];
+
 const INITIAL_ACCOUNTS = [{
   id: 'ACC1',
   name: '系統管理員',
   username: 'admin',
   passwordHash: AccountUtils.hashPassword('admin'),
   email: 'admin@jinchuan.example.com',
-  districts: ['北區', '中區', '南區', '東區'],
-  assignee: '管理員',
   enabled: true,
   permissions: _buildAllPermissions(),
   createdDate: todayDate
@@ -1023,8 +1040,6 @@ const INITIAL_ACCOUNTS = [{
   username: 'wangxm',
   passwordHash: AccountUtils.hashPassword('Pass1234'),
   email: 'wangxm@jinchuan.example.com',
-  districts: ['北區', '東區'],
-  assignee: 'A組',
   enabled: true,
   permissions: _buildLimitedPermissions(),
   createdDate: yesterdayDate
@@ -1034,8 +1049,6 @@ const INITIAL_ACCOUNTS = [{
   username: 'limeih',
   passwordHash: AccountUtils.hashPassword('Pass5678'),
   email: 'limeih@jinchuan.example.com',
-  districts: ['中區'],
-  assignee: 'B組',
   enabled: false,
   permissions: _buildLimitedPermissions(),
   createdDate: twoDaysAgoDate

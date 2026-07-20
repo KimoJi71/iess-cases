@@ -6,6 +6,12 @@
   'use strict';
   var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful;
 
+  var GROUP_ROW_STYLES = [
+    'bg-gray-100 font-bold text-gray-800',
+    'bg-gray-50 font-semibold text-gray-700'
+  ];
+  var LEAF_INDENT = ['pl-3', 'pl-8', 'pl-14'];
+
   function clonePermissions(perms) {
     var next = {};
     PERMISSION_FUNCTIONS.forEach(function (fn) {
@@ -13,6 +19,40 @@
       next[fn] = { view: !!row.view, edit: !!row.edit, close: !!row.close };
     });
     return next;
+  }
+
+  function renderPermissionRows(permissions, togglePermission, nodes, depth) {
+    var rows = [];
+    nodes.forEach(function (node) {
+      if (typeof node === 'string') {
+        var row = permissions[node];
+        rows.push(h('tr', { key: node, className: 'hover:bg-blue-50/30' },
+          h('td', {
+            className: 'p-3 font-medium text-gray-800 ' + (LEAF_INDENT[depth] || 'pl-14')
+          }, node),
+          PERMISSION_OPERATION_TYPES.map(function (op) {
+            return h('td', { key: op, className: 'p-3 text-center' },
+              h('input', {
+                type: 'checkbox',
+                checked: !!row[op],
+                onChange: function () { togglePermission(node, op); },
+                className: 'h-4 w-4'
+              })
+            );
+          })
+        ));
+        return;
+      }
+
+      rows.push(h('tr', { key: node.id + '-group-' + depth, className: GROUP_ROW_STYLES[depth] || GROUP_ROW_STYLES[1] },
+        h('td', {
+          colSpan: 1 + PERMISSION_OPERATION_TYPES.length,
+          className: 'p-3 ' + (LEAF_INDENT[depth] || 'pl-3')
+        }, node.id)
+      ));
+      rows = rows.concat(renderPermissionRows(permissions, togglePermission, node.children, depth + 1));
+    });
+    return rows;
   }
 
   function AccountPermissions(props) {
@@ -98,22 +138,7 @@
                 )
               ),
               h('tbody', { className: 'divide-y divide-gray-100' },
-                PERMISSION_FUNCTIONS.map(function (fn) {
-                  var row = permissions[fn];
-                  return h('tr', { key: fn, className: 'hover:bg-blue-50/30' },
-                    h('td', { className: 'p-3 font-medium text-gray-800' }, fn),
-                    PERMISSION_OPERATION_TYPES.map(function (op) {
-                      return h('td', { key: op, className: 'p-3 text-center' },
-                        h('input', {
-                          type: 'checkbox',
-                          checked: !!row[op],
-                          onChange: function () { togglePermission(fn, op); },
-                          className: 'h-4 w-4'
-                        })
-                      );
-                    })
-                  );
-                })
+                renderPermissionRows(permissions, togglePermission, PERMISSION_TREE, 0)
               )
             )
           ),

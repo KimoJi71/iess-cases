@@ -19,25 +19,14 @@
       username: (targetCase && targetCase.username) || '',
       password: '',
       email: (targetCase && targetCase.email) || '',
-      assignee: (targetCase && targetCase.assignee) || '',
       enabled: targetCase ? !!targetCase.enabled : true
     };
-    var districts = (targetCase && targetCase.districts)
-      ? targetCase.districts.slice()
-      : [];
 
     return stateful(function (rerender) {
       function handleChange(e) {
         var name = e.target.name;
         var value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
         formData[name] = value;
-        rerender();
-      }
-
-      function toggleDistrict(district) {
-        var idx = districts.indexOf(district);
-        if (idx === -1) districts.push(district);
-        else districts.splice(idx, 1);
         rerender();
       }
 
@@ -53,10 +42,6 @@
         }
         if (!isEdit && !formData.password) {
           showToast('密碼為必填', 'error');
-          return;
-        }
-        if (!districts.length) {
-          showToast('請至少選擇一個負責行政區域', 'error');
           return;
         }
 
@@ -75,8 +60,6 @@
               name: formData.name.trim(),
               username: formData.username.trim(),
               email: formData.email.trim(),
-              districts: districts.slice(),
-              assignee: formData.assignee,
               enabled: formData.enabled
             });
             if (formData.password) {
@@ -92,8 +75,6 @@
             username: formData.username.trim(),
             passwordHash: AccountUtils.hashPassword(formData.password),
             email: formData.email.trim(),
-            districts: districts.slice(),
-            assignee: '',
             enabled: formData.enabled,
             permissions: AccountUtils.createEmptyPermissions(),
             createdDate: todayDate
@@ -160,40 +141,6 @@
                   onChange: handleChange,
                   className: 'w-full p-2.5 border rounded-md outline-none focus:border-blue-500'
                 })
-              ),
-              isEdit && h('div', null,
-                h('label', { className: 'block text-sm mb-1' }, '歸屬指派人員'),
-                h('select', {
-                  name: 'assignee',
-                  value: formData.assignee,
-                  onChange: handleChange,
-                  className: 'w-full p-2.5 border rounded-md outline-none focus:border-blue-500 bg-white'
-                },
-                  h('option', { value: '' }, '請選擇'),
-                  ACCOUNT_ASSIGNEE_OPTIONS.map(function (opt) {
-                    return h('option', { key: opt, value: opt }, opt);
-                  })
-                )
-              ),
-              h('div', { className: isEdit ? '' : 'md:col-span-2' },
-                h('label', { className: 'block text-sm mb-2' }, '負責行政區域 ', h('span', { className: 'text-red-500' }, '*')),
-                h('div', { className: 'flex flex-wrap gap-3' },
-                  DISTRICT_OPTIONS.map(function (d) {
-                    var checked = districts.indexOf(d) !== -1;
-                    return h('label', {
-                      key: d,
-                      className: 'inline-flex items-center gap-2 px-3 py-2 border rounded-md cursor-pointer ' +
-                        (checked ? 'bg-blue-50 border-blue-300 text-blue-700' : 'bg-white border-gray-200')
-                    },
-                      h('input', {
-                        type: 'checkbox',
-                        checked: checked,
-                        onChange: function () { toggleDistrict(d); }
-                      }),
-                      d
-                    );
-                  })
-                )
               ),
               h('div', null,
                 h('label', { className: 'block text-sm mb-1' }, '啟用狀態'),

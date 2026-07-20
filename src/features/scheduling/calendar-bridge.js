@@ -95,41 +95,58 @@
             sourceId: ds.sourceId,
             customerName: ds.customerName,
             storeName: ds.storeName,
-            workCategory: ds.workCategory
+            workCategory: ds.workCategory,
+            assignee: ds.assignee
           }, dateStr, timeStr);
+          calendar.getEvents().forEach(function (ev) {
+            var p = ev.extendedProps || {};
+            if (p.isPreview && p.sourceId === ds.sourceId) {
+              ev.remove();
+            }
+          });
         }
       });
       calendar.render();
       if (options.rangeStart) calendar.gotoDate(options.rangeStart);
     }
 
-    function initExternalDrag(itemEls) {
+    function buildPreviewTitle(ds) {
+      if (window.ScheduleUtils && ScheduleUtils.formatScheduleEventTitle) {
+        return ScheduleUtils.formatScheduleEventTitle(
+          ds.workCategory, ds.assignee, ds.customerName, ds.storeName
+        );
+      }
+      return '[' + (ds.workCategory || '其他') + '] ' + (ds.assignee || '未指派') + ' ' +
+        ds.customerName + ' ' + ds.storeName;
+    }
+
+    function initExternalDrag(containerEl) {
       draggableInstances.forEach(function (d) {
         if (d && d.destroy) d.destroy();
       });
       draggableInstances = [];
-      if (typeof FullCalendar === 'undefined' || !FullCalendar.Draggable) return;
+      if (typeof FullCalendar === 'undefined' || !FullCalendar.Draggable || !containerEl) return;
 
-      (itemEls || []).forEach(function (el) {
-        if (!el) return;
-        var draggable = new FullCalendar.Draggable(el, {
-          eventData: function () {
-            var ds = el.dataset;
-            return {
-              title: ds.customerName + ' ' + ds.storeName,
-              duration: '02:00',
-              extendedProps: {
-                sourceType: ds.sourceType,
-                sourceId: ds.sourceId,
-                customerName: ds.customerName,
-                storeName: ds.storeName,
-                workCategory: ds.workCategory
-              }
-            };
-          }
-        });
-        draggableInstances.push(draggable);
+      var draggable = new FullCalendar.Draggable(containerEl, {
+        itemSelector: '.pending-item',
+        eventData: function (eventEl) {
+          var ds = eventEl.dataset;
+          return {
+            title: buildPreviewTitle(ds),
+            duration: '02:00',
+            extendedProps: {
+              isPreview: true,
+              sourceType: ds.sourceType,
+              sourceId: ds.sourceId,
+              customerName: ds.customerName,
+              storeName: ds.storeName,
+              workCategory: ds.workCategory,
+              assignee: ds.assignee || ''
+            }
+          };
+        }
       });
+      draggableInstances.push(draggable);
     }
 
     function gotoRange(startStr, endStr) {

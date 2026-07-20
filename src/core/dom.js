@@ -114,20 +114,40 @@
     return node;
   }
 
+  // IME 組字期間延後重繪，避免輸入框被重建導致注音無法選字
+  var isComposing = false;
+  var deferredRerenders = [];
+
+  document.addEventListener('compositionstart', function () { isComposing = true; }, true);
+  document.addEventListener('compositionend', function () {
+    isComposing = false;
+    var queue = deferredRerenders.slice();
+    deferredRerenders = [];
+    queue.forEach(function (fn) { fn(); });
+  }, true);
+
+  function deferRerenderWhileComposing(rerenderFn) {
+    if (isComposing) {
+      if (deferredRerenders.indexOf(rerenderFn) === -1) {
+        deferredRerenders.push(rerenderFn);
+      }
+      return true;
+    }
+    return false;
+  }
+
   /*
    * stateful(build) — 具區域狀態的元件基座
    *
    * build(rerender) 回傳一個 DOM 節點；元件的狀態放在 build 外層的閉包變數，
    * 事件處理器改變狀態後呼叫 rerender() 重建整棵子樹並就地替換。
    *
-   * 重點：文字輸入請「只更新 model、不呼叫 rerender」，避免重建導致游標跳動；
-   * 只有結構性變更（切換選項、增刪列、開關 modal）才 rerender。
+   * 組字期間（注音/拼音）會自動延後重繪，避免 IME 選字被中斷。
    */
   function stateful(build) {
     var node;
 
-    // 以「子節點索引路徑」定位目前聚焦的元素，重繪後於相同路徑還原聚焦與游標位置，
-    // 讓「onChange 更新 model 後整棵重繪」也不會造成輸入游標跳動。
+    // 以「子節點索引路徑」定位目前聚焦的元素，重繪後於相同路徑還原聚焦與游標位置
     function pathTo(root, el) {
       var path = [];
       var cur = el;
@@ -148,7 +168,7 @@
       return cur;
     }
 
-    function rerender() {
+    function doRerender() {
       var active = document.activeElement;
       var path = null, selStart = null, selEnd = null;
       if (active && node && node.contains && node.contains(active)) {
@@ -166,6 +186,11 @@
         }
       }
       return node;
+    }
+
+    function rerender() {
+      if (deferRerenderWhileComposing(doRerender)) return node;
+      return doRerender();
     }
 
     node = build(rerender);

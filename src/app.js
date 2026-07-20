@@ -40,7 +40,9 @@
   };
 
   var PERMISSIONS_SUBMENU_DEFAULT_VIEW = {
-    '帳號管理': 'account-list'
+    '帳號管理': 'account-list',
+    '行政區域管理': 'district-list',
+    '指派人員管理': 'assignee-list'
   };
 
   var WARROOM_SUBMENUS = Object.keys(WARROOM_SUBMENU_DEFAULT_VIEW);
@@ -87,6 +89,8 @@
     equipmentStore: '',
     personnelStatus: INITIAL_PERSONNEL_STATUS,
     accounts: INITIAL_ACCOUNTS,
+    districts: INITIAL_DISTRICTS,
+    assignees: INITIAL_ASSIGNEES,
     editingCase: null,
     viewingCase: null,
     statusFilter: '全部'
@@ -119,6 +123,22 @@
   var setEquipmentStore = makeSetter('equipmentStore');
   var setPersonnelStatus = makeSetter('personnelStatus');
   var setAccounts = makeSetter('accounts');
+
+  function setDistricts(v) {
+    store.set(function (s) {
+      var next = typeof v === 'function' ? v(s.districts) : v;
+      DistrictUtils.syncDistrictOptions(next);
+      return { districts: next };
+    });
+  }
+
+  function setAssignees(v) {
+    store.set(function (s) {
+      var next = typeof v === 'function' ? v(s.assignees) : v;
+      AssigneeUtils.syncAssigneeOptions(next);
+      return { assignees: next };
+    });
+  }
 
   function setCurrentTopMenu(menu) {
     var s = store.get();
@@ -334,6 +354,7 @@
           setPersonnelStatus: setPersonnelStatus,
           customers: s.customers,
           stores: s.stores,
+          assignees: s.assignees,
           showToast: showToast
         });
       case 'personnel-movement':
@@ -365,6 +386,8 @@
         return h(AccountList, {
           accounts: s.accounts,
           setAccounts: setAccounts,
+          assignees: s.assignees,
+          setAssignees: setAssignees,
           setEditingCase: setEditingCase,
           setView: setView,
           showToast: showToast
@@ -388,6 +411,80 @@
         return h(AccountPermissions, {
           accounts: s.accounts,
           setAccounts: setAccounts,
+          targetCase: s.editingCase,
+          setView: setView,
+          showToast: showToast
+        });
+      case 'district-list':
+        return h(DistrictList, {
+          districts: s.districts,
+          setDistricts: setDistricts,
+          assignees: s.assignees,
+          stores: s.stores,
+          setEditingCase: setEditingCase,
+          setView: setView,
+          showToast: showToast
+        });
+      case 'district-add':
+        return h(DistrictForm, {
+          districts: s.districts,
+          setDistricts: setDistricts,
+          assignees: s.assignees,
+          setAssignees: setAssignees,
+          stores: s.stores,
+          setStores: setStores,
+          setView: setView,
+          showToast: showToast
+        });
+      case 'district-edit':
+        return h(DistrictForm, {
+          districts: s.districts,
+          setDistricts: setDistricts,
+          assignees: s.assignees,
+          setAssignees: setAssignees,
+          stores: s.stores,
+          setStores: setStores,
+          targetCase: s.editingCase,
+          setView: setView,
+          showToast: showToast
+        });
+      case 'assignee-list':
+        return h(AssigneeList, {
+          assignees: s.assignees,
+          setAssignees: setAssignees,
+          accounts: s.accounts,
+          cases: s.cases,
+          maintenanceCases: s.maintenanceCases,
+          projectCases: s.projectCases,
+          setEditingCase: setEditingCase,
+          setView: setView,
+          showToast: showToast
+        });
+      case 'assignee-add':
+        return h(AssigneeForm, {
+          assignees: s.assignees,
+          setAssignees: setAssignees,
+          accounts: s.accounts,
+          cases: s.cases,
+          setCases: setCasesData,
+          maintenanceCases: s.maintenanceCases,
+          setMaintenanceCases: setMaintenanceCases,
+          projectCases: s.projectCases,
+          setProjectCases: setProjectCases,
+          setView: setView,
+          showToast: showToast
+        });
+      case 'assignee-edit':
+        return h(AssigneeForm, {
+          assignees: s.assignees,
+          setAssignees: setAssignees,
+          accounts: s.accounts,
+          cases: s.cases,
+          setCases: setCasesData,
+          maintenanceCases: s.maintenanceCases,
+          setMaintenanceCases: setMaintenanceCases,
+          projectCases: s.projectCases,
+          setProjectCases: setProjectCases,
           targetCase: s.editingCase,
           setView: setView,
           showToast: showToast
@@ -454,6 +551,9 @@
       )
     );
   }
+
+  DistrictUtils.syncDistrictOptions(INITIAL_DISTRICTS);
+  AssigneeUtils.syncAssigneeOptions(INITIAL_ASSIGNEES);
 
   var root = document.getElementById('root');
   function draw() {
