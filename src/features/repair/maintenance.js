@@ -282,8 +282,24 @@
     var mode = props.mode;
     var showToast = props.showToast;
 
+    var customers = props.customers;
     var formData = targetCase;
     var isEdit = mode === 'edit';
+
+    function getStoreForCase(c) {
+      return ScheduleUtils.resolveStore(stores, c && c.customerName, c && c.storeName);
+    }
+
+    function getMaintenanceInterval(c) {
+      if (!customers || !c) return '';
+      var customer = customers.find(function (cust) { return cust.name === c.customerName; });
+      return customer ? customer.maintenanceInterval : '';
+    }
+
+    function getMaintenancePeriodLabel(c) {
+      var refDate = ScheduleUtils.resolveMaintenanceReferenceDate(c);
+      return ScheduleUtils.formatMaintenancePeriod(refDate, getMaintenanceInterval(c));
+    }
 
     function ReadOnlyField(p) {
       var label = p.label;
@@ -345,10 +361,19 @@
         value: formData.district
       }), h(ReadOnlyField, {
         label: "門市地址",
-        value: formData.storeAddress
+        value: (getStoreForCase(formData) || {}).companyAddress || formData.storeAddress
       }), h(ReadOnlyField, {
         label: "服務等級",
         value: formData.serviceLevel
+      }), h(ReadOnlyField, {
+        label: "目前保養季度",
+        value: getMaintenancePeriodLabel(formData)
+      }), h(ReadOnlyField, {
+        label: "室內機高度",
+        value: (getStoreForCase(formData) || {}).indoorHeight
+      }), h(ReadOnlyField, {
+        label: "室外機高度",
+        value: (getStoreForCase(formData) || {}).outdoorHeight
       }))), h("section", null, h("h3", {
         className: "text-lg font-bold text-blue-800 border-b pb-2 mb-4"
       }, "保養作業狀態"), h("div", {

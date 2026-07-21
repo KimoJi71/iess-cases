@@ -32,9 +32,17 @@
     );
   }
 
+  function syncFormStoreFields(formData, stores) {
+    var synced = ScheduleUtils.applyStoreSnapshot(formData, stores);
+    formData.district = synced.district || '';
+    formData.serviceLevel = synced.serviceLevel || formData.serviceLevel;
+    formData.storeAddress = synced.storeAddress || '';
+  }
+
   function AddCaseForm(props) {
     var cases = props.cases;
     var setCases = props.setCases;
+    var stores = props.stores;
     var setView = props.setView;
     var showToast = props.showToast;
 
@@ -42,6 +50,8 @@
       workCategory: '一般叫修',
       customerName: '',
       storeName: '',
+      district: '',
+      storeAddress: '',
       repairItem: '室內機',
       repairReason: '不冷',
       faultDesc: '',
@@ -55,6 +65,7 @@
 
     return stateful(function (rerender) {
       var isOther = isOtherWorkCategory(formData.workCategory);
+      var storeOptions = ScheduleUtils.getStoreNamesForCustomer(stores, formData.customerName);
 
       function handleChange(e) {
         var name = e.target.name;
@@ -62,6 +73,12 @@
         formData[name] = value;
         if (name === 'customerName') {
           formData.serviceLevel = CUSTOMER_SERVICE_LEVEL_MAP[value] || '維修(無簽約客戶)';
+          formData.storeName = '';
+          formData.district = '';
+          formData.storeAddress = '';
+        }
+        if (name === 'storeName') {
+          syncFormStoreFields(formData, stores);
         }
         rerender();
       }
@@ -73,8 +90,8 @@
           repairDate: caseDT.now(),
           createdAt: new Date().toISOString()
         }, formData, {
-          district: '自動帶入區',
-          storeAddress: '自動帶入地址',
+          district: formData.district || '',
+          storeAddress: formData.storeAddress || '',
           processStatus: null,
           indicator: formData.workCategory === '緊急叫修' ? 'urgent' : 'completed',
           isClosed: false,
@@ -135,7 +152,7 @@
       }, h("option", {
         value: "",
         disabled: true
-      }, "請選擇"), STORE_OPTIONS.map(function (opt) { return h("option", {
+      }, "請選擇"), storeOptions.map(function (opt) { return h("option", {
         key: opt,
         value: opt
       }, opt); }))), h("div", null, h("label", {
@@ -159,7 +176,8 @@
       }, "門市地址 (根據門市自動帶入)"), h("input", {
         type: "text",
         disabled: true,
-        placeholder: "輸入門市後自動帶入",
+        value: formData.storeAddress,
+        placeholder: "請先選擇客戶與門市",
         className: "w-full p-2.5 bg-gray-50 border rounded-md text-gray-500 cursor-not-allowed"
       })), h("div", null, h("label", {
         className: "block text-sm font-medium text-gray-700 mb-1"
@@ -266,6 +284,7 @@
     var editingCase = props.editingCase;
     var cases = props.cases;
     var setCases = props.setCases;
+    var stores = props.stores;
     var setView = props.setView;
     var showToast = props.showToast;
 
@@ -286,6 +305,7 @@
     return stateful(function (rerender) {
       var cat2Options = Object.keys(PROCESS_METHOD_CATEGORIES[newRecord.category1] || {});
       var cat3Options = newRecord.category2 ? PROCESS_METHOD_CATEGORIES[newRecord.category1][newRecord.category2] || [] : [];
+      var storeOptions = ScheduleUtils.getStoreNamesForCustomer(stores, formData.customerName);
 
       function handleCat1Change(e) {
         var val = e.target.value;
@@ -320,6 +340,12 @@
         }
         if (name === 'customerName') {
           formData.serviceLevel = CUSTOMER_SERVICE_LEVEL_MAP[value] || '維修(無簽約客戶)';
+          formData.storeName = '';
+          formData.district = '';
+          formData.storeAddress = '';
+        }
+        if (name === 'storeName') {
+          syncFormStoreFields(formData, stores);
         }
         rerender();
       }
@@ -396,7 +422,7 @@
       }, h("option", {
         value: "",
         disabled: true
-      }, "請選擇"), STORE_OPTIONS.map(function (opt) { return h("option", {
+      }, "請選擇"), storeOptions.map(function (opt) { return h("option", {
         key: opt,
         value: opt
       }, opt); }))), h("div", null, h("span", {
@@ -428,10 +454,10 @@
         className: "text-gray-500 block mb-1"
       }, "門市地址"), h("input", {
         type: "text",
-        name: "storeAddress",
+        disabled: true,
         value: formData.storeAddress,
-        onChange: handleChange,
-        className: "w-full p-2 border rounded-md outline-none"
+        placeholder: "請先選擇客戶與門市",
+        className: "w-full p-2 border rounded-md bg-gray-50 text-gray-500 cursor-not-allowed"
       })), h("div", null, h("span", {
         className: "text-gray-500 block mb-1"
       }, "工項分類"), h("select", {

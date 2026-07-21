@@ -247,12 +247,13 @@
         });
       case 'add':
         return h(AddCaseForm, {
-          cases: s.cases, setCases: setCasesData, setView: setView, showToast: showToast
+          cases: s.cases, setCases: setCasesData, stores: s.stores,
+          setView: setView, showToast: showToast
         });
       case 'edit':
         return h(EditCaseForm, {
           editingCase: s.editingCase, cases: s.cases, setCases: setCasesData,
-          setView: setView, showToast: showToast
+          stores: s.stores, setView: setView, showToast: showToast
         });
       case 'record-list':
         return h(CaseRecordList, {
@@ -276,12 +277,13 @@
         });
       case 'maintenance-view':
         return h(MaintenanceViewEditForm, {
-          targetCase: s.viewingCase, setView: setView, mode: 'view', showToast: showToast
+          targetCase: s.viewingCase, stores: s.stores, customers: s.customers,
+          setView: setView, mode: 'view', showToast: showToast
         });
       case 'maintenance-edit':
         return h(MaintenanceViewEditForm, {
           targetCase: s.editingCase, cases: s.maintenanceCases, setCases: setMaintenanceCases,
-          stores: s.stores, setStores: setStores,
+          stores: s.stores, setStores: setStores, customers: s.customers,
           setView: setView, mode: 'edit', showToast: showToast
         });
       case 'project-list':
@@ -291,7 +293,8 @@
         });
       case 'project-add':
         return h(AddProjectForm, {
-          cases: s.projectCases, setCases: setProjectCases, setView: setView, showToast: showToast
+          cases: s.projectCases, setCases: setProjectCases, stores: s.stores,
+          setView: setView, showToast: showToast
         });
       case 'project-edit':
         return h(EditProjectForm, {

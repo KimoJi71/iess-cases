@@ -10,6 +10,7 @@
   function AddProjectForm(props) {
     var cases = props.cases;
     var setCases = props.setCases;
+    var stores = props.stores;
     var setView = props.setView;
     var showToast = props.showToast;
 
@@ -43,12 +44,25 @@
     };
 
     return stateful(function (rerender) {
+      var storeOptions = ScheduleUtils.getStoreNamesForCustomer(stores, formData.customerName);
+
+      function syncProjectStoreFields() {
+        var synced = ScheduleUtils.applyStoreSnapshot(formData, stores);
+        formData.storeAddress = synced.storeAddress || '';
+        formData.serviceLevel = synced.serviceLevel || formData.serviceLevel;
+      }
+
       function handleChange(e) {
         var name = e.target.name;
         var value = e.target.value;
         formData[name] = value;
         if (name === 'customerName') {
           formData.serviceLevel = CUSTOMER_SERVICE_LEVEL_MAP[value] || '維修(無簽約客戶)';
+          formData.storeName = '';
+          formData.storeAddress = '';
+        }
+        if (name === 'storeName') {
+          syncProjectStoreFields();
         }
         rerender();
       }
@@ -163,7 +177,7 @@
       }, h('option', {
         value: '',
         disabled: true
-      }, '請選擇'), STORE_OPTIONS.map(function (opt) {
+      }, '請選擇'), storeOptions.map(function (opt) {
         return h('option', { key: opt, value: opt }, opt);
       }))), h('div', {
         className: 'col-span-full md:col-span-2'

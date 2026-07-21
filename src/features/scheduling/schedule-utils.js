@@ -114,12 +114,58 @@
     return result;
   }
 
-  function resolveStoreDistrict(stores, customerName, storeName) {
-    if (!stores) return '';
-    var store = stores.find(function (s) {
+  function resolveStore(stores, customerName, storeName) {
+    if (!stores) return null;
+    return stores.find(function (s) {
       return s.customerName === customerName && s.storeName === storeName;
-    });
+    }) || null;
+  }
+
+  function resolveStoreDistrict(stores, customerName, storeName) {
+    var store = resolveStore(stores, customerName, storeName);
     return store ? store.district : '';
+  }
+
+  function applyStoreSnapshot(record, stores) {
+    var store = resolveStore(stores, record.customerName, record.storeName);
+    if (!store) return record;
+    return Object.assign({}, record, {
+      district: store.district,
+      serviceLevel: store.serviceLevel,
+      storeAddress: store.companyAddress
+    });
+  }
+
+  function getStoreNamesForCustomer(stores, customerName) {
+    if (!stores || !customerName) return [];
+    return stores
+      .filter(function (s) { return s.customerName === customerName; })
+      .map(function (s) { return s.storeName; });
+  }
+
+  function resolveMaintenanceReferenceDate(maintenanceCase) {
+    if (!maintenanceCase) return '';
+    if (maintenanceCase.planDate) return maintenanceCase.planDate;
+    if (maintenanceCase.dueMonth) return maintenanceCase.dueMonth + '-01';
+    return '';
+  }
+
+  function formatMaintenancePeriod(dateStr, maintenanceInterval) {
+    if (!dateStr) return '';
+    var year = parseInt(dateStr.slice(0, 4), 10);
+    var month = parseInt(dateStr.slice(5, 7), 10);
+    if (!year || !month) return '';
+
+    if (maintenanceInterval === '每季') {
+      return year + ' Q' + Math.ceil(month / 3);
+    }
+    if (maintenanceInterval === '每半年') {
+      return year + (month <= 6 ? ' 上半年' : ' 下半年');
+    }
+    if (maintenanceInterval === '每年') {
+      return String(year);
+    }
+    return String(year);
   }
 
   function resolveMaintenanceStatus(currentStatus, planDate) {
@@ -389,6 +435,11 @@
     getPersonnelEvents: getPersonnelEvents,
     getRepairSchedule: getRepairSchedule,
     resolveMaintenanceStatus: resolveMaintenanceStatus,
+    resolveStore: resolveStore,
+    applyStoreSnapshot: applyStoreSnapshot,
+    getStoreNamesForCustomer: getStoreNamesForCustomer,
+    resolveMaintenanceReferenceDate: resolveMaintenanceReferenceDate,
+    formatMaintenancePeriod: formatMaintenancePeriod,
     formatTimeRange: formatTimeRange,
     formatTime24: formatTime24,
     formatScheduleEventTitle: formatScheduleEventTitle,
