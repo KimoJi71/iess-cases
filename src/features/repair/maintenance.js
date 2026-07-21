@@ -205,7 +205,7 @@
             setView('maintenance-edit');
           },
           className: "p-1.5 text-blue-600 hover:bg-blue-100 rounded",
-          title: "查看/編輯"
+          title: "編輯"
         }, Icons.Edit({
           className: "h-4 w-4"
         })), h("button", {
@@ -337,7 +337,7 @@
       return h("div", {
         className: "max-w-5xl mx-auto bg-white rounded-lg shadow-sm border border-gray-100"
       }, PageHeader({
-        title: '查看/編輯保養明細',
+        title: isEdit ? '編輯保養明細' : '查看保養明細',
         badge: formData.caseNumber || '待產生編號',
         onClose: function () { setView('maintenance-list'); },
         wrapperClass: 'flex justify-between items-center p-6 border-b border-gray-200 sticky top-0 z-10 bg-white rounded-t-lg'

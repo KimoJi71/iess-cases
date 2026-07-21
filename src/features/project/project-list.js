@@ -123,7 +123,7 @@
         }, h('button', {
           onClick: function () { setEditingCase(c); setView('project-edit'); },
           className: 'p-1.5 text-blue-600 hover:bg-blue-100 rounded',
-          title: '查看/編輯案件'
+          title: '編輯'
         }, Icons.Edit({
           className: 'h-4 w-4'
         })), h('button', {

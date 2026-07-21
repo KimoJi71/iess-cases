@@ -1,5 +1,5 @@
 /*
- * features/project/project-form.js — 工程立案：新增立案單 / 查看編輯工程案件
+ * features/project/project-form.js — 工程立案：新增立案單 / 編輯工程案件
  * AddProjectForm  props: { cases, setCases, setView, showToast }
  * EditProjectForm props: { editingCase, cases, setCases, setView, showToast }
  */
@@ -557,7 +557,7 @@
       return h('div', {
         className: 'max-w-5xl mx-auto bg-white rounded-lg shadow-sm border border-gray-100'
       }, PageHeader({
-        title: '查看 / 編輯工程案件',
+        title: '編輯工程案件',
         badge: formData.projectNumber,
         onClose: function () { setView('project-list'); },
         wrapperClass: 'flex justify-between items-center p-6 border-b border-gray-200 sticky top-0 z-10 bg-white rounded-t-lg'
