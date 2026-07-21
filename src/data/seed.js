@@ -398,6 +398,7 @@ const INITIAL_CASES = [{
   equipment: null,
   processRecords: [],
   reRepairDate: '',
+  secondRepairDate: '',
   completionDate: '',
   expectedDate: todayDate,
   planDate: '',
@@ -433,6 +434,7 @@ const INITIAL_CASES = [{
   },
   processRecords: [],
   reRepairDate: '',
+  secondRepairDate: '',
   completionDate: '',
   expectedDate: yesterdayDate,
   planDate: '',
@@ -474,6 +476,7 @@ const INITIAL_CASES = [{
     qty: 1
   }],
   reRepairDate: yesterdayDate,
+  secondRepairDate: '',
   completionDate: todayDate,
   expectedDate: todayDate,
   planDate: '',
@@ -521,6 +524,7 @@ const INITIAL_CASES = [{
     qty: 2
   }],
   reRepairDate: '',
+  secondRepairDate: '',
   completionDate: twoDaysAgoDate,
   expectedDate: yesterdayDate,
   planDate: '',
@@ -562,6 +566,7 @@ const INITIAL_CASES = [{
     qty: 1
   }],
   reRepairDate: '',
+  secondRepairDate: '',
   completionDate: todayDate,
   expectedDate: todayDate,
   planDate: '',
@@ -590,6 +595,7 @@ const INITIAL_CASES = [{
   equipment: null,
   processRecords: [],
   reRepairDate: '',
+  secondRepairDate: '',
   completionDate: '',
   expectedDate: '',
   planDate: '',
@@ -618,6 +624,7 @@ const INITIAL_CASES = [{
   equipment: null,
   processRecords: [],
   reRepairDate: '',
+  secondRepairDate: '',
   completionDate: '',
   expectedDate: todayDate,
   planDate: todayDate,
@@ -646,6 +653,7 @@ const INITIAL_CASES = [{
   equipment: null,
   processRecords: [],
   reRepairDate: '',
+  secondRepairDate: '',
   completionDate: twoDaysAgoDate,
   expectedDate: twoDaysAgoDate,
   planDate: '',
@@ -674,6 +682,7 @@ const INITIAL_CASES = [{
   equipment: null,
   processRecords: [],
   reRepairDate: '',
+  secondRepairDate: '',
   completionDate: todayDate,
   expectedDate: todayDate,
   planDate: '',
@@ -702,6 +711,7 @@ const INITIAL_CASES = [{
   equipment: null,
   processRecords: [],
   reRepairDate: '',
+  secondRepairDate: '',
   completionDate: todayDate,
   expectedDate: todayDate,
   planDate: '',
@@ -730,6 +740,7 @@ const INITIAL_CASES = [{
   equipment: null,
   processRecords: [],
   reRepairDate: '',
+  secondRepairDate: '',
   completionDate: todayDate,
   expectedDate: todayDate,
   planDate: '',
@@ -758,6 +769,7 @@ const INITIAL_CASES = [{
   equipment: null,
   processRecords: [],
   reRepairDate: '',
+  secondRepairDate: '',
   completionDate: todayDate,
   expectedDate: todayDate,
   planDate: '',
@@ -765,6 +777,20 @@ const INITIAL_CASES = [{
   planTimeEnd: '',
   isPerformanceIncluded: true
 }];
+
+INITIAL_CASES.forEach(function (c, i) {
+  if (!c.createdAt) {
+    var hour = 8 + (i % 10);
+    var minute = (i * 11) % 60;
+    c.createdAt = c.repairDate + 'T' + String(hour).padStart(2, '0') + ':' + String(minute).padStart(2, '0') + ':00';
+  }
+  c.repairDate = IESS.caseDateTime.format(c.createdAt || c.repairDate);
+  ['reRepairDate', 'secondRepairDate', 'completionDate'].forEach(function (field) {
+    if (c[field]) c[field] = IESS.caseDateTime.format(c[field]);
+  });
+  if (!c.equipment && !c.isClosed) c.processStatus = null;
+  if (c.isListClosed == null) c.isListClosed = false;
+});
 
 // --- 初始模擬保養計畫列表 ---
 const INITIAL_MAINTENANCE_CASES = [{
@@ -774,7 +800,7 @@ const INITIAL_MAINTENANCE_CASES = [{
   storeName: '台北信義店',
   district: '北區',
   serviceLevel: '保修(一年一次)',
-  status: '待排程',
+  status: '未保養',
   planDate: '',
   planTimeStart: '',
   planTimeEnd: '',
@@ -790,7 +816,7 @@ const INITIAL_MAINTENANCE_CASES = [{
   storeName: '台中旗艦店',
   district: '中區',
   serviceLevel: '保修(一年兩次)',
-  status: '已排程',
+  status: '已預約',
   planDate: todayDate,
   planTimeStart: '09:00',
   planTimeEnd: '11:00',
@@ -805,7 +831,7 @@ const INITIAL_MAINTENANCE_CASES = [{
   storeName: '高雄左營店',
   district: '南區',
   serviceLevel: '保養(一年一次)',
-  status: '已完工',
+  status: '已完成',
   planDate: yesterdayDate,
   planTimeStart: '14:00',
   planTimeEnd: '16:00',

@@ -1,48 +1,100 @@
 /*
- * shell/header.js — 頂部藍色列（logo + 主選單 + 使用者）
- * props: { currentTopMenu, setCurrentTopMenu }
+ * shell/header.js — 頂部藍色列（logo + 主選單 + 快捷操作 + 使用者）
+ * props: { currentTopMenu, setCurrentTopMenu, quickActions, onMenuToggle?, mobileSidebarOpen? }
+ *
+ * quickActions: [{ id, label, icon, variant?, onClick, title? }]
+ *   variant: 'primary' | 'secondary'（預設 secondary）
  */
 (function () {
   'use strict';
   var h = IESS.h, Icons = IESS.Icons;
 
+  function renderQuickAction(action) {
+    var Icon = Icons[action.icon];
+    var variant = action.variant === 'primary' ? 'primary' : 'secondary';
+    return h('button', {
+      key: action.id,
+      type: 'button',
+      onClick: action.onClick,
+      className: 'header-quick-action header-quick-action--' + variant,
+      title: action.title || action.label,
+      'aria-label': action.label
+    },
+      Icon && Icon({ className: 'header-quick-action__icon' }),
+      h('span', { className: 'header-quick-action__label' }, action.label)
+    );
+  }
+
   function Header(props) {
     var currentTopMenu = props.currentTopMenu;
     var setCurrentTopMenu = props.setCurrentTopMenu;
+    var quickActions = props.quickActions || [];
+    var onMenuToggle = props.onMenuToggle;
+    var mobileSidebarOpen = props.mobileSidebarOpen;
 
     var menus = ['戰情室', '案件排程', '報表統計', '系統權限'];
 
-    return h('header', { className: 'bg-blue-900 text-white shadow-md shrink-0' },
-      h('div', { className: 'flex items-center justify-between px-6 py-3' },
-        h('div', { className: 'flex items-center space-x-8' },
-          h('div', { className: 'flex items-center space-x-2' },
-            Icons.Wrench({ className: 'h-6 w-6 text-blue-300' }),
-            h('h1', { className: 'text-xl font-bold tracking-wider' }, '晉詮系統')
+    return h('header', { className: 'app-header shrink-0' },
+      h('div', { className: 'app-header__inner' },
+        h('div', { className: 'app-header__start' },
+          onMenuToggle && h('button', {
+            type: 'button',
+            className: 'app-header__menu-btn',
+            onClick: onMenuToggle,
+            'aria-label': mobileSidebarOpen ? '關閉選單' : '開啟選單',
+            'aria-expanded': mobileSidebarOpen ? 'true' : 'false'
+          }, Icons.Menu({ className: 'h-6 w-6' })),
+          h('div', { className: 'app-header__brand' },
+            Icons.Wrench({ className: 'app-header__brand-icon' }),
+            h('h1', { className: 'app-header__title' }, '晉詮系統')
           ),
-          h('nav', { className: 'hidden md:flex space-x-1' },
+          h('nav', { className: 'app-header__nav', 'aria-label': '主選單' },
             menus.map(function (menu) {
               return h('button', {
                 key: menu,
+                type: 'button',
                 onClick: function () { setCurrentTopMenu(menu); },
-                className: 'px-4 py-2 rounded-md transition-colors ' +
-                  (currentTopMenu === menu
-                    ? 'bg-blue-800 text-white font-medium'
-                    : 'text-blue-200 hover:bg-blue-800 hover:text-white')
+                className: 'app-header__nav-item' +
+                  (currentTopMenu === menu ? ' app-header__nav-item--active' : '')
               }, menu);
             })
           )
         ),
-        h('div', { className: 'flex items-center space-x-4' },
-          h('button', { className: 'text-blue-200 hover:text-white' },
-            Icons.Bell({ className: 'h-5 w-5' })
+        h('div', { className: 'app-header__end' },
+          quickActions.length > 0 && h('div', {
+            className: 'header-quick-actions',
+            role: 'toolbar',
+            'aria-label': '快捷操作'
+          },
+            quickActions.map(renderQuickAction)
           ),
-          h('div', { className: 'flex items-center space-x-2 text-sm' },
-            h('div', { className: 'bg-blue-800 p-1.5 rounded-full' },
-              Icons.User({ className: 'h-4 w-4' })
-            ),
-            h('span', { className: 'hidden sm:inline' }, '管理員')
+          quickActions.length > 0 && h('div', { className: 'app-header__divider', 'aria-hidden': 'true' }),
+          h('div', { className: 'app-header__utilities' },
+            h('button', {
+              type: 'button',
+              className: 'app-header__utility-btn',
+              title: '通知',
+              'aria-label': '通知'
+            }, Icons.Bell({ className: 'h-5 w-5' })),
+            h('div', { className: 'app-header__user' },
+              h('div', { className: 'app-header__user-avatar' },
+                Icons.User({ className: 'h-4 w-4' })
+              ),
+              h('span', { className: 'app-header__user-name' }, '管理員')
+            )
           )
         )
+      ),
+      h('nav', { className: 'app-header__mobile-nav', 'aria-label': '主選單（手機版）' },
+        menus.map(function (menu) {
+          return h('button', {
+            key: menu,
+            type: 'button',
+            onClick: function () { setCurrentTopMenu(menu); },
+            className: 'app-header__mobile-nav-item' +
+              (currentTopMenu === menu ? ' app-header__mobile-nav-item--active' : '')
+          }, menu);
+        })
       )
     );
   }

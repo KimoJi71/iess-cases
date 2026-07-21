@@ -17,11 +17,11 @@
       'flex justify-between items-center mb-6 pb-4 border-b border-gray-200';
 
     return h('div', { className: wrapperClass },
-      h('div', { className: 'flex items-center gap-3 min-w-0' },
-        h('h2', { className: 'text-2xl font-bold text-gray-800 whitespace-nowrap' }, opts.title),
+      h('div', { className: 'flex items-center gap-2 sm:gap-3 min-w-0 flex-1' },
+        h('h2', { className: 'text-xl sm:text-2xl font-bold text-gray-800' }, opts.title),
         opts.badge
           ? h('span', {
-              className: 'text-base font-medium text-blue-700 bg-blue-50 px-3 py-1 rounded-full whitespace-nowrap'
+              className: 'text-sm sm:text-base font-medium text-blue-700 bg-blue-50 px-2.5 sm:px-3 py-1 rounded-full shrink-0'
             }, opts.badge)
           : null
       ),
@@ -29,7 +29,7 @@
         type: 'button',
         onClick: opts.onClose,
         title: '關閉並返回列表',
-        className: 'shrink-0 ml-4 p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors'
+        className: 'shrink-0 p-2.5 sm:p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors'
       }, Icons.X({ className: 'h-6 w-6' }))
     );
   }

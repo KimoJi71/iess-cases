@@ -11,7 +11,7 @@
  */
 (function () {
   'use strict';
-  var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful, TimeInput24 = IESS.TimeInput24;
+  var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful;
   var CalendarBridge = IESS.CalendarBridge;
 
   function CaseArrangement(props) {
@@ -39,20 +39,6 @@
     var pendingDistrict = '';
     var pendingAssignee = '';
     var appliedPending = null;
-
-    var addModal = { show: false };
-    var addForm = {
-      workName: '',
-      customerName: '',
-      storeName: '',
-      storeAddress: '',
-      serviceLevel: '',
-      workDesc: '',
-      assignee: 'A組',
-      planDate: '',
-      timeStart: '09:00',
-      timeEnd: '11:00'
-    };
 
     var bridge = null;
     var calendarEl = null;
@@ -128,7 +114,7 @@
             planTimeStart: payload.planTimeStart,
             planTimeEnd: payload.planTimeEnd,
             assignee: payload.assignee,
-            status: payload.planDate ? '已排程' : c.status
+            status: ScheduleUtils.resolveMaintenanceStatus(c.status, payload.planDate)
           });
         });
       } else if (sourceType === 'repair') {
@@ -259,94 +245,10 @@
       showToast('排程時間已更新');
     }
 
-    function handleAddSave(rerender) {
-      if (!addForm.workName || !addForm.customerName || !addForm.storeName || !addForm.planDate) {
-        showToast('請填寫必填欄位');
-        return;
-      }
-      var planDate = addForm.planDate;
-      var newId = 'C' + Date.now();
-      var store = stores.find(function (s) {
-        return s.customerName === addForm.customerName && s.storeName === addForm.storeName;
-      });
-      var newCase = {
-        id: newId,
-        caseNumber: planDate.replace(/-/g, '') + String(Math.floor(Math.random() * 1000)).padStart(3, '0'),
-        repairDate: planDate,
-        customerName: addForm.customerName,
-        storeName: addForm.storeName,
-        district: store ? store.district : '北區',
-        workCategory: addForm.workName,
-        repairItem: '室內機',
-        repairReason: '其他',
-        faultDesc: addForm.workDesc,
-        actualReason: '',
-        assignee: addForm.assignee,
-        processStatus: '尚未處理完成',
-        indicator: 'normal',
-        isClosed: false,
-        serviceLevel: addForm.serviceLevel,
-        storeAddress: addForm.storeAddress,
-        reporter: '管理員',
-        equipment: null,
-        processRecords: [],
-        reRepairDate: '',
-        completionDate: '',
-        expectedDate: planDate,
-        planDate: planDate,
-        planTimeStart: addForm.timeStart,
-        planTimeEnd: addForm.timeEnd,
-        isPerformanceIncluded: false
-      };
-      setCases(cases.concat([newCase]));
-      ScheduleUtils.upsertPersonnelStatus(personnelStatus, {
-        id: 'PS' + Date.now(),
-        assignee: addForm.assignee,
-        date: planDate,
-        timeStart: addForm.timeStart,
-        timeEnd: addForm.timeEnd,
-        customerName: addForm.customerName,
-        storeName: addForm.storeName,
-        workCategory: addForm.workName,
-        sourceType: 'manual',
-        sourceId: newId
-      }, setPersonnelStatus);
-      addModal = { show: false };
-      addForm = {
-        workName: '', customerName: '', storeName: '', storeAddress: '', serviceLevel: '',
-        workDesc: '', assignee: 'A組', planDate: '', timeStart: '09:00', timeEnd: '11:00'
-      };
-      showToast('排程已新增');
-      rerender();
-    }
-
-    function onStoreChange(customerName, rerender) {
-      addForm.customerName = customerName;
-      addForm.storeName = '';
-      addForm.storeAddress = '';
-      addForm.serviceLevel = '';
-      rerender();
-    }
-
-    function onStoreSelect(storeName, rerender) {
-      addForm.storeName = storeName;
-      var store = stores.find(function (s) {
-        return s.customerName === addForm.customerName && s.storeName === storeName;
-      });
-      if (store) {
-        addForm.storeAddress = store.companyAddress || '';
-        addForm.serviceLevel = store.serviceLevel || '';
-      }
-      rerender();
-    }
-
     return stateful(function (rerender) {
       rerenderRef = rerender;
       var pendingItems = getPendingList();
       var customerNames = customers.map(function (c) { return c.name; });
-      var storeOptions = stores.filter(function (s) {
-        return !addForm.customerName || s.customerName === addForm.customerName;
-      });
 
       function handleCalSearch() {
         appliedCal = { start: calStart, end: calEnd, assignee: calAssignee };
@@ -381,8 +283,7 @@
       setTimeout(function () { refreshCalendar(); }, 0);
 
       return h('div', { className: 'bg-white p-6 rounded-lg shadow-sm border border-gray-100' },
-        h('div', { className: 'flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-6' },
-          h('div', { className: 'flex flex-wrap items-end gap-3' },
+        h('div', { className: 'flex flex-wrap items-end gap-3 mb-6' },
             h('div', null,
               h('label', { className: 'block text-xs text-gray-500 mb-1' }, '開始日期'),
               h('input', {
@@ -416,11 +317,6 @@
               onClick: handleCalSearch,
               className: 'px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center gap-1'
             }, Icons.Search({ className: 'h-4 w-4' }), '查詢')
-          ),
-          h('button', {
-            onClick: function () { addModal = { show: true }; rerender(); },
-            className: 'px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center gap-1 shrink-0'
-          }, Icons.Plus({ className: 'h-4 w-4' }), '新增案件排程')
         ),
 
         h('div', { className: 'flex flex-col xl:flex-row gap-4' },
@@ -523,139 +419,6 @@
             className: 'flex-1 min-h-[520px] border border-gray-200 rounded-lg p-2 bg-white',
             ref: initCalendar
           })
-        ),
-
-        addModal.show && h('div', {
-          className: 'fixed inset-0 bg-black/40 flex items-center justify-center z-50 overflow-y-auto py-8'
-        },
-          h('div', { className: 'bg-white rounded-lg shadow-xl p-6 w-full max-w-lg mx-4' },
-            h('div', { className: 'flex justify-between items-center mb-4' },
-              h('h3', { className: 'text-lg font-bold text-gray-800' }, '新增案件排程'),
-              h('button', {
-                onClick: function () { addModal = { show: false }; rerender(); },
-                className: 'text-gray-400 hover:text-gray-600'
-              }, Icons.X({ className: 'h-5 w-5' }))
-            ),
-            h('div', { className: 'space-y-3 max-h-[60vh] overflow-y-auto pr-1' },
-              h('div', null,
-                h('label', { className: 'block text-xs text-gray-500 mb-1' }, '工作名稱 ', h('span', { className: 'text-red-500' }, '*')),
-                h('input', {
-                  type: 'text', value: addForm.workName,
-                  onChange: function (e) { addForm.workName = e.target.value; },
-                  className: 'w-full p-2 border rounded-md outline-none focus:border-blue-500'
-                })
-              ),
-              h('div', { className: 'grid grid-cols-2 gap-3' },
-                h('div', null,
-                  h('label', { className: 'block text-xs text-gray-500 mb-1' }, '客戶名稱 ', h('span', { className: 'text-red-500' }, '*')),
-                  h('select', {
-                    value: addForm.customerName,
-                    onChange: function (e) { onStoreChange(e.target.value, rerender); },
-                    className: 'w-full p-2 border rounded-md bg-white'
-                  },
-                    h('option', { value: '' }, '請選擇'),
-                    customerNames.map(function (n) {
-                      return h('option', { key: n, value: n }, n);
-                    })
-                  )
-                ),
-                h('div', null,
-                  h('label', { className: 'block text-xs text-gray-500 mb-1' }, '門市名稱 ', h('span', { className: 'text-red-500' }, '*')),
-                  h('select', {
-                    value: addForm.storeName,
-                    disabled: !addForm.customerName,
-                    onChange: function (e) { onStoreSelect(e.target.value, rerender); },
-                    className: 'w-full p-2 border rounded-md bg-white disabled:bg-gray-100'
-                  },
-                    h('option', { value: '' }, '請選擇'),
-                    storeOptions.map(function (s) {
-                      return h('option', { key: s.id, value: s.storeName }, s.storeName);
-                    })
-                  )
-                )
-              ),
-              h('div', null,
-                h('label', { className: 'block text-xs text-gray-500 mb-1' }, '門市地址'),
-                h('input', {
-                  type: 'text', value: addForm.storeAddress, readOnly: true,
-                  className: 'w-full p-2 border rounded-md bg-gray-50'
-                })
-              ),
-              h('div', { className: 'grid grid-cols-2 gap-3' },
-                h('div', null,
-                  h('label', { className: 'block text-xs text-gray-500 mb-1' }, '服務等級'),
-                  h('input', {
-                    type: 'text', value: addForm.serviceLevel, readOnly: true,
-                    className: 'w-full p-2 border rounded-md bg-gray-50'
-                  })
-                ),
-                h('div', null,
-                  h('label', { className: 'block text-xs text-gray-500 mb-1' }, '安排人員'),
-                  h('input', {
-                    type: 'text', value: '管理員', readOnly: true,
-                    className: 'w-full p-2 border rounded-md bg-gray-50'
-                  })
-                )
-              ),
-              h('div', null,
-                h('label', { className: 'block text-xs text-gray-500 mb-1' }, '工作說明'),
-                h('textarea', {
-                  value: addForm.workDesc,
-                  onChange: function (e) { addForm.workDesc = e.target.value; },
-                  rows: 2,
-                  className: 'w-full p-2 border rounded-md outline-none focus:border-blue-500'
-                })
-              ),
-              h('div', null,
-                h('label', { className: 'block text-xs text-gray-500 mb-1' }, '指派人員'),
-                h('select', {
-                  value: addForm.assignee,
-                  onChange: function (e) { addForm.assignee = e.target.value; rerender(); },
-                  className: 'w-full p-2 border rounded-md bg-white'
-                },
-                  SCHEDULE_ASSIGNEE_OPTIONS.filter(function (a) { return a !== '案件待辦'; }).map(function (a) {
-                    return h('option', { key: a, value: a }, a);
-                  })
-                )
-              ),
-              h('div', null,
-                h('label', { className: 'block text-xs text-gray-500 mb-1' }, '預定日期 ', h('span', { className: 'text-red-500' }, '*')),
-                h('input', {
-                  type: 'date', value: addForm.planDate,
-                  onChange: function (e) { addForm.planDate = e.target.value; },
-                  className: 'w-full p-2 border rounded-md outline-none focus:border-blue-500'
-                })
-              ),
-              h('div', { className: 'grid grid-cols-2 gap-3' },
-                h('div', null,
-                  h('label', { className: 'block text-xs text-gray-500 mb-1' }, '預定開始時間'),
-                  h(TimeInput24, {
-                    value: addForm.timeStart,
-                    onChange: function (e) { addForm.timeStart = e.target.value; },
-                    className: 'w-full'
-                  })
-                ),
-                h('div', null,
-                  h('label', { className: 'block text-xs text-gray-500 mb-1' }, '預定結束時間'),
-                  h(TimeInput24, {
-                    value: addForm.timeEnd,
-                    onChange: function (e) { addForm.timeEnd = e.target.value; },
-                    className: 'w-full'
-                  })
-                )
-              )
-            ),
-            h('div', { className: 'flex justify-end gap-2 mt-6' },
-              h('button', {
-                onClick: function () { addModal = { show: false }; rerender(); },
-                className: 'px-4 py-2 border rounded-md text-gray-600 hover:bg-gray-50'
-              }, '取消'),
-              h('button', {
-                onClick: function () { handleAddSave(rerender); },
-                className: 'px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700'
-              }, '儲存')
-            )
-          )
         )
       );
     });

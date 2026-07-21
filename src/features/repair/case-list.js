@@ -1,37 +1,60 @@
 /*
  * features/repair/case-list.js — 案件處理：案件列表（未結案）
- * props: { cases, setCases, setEditingCase, setView, showToast, statusFilter, setStatusFilter }
+ * props: { cases, setCases, stores, setStores, setEditingCase, setView, showToast, statusFilter, setStatusFilter }
  */
 (function () {
   'use strict';
   var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful, useDragScroll = IESS.useDragScroll;
+  var caseStatus = IESS.caseStatus;
+
+  function formatCreatedAt(c) {
+    return IESS.caseDateTime.format(c.createdAt || c.repairDate);
+  }
+
+  function iconActionBtn(opts) {
+    return h('span', { className: 'icon-tooltip' },
+      h('button', {
+        type: 'button',
+        onClick: opts.onClick,
+        className: opts.className,
+        'aria-label': opts.label
+      }, opts.icon),
+      h('span', { className: 'icon-tooltip__tip', role: 'tooltip' }, opts.label)
+    );
+  }
 
   function CaseList(props) {
     var cases = props.cases;
     var setCases = props.setCases;
+    var stores = props.stores;
+    var setStores = props.setStores;
     var setEditingCase = props.setEditingCase;
     var setView = props.setView;
     var showToast = props.showToast;
-    var statusFilter = props.statusFilter;      // 來自 store（切換即整頁重繪）
+    var statusFilter = props.statusFilter;
     var setStatusFilter = props.setStatusFilter;
 
-    // 區域狀態：結案確認 modal
-    var closeConfirmModal = { show: false, caseId: null };
+    var closeConfirmModal = { show: false, caseId: null, mode: 'close' };
     var dragProps = useDragScroll();
 
+    function isActiveInList(c) {
+      return !c.isClosed;
+    }
+
     function getFiltered() {
-      var filtered;
-      if (statusFilter === '全部') {
-        filtered = cases.filter(function (c) { return !c.isClosed; });
-      } else {
-        filtered = cases.filter(function (c) { return !c.isClosed && c.processStatus === statusFilter; });
-      }
-      return filtered.sort(function (a, b) { return new Date(b.repairDate) - new Date(a.repairDate); });
+      return cases.filter(function (c) {
+        if (!isActiveInList(c)) return false;
+        if (statusFilter === '未處理') return !c.processStatus;
+        return c.processStatus === statusFilter;
+      }).sort(function (a, b) {
+        return new Date(b.createdAt || b.repairDate) - new Date(a.createdAt || a.repairDate);
+      });
     }
 
     function getStatusCounts() {
-      return cases.filter(function (c) { return !c.isClosed; }).reduce(function (acc, c) {
-        acc[c.processStatus] = (acc[c.processStatus] || 0) + 1;
+      return cases.filter(isActiveInList).reduce(function (acc, c) {
+        var key = c.processStatus || '未處理';
+        acc[key] = (acc[key] || 0) + 1;
         return acc;
       }, {});
     }
@@ -41,26 +64,106 @@
       showToast('已複製 ' + caseNumber + ' 案件連結');
     }
 
+    function updateStoreLastRepairDate(targetCase) {
+      if (!setStores || !stores || !targetCase) return;
+      var stamp = IESS.caseDateTime.now();
+      setStores(stores.map(function (s) {
+        return s.customerName === targetCase.customerName && s.storeName === targetCase.storeName
+          ? Object.assign({}, s, { lastRepairDate: stamp })
+          : s;
+      }));
+    }
+
     function handleCloseCase(caseId) {
+      var target = cases.find(function (c) { return c.id === caseId; });
+      if (!target) return;
+
+      updateStoreLastRepairDate(target);
+
+      if (target.processStatus === '案件完成') {
+        setCases(cases.map(function (c) {
+          return c.id === caseId ? Object.assign({}, c, { isClosed: true }) : c;
+        }));
+        showToast('案件已結案，並移至「案件銷案審核」列表');
+        return;
+      }
+
+      if (target.processStatus === '待汰換' || target.processStatus === '轉原廠') {
+        setCases(cases.map(function (c) {
+          return c.id === caseId ? Object.assign({}, c, { isListClosed: true }) : c;
+        }));
+        showToast('案件已結案，請完成後點選「' + caseStatus.getInterimCompleteLabel(target.processStatus) + '」');
+      }
+    }
+
+    function handleInterimComplete(caseId) {
       setCases(cases.map(function (c) {
         return c.id === caseId
-          ? Object.assign({}, c, { isClosed: true, processStatus: '案件完成', completionDate: c.completionDate || todayDate })
+          ? Object.assign({}, c, { isClosed: true, isListClosed: false })
           : c;
       }));
-      // setCases 觸發整頁重繪，modal 隨之關閉
-      showToast('案件已結案，並移至銷案審核列表');
+      showToast('案件已完成，並移至「案件銷案審核」列表');
     }
 
     function getIndicatorColor(c) {
       if (c.processStatus === '案件完成') return 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]';
+      if (c.isListClosed) return 'bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.6)]';
       if (c.workCategory === '緊急叫修') return 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]';
       if (c.expectedDate && c.expectedDate < todayDate) return 'bg-yellow-400 shadow-[0_0_8px_rgba(250,204,21,0.6)]';
       return 'bg-gray-300';
     }
 
+    function renderRowActions(c, rerender) {
+      var actions = [
+        iconActionBtn({
+          label: '編輯',
+          className: 'p-1.5 text-blue-600 hover:bg-blue-100 rounded',
+          onClick: function () { setEditingCase(c); setView('edit'); },
+          icon: Icons.Edit({ className: 'h-4 w-4' })
+        })
+      ];
+
+      if (caseStatus.showsCaseCloseButton(c)) {
+        actions.push(iconActionBtn({
+          label: '案件結案',
+          className: 'p-1.5 text-green-600 hover:bg-green-100 rounded',
+          onClick: function () {
+            closeConfirmModal = { show: true, caseId: c.id, mode: 'close' };
+            rerender();
+          },
+          icon: Icons.CheckCircle({ className: 'h-4 w-4' })
+        }));
+      }
+
+      if (caseStatus.showsInterimCompleteButton(c)) {
+        var completeLabel = caseStatus.getInterimCompleteLabel(c.processStatus);
+        actions.push(iconActionBtn({
+          label: completeLabel,
+          className: 'p-1.5 text-indigo-600 hover:bg-indigo-100 rounded',
+          onClick: function () {
+            closeConfirmModal = { show: true, caseId: c.id, mode: 'complete' };
+            rerender();
+          },
+          icon: Icons.CheckCircle({ className: 'h-4 w-4' })
+        }));
+      }
+
+      actions.push(iconActionBtn({
+        label: '複製URL',
+        className: 'p-1.5 text-gray-500 hover:bg-gray-200 rounded',
+        onClick: function () { handleCopyUrl(c.caseNumber); },
+        icon: Icons.Copy({ className: 'h-4 w-4' })
+      }));
+
+      return actions;
+    }
+
     return stateful(function (rerender) {
       var filteredCases = getFiltered();
       var statusCounts = getStatusCounts();
+      var modalCase = closeConfirmModal.show
+        ? cases.find(function (c) { return c.id === closeConfirmModal.caseId; })
+        : null;
 
       function statusFilterBtn(status, label) {
         return h('button', {
@@ -70,7 +173,7 @@
               ? 'bg-blue-100 text-blue-800 border-2 border-blue-500'
               : 'bg-white text-gray-600 border border-gray-300 hover:bg-gray-50')
         }, label,
-          status !== '全部' && statusCounts[status] > 0 && h('span', {
+          statusCounts[status] > 0 && h('span', {
             className: 'ml-2 bg-blue-500 text-white text-xs py-0.5 px-2 rounded-full'
           }, statusCounts[status]));
       }
@@ -78,24 +181,24 @@
       return h('div', { className: 'bg-white p-6 rounded-lg shadow-sm border border-gray-100' },
         h('div', { className: 'flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4' },
           h('div', { className: 'flex flex-wrap gap-2' },
-            statusFilterBtn('全部', '全部'),
-            PROCESS_STATUS_OPTIONS.map(function (status) { return statusFilterBtn(status, status); })
+            CASE_LIST_STATUS_FILTERS.map(function (status) { return statusFilterBtn(status, status); })
           ),
-          h('button', {
-            onClick: function () { setView('add'); },
+          iconActionBtn({
+            label: '新增叫修案件',
             className: 'flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white p-2.5 rounded-full shadow-sm transition-colors',
-            title: '新增叫修案件'
-          }, Icons.Plus({ className: 'h-5 w-5' }))
+            onClick: function () { setView('add'); },
+            icon: Icons.Plus({ className: 'h-5 w-5' })
+          })
         ),
         h('div', Object.assign({
-          className: 'overflow-x-auto border rounded-lg cursor-grab active:cursor-grabbing'
+          className: 'overflow-x-auto border rounded-lg cursor-grab active:cursor-grabbing table-scroll-hint'
         }, dragProps),
           h('table', { className: 'w-full text-left text-sm text-gray-600 whitespace-nowrap select-none' },
             h('thead', { className: 'bg-gray-50 text-gray-700 border-b' },
               h('tr', null,
-                h('th', { className: 'p-3 font-semibold text-center w-32' }, '操作'),
+                h('th', { className: 'p-3 font-semibold text-center min-w-[140px]' }, '操作'),
                 h('th', { className: 'p-3 font-semibold text-center' }, '燈號'),
-                h('th', { className: 'p-3 font-semibold' }, '叫修日期'),
+                h('th', { className: 'p-3 font-semibold' }, '叫修時間'),
                 h('th', { className: 'p-3 font-semibold' }, '案件編號'),
                 h('th', { className: 'p-3 font-semibold' }, '客戶/門市名稱'),
                 h('th', { className: 'p-3 font-semibold' }, '行政區域'),
@@ -110,25 +213,14 @@
               filteredCases.map(function (c) {
                 return h('tr', { key: c.id, className: 'hover:bg-blue-50/50 transition-colors' },
                   h('td', { className: 'p-3' },
-                    h('div', { className: 'flex items-center justify-center space-x-2' },
-                      h('button', {
-                        onClick: function () { setEditingCase(c); setView('edit'); },
-                        className: 'p-1.5 text-blue-600 hover:bg-blue-100 rounded', title: '編輯'
-                      }, Icons.Edit({ className: 'h-4 w-4' })),
-                      h('button', {
-                        onClick: function () { closeConfirmModal = { show: true, caseId: c.id }; rerender(); },
-                        className: 'p-1.5 text-green-600 hover:bg-green-100 rounded', title: '結案'
-                      }, Icons.CheckCircle({ className: 'h-4 w-4' })),
-                      h('button', {
-                        onClick: function () { handleCopyUrl(c.caseNumber); },
-                        className: 'p-1.5 text-gray-500 hover:bg-gray-200 rounded', title: '複製URL'
-                      }, Icons.Copy({ className: 'h-4 w-4' }))
+                    h('div', { className: 'flex items-center justify-center flex-wrap gap-1' },
+                      renderRowActions(c, rerender)
                     )
                   ),
                   h('td', { className: 'p-3 text-center' },
                     h('div', { className: 'inline-block w-3 h-3 rounded-full ' + getIndicatorColor(c) })
                   ),
-                  h('td', { className: 'p-3' }, c.repairDate),
+                  h('td', { className: 'p-3' }, formatCreatedAt(c)),
                   h('td', { className: 'p-3 font-medium text-blue-700' }, c.caseNumber),
                   h('td', { className: 'p-3' },
                     h('div', null, c.customerName),
@@ -148,9 +240,13 @@
                   h('td', { className: 'p-3 max-w-[200px] truncate', title: c.faultDesc }, c.faultDesc),
                   h('td', { className: 'p-3' }, c.assignee),
                   h('td', { className: 'p-3' },
-                    h('span', {
-                      className: 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200'
-                    }, c.processStatus)
+                    (function () {
+                      var dispatchStatus = caseStatus.getCaseListDispatchStatus(c);
+                      return h('span', {
+                        className: 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ' +
+                          caseStatus.getCaseListDispatchBadgeClass(dispatchStatus)
+                      }, dispatchStatus);
+                    })()
                   )
                 );
               })
@@ -163,19 +259,36 @@
           h('div', { className: 'bg-white rounded-lg shadow-xl p-6 w-96 max-w-full m-4' },
             h('div', { className: 'flex items-center space-x-3 text-yellow-600 mb-4' },
               Icons.AlertCircle({ className: 'h-6 w-6' }),
-              h('h3', { className: 'text-lg font-bold text-gray-800' }, '確認結案')
+              h('h3', { className: 'text-lg font-bold text-gray-800' },
+                closeConfirmModal.mode === 'complete' && modalCase
+                  ? '確認' + caseStatus.getInterimCompleteLabel(modalCase.processStatus)
+                  : '確認結案'
+              )
             ),
             h('p', { className: 'text-gray-600 mb-6' },
-              '確定要將此案件標記為結案嗎？結案後狀態將更新並移至「案件銷案審核」列表。'),
+              closeConfirmModal.mode === 'complete'
+                ? '確定要將此案件標記為已完成嗎？完成後將移至「案件銷案審核」列表。'
+                : modalCase && modalCase.processStatus === '案件完成'
+                  ? '確定要將此案件結案嗎？結案後將移至「案件銷案審核」列表。'
+                  : '確定要將此案件結案嗎？結案後案件仍會保留在列表上，待完成後請點選對應完成按鈕。'
+            ),
             h('div', { className: 'flex justify-end space-x-3' },
               h('button', {
-                onClick: function () { closeConfirmModal = { show: false, caseId: null }; rerender(); },
+                onClick: function () { closeConfirmModal = { show: false, caseId: null, mode: 'close' }; rerender(); },
                 className: 'px-4 py-2 border rounded-md text-gray-600 hover:bg-gray-50 transition-colors'
               }, '取消'),
               h('button', {
-                onClick: function () { handleCloseCase(closeConfirmModal.caseId); },
+                onClick: function () {
+                  if (closeConfirmModal.mode === 'complete') {
+                    handleInterimComplete(closeConfirmModal.caseId);
+                  } else {
+                    handleCloseCase(closeConfirmModal.caseId);
+                  }
+                  closeConfirmModal = { show: false, caseId: null, mode: 'close' };
+                  rerender();
+                },
                 className: 'px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors'
-              }, '確認結案')
+              }, '確認')
             )
           )
         )

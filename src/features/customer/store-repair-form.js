@@ -44,7 +44,8 @@
         var newCase = Object.assign({
           id: 'C' + Date.now(),
           caseNumber: todayDate.replace(/-/g, '') + String(Math.floor(Math.random() * 1000)).padStart(3, '0'),
-          repairDate: todayDate
+          repairDate: IESS.caseDateTime.now(),
+          createdAt: new Date().toISOString()
         }, {
           workCategory: formData.workCategory,
           customerName: store.customerName || '',
@@ -60,15 +61,17 @@
           serviceLevel: store.serviceLevel || '維修(無簽約客戶)',
           district: store.district || '',
           storeAddress: store.companyAddress || '',
-          processStatus: '待料件',
+          processStatus: null,
           indicator: formData.workCategory === '緊急叫修' ? 'urgent' : 'completed',
           isClosed: false,
           actualReason: '',
           processRecords: [],
           equipment: null,
           reRepairDate: '',
+          secondRepairDate: '',
           completionDate: '',
-          isPerformanceIncluded: false
+          isPerformanceIncluded: false,
+          isListClosed: false
         });
         setCases([newCase].concat(cases));
 

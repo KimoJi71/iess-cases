@@ -21,8 +21,8 @@
       if (!store || !store.history) return [];
       var kw = appliedFilter.keyword.trim().toLowerCase();
       return store.history.filter(function (rec) {
-        if (appliedFilter.start && (rec.repairDate || '') < appliedFilter.start) return false;
-        if (appliedFilter.end && (rec.repairDate || '') > appliedFilter.end) return false;
+        if (appliedFilter.start && (rec.repairDate || '').slice(0, 10) < appliedFilter.start) return false;
+        if (appliedFilter.end && (rec.repairDate || '').slice(0, 10) > appliedFilter.end) return false;
         if (kw) {
           var hit = [rec.workCategory, rec.equipmentCategory, rec.equipmentName, rec.equipmentArea,
             rec.repairItem, rec.repairReason, rec.assignee]
@@ -114,7 +114,7 @@
                   h('th', { className: 'p-3 font-semibold' }, '叫修項目'),
                   h('th', { className: 'p-3 font-semibold' }, '叫修原因'),
                   h('th', { className: 'p-3 font-semibold' }, '維修人員'),
-                  h('th', { className: 'p-3 font-semibold' }, '叫修日期'),
+                  h('th', { className: 'p-3 font-semibold' }, '叫修時間'),
                   h('th', { className: 'p-3 font-semibold' }, '銷案日期')
                 )
               ),

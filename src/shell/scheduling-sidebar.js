@@ -17,10 +17,16 @@
     var setCurrentSubMenu = props.setCurrentSubMenu;
 
     return h('aside', {
-      className: 'w-56 bg-white border-r border-gray-200 shadow-sm flex flex-col shrink-0 z-0'
+      className: 'app-sidebar w-56 bg-white border-r border-gray-200 shadow-sm flex flex-col shrink-0 z-0'
     },
-      h('div', { className: 'p-4 border-b border-gray-100 bg-gray-50/50' },
-        h('h2', { className: 'text-base font-bold text-gray-700 tracking-wide' }, '案件排程 選單')
+      h('div', { className: 'p-4 border-b border-gray-100 bg-gray-50/50 app-sidebar__header' },
+        h('h2', { className: 'text-base font-bold text-gray-700 tracking-wide' }, '案件排程 選單'),
+        props.onClose && h('button', {
+          type: 'button',
+          className: 'app-sidebar__close',
+          onClick: props.onClose,
+          'aria-label': '關閉選單'
+        }, Icons.X({ className: 'h-5 w-5' }))
       ),
       h('nav', { className: 'flex-1 p-3 space-y-1 overflow-y-auto' },
         MENU_ITEMS.map(function (item) {

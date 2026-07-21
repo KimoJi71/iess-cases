@@ -1,17 +1,45 @@
 /*
  * features/repair/maintenance.js — 保養：保養列表 + 保養明細檢視/編輯
  * props:
- *   MaintenanceList         { cases, setCases, setViewingCase, setEditingCase, setView, showToast }
- *   MaintenanceViewEditForm { targetCase, cases, setCases, setView, mode, showToast }
+ *   MaintenanceList         { cases, setCases, stores, setStores, setViewingCase, setEditingCase, setView, showToast }
+ *   MaintenanceViewEditForm { targetCase, cases, setCases, stores, setStores, setView, mode, showToast }
  */
 (function () {
   'use strict';
   var h = IESS.h, Fragment = IESS.Fragment, Icons = IESS.Icons,
       stateful = IESS.stateful, useDragScroll = IESS.useDragScroll, TimeInput24 = IESS.TimeInput24;
 
+  function getMaintenanceStatusBadgeClass(status) {
+    if (status === '已完成') return 'bg-green-100 text-green-700';
+    if (status === '已預約') return 'bg-blue-100 text-blue-700';
+    return 'bg-gray-100 text-gray-600';
+  }
+
+  function getMaintenanceStatusBadgeClass(status) {
+    if (status === '已完成') return 'bg-green-100 text-green-700';
+    if (status === '已預約') return 'bg-blue-100 text-blue-700';
+    return 'bg-gray-100 text-gray-600';
+  }
+
+  function resolveMaintenanceCompletionDate(maintenanceCase) {
+    return (maintenanceCase && maintenanceCase.planDate) || todayDate;
+  }
+
+  function updateStoreLastMaintenanceDate(stores, setStores, maintenanceCase) {
+    if (!setStores || !stores || !maintenanceCase) return;
+    var completionDate = resolveMaintenanceCompletionDate(maintenanceCase);
+    setStores(stores.map(function (s) {
+      return s.customerName === maintenanceCase.customerName && s.storeName === maintenanceCase.storeName
+        ? Object.assign({}, s, { lastMaintenanceDate: completionDate })
+        : s;
+    }));
+  }
+
   function MaintenanceList(props) {
     var cases = props.cases;
     var setCases = props.setCases;
+    var stores = props.stores;
+    var setStores = props.setStores;
     var setViewingCase = props.setViewingCase;
     var setEditingCase = props.setEditingCase;
     var setView = props.setView;
@@ -51,7 +79,7 @@
         if (appliedFilters.status !== '全部' && c.status !== appliedFilters.status) return false;
         var caseMonth = (c.planDate && c.planDate.slice(0, 7)) || c.dueMonth || '';
         if (caseMonth && (caseMonth < appliedFilters.start || caseMonth > appliedFilters.end)) return false;
-        if (!caseMonth && c.status !== '待排程') return false;
+        if (!caseMonth && c.status !== '未保養') return false;
         return true;
       }).sort(function (a, b) {
         var aDate = a.planDate || a.dueMonth || '1970-01-01';
@@ -60,11 +88,15 @@
       });
 
       function handleCloseCase(id) {
+        var target = cases.find(function (c) { return c.id === id; });
+        if (!target) return;
+        var closedCase = Object.assign({}, target, {
+          isClosed: true,
+          status: '已完成'
+        });
+        updateStoreLastMaintenanceDate(stores, setStores, closedCase);
         setCases(cases.map(function (c) {
-          return c.id === id ? Object.assign({}, c, {
-            isClosed: true,
-            status: '已完工'
-          }) : c;
+          return c.id === id ? closedCase : c;
         }));
         closeConfirmModal = { show: false, id: null };
         showToast('保養單已結案並移至銷案審核');
@@ -75,59 +107,58 @@
       }, h("div", {
         className: "bg-gray-50 p-4 rounded-lg mb-6 border border-gray-200"
       }, h("div", {
-        className: "grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 items-end"
-      }, h("div", null, h("label", {
+        className: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 items-end"
+      }, h("div", { className: "min-w-0" }, h("label", {
         className: "block text-xs text-gray-500 mb-1"
       }, "開始月份"), h("input", {
         type: "month",
         value: filterMonthStart,
         onChange: function (e) { filterMonthStart = e.target.value; rerender(); },
-        className: "w-full p-2 border rounded-md outline-none"
-      })), h("div", null, h("label", {
+        className: "w-full p-2 border rounded-md outline-none bg-white"
+      })), h("div", { className: "min-w-0" }, h("label", {
         className: "block text-xs text-gray-500 mb-1"
       }, "結束月份"), h("input", {
         type: "month",
         value: filterMonthEnd,
         onChange: function (e) { filterMonthEnd = e.target.value; rerender(); },
-        className: "w-full p-2 border rounded-md outline-none"
-      })), h("div", null, h("label", {
+        className: "w-full p-2 border rounded-md outline-none bg-white"
+      })), h("div", { className: "min-w-0" }, h("label", {
         className: "block text-xs text-gray-500 mb-1"
       }, "客戶名稱"), h("select", {
         value: filterCustomer,
         onChange: function (e) { filterCustomer = e.target.value; rerender(); },
-        className: "w-full p-2 border rounded-md outline-none"
+        className: "w-full p-2 border rounded-md outline-none bg-white"
       }, h("option", {
         value: "全部"
       }, "全部"), CUSTOMER_OPTIONS.map(function (opt) {
         return h("option", { key: opt, value: opt }, opt);
-      }))), h("div", null, h("label", {
+      }))), h("div", { className: "min-w-0" }, h("label", {
         className: "block text-xs text-gray-500 mb-1"
       }, "行政區域"), h("select", {
         value: filterDistrict,
         onChange: function (e) { filterDistrict = e.target.value; rerender(); },
-        className: "w-full p-2 border rounded-md outline-none"
+        className: "w-full p-2 border rounded-md outline-none bg-white"
       }, h("option", {
         value: "全部"
       }, "全部"), DISTRICT_OPTIONS.map(function (d) {
         return h("option", { key: d, value: d }, d);
-      }))), h("div", null, h("label", {
+      }))), h("div", { className: "min-w-0" }, h("label", {
         className: "block text-xs text-gray-500 mb-1"
-      }, "保養狀態"), h("div", {
-        className: "flex gap-2"
-      }, h("select", {
+      }, "保養狀態"), h("select", {
         value: filterStatus,
         onChange: function (e) { filterStatus = e.target.value; rerender(); },
-        className: "w-full p-2 border rounded-md outline-none"
+        className: "w-full p-2 border rounded-md outline-none bg-white"
       }, h("option", {
         value: "全部"
       }, "全部"), MAINTENANCE_STATUS_OPTIONS.map(function (s) {
         return h("option", { key: s, value: s }, s);
-      })), h("button", {
+      }))), h("div", { className: "min-w-0 flex items-end" }, h("button", {
+        type: "button",
         onClick: handleSearch,
-        className: "bg-blue-600 text-white px-4 py-2 rounded-md flex items-center gap-1"
+        className: "w-full xl:w-auto bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-md flex items-center justify-center gap-1.5 whitespace-nowrap min-h-[42px] transition-colors"
       }, Icons.Search({
-        className: "h-4 w-4"
-      }), " 搜尋"))))), h("div", Object.assign({
+        className: "h-4 w-4 shrink-0"
+      }), "搜尋")))), h("div", Object.assign({
         className: "overflow-x-auto border rounded-lg cursor-grab active:cursor-grabbing"
       }, dragProps), h("table", {
         className: "w-full text-left text-sm text-gray-600 whitespace-nowrap select-none"
@@ -190,7 +221,7 @@
           className: "p-3 font-medium text-blue-700"
         }, c.caseNumber || h("span", {
           className: "text-gray-400 italic"
-        }, "待排程產生")), h("td", {
+        }, "待產生")), h("td", {
           className: "p-3 font-medium text-gray-800"
         }, c.customerName), h("td", {
           className: "p-3"
@@ -203,12 +234,12 @@
         }, c.serviceLevel)), h("td", {
           className: "p-3 text-center"
         }, h("span", {
-          className: "px-2 py-1 rounded-full text-xs font-medium " + (c.status === '已完工' ? 'bg-green-100 text-green-700' : c.status === '逾期' ? 'bg-red-100 text-red-700' : c.status === '待排程' ? 'bg-gray-100 text-gray-600' : 'bg-blue-100 text-blue-700')
+          className: "px-2 py-1 rounded-full text-xs font-medium " + getMaintenanceStatusBadgeClass(c.status)
         }, c.status)), h("td", {
           className: "p-3"
         }, c.workCategory || '保養'), h("td", {
           className: "p-3"
-        }, c.planDate || (c.dueMonth ? c.dueMonth + '（待排程）' : '未定')), h("td", {
+        }, c.planDate || (c.dueMonth ? c.dueMonth + '（未保養）' : '未定')), h("td", {
           className: "p-3"
         }, c.planTimeStart ? (c.planTimeEnd && c.planTimeEnd !== c.planTimeStart
           ? c.planTimeStart + ' ~ ' + c.planTimeEnd : c.planTimeStart) : '-'), h("td", {
@@ -245,6 +276,8 @@
     var targetCase = props.targetCase;
     var cases = props.cases;
     var setCases = props.setCases;
+    var stores = props.stores;
+    var setStores = props.setStores;
     var setView = props.setView;
     var mode = props.mode;
     var showToast = props.showToast;
@@ -265,8 +298,8 @@
     return stateful(function (rerender) {
       function handleSubmit() {
         var updatedData = Object.assign({}, formData);
-        if (updatedData.planDate && updatedData.status === '待排程') {
-          updatedData.status = '已排程';
+        if (updatedData.status !== '已完成') {
+          updatedData.status = ScheduleUtils.resolveMaintenanceStatus(updatedData.status, updatedData.planDate);
         }
 
         // 如果原本沒有編號，且現在有了保養日期，就產生一組新編號
@@ -275,6 +308,9 @@
           showToast('已產生案件編號：' + updatedData.caseNumber);
         } else {
           showToast('保養狀態已更新');
+        }
+        if (updatedData.status === '已完成') {
+          updateStoreLastMaintenanceDate(stores, setStores, updatedData);
         }
         setCases(cases.map(function (c) {
           return c.id === updatedData.id ? updatedData : c;
@@ -286,7 +322,7 @@
         className: "max-w-5xl mx-auto bg-white rounded-lg shadow-sm border border-gray-100"
       }, PageHeader({
         title: '查看/編輯保養明細',
-        badge: formData.caseNumber || '待排程產生編號',
+        badge: formData.caseNumber || '待產生編號',
         onClose: function () { setView('maintenance-list'); },
         wrapperClass: 'flex justify-between items-center p-6 border-b border-gray-200 sticky top-0 z-10 bg-white rounded-t-lg'
       }), h("div", {

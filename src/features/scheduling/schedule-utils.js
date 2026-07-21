@@ -87,7 +87,7 @@
       var hasOpen = result.some(function (m) {
         if (m.isClosed) return false;
         if (m.customerName !== store.customerName || m.storeName !== store.storeName) return false;
-        if (m.status === '待排程') return true;
+        if (m.status === '未保養') return true;
         var mMonth = m.planDate ? m.planDate.slice(0, 7) : (m.dueMonth || '');
         return mMonth === dueMonth;
       });
@@ -100,7 +100,7 @@
         storeName: store.storeName,
         district: store.district,
         serviceLevel: store.serviceLevel,
-        status: '待排程',
+        status: '未保養',
         planDate: '',
         planTimeStart: '',
         planTimeEnd: '',
@@ -122,13 +122,20 @@
     return store ? store.district : '';
   }
 
+  function resolveMaintenanceStatus(currentStatus, planDate) {
+    if (currentStatus === '已完成') return '已完成';
+    if (planDate) return '已預約';
+    if (currentStatus === '已預約') return '未保養';
+    return '未保養';
+  }
+
   function getPendingCases(maintenanceCases, cases, projectCases, filters, stores) {
     if (!filters || !filters.workCategory || !filters.customer || !filters.district) {
       return [];
     }
     var items = [];
     maintenanceCases.forEach(function (c) {
-      if (c.isClosed || c.status !== '待排程') return;
+      if (c.isClosed || c.status !== '未保養') return;
       items.push({
         sourceType: 'maintenance',
         sourceId: c.id,
@@ -298,7 +305,7 @@
           planTimeStart: planTimeStart,
           planTimeEnd: planTimeEnd,
           assignee: assignee,
-          status: planDate ? '已排程' : c.status
+          status: resolveMaintenanceStatus(c.status, planDate)
         });
       }));
     } else if (sourceType === 'repair') {
@@ -381,6 +388,7 @@
     getPersonnelRows: getPersonnelRows,
     getPersonnelEvents: getPersonnelEvents,
     getRepairSchedule: getRepairSchedule,
+    resolveMaintenanceStatus: resolveMaintenanceStatus,
     formatTimeRange: formatTimeRange,
     formatTime24: formatTime24,
     formatScheduleEventTitle: formatScheduleEventTitle,

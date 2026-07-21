@@ -25,6 +25,7 @@
         type === 'radio' ||
         type === 'file' ||
         type === 'date' ||
+        type === 'datetime-local' ||
         type === 'month';
       return isChangeType ? 'change' : 'input';
     }

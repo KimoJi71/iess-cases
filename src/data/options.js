@@ -5,6 +5,7 @@
  * 純資料，無邏輯。
  */
 const PROCESS_STATUS_OPTIONS = ['待料件', '待報價', '待汰換', '轉原廠', '尚未處理完成', '案件完成', '其他'];
+const CASE_LIST_STATUS_FILTERS = ['未處理', '待料件', '待報價', '待汰換', '轉原廠', '尚未處理完成', '案件完成'];
 const WORK_CATEGORY_OPTIONS = ['一般叫修', '緊急叫修', '保養清潔', '其他'];
 const REPAIR_ITEMS = ['室內機', '室外機', '風管', '出風口', '控制面板', '跳代碼', '空氣門'];
 const REPAIR_REASONS = ['不冷', '異音', '溫控故障', '跳機', '異味', '漏水', '代碼', '其他'];
@@ -31,7 +32,7 @@ const PROCESS_METHOD_CATEGORIES = {
     '特殊作業': ['高空作業', '危險作業', '吊車吊掛', '局限空間作業', '夜間施工', '假日施工']
   }
 };
-const MAINTENANCE_STATUS_OPTIONS = ['待排程', '已排程', '保養中', '已完工', '逾期'];
+const MAINTENANCE_STATUS_OPTIONS = ['未保養', '已預約', '已完成'];
 const DISTRICT_OPTIONS = ['北區', '中區', '南區', '東區'];
 const SERVICE_LEVEL_OPTIONS = ['保修(一年一次)', '保修(一年兩次)', '保養(一年一次)', '維修(無簽約客戶)'];
 const MAINTENANCE_INTERVAL_OPTIONS = ['每季', '每半年', '每年'];

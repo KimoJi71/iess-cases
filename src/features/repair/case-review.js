@@ -26,7 +26,9 @@
       }
 
       var filteredCases = cases.filter(function (c) {
-        return c.isClosed && !c.isPerformanceIncluded && c.repairDate >= appliedDateRange.start && c.repairDate <= appliedDateRange.end;
+        return c.isClosed && !c.isPerformanceIncluded &&
+          (c.repairDate || '').slice(0, 10) >= appliedDateRange.start &&
+          (c.repairDate || '').slice(0, 10) <= appliedDateRange.end;
       }).sort(function (a, b) { return new Date(b.repairDate) - new Date(a.repairDate); });
 
       function handleIncludePerformance(caseId) {
@@ -68,7 +70,7 @@
             h('thead', { className: 'bg-gray-50 text-gray-700 border-b' },
               h('tr', null,
                 h('th', { className: 'p-3 w-24 text-center' }, '操作'),
-                h('th', { className: 'p-3 font-semibold' }, '叫修日期'),
+                h('th', { className: 'p-3 font-semibold' }, '叫修時間'),
                 h('th', { className: 'p-3 font-semibold' }, '案件編號'),
                 h('th', { className: 'p-3 font-semibold' }, '客戶名稱'),
                 h('th', { className: 'p-3 font-semibold' }, '門市名稱'),
@@ -100,7 +102,7 @@
                       }, Icons.Star({ className: 'h-4 w-4' }))
                     )
                   ),
-                  h('td', { className: 'p-3' }, c.repairDate),
+                  h('td', { className: 'p-3' }, IESS.caseDateTime.format(c.repairDate)),
                   h('td', { className: 'p-3 font-medium text-blue-700' }, c.caseNumber),
                   h('td', { className: 'p-3' }, c.customerName),
                   h('td', { className: 'p-3' }, c.storeName),

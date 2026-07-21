@@ -7,6 +7,30 @@
 (function () {
   'use strict';
   var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful, useDragScroll = IESS.useDragScroll, TimeInput24 = IESS.TimeInput24;
+  var caseDT = IESS.caseDateTime;
+  var caseStatus = IESS.caseStatus;
+
+  function isOtherWorkCategory(workCategory) {
+    return workCategory === '其他';
+  }
+
+  function TimeRecordField(p) {
+    return h('div', null,
+      h('label', { className: 'block text-sm font-medium text-gray-800 mb-1.5' }, p.label),
+      p.readOnly
+        ? h('div', {
+            className: 'w-full p-2.5 border rounded-md bg-gray-100 text-gray-700 min-h-[42px] flex items-center'
+          }, p.value || '—')
+        : h('input', {
+            type: 'datetime-local',
+            name: p.name,
+            value: caseDT.toInput(p.value),
+            onChange: p.onChange,
+            step: '1',
+            className: 'w-full p-2.5 border rounded-md outline-none bg-white'
+          })
+    );
+  }
 
   function AddCaseForm(props) {
     var cases = props.cases;
@@ -30,6 +54,8 @@
     };
 
     return stateful(function (rerender) {
+      var isOther = isOtherWorkCategory(formData.workCategory);
+
       function handleChange(e) {
         var name = e.target.name;
         var value = e.target.value;
@@ -44,22 +70,25 @@
         var newCase = Object.assign({
           id: 'C' + Date.now(),
           caseNumber: new Date().toISOString().split('T')[0].replace(/-/g, '') + String(Math.floor(Math.random() * 1000)).padStart(3, '0'),
-          repairDate: new Date().toISOString().split('T')[0]
+          repairDate: caseDT.now(),
+          createdAt: new Date().toISOString()
         }, formData, {
           district: '自動帶入區',
           storeAddress: '自動帶入地址',
-          processStatus: '待料件',
+          processStatus: null,
           indicator: formData.workCategory === '緊急叫修' ? 'urgent' : 'completed',
           isClosed: false,
           actualReason: '',
           processRecords: [],
           equipment: null,
           reRepairDate: '',
+          secondRepairDate: '',
           completionDate: '',
           planDate: formData.expectedDate || '',
           planTimeStart: formData.expectedTimeStart || '',
           planTimeEnd: formData.expectedTimeEnd || '',
-          isPerformanceIncluded: false
+          isPerformanceIncluded: false,
+          isListClosed: false
         });
         setCases([newCase].concat(cases));
         showToast('案件新增成功');
@@ -71,10 +100,10 @@
       }, PageHeader({
         title: '新增案件',
         onClose: function () { setView('list'); },
-        wrapperClass: 'flex justify-between items-center p-6 border-b border-gray-200 sticky top-0 z-10 bg-white rounded-t-lg'
+        wrapperClass: 'page-header-sticky flex justify-between items-center p-4 sm:p-6 border-b border-gray-200 sticky top-0 z-10 bg-white rounded-t-lg'
       }), h("form", {
         onSubmit: handleSubmit,
-        className: "p-6"
+        className: "p-4 sm:p-6"
       }, h("div", {
         className: "space-y-6"
       }, h("div", {
@@ -154,7 +183,7 @@
       }, WORK_CATEGORY_OPTIONS.map(function (opt) { return h("option", {
         key: opt,
         value: opt
-      }, opt); }))), h("div", null, h("label", {
+      }, opt); }))), !isOther && h("div", null, h("label", {
         className: "block text-sm mb-1"
       }, "叫修項目"), h("select", {
         name: "repairItem",
@@ -164,7 +193,7 @@
       }, REPAIR_ITEMS.map(function (opt) { return h("option", {
         key: opt,
         value: opt
-      }, opt); }))), h("div", null, h("label", {
+      }, opt); }))), !isOther && h("div", null, h("label", {
         className: "block text-sm mb-1"
       }, "叫修原因"), h("select", {
         name: "repairReason",
@@ -178,7 +207,7 @@
         className: "col-span-full"
       }, h("label", {
         className: "block text-sm mb-1"
-      }, "故障描述"), h("textarea", {
+      }, isOther ? "工作描述" : "故障描述"), h("textarea", {
         name: "faultDesc",
         value: formData.faultDesc,
         onChange: handleChange,
@@ -244,6 +273,8 @@
     if (!formData.expectedTimeStart) formData.expectedTimeStart = formData.planTimeStart || '';
     if (!formData.expectedTimeEnd) formData.expectedTimeEnd = formData.planTimeEnd || '';
     if (!formData.expectedDate) formData.expectedDate = formData.planDate || '';
+    if (!formData.remarks) formData.remarks = '';
+    var savedProcessStatus = editingCase.processStatus || null;
     var newRecord = {
       category1: '工資',
       category2: '分離式',
@@ -279,14 +310,13 @@
       function handleChange(e) {
         var name = e.target.name;
         var value = e.target.value;
+        if (e.target.type === 'datetime-local') {
+          value = value ? caseDT.fromInput(value) : '';
+        }
         formData[name] = value;
         if (name === 'processStatus') {
-          var d = new Date().toISOString().split('T')[0];
-          if (['待料件', '待報價', '尚未處理完成'].includes(value)) {
-            formData.reRepairDate = d;
-          } else if (value === '案件完成') {
-            formData.completionDate = d;
-          }
+          formData.processStatus = value || null;
+          caseStatus.applyProcessStatusChange(formData, value || null, savedProcessStatus, caseDT.now());
         }
         if (name === 'customerName') {
           formData.serviceLevel = CUSTOMER_SERVICE_LEVEL_MAP[value] || '維修(無簽約客戶)';
@@ -325,21 +355,24 @@
         setView('list');
       }
 
+      var showSecondRepairDate = caseStatus.isReRepairPendingStatus(formData.processStatus);
+      var isOther = isOtherWorkCategory(formData.workCategory);
+
       return h("div", {
         className: "max-w-5xl mx-auto bg-white rounded-lg shadow-sm border border-gray-100"
       }, PageHeader({
         title: '編輯案件',
         badge: formData.caseNumber,
         onClose: function () { setView('list'); },
-        wrapperClass: 'flex justify-between items-center p-6 border-b border-gray-200 sticky top-0 z-10 bg-white rounded-t-lg'
+        wrapperClass: 'page-header-sticky flex justify-between items-center p-4 sm:p-6 border-b border-gray-200 sticky top-0 z-10 bg-white rounded-t-lg'
       }), h("div", {
-        className: "p-6 space-y-8 bg-gray-50"
+        className: "p-4 sm:p-6 space-y-6 sm:space-y-8 bg-gray-50"
       }, h("section", {
-        className: "bg-white p-6 rounded-lg shadow-sm border border-gray-100"
+        className: "bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-100"
       }, h("h3", {
         className: "text-lg font-bold text-blue-800 border-b pb-2 mb-4"
       }, "1. 案件資料"), h("div", {
-        className: "grid grid-cols-2 md:grid-cols-4 gap-4 text-sm items-start"
+        className: "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-sm items-start"
       }, h("div", null, h("span", {
         className: "text-gray-500 block mb-1"
       }, "客戶名稱"), h("select", {
@@ -390,7 +423,7 @@
         key: opt,
         value: opt
       }, opt); }))), h("div", {
-        className: "col-span-2 md:col-span-4"
+        className: "col-span-full md:col-span-4"
       }, h("span", {
         className: "text-gray-500 block mb-1"
       }, "門市地址"), h("input", {
@@ -409,7 +442,7 @@
       }, WORK_CATEGORY_OPTIONS.map(function (opt) { return h("option", {
         key: opt,
         value: opt
-      }, opt); }))), h("div", null, h("span", {
+      }, opt); }))), !isOther && h("div", null, h("span", {
         className: "text-gray-500 block mb-1"
       }, "叫修項目"), h("select", {
         name: "repairItem",
@@ -419,7 +452,7 @@
       }, REPAIR_ITEMS.map(function (opt) { return h("option", {
         key: opt,
         value: opt
-      }, opt); }))), h("div", null, h("span", {
+      }, opt); }))), !isOther && h("div", null, h("span", {
         className: "text-gray-500 block mb-1"
       }, "叫修原因"), h("select", {
         name: "repairReason",
@@ -465,14 +498,14 @@
         className: "col-span-full"
       }, h("span", {
         className: "text-gray-500 block mb-1"
-      }, "故障描述"), h("textarea", {
+      }, isOther ? "工作描述" : "故障描述"), h("textarea", {
         name: "faultDesc",
         value: formData.faultDesc,
         onChange: handleChange,
         rows: "2",
         className: "w-full p-2 border rounded-md outline-none"
       })))), h("section", {
-        className: "bg-white p-6 rounded-lg shadow-sm border border-gray-100"
+        className: "bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-100"
       }, h("div", {
         className: "flex justify-between items-center border-b pb-2 mb-4"
       }, h("h3", {
@@ -484,7 +517,7 @@
       }, Icons.QrCode({
         className: "h-4 w-4"
       }), " 掃描設備")), formData.equipment ? h("div", {
-        className: "grid grid-cols-2 md:grid-cols-5 gap-y-4 gap-x-6 text-sm bg-green-50/50 p-4 rounded-md border border-green-100"
+        className: "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-y-4 gap-x-6 text-sm bg-green-50/50 p-4 rounded-md border border-green-100"
       }, h("div", null, h("span", {
         className: "text-gray-500 block mb-1"
       }, "客戶名稱"), h("div", {
@@ -507,8 +540,22 @@
         className: "font-medium"
       }, formData.equipment.model))) : h("div", {
         className: "text-center py-8 text-gray-400 bg-gray-50 rounded-md border border-dashed"
-      }, "請點擊上方按鈕掃描")), h("section", {
-        className: "bg-white p-6 rounded-lg shadow-sm border border-gray-100 relative overflow-hidden"
+      }, "請點擊上方按鈕掃描")), isOther ? h("section", {
+        className: "bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-100 relative overflow-hidden"
+      }, h("h3", {
+        className: "text-lg font-bold text-blue-800 border-b pb-2 mb-4"
+      }, "3. 備註"), h("div", {
+        className: !formData.equipment ? 'opacity-30 pointer-events-none' : ''
+      }, h("textarea", {
+        name: "remarks",
+        value: formData.remarks || '',
+        onChange: handleChange,
+        disabled: !formData.equipment,
+        rows: "4",
+        className: "w-full p-2 border rounded-md outline-none disabled:bg-gray-100 disabled:cursor-not-allowed",
+        placeholder: formData.equipment ? "請輸入備註..." : "請先掃描設備"
+      }))) : h("section", {
+        className: "bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-100 relative overflow-hidden"
       }, h("h3", {
         className: "text-lg font-bold text-blue-800 border-b pb-2 mb-4"
       }, "3. 處理資料"), h("div", {
@@ -583,7 +630,7 @@
         onClick: handleAddRecord,
         className: "bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700 h-[38px]"
       }, "新增")), h("div", Object.assign({
-        className: "border rounded-md overflow-x-auto"
+        className: "border rounded-md overflow-x-auto table-scroll-hint"
       }, dragProps), h("table", {
         className: "w-full text-left text-sm whitespace-nowrap"
       }, h("thead", {
@@ -621,38 +668,43 @@
         className: "block text-sm mb-1"
       }, "處理狀態"), h("select", {
         name: "processStatus",
-        value: formData.processStatus,
+        value: formData.processStatus || '',
         onChange: handleChange,
-        className: "w-full p-2.5 border-2 border-blue-200 rounded-md font-medium text-blue-900 bg-blue-50/30"
-      }, PROCESS_STATUS_OPTIONS.map(function (opt) { return h("option", {
+        disabled: !formData.equipment,
+        className: "w-full p-2.5 border-2 border-blue-200 rounded-md font-medium text-blue-900 bg-blue-50/30 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
+      }, h("option", {
+        value: "",
+        disabled: true
+      }, formData.equipment ? "請選擇" : "請先掃描設備"), PROCESS_STATUS_OPTIONS.map(function (opt) { return h("option", {
         key: opt,
         value: opt
       }, opt); })))), h("div", {
-        className: "grid grid-cols-1 md:grid-cols-3 gap-6 pt-4 border-t border-gray-100"
-      }, h("div", null, h("label", {
-        className: "block text-sm mb-1"
-      }, "叫修日期"), h("input", {
-        type: "date",
-        name: "repairDate",
-        value: formData.repairDate || '',
-        onChange: handleChange,
-        className: "w-full p-2.5 border rounded-md outline-none"
-      })), h("div", null, h("label", {
-        className: "block text-sm mb-1"
-      }, "再次叫修日期"), h("input", {
-        type: "date",
-        name: "reRepairDate",
-        value: formData.reRepairDate || '',
-        onChange: handleChange,
-        className: "w-full p-2.5 border rounded-md outline-none bg-gray-50"
-      })), h("div", null, h("label", {
-        className: "block text-sm mb-1"
-      }, "完工日期"), h("input", {
-        type: "date",
-        name: "completionDate",
-        value: formData.completionDate || '',
-        onChange: handleChange,
-        className: "w-full p-2.5 border rounded-md outline-none bg-gray-50"
+        className: "pt-4 border-t border-gray-100"
+      }, h("h4", {
+        className: "text-sm font-semibold text-gray-800 mb-4"
+      }, "時間紀錄"), h("div", {
+        className: showSecondRepairDate
+          ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+          : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+      }, TimeRecordField({
+        label: '叫修時間',
+        readOnly: true,
+        value: caseDT.format(formData.createdAt || formData.repairDate)
+      }), TimeRecordField({
+        label: '維修時間',
+        name: 'reRepairDate',
+        value: formData.reRepairDate,
+        onChange: handleChange
+      }), showSecondRepairDate ? TimeRecordField({
+        label: '再次維修時間',
+        name: 'secondRepairDate',
+        value: formData.secondRepairDate,
+        onChange: handleChange
+      }) : null, TimeRecordField({
+        label: '完成時間',
+        name: 'completionDate',
+        value: formData.completionDate,
+        onChange: handleChange
       }))))), h("div", {
         className: "mt-8 pt-6 border-t flex justify-end gap-4"
       }, h("button", {

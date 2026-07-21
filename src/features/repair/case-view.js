@@ -5,6 +5,8 @@
 (function () {
   'use strict';
   var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful, useDragScroll = IESS.useDragScroll;
+  var caseDT = IESS.caseDateTime;
+  var caseStatus = IESS.caseStatus;
 
   function ViewCaseForm(props) {
     var viewingCase = props.viewingCase;
@@ -30,6 +32,9 @@
       );
     }
 
+    var showSecondRepairDate = viewingCase && caseStatus.isReRepairPendingStatus(viewingCase.processStatus);
+    var isOther = viewingCase && viewingCase.workCategory === '其他';
+
     return h('div', {
       className: 'max-w-5xl mx-auto bg-white rounded-lg shadow-sm border border-gray-100'
     },
@@ -37,22 +42,22 @@
         title: '查看案件明細',
         badge: viewingCase && viewingCase.caseNumber,
         onClose: function () { setView(backView); },
-        wrapperClass: 'flex justify-between items-center p-6 border-b border-gray-200 sticky top-0 z-10 bg-white rounded-t-lg'
+        wrapperClass: 'page-header-sticky flex justify-between items-center p-4 sm:p-6 border-b border-gray-200 sticky top-0 z-10 bg-white rounded-t-lg'
       }),
-      h('div', { className: 'p-6 space-y-8 bg-gray-50' },
-        h('section', { className: 'bg-white p-6 rounded-lg shadow-sm border border-gray-100' },
+      h('div', { className: 'p-4 sm:p-6 space-y-6 sm:space-y-8 bg-gray-50' },
+        h('section', { className: 'bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-100' },
           h('h3', { className: 'text-lg font-bold text-blue-800 border-b pb-2 mb-4' }, '1. 案件資料'),
-          h('div', { className: 'grid grid-cols-2 md:grid-cols-4 gap-4 text-sm items-start' },
+          h('div', { className: 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-sm items-start' },
             h(ReadOnlyField, { label: '客戶名稱', value: viewingCase && viewingCase.customerName }),
             h(ReadOnlyField, { label: '門市名稱', value: viewingCase && viewingCase.storeName }),
             h(ReadOnlyField, { label: '叫修人員', value: viewingCase && viewingCase.reporter }),
             h(ReadOnlyField, { label: '服務等級', value: viewingCase && viewingCase.serviceLevel }),
-            h('div', { className: 'col-span-2 md:col-span-4' },
+            h('div', { className: 'col-span-full md:col-span-4' },
               h(ReadOnlyField, { label: '門市地址', value: viewingCase && viewingCase.storeAddress })
             ),
             h(ReadOnlyField, { label: '工項分類', value: viewingCase && viewingCase.workCategory }),
-            h(ReadOnlyField, { label: '叫修項目', value: viewingCase && viewingCase.repairItem }),
-            h(ReadOnlyField, { label: '叫修原因', value: viewingCase && viewingCase.repairReason }),
+            !isOther && h(ReadOnlyField, { label: '叫修項目', value: viewingCase && viewingCase.repairItem }),
+            !isOther && h(ReadOnlyField, { label: '叫修原因', value: viewingCase && viewingCase.repairReason }),
             h(ReadOnlyField, { label: '指派人員', value: viewingCase && viewingCase.assignee }),
             h(ReadOnlyField, { label: '預計日期', value: viewingCase && (viewingCase.expectedDate || viewingCase.planDate) }),
             h(ReadOnlyField, {
@@ -62,13 +67,17 @@
                 viewingCase.expectedTimeEnd || viewingCase.planTimeEnd
               )
             }),
-            h(ReadOnlyField, { label: '故障描述', value: viewingCase && viewingCase.faultDesc, fullWidth: true })
+            h(ReadOnlyField, {
+              label: isOther ? '工作描述' : '故障描述',
+              value: viewingCase && viewingCase.faultDesc,
+              fullWidth: true
+            })
           )
         ),
-        h('section', { className: 'bg-white p-6 rounded-lg shadow-sm border border-gray-100' },
+        h('section', { className: 'bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-100' },
           h('h3', { className: 'text-lg font-bold text-blue-800 border-b pb-2 mb-4' }, '2. 設備資料'),
           (viewingCase && viewingCase.equipment) ? h('div', {
-            className: 'grid grid-cols-2 md:grid-cols-5 gap-4 text-sm bg-green-50/50 p-4 rounded-md border border-green-100'
+            className: 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 text-sm bg-green-50/50 p-4 rounded-md border border-green-100'
           },
             h(ReadOnlyField, { label: '客戶名稱', value: viewingCase.equipment.customerName }),
             h(ReadOnlyField, { label: '門市名稱', value: viewingCase.equipment.storeName }),
@@ -79,13 +88,16 @@
             className: 'text-center py-4 text-gray-400 bg-gray-50 rounded-md border border-dashed'
           }, '無設備資料')
         ),
-        h('section', { className: 'bg-white p-6 rounded-lg shadow-sm border border-gray-100' },
+        isOther ? h('section', { className: 'bg-white p-6 rounded-lg shadow-sm border border-gray-100' },
+          h('h3', { className: 'text-lg font-bold text-blue-800 border-b pb-2 mb-4' }, '3. 備註'),
+          h(ReadOnlyField, { label: '備註', value: viewingCase && viewingCase.remarks, fullWidth: true })
+        ) : h('section', { className: 'bg-white p-6 rounded-lg shadow-sm border border-gray-100' },
           h('h3', { className: 'text-lg font-bold text-blue-800 border-b pb-2 mb-4' }, '3. 處理資料'),
           h('div', { className: 'space-y-6' },
             h(ReadOnlyField, { label: '實際維修原因', value: viewingCase && viewingCase.actualReason, fullWidth: true }),
             h('div', null,
               h('span', { className: 'text-gray-500 block mb-2 text-sm' }, '處理方式清單'),
-              h('div', Object.assign({ className: 'border rounded-md overflow-x-auto' }, dragProps),
+              h('div', Object.assign({ className: 'border rounded-md overflow-x-auto table-scroll-hint' }, dragProps),
                 h('table', { className: 'w-full text-left text-sm whitespace-nowrap' },
                   h('thead', { className: 'bg-gray-100' },
                     h('tr', null,
@@ -110,12 +122,23 @@
               )
             ),
             h('div', { className: 'grid grid-cols-1 md:grid-cols-2 gap-6' },
-              h(ReadOnlyField, { label: '處理狀態', value: viewingCase && viewingCase.processStatus })
+              h(ReadOnlyField, { label: '處理狀態', value: (viewingCase && viewingCase.processStatus) || '—' })
             ),
-            h('div', { className: 'grid grid-cols-1 md:grid-cols-3 gap-6 pt-4 border-t border-gray-100' },
-              h(ReadOnlyField, { label: '叫修日期', value: viewingCase && viewingCase.repairDate }),
-              h(ReadOnlyField, { label: '再次叫修日期', value: viewingCase && viewingCase.reRepairDate }),
-              h(ReadOnlyField, { label: '完工日期', value: viewingCase && viewingCase.completionDate })
+            h('div', { className: 'pt-4 border-t border-gray-100' },
+              h('h4', { className: 'text-sm font-semibold text-gray-800 mb-4' }, '時間紀錄'),
+              h('div', {
+                className: showSecondRepairDate
+                  ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6'
+                  : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'
+              },
+                h(ReadOnlyField, {
+                  label: '叫修時間',
+                  value: caseDT.format(viewingCase && (viewingCase.createdAt || viewingCase.repairDate))
+                }),
+                h(ReadOnlyField, { label: '維修時間', value: caseDT.format(viewingCase && viewingCase.reRepairDate) }),
+                showSecondRepairDate ? h(ReadOnlyField, { label: '再次維修時間', value: caseDT.format(viewingCase && viewingCase.secondRepairDate) }) : null,
+                h(ReadOnlyField, { label: '完成時間', value: caseDT.format(viewingCase && viewingCase.completionDate) })
+              )
             )
           )
         )
