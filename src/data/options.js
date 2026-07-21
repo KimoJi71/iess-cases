@@ -33,7 +33,24 @@ const PROCESS_METHOD_CATEGORIES = {
   }
 };
 const MAINTENANCE_STATUS_OPTIONS = ['未保養', '已預約', '已完成'];
-const DISTRICT_OPTIONS = ['北區', '中區', '南區', '東區'];
+const TAIWAN_CITY_DISTRICTS = {
+  '台北市': ['信義區', '中山區', '大安區', '松山區', '內湖區', '士林區', '北投區', '萬華區', '中正區', '大同區', '南港區', '文山區'],
+  '新北市': ['板橋區', '中和區', '永和區', '新莊區', '三重區', '土城區', '汐止區', '淡水區'],
+  '桃園市': ['桃園區', '中壢區', '平鎮區', '八德區'],
+  '台中市': ['中區', '西屯區', '北屯區', '南屯區', '西區', '南區', '北區', '東區', '太平區', '大里區'],
+  '台南市': ['中西區', '東區', '南區', '北區', '安平區', '永康區'],
+  '高雄市': ['左營區', '三民區', '鼓山區', '前鎮區', '苓雅區', '新興區', '鳳山區']
+};
+const TAIWAN_CITY_OPTIONS = Object.keys(TAIWAN_CITY_DISTRICTS);
+const STORE_AREA_OPTIONS = (function () {
+  var list = [];
+  TAIWAN_CITY_OPTIONS.forEach(function (city) {
+    TAIWAN_CITY_DISTRICTS[city].forEach(function (district) {
+      list.push(city + district);
+    });
+  });
+  return list;
+})();
 const SERVICE_LEVEL_OPTIONS = ['保修(一年一次)', '保修(一年兩次)', '保養(一年一次)', '維修(無簽約客戶)'];
 const MAINTENANCE_INTERVAL_OPTIONS = ['每季', '每半年', '每年'];
 const CUSTOMER_ENABLED_FILTERS = ['全部', '啟用', '停用'];
@@ -166,7 +183,6 @@ const PERMISSION_FUNCTIONS = [
   'GPS',
   '案件績效統計',
   '帳號管理',
-  '行政區域管理',
   '指派人員管理',
   '設備分類管理'
 ];
@@ -198,6 +214,6 @@ const PERMISSION_TREE = [
   },
   {
     id: '系統權限',
-    children: ['帳號管理', '行政區域管理', '指派人員管理', '設備分類管理']
+    children: ['帳號管理', '指派人員管理', '設備分類管理']
   }
 ];

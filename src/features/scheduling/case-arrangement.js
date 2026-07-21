@@ -36,7 +36,7 @@
 
     var pendingWorkCategory = '';
     var pendingCustomer = '';
-    var pendingDistrict = '';
+    var pendingStoreArea = '';
     var pendingAssignee = '';
     var appliedPending = null;
 
@@ -60,28 +60,27 @@
     }
 
     function isPendingFiltersReady() {
-      return !!(pendingWorkCategory && pendingCustomer && pendingDistrict && pendingAssignee);
+      return !!(pendingWorkCategory && pendingCustomer && pendingStoreArea && pendingAssignee);
     }
 
-    function validatePendingAssigneeDistrict(assigneeName, districtName) {
+    function validatePendingAssigneeArea(assigneeName, storeArea) {
       var assignee = assignees.find(function (a) { return a.name === assigneeName; });
-      if (!assignee) return false;
-      return (assignee.districts || []).indexOf(districtName) !== -1;
+      return StoreUtils.assigneeCoversArea(assignee, storeArea);
     }
 
-    function getPendingAssigneeOptions(districtName) {
-      if (!districtName) return [];
+    function getPendingAssigneeOptions(storeArea) {
+      if (!storeArea) return [];
       return assignees
         .filter(function (a) {
           if (a.name === '案件待辦' || a.name === '管理員') return false;
-          return (a.districts || []).indexOf(districtName) !== -1;
+          return StoreUtils.assigneeCoversArea(a, storeArea);
         })
         .map(function (a) { return a.name; });
     }
 
-    function onPendingDistrictChange(districtName, rerender) {
-      pendingDistrict = districtName;
-      if (pendingAssignee && getPendingAssigneeOptions(districtName).indexOf(pendingAssignee) === -1) {
+    function onPendingStoreAreaChange(storeArea, rerender) {
+      pendingStoreArea = storeArea;
+      if (pendingAssignee && getPendingAssigneeOptions(storeArea).indexOf(pendingAssignee) === -1) {
         pendingAssignee = '';
       }
       rerender();
@@ -261,23 +260,24 @@
 
       function handlePendingSearch() {
         if (!isPendingFiltersReady()) {
-          showToast('請選擇工項類別、客戶名稱、行政區域與指派人員');
+          showToast('請選擇工項類別、客戶名稱、公司區域與指派人員');
           return;
         }
-        if (!validatePendingAssigneeDistrict(pendingAssignee, pendingDistrict)) {
-          showToast('此指派人員不負責所選行政區域');
+        if (!validatePendingAssigneeArea(pendingAssignee, pendingStoreArea)) {
+          showToast('此指派人員不負責所選公司區域');
           return;
         }
         appliedPending = {
           workCategory: pendingWorkCategory,
           customer: pendingCustomer,
-          district: pendingDistrict,
+          storeArea: pendingStoreArea,
           assignee: pendingAssignee
         };
         rerender();
       }
 
-      var pendingAssigneeOptions = getPendingAssigneeOptions(pendingDistrict);
+      var pendingAssigneeOptions = getPendingAssigneeOptions(pendingStoreArea);
+      var pendingStoreAreaOptions = StoreUtils.getAreaOptionsFromStores(stores);
       var pendingFiltersReady = isPendingFiltersReady();
 
       setTimeout(function () { refreshCalendar(); }, 0);
@@ -351,14 +351,14 @@
                   )
                 ),
                 h('div', null,
-                  h('label', { className: 'block text-xs text-gray-500 mb-1' }, '行政區域'),
+                  h('label', { className: 'block text-xs text-gray-500 mb-1' }, '公司區域'),
                   h('select', {
-                    value: pendingDistrict,
-                    onChange: function (e) { onPendingDistrictChange(e.target.value, rerender); },
+                    value: pendingStoreArea,
+                    onChange: function (e) { onPendingStoreAreaChange(e.target.value, rerender); },
                     className: 'w-full p-2 text-sm border rounded-md bg-white'
                   },
                     h('option', { value: '' }, '請選擇'),
-                    DISTRICT_OPTIONS.map(function (d) {
+                    pendingStoreAreaOptions.map(function (d) {
                       return h('option', { key: d, value: d }, d);
                     })
                   )
@@ -367,7 +367,7 @@
                   h('label', { className: 'block text-xs text-gray-500 mb-1' }, '指派人員'),
                   h('select', {
                     value: pendingAssignee,
-                    disabled: !pendingDistrict,
+                    disabled: !pendingStoreArea,
                     onChange: function (e) { pendingAssignee = e.target.value; rerender(); },
                     className: 'w-full p-2 text-sm border rounded-md bg-white disabled:bg-gray-100'
                   },

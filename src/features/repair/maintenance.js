@@ -49,13 +49,13 @@
     var filterMonthStart = currentMonthStr;
     var filterMonthEnd = currentMonthStr;
     var filterCustomer = '全部';
-    var filterDistrict = '全部';
+    var filterStoreArea = '全部';
     var filterStatus = '全部';
     var appliedFilters = {
       start: currentMonthStr,
       end: currentMonthStr,
       customer: '全部',
-      district: '全部',
+      storeArea: '全部',
       status: '全部'
     };
     var closeConfirmModal = { show: false, id: null };
@@ -73,7 +73,7 @@
           start: filterMonthStart,
           end: filterMonthEnd,
           customer: filterCustomer,
-          district: filterDistrict,
+          storeArea: filterStoreArea,
           status: filterStatus
         };
         rerender();
@@ -82,7 +82,7 @@
       var filteredCases = cases.filter(function (c) {
         if (c.isClosed) return false;
         if (appliedFilters.customer !== '全部' && c.customerName !== appliedFilters.customer) return false;
-        if (appliedFilters.district !== '全部' && c.district !== appliedFilters.district) return false;
+        if (appliedFilters.storeArea !== '全部' && !StoreUtils.matchesRecordArea(c, appliedFilters.storeArea)) return false;
         if (appliedFilters.status !== '全部' && c.status !== appliedFilters.status) return false;
         var caseMonth = (c.planDate && c.planDate.slice(0, 7)) || c.dueMonth || '';
         if (caseMonth && (caseMonth < appliedFilters.start || caseMonth > appliedFilters.end)) return false;
@@ -97,10 +97,13 @@
       function handleCloseCase(id) {
         var target = cases.find(function (c) { return c.id === id; });
         if (!target) return;
-        var completionDate = resolveMaintenanceCompletionDate(target);
+        var stamp = IESS.caseDateTime.now();
+        var completionDate = target.completionDate || resolveMaintenanceCompletionDate(target);
         var closedCase = Object.assign({}, target, {
           isClosed: true,
           status: '已完成',
+          completionDate: completionDate,
+          closeDate: stamp,
           repairDate: completionDate
         });
         updateStoreLastMaintenanceDate(stores, setStores, closedCase);
@@ -110,6 +113,8 @@
         closeConfirmModal = { show: false, id: null };
         showToast('保養單已結案並移至銷案審核');
       }
+
+      var storeAreaOptions = StoreUtils.getAreaOptionsFromStores(stores);
 
       return h("div", {
         className: "bg-white p-6 rounded-lg shadow-sm border border-gray-100"
@@ -143,13 +148,13 @@
         return h("option", { key: opt, value: opt }, opt);
       }))), h("div", { className: "min-w-0" }, h("label", {
         className: "block text-xs text-gray-500 mb-1"
-      }, "行政區域"), h("select", {
-        value: filterDistrict,
-        onChange: function (e) { filterDistrict = e.target.value; rerender(); },
+      }, "公司區域"), h("select", {
+        value: filterStoreArea,
+        onChange: function (e) { filterStoreArea = e.target.value; rerender(); },
         className: "w-full p-2 border rounded-md outline-none bg-white"
       }, h("option", {
         value: "全部"
-      }, "全部"), DISTRICT_OPTIONS.map(function (d) {
+      }, "全部"), storeAreaOptions.map(function (d) {
         return h("option", { key: d, value: d }, d);
       }))), h("div", { className: "min-w-0" }, h("label", {
         className: "block text-xs text-gray-500 mb-1"
@@ -183,7 +188,7 @@
         className: "p-3 font-semibold"
       }, "門市名稱"), h("th", {
         className: "p-3 font-semibold"
-      }, "行政區域"), h("th", {
+      }, "公司區域"), h("th", {
         className: "p-3 font-semibold text-center"
       }, "服務等級"), h("th", {
         className: "p-3 font-semibold text-center"
@@ -195,10 +200,12 @@
         className: "p-3 font-semibold"
       }, "保養時間"), h("th", {
         className: "p-3 font-semibold"
+      }, "完成時間"), h("th", {
+        className: "p-3 font-semibold"
       }, "保養人員"))), h("tbody", {
         className: "divide-y divide-gray-100"
       }, filteredCases.length === 0 ? h("tr", null, h("td", {
-        colspan: "11",
+        colspan: "12",
         className: "text-center p-8 text-gray-400"
       }, "無符合條件之保養資料")) : filteredCases.map(function (c) {
         return h("tr", {
@@ -236,7 +243,7 @@
           className: "p-3"
         }, c.storeName), h("td", {
           className: "p-3"
-        }, c.district), h("td", {
+        }, StoreUtils.getRecordArea(c) || '—'), h("td", {
           className: "p-3 text-center"
         }, h("span", {
           className: "px-2 py-0.5 rounded text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200"
@@ -252,6 +259,8 @@
           className: "p-3"
         }, c.planTimeStart ? (c.planTimeEnd && c.planTimeEnd !== c.planTimeStart
           ? c.planTimeStart + ' ~ ' + c.planTimeEnd : c.planTimeStart) : '-'), h("td", {
+          className: "p-3"
+        }, IESS.caseDateTime.format(c.completionDate)), h("td", {
           className: "p-3"
         }, c.assignee));
       })))), closeConfirmModal.show && h("div", {
@@ -326,6 +335,8 @@
         var updatedData = Object.assign({}, formData);
         if (updatedData.status !== '已完成') {
           updatedData.status = ScheduleUtils.resolveMaintenanceStatus(updatedData.status, updatedData.planDate);
+        } else if (!updatedData.completionDate) {
+          updatedData.completionDate = IESS.caseDateTime.now();
         }
 
         // 如果原本沒有編號，且現在有了保養日期，就產生一組新編號
@@ -367,11 +378,11 @@
         label: "門市名稱",
         value: formData.storeName
       }), h(ReadOnlyField, {
-        label: "行政區域",
-        value: formData.district
+        label: "公司區域",
+        value: StoreUtils.getRecordArea(formData) || '—'
       }), h(ReadOnlyField, {
         label: "門市地址",
-        value: (getStoreForCase(formData) || {}).companyAddress || formData.storeAddress
+        value: (getStoreForCase(formData) && StoreUtils.buildFullAddress(getStoreForCase(formData))) || formData.storeAddress
       }), h(ReadOnlyField, {
         label: "服務等級",
         value: formData.serviceLevel
@@ -435,7 +446,10 @@
         className: "w-full"
       }) : h(ReadOnlyField, {
         value: formData.planTimeEnd
-      })))), isEdit && h("div", {
+      })), h(ReadOnlyField, {
+        label: '完成時間',
+        value: IESS.caseDateTime.format(formData.completionDate)
+      }))), isEdit && h("div", {
         className: "mt-8 pt-6 border-t flex justify-end gap-4"
       }, h("button", {
         onClick: function () { setView(backView); },

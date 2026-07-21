@@ -127,9 +127,9 @@
               })
             ),
             h('div', null,
-              h('label', { className: 'block text-sm mb-2' }, '負責行政區域'),
-              h('div', { className: 'flex flex-wrap gap-3' },
-                DISTRICT_OPTIONS.map(function (d) {
+              h('label', { className: 'block text-sm mb-2' }, '負責公司區域'),
+              h('div', { className: 'flex flex-wrap gap-3 max-h-64 overflow-y-auto border rounded-md p-3' },
+                STORE_AREA_OPTIONS.map(function (d) {
                   var checked = districts.indexOf(d) !== -1;
                   return h('label', {
                     key: d,

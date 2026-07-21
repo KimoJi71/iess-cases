@@ -1,6 +1,6 @@
 /*
  * features/customer/store-list.js — 客戶建檔（門市管理）：門市列表
- * props: { stores, setStores, customers, storeCustomer, setStoreCustomer, setEditingCase, setView, showToast }
+ * props: { stores, setStores, customers, storeCustomer, setStoreCustomer, setEditingCase, setHistoryStore, setView, showToast }
  */
 (function () {
   'use strict';
@@ -14,7 +14,7 @@
     var storeCustomer = props.storeCustomer;
     var setStoreCustomer = props.setStoreCustomer;
     var setEditingCase = props.setEditingCase;
-    var setViewingCase = props.setViewingCase;
+    var setHistoryStore = props.setHistoryStore;
     var setView = props.setView;
     var showToast = props.showToast;
 
@@ -25,7 +25,7 @@
     var dragProps = useDragScroll();
 
     function openHistory(store) {
-      setViewingCase(store);
+      setHistoryStore(store);
       setView('store-history');
     }
 
@@ -35,7 +35,7 @@
       var list = stores.filter(function (s) { return s.customerName === storeCustomer; });
       if (kw) {
         list = list.filter(function (s) {
-          return [s.storeCode, s.storeName, s.district, s.companyPhone, s.serviceLevel]
+          return [s.storeCode, s.storeName, s.companyCity, s.companyDistrict, s.companyPhone, s.serviceLevel]
             .filter(Boolean)
             .some(function (v) { return String(v).toLowerCase().includes(kw); });
         });
@@ -129,7 +129,6 @@
               h('thead', { className: 'bg-gray-50 text-gray-700 border-b' },
                 h('tr', null,
                   h('th', { className: 'p-3 font-semibold text-center w-32' }, '操作'),
-                  h('th', { className: 'p-3 font-semibold' }, '門市區域'),
                   h('th', { className: 'p-3 font-semibold' }, '門市店編'),
                   h('th', { className: 'p-3 font-semibold' }, '門市名稱'),
                   h('th', { className: 'p-3 font-semibold' }, '門市電話'),
@@ -140,7 +139,7 @@
               h('tbody', { className: 'divide-y divide-gray-100' },
                 filteredStores.length === 0
                   ? h('tr', null, h('td', {
-                      colspan: 7,
+                      colspan: 6,
                       className: 'p-10 text-center text-gray-400 text-base'
                     }, '無資料'))
                   : filteredStores.map(function (s) {
@@ -161,7 +160,6 @@
                               className: 'p-1.5 text-gray-500 hover:bg-gray-100 rounded', icon: Icons.Clock({ className: 'h-4 w-4' }) })
                           )
                         ),
-                        h('td', { className: 'p-3' }, s.district || '—'),
                         h('td', { className: 'p-3' }, s.storeCode || '—'),
                         h('td', { className: 'p-3 font-medium text-gray-800' }, s.storeName),
                         h('td', { className: 'p-3' }, s.companyPhone || '—'),

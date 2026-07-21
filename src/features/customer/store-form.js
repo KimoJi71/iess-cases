@@ -27,7 +27,8 @@
     var formData = {
       storeCode: (targetCase && targetCase.storeCode) || '',
       storeName: (targetCase && targetCase.storeName) || '',
-      district: (targetCase && targetCase.district) || DISTRICT_OPTIONS[0],
+      companyCity: (targetCase && targetCase.companyCity) || TAIWAN_CITY_OPTIONS[0],
+      companyDistrict: (targetCase && targetCase.companyDistrict) || StoreUtils.getDistrictsForCity(TAIWAN_CITY_OPTIONS[0])[0] || '',
       companyPhone: (targetCase && targetCase.companyPhone) || '',
       companyFax: (targetCase && targetCase.companyFax) || '',
       companyAddress: (targetCase && targetCase.companyAddress) || '',
@@ -67,6 +68,10 @@
         var name = e.target.name;
         var value = e.target.value;
         formData[name] = value;
+        if (name === 'companyCity') {
+          var districts = StoreUtils.getDistrictsForCity(value);
+          formData.companyDistrict = districts[0] || '';
+        }
         rerender();
       }
       function handleContactChange(e) {
@@ -224,13 +229,24 @@
             field('門市店編', 'storeCode'),
             field('門市名稱', 'storeName', { required: true }),
             h('div', null,
-              h('label', { className: 'block text-sm mb-1' }, '門市區域'),
+              h('label', { className: 'block text-sm mb-1' }, '公司縣市'),
               h('select', {
-                name: 'district',
-                value: formData.district,
+                name: 'companyCity',
+                value: formData.companyCity,
                 onChange: handleChange,
                 className: 'w-full p-2.5 border rounded-md outline-none bg-white'
-              }, DISTRICT_OPTIONS.map(function (opt) { return h('option', { key: opt, value: opt }, opt); }))
+              }, TAIWAN_CITY_OPTIONS.map(function (opt) { return h('option', { key: opt, value: opt }, opt); }))
+            ),
+            h('div', null,
+              h('label', { className: 'block text-sm mb-1' }, '公司行政區'),
+              h('select', {
+                name: 'companyDistrict',
+                value: formData.companyDistrict,
+                onChange: handleChange,
+                className: 'w-full p-2.5 border rounded-md outline-none bg-white'
+              }, StoreUtils.getDistrictsForCity(formData.companyCity).map(function (opt) {
+                return h('option', { key: opt, value: opt }, opt);
+              }))
             ),
             h('div', null,
               h('label', { className: 'block text-sm mb-1' }, '服務等級 '),

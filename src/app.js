@@ -41,7 +41,6 @@
 
   var PERMISSIONS_SUBMENU_DEFAULT_VIEW = {
     '帳號管理': 'account-list',
-    '行政區域管理': 'district-list',
     '指派人員管理': 'assignee-list',
     '設備分類管理': 'device-category-list'
   };
@@ -56,6 +55,9 @@
   var initialSchedulingSubMenu = readLS('iess:schedulingSubMenu', '案件安排');
   var initialReportsSubMenu = readLS('iess:reportsSubMenu', '案件績效統計');
   var initialPermissionsSubMenu = readLS('iess:permissionsSubMenu', '帳號管理');
+  if (initialPermissionsSubMenu === '行政區域管理') {
+    initialPermissionsSubMenu = '帳號管理';
+  }
   var initialView = initialTopMenu === '案件排程'
     ? (SCHEDULING_SUBMENU_DEFAULT_VIEW[initialSchedulingSubMenu] || 'arrangement')
     : initialTopMenu === '報表統計'
@@ -91,11 +93,11 @@
     equipmentStore: '',
     personnelStatus: INITIAL_PERSONNEL_STATUS,
     accounts: INITIAL_ACCOUNTS,
-    districts: INITIAL_DISTRICTS,
     deviceCategories: INITIAL_DEVICE_CATEGORIES,
     assignees: INITIAL_ASSIGNEES,
     editingCase: null,
     viewingCase: null,
+    historyStore: null,
     statusFilter: '未處理'
   });
 
@@ -113,6 +115,7 @@
   var setView = makeSetter('view');
   var setEditingCase = makeSetter('editingCase');
   var setViewingCase = makeSetter('viewingCase');
+  var setHistoryStore = makeSetter('historyStore');
   var setStatusFilter = makeSetter('statusFilter');
   var setStoreCustomer = makeSetter('storeCustomer');
   var setCasesData = makeSetter('cases');
@@ -130,14 +133,6 @@
       var next = typeof v === 'function' ? v(s.accounts) : v;
       AccountUtils.syncProjectPersonOptions(next);
       return { accounts: next };
-    });
-  }
-
-  function setDistricts(v) {
-    store.set(function (s) {
-      var next = typeof v === 'function' ? v(s.districts) : v;
-      DistrictUtils.syncDistrictOptions(next);
-      return { districts: next };
     });
   }
 
@@ -359,12 +354,37 @@
         return h(StoreList, {
           stores: s.stores, setStores: setStores, customers: s.customers,
           storeCustomer: s.storeCustomer, setStoreCustomer: setStoreCustomer,
-          setEditingCase: setEditingCase, setViewingCase: setViewingCase,
+          setEditingCase: setEditingCase, setHistoryStore: setHistoryStore,
           setView: setView, showToast: showToast
         });
       case 'store-history':
         return h(StoreHistory, {
-          store: s.viewingCase, setView: setView, showToast: showToast
+          store: s.historyStore,
+          cases: s.cases,
+          maintenanceCases: s.maintenanceCases,
+          projectCases: s.projectCases,
+          equipments: s.equipments,
+          setViewingCase: setViewingCase,
+          setEditingCase: setEditingCase,
+          setHistoryStore: setHistoryStore,
+          setView: setView
+        });
+      case 'store-history-repair-view':
+        return h(ViewCaseForm, {
+          viewingCase: s.viewingCase, setView: setView, backView: 'store-history'
+        });
+      case 'store-history-maintenance-view':
+        return h(MaintenanceViewEditForm, {
+          targetCase: s.viewingCase, stores: s.stores, customers: s.customers,
+          setView: setView, mode: 'view', showToast: showToast, backView: 'store-history'
+        });
+      case 'store-history-project-view':
+        return h(EditProjectForm, {
+          editingCase: s.editingCase, cases: s.projectCases, setCases: setProjectCases,
+          stores: s.stores, customers: s.customers, accounts: s.accounts,
+          deviceCategories: s.deviceCategories, setView: setView, showToast: showToast,
+          backView: 'store-history',
+          mode: 'view'
         });
       case 'store-add':
         return h(StoreForm, {
@@ -486,39 +506,6 @@
         return h(AccountPermissions, {
           accounts: s.accounts,
           setAccounts: setAccounts,
-          targetCase: s.editingCase,
-          setView: setView,
-          showToast: showToast
-        });
-      case 'district-list':
-        return h(DistrictList, {
-          districts: s.districts,
-          setDistricts: setDistricts,
-          assignees: s.assignees,
-          stores: s.stores,
-          setEditingCase: setEditingCase,
-          setView: setView,
-          showToast: showToast
-        });
-      case 'district-add':
-        return h(DistrictForm, {
-          districts: s.districts,
-          setDistricts: setDistricts,
-          assignees: s.assignees,
-          setAssignees: setAssignees,
-          stores: s.stores,
-          setStores: setStores,
-          setView: setView,
-          showToast: showToast
-        });
-      case 'district-edit':
-        return h(DistrictForm, {
-          districts: s.districts,
-          setDistricts: setDistricts,
-          assignees: s.assignees,
-          setAssignees: setAssignees,
-          stores: s.stores,
-          setStores: setStores,
           targetCase: s.editingCase,
           setView: setView,
           showToast: showToast
@@ -692,7 +679,6 @@
     );
   }
 
-  DistrictUtils.syncDistrictOptions(INITIAL_DISTRICTS);
   DeviceCategoryUtils.syncDeviceCategoryOptions(INITIAL_DEVICE_CATEGORIES);
   AssigneeUtils.syncAssigneeOptions(INITIAL_ASSIGNEES);
   AccountUtils.syncProjectPersonOptions(INITIAL_ACCOUNTS);

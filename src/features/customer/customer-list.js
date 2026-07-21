@@ -40,9 +40,7 @@
         }
         if (kw) {
           list = list.filter(function (c) {
-            return [c.name, c.taxId, c.principal, c.phone, c.address].filter(Boolean).some(function (v) {
-              return String(v).toLowerCase().includes(kw);
-            });
+            return c.name && String(c.name).toLowerCase().includes(kw);
           });
         }
         return list.slice().sort(function (a, b) { return new Date(b.createdDate) - new Date(a.createdDate); });
@@ -86,7 +84,7 @@
                 value: keyword,
                 onChange: function (e) { keyword = e.target.value; rerender(); },
                 onKeyDown: handleKeyDown,
-                placeholder: '客戶名稱 / 統一編號 / 負責人',
+                placeholder: '客戶名稱',
                 className: 'w-64 p-2.5 border rounded-md outline-none focus:border-blue-500'
               })
             ),

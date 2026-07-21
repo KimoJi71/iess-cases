@@ -58,7 +58,8 @@
       function syncSurveyStoreFields() {
         var synced = ScheduleUtils.applyStoreSnapshot(formData, stores);
         formData.storeAddress = synced.storeAddress || '';
-        formData.district = synced.district || '';
+        formData.companyCity = synced.companyCity || '';
+        formData.companyDistrict = synced.companyDistrict || '';
         formData.serviceLevel = synced.serviceLevel || formData.serviceLevel;
       }
 

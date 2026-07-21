@@ -34,7 +34,8 @@
 
   function syncFormStoreFields(formData, stores) {
     var synced = ScheduleUtils.applyStoreSnapshot(formData, stores);
-    formData.district = synced.district || '';
+    formData.companyCity = synced.companyCity || '';
+    formData.companyDistrict = synced.companyDistrict || '';
     formData.serviceLevel = synced.serviceLevel || formData.serviceLevel;
     formData.storeAddress = synced.storeAddress || '';
   }
@@ -51,7 +52,8 @@
       workCategory: '一般叫修',
       customerName: '',
       storeName: '',
-      district: '',
+      companyCity: '',
+      companyDistrict: '',
       storeAddress: '',
       repairItem: '室內機',
       repairReason: '不冷',
@@ -76,7 +78,8 @@
         if (name === 'customerName') {
           formData.serviceLevel = CUSTOMER_SERVICE_LEVEL_MAP[value] || '維修(無簽約客戶)';
           formData.storeName = '';
-          formData.district = '';
+          formData.companyCity = '';
+          formData.companyDistrict = '';
           formData.storeAddress = '';
         }
         if (name === 'storeName') {
@@ -92,7 +95,8 @@
           repairDate: caseDT.now(),
           createdAt: new Date().toISOString()
         }, formData, {
-          district: formData.district || '',
+          companyCity: formData.companyCity || '',
+          companyDistrict: formData.companyDistrict || '',
           storeAddress: formData.storeAddress || '',
           processStatus: null,
           indicator: formData.workCategory === '緊急叫修' ? 'urgent' : 'completed',
@@ -342,7 +346,8 @@
         if (name === 'customerName') {
           formData.serviceLevel = CUSTOMER_SERVICE_LEVEL_MAP[value] || '維修(無簽約客戶)';
           formData.storeName = '';
-          formData.district = '';
+          formData.companyCity = '';
+          formData.companyDistrict = '';
           formData.storeAddress = '';
         }
         if (name === 'storeName') {

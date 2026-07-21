@@ -74,7 +74,10 @@
 
       if (target.processStatus === '案件完成') {
         setCases(cases.map(function (c) {
-          return c.id === caseId ? Object.assign({}, c, { isClosed: true }) : c;
+          return c.id === caseId ? Object.assign({}, c, {
+            isClosed: true,
+            closeDate: IESS.caseDateTime.now()
+          }) : c;
         }));
         showToast('案件已結案，並移至「案件銷案審核」列表');
         return;
@@ -91,7 +94,11 @@
     function handleInterimComplete(caseId) {
       setCases(cases.map(function (c) {
         return c.id === caseId
-          ? Object.assign({}, c, { isClosed: true, isListClosed: false })
+          ? Object.assign({}, c, {
+            isClosed: true,
+            isListClosed: false,
+            closeDate: IESS.caseDateTime.now()
+          })
           : c;
       }));
       showToast('案件已完成，並移至「案件銷案審核」列表');
@@ -193,7 +200,7 @@
                 h('th', { className: 'p-3 font-semibold' }, '叫修時間'),
                 h('th', { className: 'p-3 font-semibold' }, '案件編號'),
                 h('th', { className: 'p-3 font-semibold' }, '客戶/門市名稱'),
-                h('th', { className: 'p-3 font-semibold' }, '行政區域'),
+                h('th', { className: 'p-3 font-semibold' }, '公司區域'),
                 h('th', { className: 'p-3 font-semibold' }, '工項分類'),
                 h('th', { className: 'p-3 font-semibold' }, '叫修項目/原因'),
                 h('th', { className: 'p-3 font-semibold min-w-[200px]' }, '故障描述'),
@@ -218,7 +225,7 @@
                     h('div', null, c.customerName),
                     h('div', { className: 'text-xs text-gray-500' }, c.storeName)
                   ),
-                  h('td', { className: 'p-3' }, c.district),
+                  h('td', { className: 'p-3' }, StoreUtils.getRecordArea(c) || '—'),
                   h('td', { className: 'p-3' },
                     h('span', {
                       className: 'px-2 py-1 rounded text-xs ' +

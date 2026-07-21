@@ -59,8 +59,9 @@
           expectedTimeEnd: '',
           reporter: formData.reporter,
           serviceLevel: store.serviceLevel || '維修(無簽約客戶)',
-          district: store.district || '',
-          storeAddress: store.companyAddress || '',
+          companyCity: store.companyCity || '',
+          companyDistrict: store.companyDistrict || '',
+          storeAddress: StoreUtils.buildFullAddress(store),
           processStatus: null,
           indicator: formData.workCategory === '緊急叫修' ? 'urgent' : 'completed',
           isClosed: false,
@@ -115,24 +116,20 @@
             h('div', { className: 'grid grid-cols-1 md:grid-cols-3 gap-6' },
               h('div', { className: 'col-span-full font-semibold text-lg text-blue-800 border-b pb-2 mb-2' }, '門市資料'),
               h('div', null,
-                h('label', { className: 'block text-sm mb-1' }, '客戶名稱 ',
-                  h('span', { className: 'text-xs text-gray-400' }, '(自動帶入)')),
+                h('label', { className: 'block text-sm mb-1' }, '客戶名稱'),
                 h('input', { type: 'text', value: store.customerName || '—', disabled: true, className: disabledCls })
               ),
               h('div', null,
-                h('label', { className: 'block text-sm mb-1' }, '門市名稱 ',
-                  h('span', { className: 'text-xs text-gray-400' }, '(自動帶入)')),
+                h('label', { className: 'block text-sm mb-1' }, '門市名稱'),
                 h('input', { type: 'text', value: store.storeName || '—', disabled: true, className: disabledCls })
               ),
               h('div', null,
-                h('label', { className: 'block text-sm mb-1' }, '服務等級 ',
-                  h('span', { className: 'text-xs text-gray-400' }, '(自動帶入)')),
+                h('label', { className: 'block text-sm mb-1' }, '服務等級'),
                 h('input', { type: 'text', value: store.serviceLevel || '—', disabled: true, className: disabledCls })
               ),
               h('div', { className: 'col-span-full' },
-                h('label', { className: 'block text-sm mb-1' }, '門市地址 ',
-                  h('span', { className: 'text-xs text-gray-400' }, '(自動帶入)')),
-                h('input', { type: 'text', value: store.companyAddress || '—', disabled: true, className: disabledCls })
+                h('label', { className: 'block text-sm mb-1' }, '門市地址'),
+                h('input', { type: 'text', value: StoreUtils.buildFullAddress(store) || '—', disabled: true, className: disabledCls })
               ),
 
               h('div', { className: 'col-span-full font-semibold text-lg text-blue-800 border-b pb-2 mt-4 mb-2' }, '叫修內容'),

@@ -98,7 +98,8 @@
         caseNumber: '',
         customerName: store.customerName,
         storeName: store.storeName,
-        district: store.district,
+        companyCity: store.companyCity,
+        companyDistrict: store.companyDistrict,
         serviceLevel: store.serviceLevel,
         status: '未保養',
         planDate: '',
@@ -108,7 +109,7 @@
         workCategory: '保養',
         assignee: '尚未指派',
         isClosed: false,
-        storeAddress: store.companyAddress
+        storeAddress: StoreUtils.buildFullAddress(store)
       });
     });
     return result;
@@ -121,18 +122,19 @@
     }) || null;
   }
 
-  function resolveStoreDistrict(stores, customerName, storeName) {
+  function resolveStoreArea(stores, customerName, storeName) {
     var store = resolveStore(stores, customerName, storeName);
-    return store ? store.district : '';
+    return store ? StoreUtils.getStoreArea(store) : '';
   }
 
   function applyStoreSnapshot(record, stores) {
     var store = resolveStore(stores, record.customerName, record.storeName);
     if (!store) return record;
     return Object.assign({}, record, {
-      district: store.district,
+      companyCity: store.companyCity,
+      companyDistrict: store.companyDistrict,
       serviceLevel: store.serviceLevel,
-      storeAddress: store.companyAddress
+      storeAddress: StoreUtils.buildFullAddress(store)
     });
   }
 
@@ -199,7 +201,7 @@
   }
 
   function getPendingCases(maintenanceCases, cases, projectCases, filters, stores) {
-    if (!filters || !filters.workCategory || !filters.customer || !filters.district) {
+    if (!filters || !filters.workCategory || !filters.customer || !filters.storeArea) {
       return [];
     }
     var items = [];
@@ -210,7 +212,7 @@
         sourceId: c.id,
         customerName: c.customerName,
         storeName: c.storeName,
-        district: c.district,
+        storeArea: StoreUtils.getRecordArea(c),
         workCategory: getMaintenanceWorkCategory(c),
         assignee: c.assignee || '尚未指派'
       });
@@ -223,7 +225,7 @@
         sourceId: c.id,
         customerName: c.customerName,
         storeName: c.storeName,
-        district: c.district,
+        storeArea: StoreUtils.getRecordArea(c),
         workCategory: c.workCategory,
         assignee: c.assignee
       });
@@ -235,7 +237,7 @@
         sourceId: c.id,
         customerName: c.customerName,
         storeName: c.storeName,
-        district: resolveStoreDistrict(stores, c.customerName, c.storeName),
+        storeArea: resolveStoreArea(stores, c.customerName, c.storeName),
         workCategory: c.workCategory,
         assignee: c.stageAssignee
       });
@@ -243,7 +245,7 @@
     return items.filter(function (item) {
       if (item.workCategory !== filters.workCategory) return false;
       if (item.customerName !== filters.customer) return false;
-      if (item.district !== filters.district) return false;
+      if (item.storeArea !== filters.storeArea) return false;
       return true;
     });
   }

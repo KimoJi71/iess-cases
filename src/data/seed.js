@@ -102,11 +102,12 @@ const INITIAL_STORES = [{
   customerName: '屈臣氏',
   storeCode: 'WT-001',
   storeName: '台北信義店',
-  district: '北區',
   serviceLevel: '保修(一年一次)',
   companyPhone: '02-2712-3456',
   companyFax: '02-2712-3457',
-  companyAddress: '台北市信義區松智路X號',
+  companyCity: '台北市',
+  companyDistrict: '信義區',
+  companyAddress: '松智路X號',
   openDate: '2019-05-01',
   closeDate: '',
   storeStatus: '正常營業',
@@ -168,11 +169,12 @@ const INITIAL_STORES = [{
   customerName: '屈臣氏',
   storeCode: 'WT-002',
   storeName: '台中旗艦店',
-  district: '中區',
   serviceLevel: '保修(一年一次)',
   companyPhone: '04-2251-1234',
   companyFax: '04-2251-1235',
-  companyAddress: '台中市西屯區台灣大道X號',
+  companyCity: '台中市',
+  companyDistrict: '西屯區',
+  companyAddress: '台灣大道X號',
   openDate: '2020-11-20',
   closeDate: '',
   storeStatus: '正常營業',
@@ -213,11 +215,12 @@ const INITIAL_STORES = [{
   customerName: '星巴克',
   storeCode: 'SB-011',
   storeName: '站前店',
-  district: '中區',
   serviceLevel: '保修(一年兩次)',
   companyPhone: '04-2223-8888',
   companyFax: '04-2223-8889',
-  companyAddress: '台中市中區建國路X號',
+  companyCity: '台中市',
+  companyDistrict: '中區',
+  companyAddress: '建國路X號',
   openDate: '2018-03-15',
   closeDate: '',
   storeStatus: '整裝',
@@ -253,11 +256,12 @@ const INITIAL_STORES = [{
   customerName: '星巴克',
   storeCode: 'SB-012',
   storeName: '中山店',
-  district: '北區',
   serviceLevel: '保修(一年兩次)',
   companyPhone: '02-2521-6688',
   companyFax: '02-2521-6689',
-  companyAddress: '台北市中山區中山北路X號',
+  companyCity: '台北市',
+  companyDistrict: '中山區',
+  companyAddress: '中山北路X號',
   openDate: '2021-09-01',
   closeDate: '',
   storeStatus: '正常營業',
@@ -276,11 +280,12 @@ const INITIAL_STORES = [{
   customerName: '萊爾富',
   storeCode: 'HL-021',
   storeName: '高雄左營店',
-  district: '南區',
   serviceLevel: '保養(一年一次)',
   companyPhone: '07-345-2222',
   companyFax: '07-345-2223',
-  companyAddress: '高雄市左營區博愛路X號',
+  companyCity: '高雄市',
+  companyDistrict: '左營區',
+  companyAddress: '博愛路X號',
   openDate: '2017-07-07',
   closeDate: '2026-06-30',
   storeStatus: '撤店',
@@ -321,11 +326,12 @@ const INITIAL_STORES = [{
   customerName: '全家便利商店',
   storeCode: 'FM-101',
   storeName: '中山店',
-  district: '北區',
   serviceLevel: '維修(無簽約客戶)',
   companyPhone: '02-2521-6688',
   companyFax: '',
-  companyAddress: '台北市中山區中山北路X號',
+  companyCity: '台北市',
+  companyDistrict: '中山區',
+  companyAddress: '中山北路X號',
   openDate: '2016-04-01',
   closeDate: '',
   storeStatus: '正常營業',
@@ -344,11 +350,12 @@ const INITIAL_STORES = [{
   customerName: '全家便利商店',
   storeCode: 'FM-102',
   storeName: '站前店',
-  district: '中區',
   serviceLevel: '維修(無簽約客戶)',
   companyPhone: '04-2223-8888',
   companyFax: '',
-  companyAddress: '台中市中區建國路X號',
+  companyCity: '台中市',
+  companyDistrict: '中區',
+  companyAddress: '建國路X號',
   openDate: '2018-08-10',
   closeDate: '',
   storeStatus: '正常營業',
@@ -367,11 +374,12 @@ const INITIAL_STORES = [{
   customerName: '統一超商',
   storeCode: 'UC-201',
   storeName: '中山店',
-  district: '北區',
   serviceLevel: '維修(無簽約客戶)',
   companyPhone: '02-2521-6688',
   companyFax: '',
-  companyAddress: '台北市中山區中山北路X號',
+  companyCity: '台北市',
+  companyDistrict: '中山區',
+  companyAddress: '中山北路X號',
   openDate: '2015-02-20',
   closeDate: '',
   storeStatus: '正常營業',
@@ -390,11 +398,12 @@ const INITIAL_STORES = [{
   customerName: '統一超商',
   storeCode: 'UC-202',
   storeName: '站前店',
-  district: '中區',
   serviceLevel: '維修(無簽約客戶)',
   companyPhone: '04-2223-8888',
   companyFax: '',
-  companyAddress: '台中市中區建國路X號',
+  companyCity: '台中市',
+  companyDistrict: '中區',
+  companyAddress: '建國路X號',
   openDate: '2017-11-05',
   closeDate: '',
   storeStatus: '正常營業',
@@ -506,7 +515,6 @@ const INITIAL_CASES = [{
   caseNumber: '20260709001',
   customerName: '屈臣氏',
   storeName: '台北信義店',
-  district: '北區',
   workCategory: '緊急叫修',
   repairItem: '室內機',
   repairReason: '漏水',
@@ -535,7 +543,6 @@ const INITIAL_CASES = [{
   caseNumber: '20260708002',
   customerName: '星巴克',
   storeName: '站前店',
-  district: '中區',
   workCategory: '一般叫修',
   repairItem: '室外機',
   repairReason: '異音',
@@ -571,7 +578,6 @@ const INITIAL_CASES = [{
   caseNumber: '20260707003',
   customerName: '萊爾富',
   storeName: '高雄左營店',
-  district: '南區',
   workCategory: '保養清潔',
   repairItem: '風管',
   repairReason: '異味',
@@ -613,7 +619,6 @@ const INITIAL_CASES = [{
   caseNumber: '20260706004',
   customerName: '全家便利商店',
   storeName: '中山店',
-  district: '北區',
   workCategory: '一般叫修',
   repairItem: '室內機',
   repairReason: '不冷',
@@ -661,7 +666,6 @@ const INITIAL_CASES = [{
   caseNumber: '20260710005',
   customerName: '統一超商',
   storeName: '站前店',
-  district: '中區',
   workCategory: '一般叫修',
   repairItem: '室內機',
   repairReason: '漏水',
@@ -703,7 +707,6 @@ const INITIAL_CASES = [{
   caseNumber: '20260713006',
   customerName: '屈臣氏',
   storeName: '台中旗艦店',
-  district: '中區',
   workCategory: '一般叫修',
   repairItem: '室內機',
   repairReason: '不冷',
@@ -732,7 +735,6 @@ const INITIAL_CASES = [{
   caseNumber: '20260713007',
   customerName: '屈臣氏',
   storeName: '台北信義店',
-  district: '北區',
   workCategory: '一般叫修',
   repairItem: '室內機',
   repairReason: '不冷',
@@ -761,7 +763,6 @@ const INITIAL_CASES = [{
   caseNumber: '20260705008',
   customerName: '萊爾富',
   storeName: '高雄左營店',
-  district: '南區',
   workCategory: '一般叫修',
   repairItem: '室外機',
   repairReason: '不冷',
@@ -790,7 +791,6 @@ const INITIAL_CASES = [{
   caseNumber: '20260704009',
   customerName: '星巴克',
   storeName: '中山店',
-  district: '北區',
   workCategory: '一般叫修',
   repairItem: '室內機',
   repairReason: '異音',
@@ -819,7 +819,6 @@ const INITIAL_CASES = [{
   caseNumber: '20260703010',
   customerName: '屈臣氏',
   storeName: '台中旗艦店',
-  district: '中區',
   workCategory: '保養清潔',
   repairItem: '風管',
   repairReason: '異味',
@@ -848,7 +847,6 @@ const INITIAL_CASES = [{
   caseNumber: '20260702011',
   customerName: '統一超商',
   storeName: '中山店',
-  district: '北區',
   workCategory: '一般叫修',
   repairItem: '控制面板',
   repairReason: '溫控故障',
@@ -877,7 +875,6 @@ const INITIAL_CASES = [{
   caseNumber: '20260701012',
   customerName: '全家便利商店',
   storeName: '站前店',
-  district: '中區',
   workCategory: '一般叫修',
   repairItem: '室外機',
   repairReason: '跳機',
@@ -908,9 +905,12 @@ INITIAL_CASES.forEach(function (c, i) {
     c.createdAt = c.repairDate + 'T' + String(hour).padStart(2, '0') + ':' + String(minute).padStart(2, '0') + ':00';
   }
   c.repairDate = IESS.caseDateTime.format(c.createdAt || c.repairDate);
-  ['reRepairDate', 'secondRepairDate', 'completionDate'].forEach(function (field) {
+  ['reRepairDate', 'secondRepairDate', 'completionDate', 'closeDate'].forEach(function (field) {
     if (c[field]) c[field] = IESS.caseDateTime.format(c[field]);
   });
+  if (c.isClosed && !c.closeDate) {
+    c.closeDate = c.completionDate || c.repairDate || '';
+  }
   if (!c.equipment && !c.isClosed) c.processStatus = null;
   if (c.isListClosed == null) c.isListClosed = false;
 });
@@ -921,7 +921,6 @@ const INITIAL_MAINTENANCE_CASES = [{
   caseNumber: '',
   customerName: '屈臣氏',
   storeName: '台北信義店',
-  district: '北區',
   serviceLevel: '保修(一年一次)',
   status: '未保養',
   planDate: '',
@@ -937,7 +936,6 @@ const INITIAL_MAINTENANCE_CASES = [{
   caseNumber: `${todayDate.replace(/-/g, '')}002`,
   customerName: '星巴克',
   storeName: '中山店',
-  district: '北區',
   serviceLevel: '保修(一年兩次)',
   status: '已預約',
   planDate: todayDate,
@@ -952,12 +950,12 @@ const INITIAL_MAINTENANCE_CASES = [{
   caseNumber: `${yesterdayDate.replace(/-/g, '')}003`,
   customerName: '萊爾富',
   storeName: '高雄左營店',
-  district: '南區',
   serviceLevel: '保養(一年一次)',
   status: '已完成',
   planDate: yesterdayDate,
   planTimeStart: '14:00',
   planTimeEnd: '16:00',
+  completionDate: yesterdayDate + ' 16:00:00',
   assignee: '協力廠商',
   isClosed: false,
   storeAddress: '高雄市左營區博愛路X號'
@@ -1091,6 +1089,288 @@ const INITIAL_PROJECT_CASES = [{
     remarks: '',
     equipment: []
   }
+}, {
+  id: 'P20260615004',
+  projectNumber: `${twoDaysAgoDate.replace(/-/g, '')}004`,
+  creationDate: twoDaysAgoDate,
+  customerName: '屈臣氏',
+  storeName: '台北信義店',
+  workCategory: '汰換',
+  currentStage: '發票請款作業',
+  stageDate: todayDate,
+  stageAssignee: '王小明',
+  planDate: '',
+  planTimeStart: '',
+  planTimeEnd: '',
+  isClosed: true,
+  closeDate: todayDate,
+  history: [{
+    stage: '立案時間',
+    date: twoDaysAgoDate,
+    assignee: '系統管理員'
+  }, {
+    stage: '工程發包作業',
+    date: twoDaysAgoDate,
+    assignee: '王小明'
+  }, {
+    stage: '現勘',
+    date: yesterdayDate,
+    assignee: '王小明'
+  }, {
+    stage: '設備訂貨作業',
+    date: yesterdayDate,
+    assignee: '王小明'
+  }, {
+    stage: '廠商驗收作業',
+    date: todayDate,
+    assignee: '王小明'
+  }, {
+    stage: '客戶驗收',
+    date: todayDate,
+    assignee: '王小明'
+  }, {
+    stage: '發票請款作業',
+    date: todayDate,
+    assignee: '王小明'
+  }],
+  comments: [],
+  details: {
+    storeAddress: '台北市信義區松智路X號',
+    serviceLevel: '保修(一年一次)',
+    contactPerson: '林店長',
+    suggestedContractor: '機電維護商',
+    entryDate: twoDaysAgoDate,
+    remarks: '賣場主機汰換，夜間施工',
+    equipment: [{
+      id: 1,
+      category: '箱型',
+      brand: '大金',
+      deviceName: '賣場空調',
+      specification: '5.0匹',
+      model: 'FXYP140',
+      area: '賣場區',
+      assetNumber: 'WT-001-A1',
+      serialNumber: '',
+      manufactureDate: '',
+      installDate: ''
+    }]
+  }
+}, {
+  id: 'P20260620005',
+  projectNumber: `${yesterdayDate.replace(/-/g, '')}005`,
+  creationDate: yesterdayDate,
+  customerName: '屈臣氏',
+  storeName: '台中旗艦店',
+  workCategory: '加裝',
+  currentStage: '發票請款作業',
+  stageDate: todayDate,
+  stageAssignee: '王小明',
+  planDate: '',
+  planTimeStart: '',
+  planTimeEnd: '',
+  isClosed: true,
+  closeDate: todayDate,
+  history: [{
+    stage: '立案時間',
+    date: yesterdayDate,
+    assignee: '系統管理員'
+  }, {
+    stage: '工程發包作業',
+    date: yesterdayDate,
+    assignee: '王小明'
+  }, {
+    stage: '現勘',
+    date: yesterdayDate,
+    assignee: '王小明'
+  }, {
+    stage: '設備訂貨作業',
+    date: todayDate,
+    assignee: '王小明'
+  }, {
+    stage: '廠商驗收作業',
+    date: todayDate,
+    assignee: '王小明'
+  }, {
+    stage: '客戶驗收',
+    date: todayDate,
+    assignee: '王小明'
+  }, {
+    stage: '發票請款作業',
+    date: todayDate,
+    assignee: '王小明'
+  }],
+  comments: [],
+  details: {
+    storeAddress: '台中市西屯區台灣大道X號',
+    serviceLevel: '保修(一年一次)',
+    contactPerson: '張小姐',
+    suggestedContractor: '內部工程組',
+    entryDate: yesterdayDate,
+    remarks: '倉庫區加裝分離式冷氣',
+    equipment: []
+  }
+}, {
+  id: 'P20260625006',
+  projectNumber: `${todayDate.replace(/-/g, '')}006`,
+  creationDate: twoDaysAgoDate,
+  customerName: '統一超商',
+  storeName: '站前店',
+  workCategory: '新開',
+  currentStage: '發票請款作業',
+  stageDate: todayDate,
+  stageAssignee: '王小明',
+  planDate: '',
+  planTimeStart: '',
+  planTimeEnd: '',
+  isClosed: true,
+  closeDate: todayDate,
+  history: [{
+    stage: '立案時間',
+    date: twoDaysAgoDate,
+    assignee: '系統管理員'
+  }, {
+    stage: '工程發包作業',
+    date: twoDaysAgoDate,
+    assignee: '王小明'
+  }, {
+    stage: '現勘',
+    date: yesterdayDate,
+    assignee: '王小明'
+  }, {
+    stage: '設備訂貨作業',
+    date: yesterdayDate,
+    assignee: '王小明'
+  }, {
+    stage: '廠商驗收作業',
+    date: todayDate,
+    assignee: '王小明'
+  }, {
+    stage: '客戶驗收',
+    date: todayDate,
+    assignee: '王小明'
+  }, {
+    stage: '發票請款作業',
+    date: todayDate,
+    assignee: '王小明'
+  }],
+  comments: [],
+  details: {
+    storeAddress: '台中市中區建國路X號',
+    serviceLevel: '維修(無簽約客戶)',
+    contactPerson: '王專員',
+    suggestedContractor: '協力廠商',
+    entryDate: twoDaysAgoDate,
+    remarks: '新開店空調工程',
+    equipment: []
+  }
+}, {
+  id: 'P20260610007',
+  projectNumber: `${twoDaysAgoDate.replace(/-/g, '')}007`,
+  creationDate: oneMonthAgoDate,
+  customerName: '全家便利商店',
+  storeName: '中山店',
+  workCategory: '撤店',
+  currentStage: '發票請款作業',
+  stageDate: twoDaysAgoDate,
+  stageAssignee: '王小明',
+  planDate: '',
+  planTimeStart: '',
+  planTimeEnd: '',
+  isClosed: true,
+  closeDate: twoDaysAgoDate,
+  history: [{
+    stage: '立案時間',
+    date: oneMonthAgoDate,
+    assignee: '系統管理員'
+  }, {
+    stage: '工程發包作業',
+    date: oneMonthAgoDate,
+    assignee: '王小明'
+  }, {
+    stage: '現勘',
+    date: oneMonthAgoDate,
+    assignee: '王小明'
+  }, {
+    stage: '設備訂貨作業',
+    date: yesterdayDate,
+    assignee: '王小明'
+  }, {
+    stage: '廠商驗收作業',
+    date: twoDaysAgoDate,
+    assignee: '王小明'
+  }, {
+    stage: '客戶驗收',
+    date: twoDaysAgoDate,
+    assignee: '王小明'
+  }, {
+    stage: '發票請款作業',
+    date: twoDaysAgoDate,
+    assignee: '王小明'
+  }],
+  comments: [],
+  details: {
+    storeAddress: '台北市中山區中山北路X號',
+    serviceLevel: '維修(無簽約客戶)',
+    contactPerson: '李先生',
+    suggestedContractor: '內部工程組',
+    entryDate: oneMonthAgoDate,
+    remarks: '設備拆除回收',
+    equipment: []
+  }
+}, {
+  id: 'P20260701008',
+  projectNumber: `${todayDate.replace(/-/g, '')}008`,
+  creationDate: yesterdayDate,
+  customerName: '星巴克',
+  storeName: '中山店',
+  workCategory: '整裝',
+  currentStage: '發票請款作業',
+  stageDate: todayDate,
+  stageAssignee: '王小明',
+  planDate: '',
+  planTimeStart: '',
+  planTimeEnd: '',
+  isClosed: true,
+  closeDate: todayDate,
+  history: [{
+    stage: '立案時間',
+    date: yesterdayDate,
+    assignee: '系統管理員'
+  }, {
+    stage: '工程發包作業',
+    date: yesterdayDate,
+    assignee: '王小明'
+  }, {
+    stage: '現勘',
+    date: yesterdayDate,
+    assignee: '王小明'
+  }, {
+    stage: '設備訂貨作業',
+    date: todayDate,
+    assignee: '王小明'
+  }, {
+    stage: '廠商驗收作業',
+    date: todayDate,
+    assignee: '王小明'
+  }, {
+    stage: '客戶驗收',
+    date: todayDate,
+    assignee: '王小明'
+  }, {
+    stage: '發票請款作業',
+    date: todayDate,
+    assignee: '王小明'
+  }],
+  comments: [],
+  details: {
+    storeAddress: '台北市中山區中山北路X號',
+    serviceLevel: '保修(一年兩次)',
+    contactPerson: '陳副理',
+    suggestedContractor: '機電維護商',
+    entryDate: yesterdayDate,
+    remarks: '吧台區空調整裝',
+    equipment: []
+  }
 }];
 
 // --- 初始人員動向 ---
@@ -1141,9 +1421,10 @@ function syncRecordStoreFields(record, stores) {
     return s.customerName === record.customerName && s.storeName === record.storeName;
   });
   if (!store) return;
-  record.district = store.district;
+  record.companyCity = store.companyCity;
+  record.companyDistrict = store.companyDistrict;
   record.serviceLevel = store.serviceLevel;
-  record.storeAddress = store.companyAddress;
+  record.storeAddress = StoreUtils.buildFullAddress(store);
 }
 
 function syncProjectStoreFields(project, stores) {
@@ -1153,13 +1434,20 @@ function syncProjectStoreFields(project, stores) {
     return s.customerName === project.customerName && s.storeName === project.storeName;
   });
   if (!store) return;
-  project.details.storeAddress = store.companyAddress;
+  project.details.storeAddress = StoreUtils.buildFullAddress(store);
   project.details.serviceLevel = store.serviceLevel;
 }
 
 INITIAL_CASES.forEach(function (c) { syncRecordStoreFields(c, INITIAL_STORES); });
-INITIAL_MAINTENANCE_CASES.forEach(function (c) { syncRecordStoreFields(c, INITIAL_STORES); });
-INITIAL_PROJECT_CASES.forEach(function (c) { syncProjectStoreFields(c, INITIAL_STORES); });
+INITIAL_MAINTENANCE_CASES.forEach(function (c) {
+  syncRecordStoreFields(c, INITIAL_STORES);
+  if (c.completionDate) c.completionDate = IESS.caseDateTime.format(c.completionDate);
+  if (c.closeDate) c.closeDate = IESS.caseDateTime.format(c.closeDate);
+});
+INITIAL_PROJECT_CASES.forEach(function (c) {
+  syncProjectStoreFields(c, INITIAL_STORES);
+  if (c.closeDate) c.closeDate = IESS.caseDateTime.format(c.closeDate);
+});
 INITIAL_PERSONNEL_STATUS.forEach(function (c) { syncRecordStoreFields(c, INITIAL_STORES); });
 INITIAL_SURVEY_CASES.forEach(function (c) { syncRecordStoreFields(c, INITIAL_STORES); });
 
@@ -1182,13 +1470,6 @@ function _buildLimitedPermissions() {
   perms['保養計劃進度'] = { view: true, edit: false, close: false };
   return perms;
 }
-
-const INITIAL_DISTRICTS = [
-  { id: 'DIST1', name: '北區', createdDate: todayDate },
-  { id: 'DIST2', name: '中區', createdDate: todayDate },
-  { id: 'DIST3', name: '南區', createdDate: todayDate },
-  { id: 'DIST4', name: '東區', createdDate: todayDate }
-];
 
 const INITIAL_DEVICE_CATEGORIES = [{
   id: 'DCAT1',
@@ -1243,15 +1524,15 @@ const INITIAL_DEVICE_CATEGORIES = [{
 }];
 
 const INITIAL_ASSIGNEES = [
-  { id: 'ASG1', name: 'A組', districts: ['北區', '東區'], memberIds: ['ACC2'], createdDate: todayDate },
-  { id: 'ASG2', name: 'B組', districts: ['中區'], memberIds: ['ACC3'], createdDate: todayDate },
-  { id: 'ASG3', name: 'C組', districts: ['南區'], memberIds: [], createdDate: todayDate },
-  { id: 'ASG4', name: 'D組', districts: ['東區'], memberIds: [], createdDate: todayDate },
-  { id: 'ASG5', name: '晉詮人員', districts: ['北區', '中區', '南區', '東區'], memberIds: [], createdDate: todayDate },
-  { id: 'ASG6', name: '協力廠商', districts: ['北區', '南區'], memberIds: [], createdDate: todayDate },
-  { id: 'ASG7', name: '案件待辦', districts: ['北區', '中區', '南區', '東區'], memberIds: [], createdDate: todayDate },
-  { id: 'ASG8', name: '管理員', districts: ['北區', '中區', '南區', '東區'], memberIds: ['ACC1'], createdDate: todayDate },
-  { id: 'ASG9', name: '督導', districts: ['北區', '中區'], memberIds: [], createdDate: todayDate }
+  { id: 'ASG1', name: 'A組', districts: ['台北市信義區', '台北市中山區'], memberIds: ['ACC2'], createdDate: todayDate },
+  { id: 'ASG2', name: 'B組', districts: ['台中市中區', '台中市西屯區'], memberIds: ['ACC3'], createdDate: todayDate },
+  { id: 'ASG3', name: 'C組', districts: ['高雄市左營區'], memberIds: [], createdDate: todayDate },
+  { id: 'ASG4', name: 'D組', districts: ['台北市信義區'], memberIds: [], createdDate: todayDate },
+  { id: 'ASG5', name: '晉詮人員', districts: ['台北市信義區', '台北市中山區', '台中市中區', '台中市西屯區', '高雄市左營區'], memberIds: [], createdDate: todayDate },
+  { id: 'ASG6', name: '協力廠商', districts: ['台北市信義區', '台北市中山區', '高雄市左營區'], memberIds: [], createdDate: todayDate },
+  { id: 'ASG7', name: '案件待辦', districts: ['台北市信義區', '台北市中山區', '台中市中區', '台中市西屯區', '高雄市左營區'], memberIds: [], createdDate: todayDate },
+  { id: 'ASG8', name: '管理員', districts: ['台北市信義區', '台北市中山區', '台中市中區', '台中市西屯區', '高雄市左營區'], memberIds: ['ACC1'], createdDate: todayDate },
+  { id: 'ASG9', name: '督導', districts: ['台北市信義區', '台北市中山區', '台中市中區', '台中市西屯區'], memberIds: [], createdDate: todayDate }
 ];
 
 const INITIAL_ACCOUNTS = [{

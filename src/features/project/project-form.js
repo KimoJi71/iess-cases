@@ -1,7 +1,7 @@
 /*
  * features/project/project-form.js — 工程立案：新增立案單 / 編輯工程案件
  * AddProjectForm  props: { cases, setCases, stores, deviceCategories, setView, showToast }
- * EditProjectForm props: { editingCase, cases, setCases, stores, accounts, deviceCategories, setView, showToast }
+ * EditProjectForm props: { editingCase, cases, setCases, stores, accounts, deviceCategories, setView, showToast, backView, mode }
  */
 (function () {
   'use strict';
@@ -272,7 +272,7 @@
         h('div', { className: 'text-xs' }, '裝：', eq.installDate || '-')),
       h('td', { className: 'p-3' }, eq.assetNumber || '-'),
       h('td', { className: 'p-3' }, eq.serialNumber || '-'),
-      h('td', { className: 'p-3 text-center' },
+      (p.onEdit || p.onDelete) ? h('td', { className: 'p-3 text-center' },
         h('div', { className: 'flex items-center justify-center gap-1' },
           p.onEdit && h('button', {
             type: 'button',
@@ -280,12 +280,12 @@
             className: 'p-1.5 text-blue-600 hover:bg-blue-100 rounded transition-colors',
             title: '編輯設備'
           }, Icons.Edit({ className: 'h-4 w-4' })),
-          iconActionBtn({ label: '移除此設備', type: 'button',
+          p.onDelete && iconActionBtn({ label: '移除此設備', type: 'button',
             onClick: function () { p.onDelete(eq.id); },
-            className: 'p-1.5 text-red-500 hover:bg-red-100 rounded transition-colors', icon: Icons.Trash2({ className: 'h-4 w-4' }) }))));
+            className: 'p-1.5 text-red-500 hover:bg-red-100 rounded transition-colors', icon: Icons.Trash2({ className: 'h-4 w-4' }) }))) : null);
   }
 
-  function equipmentTableHeaders(includeEdit) {
+  function equipmentTableHeaders(includeActions) {
     return h('tr', null,
       h('th', { className: 'p-3 font-semibold' }, '設備分類'),
       h('th', { className: 'p-3 font-semibold' }, '品牌'),
@@ -295,7 +295,7 @@
       h('th', { className: 'p-3 font-semibold' }, '出廠 / 安裝日期'),
       h('th', { className: 'p-3 font-semibold' }, '資產編號'),
       h('th', { className: 'p-3 font-semibold' }, '流水序號'),
-      h('th', { className: 'p-3 font-semibold text-center w-24' }, '操作'));
+      includeActions ? h('th', { className: 'p-3 font-semibold text-center w-24' }, '操作') : null);
   }
 
   function AddProjectForm(props) {
@@ -549,7 +549,7 @@
         className: 'w-full text-left text-sm text-gray-600 whitespace-nowrap'
       }, h('thead', {
         className: 'bg-gray-50 text-gray-700 border-b'
-      }, equipmentTableHeaders()), h('tbody', {
+      }, equipmentTableHeaders(true)), h('tbody', {
         className: 'divide-y divide-gray-100'
       }, equipmentList.length === 0 ? h('tr', null, h('td', {
         colspan: '9',
@@ -621,6 +621,9 @@
     var deviceCategories = props.deviceCategories || [];
     var setView = props.setView;
     var showToast = props.showToast;
+    var backView = props.backView === undefined ? 'project-list' : props.backView;
+    var isEdit = props.mode !== 'view';
+    var viewFieldCls = 'w-full p-2.5 bg-gray-50 border rounded-md text-gray-700 cursor-not-allowed';
 
     var formData = JSON.parse(JSON.stringify(editingCase));
     if (!formData.details) formData.details = {};
@@ -648,6 +651,7 @@
     });
     var stagesData = initialStages;
     var inputCls = 'w-full p-2.5 border rounded-md outline-none focus:ring-2 focus:ring-blue-500';
+    var fieldCls = isEdit ? inputCls : viewFieldCls;
 
     return stateful(function (rerender) {
       var storeOptions = ScheduleUtils.getStoreNamesForCustomer(stores, formData.customerName);
@@ -767,21 +771,21 @@
         }
         setCases(cases.map(function (c) { return c.id === updatedCase.id ? updatedCase : c; }));
         showToast('工程案件已成功更新');
-        setView('project-list');
+        setView(backView);
       }
 
       return h('div', {
         className: 'max-w-5xl mx-auto bg-white rounded-lg shadow-sm border border-gray-100 relative'
       }, PageHeader({
-        title: '編輯工程案件',
+        title: isEdit ? '編輯工程案件' : '查看工程案件',
         badge: formData.projectNumber,
-        onClose: function () { setView('project-list'); },
+        onClose: function () { setView(backView); },
         wrapperClass: 'flex justify-between items-center p-6 border-b border-gray-200 sticky top-0 z-10 bg-white rounded-t-lg'
       }), h('div', {
         className: 'p-6 space-y-8 bg-gray-50'
       }, h('form', {
         id: 'editProjectForm',
-        onSubmit: handleSubmit,
+        onSubmit: isEdit ? handleSubmit : function (e) { e.preventDefault(); },
         className: 'space-y-8'
       }, h('section', {
         className: 'bg-white p-6 rounded-lg shadow-sm border border-gray-100'
@@ -795,7 +799,8 @@
         name: 'workCategory',
         value: formData.workCategory,
         onChange: handleChange,
-        className: inputCls
+        disabled: !isEdit,
+        className: fieldCls
       }, PROJECT_WORK_CATEGORIES.map(function (opt) {
         return h('option', { key: opt, value: opt }, opt);
       }))), h('div', null, h('label', {
@@ -803,11 +808,12 @@
       }, '客戶名稱 ', h('span', {
         className: 'text-red-500'
       }, '*')), h('select', {
-        required: true,
+        required: isEdit,
         name: 'customerName',
         value: formData.customerName,
         onChange: handleChange,
-        className: inputCls
+        disabled: !isEdit,
+        className: fieldCls
       }, h('option', {
         value: '',
         disabled: true
@@ -818,11 +824,12 @@
       }, '門市名稱 ', h('span', {
         className: 'text-red-500'
       }, '*')), h('select', {
-        required: true,
+        required: isEdit,
         name: 'storeName',
         value: formData.storeName,
         onChange: handleChange,
-        className: inputCls
+        disabled: !isEdit,
+        className: fieldCls
       }, h('option', {
         value: '',
         disabled: true
@@ -850,7 +857,8 @@
         name: 'details.contactPerson',
         value: detailsData.contactPerson || '',
         onChange: handleChange,
-        className: inputCls
+        disabled: !isEdit,
+        className: fieldCls
       }, h('option', {
         value: ''
       }, '請選擇'), contactPersonOptions.map(function (opt) {
@@ -863,12 +871,13 @@
         name: 'details.suggestedContractor',
         value: detailsData.suggestedContractor || '',
         onChange: handleChange,
-        className: inputCls
+        disabled: !isEdit,
+        className: fieldCls
       }, h('option', {
         value: ''
       }, '請選擇單位'), contractors.map(function (c) {
         return h('option', { key: c, value: c }, c);
-      })), iconActionBtn({ label: '新增單位選項', type: 'button',
+      })), isEdit && iconActionBtn({ label: '新增單位選項', type: 'button',
         onClick: function () { showAddContractor = true; rerender(); },
         className: 'px-3 border border-gray-300 rounded-md bg-gray-50 text-gray-600 hover:bg-gray-100 transition-colors', icon: Icons.Plus({
         className: 'h-5 w-5'
@@ -879,7 +888,8 @@
         name: 'details.entryDate',
         value: detailsData.entryDate || '',
         onChange: handleChange,
-        className: inputCls
+        disabled: !isEdit,
+        className: fieldCls
       })), h('div', null, h('label', {
         className: 'block text-sm font-medium text-gray-500 mb-1'
       }, '立案日期'), h('input', {
@@ -896,15 +906,16 @@
         value: detailsData.remarks || '',
         onChange: handleChange,
         rows: '3',
-        placeholder: '請輸入其他補充事項...',
-        className: inputCls + ' resize-none'
+        readOnly: !isEdit,
+        placeholder: isEdit ? '請輸入其他補充事項...' : '',
+        className: fieldCls + ' resize-none'
       })))), h('section', {
         className: 'bg-white p-6 rounded-lg shadow-sm border border-gray-100'
       }, h('div', {
         className: 'flex justify-between items-center border-b pb-2 mb-4'
       }, h('h3', {
         className: 'text-lg font-bold text-blue-800'
-      }, '2. 設備資料'), h('button', {
+      }, '2. 設備資料'), isEdit && h('button', {
         type: 'button',
         onClick: function () { openEquipModal(null); },
         className: 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100 px-4 py-2 rounded-md flex items-center gap-2 font-medium transition-colors border border-indigo-200'
@@ -916,16 +927,16 @@
         className: 'w-full text-left text-sm text-gray-600 whitespace-nowrap'
       }, h('thead', {
         className: 'bg-gray-50 text-gray-700 border-b'
-      }, equipmentTableHeaders()), h('tbody', {
+      }, equipmentTableHeaders(isEdit)), h('tbody', {
         className: 'divide-y divide-gray-100'
       }, equipmentList.length === 0 ? h('tr', null, h('td', {
-        colspan: '9',
+        colspan: isEdit ? '9' : '8',
         className: 'text-center p-8 text-gray-400 bg-gray-50/50'
       }, '尚未加入任何設備資料')) : equipmentList.map(function (eq) {
-        return renderEquipmentTableRow(eq, {
+        return renderEquipmentTableRow(eq, isEdit ? {
           onEdit: openEquipModal,
           onDelete: handleDeleteEquipment
-        });
+        } : {});
       }))))), h('section', {
         className: 'bg-white p-6 rounded-lg shadow-sm border border-indigo-100 ring-1 ring-indigo-50'
       }, h('h3', {
@@ -950,35 +961,45 @@
           type: 'date',
           value: stagesData[stage].date,
           onChange: function (e) { handleStageChange(stage, 'date', e.target.value); },
-          className: 'w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500'
+          disabled: !isEdit,
+          className: isEdit
+            ? 'w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500'
+            : viewFieldCls
         })), h('div', null, h('label', {
           className: 'block text-xs text-gray-500 mb-1'
         }, '開始時間'), h(TimeInput24, {
           value: stagesData[stage].timeStart,
           onChange: function (e) { handleStageChange(stage, 'timeStart', e.target.value); },
+          readOnly: !isEdit,
+          disabled: !isEdit,
           className: 'w-full'
         })), h('div', null, h('label', {
           className: 'block text-xs text-gray-500 mb-1'
         }, '結束時間'), h(TimeInput24, {
           value: stagesData[stage].timeEnd,
           onChange: function (e) { handleStageChange(stage, 'timeEnd', e.target.value); },
+          readOnly: !isEdit,
+          disabled: !isEdit,
           className: 'w-full'
         })), h('div', null, h('label', {
           className: 'block text-xs text-gray-500 mb-1'
         }, '負責人員'), h('select', {
           value: stagesData[stage].assignee,
           onChange: function (e) { handleStageChange(stage, 'assignee', e.target.value); },
-          className: 'w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500'
+          disabled: !isEdit,
+          className: isEdit
+            ? 'w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500'
+            : viewFieldCls
         }, h('option', {
           value: ''
         }, '尚未指派'), stagePersonOptions.map(function (opt) {
           return h('option', { key: opt, value: opt }, opt);
         })))));
-      })))), h('div', {
+      })))), isEdit && h('div', {
         className: 'mt-8 pt-6 border-t flex justify-end gap-4'
       }, h('button', {
         type: 'button',
-        onClick: function () { setView('project-list'); },
+        onClick: function () { setView(backView); },
         className: 'px-6 py-2.5 border rounded-md text-gray-600 hover:bg-gray-50 font-medium transition-colors'
       }, '取消'), h('button', {
         type: 'submit',
@@ -986,7 +1007,7 @@
         className: 'px-8 py-2.5 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 flex items-center gap-2 font-bold shadow-sm transition-colors'
       }, Icons.Save({
         className: 'h-5 w-5'
-      }), ' 儲存更新'))), equipModal.show && h(ProjectEquipModal, {
+      }), ' 儲存更新'))), isEdit && equipModal.show && h(ProjectEquipModal, {
         initialEquip: equipModal.initialEquip,
         editingId: equipModal.editingId,
         deviceCategories: deviceCategories,
@@ -996,7 +1017,7 @@
           rerender();
         },
         onSave: handleEquipSaved
-      }), showAddContractor && h('div', {
+      }), isEdit && showAddContractor && h('div', {
         className: 'fixed inset-0 bg-black/40 flex items-center justify-center z-[70]'
       }, h('div', {
         className: 'bg-white rounded-lg shadow-xl p-6 w-80 max-w-full m-4'

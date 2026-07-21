@@ -74,7 +74,10 @@
 
       function handleCloseProject(id) {
         setCases(cases.map(function (c) {
-          return c.id === id ? Object.assign({}, c, { isClosed: true }) : c;
+          return c.id === id ? Object.assign({}, c, {
+            isClosed: true,
+            closeDate: IESS.caseDateTime.now()
+          }) : c;
         }));
         closeConfirmModal = { show: false, id: null };
         showToast('工程案件已結案並移至銷案審核列表');

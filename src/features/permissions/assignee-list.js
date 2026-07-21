@@ -78,7 +78,7 @@
                 value: keyword,
                 onChange: function (e) { keyword = e.target.value; rerender(); },
                 onKeyDown: handleKeyDown,
-                placeholder: '名稱 / 行政區域 / 成員',
+                placeholder: '名稱 / 公司區域 / 成員',
                 className: 'w-72 p-2.5 border rounded-md outline-none focus:border-blue-500'
               })
             ),
@@ -101,7 +101,7 @@
               h('tr', null,
                 h('th', { className: 'p-3 font-semibold text-center w-36' }, '操作'),
                 h('th', { className: 'p-3 font-semibold' }, '指派人員名稱'),
-                h('th', { className: 'p-3 font-semibold' }, '負責行政區域'),
+                h('th', { className: 'p-3 font-semibold' }, '負責公司區域'),
                 h('th', { className: 'p-3 font-semibold' }, '成員名單')
               )
             ),
