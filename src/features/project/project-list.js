@@ -108,7 +108,7 @@
         value: filterContactPerson,
         onChange: function (e) { filterContactPerson = e.target.value; rerender(); },
         className: 'w-full p-2 border rounded-md outline-none bg-white'
-      }, h('option', { value: '全部' }, '全部'), ASSIGNEES.map(function (opt) {
+      }, h('option', { value: '全部' }, '全部'), PROJECT_ASSIGNEES.map(function (opt) {
         return h('option', { key: opt, value: opt }, opt);
       }))), h('div', { className: 'min-w-0 flex items-end' }, h('button', {
         type: 'button',

@@ -48,7 +48,7 @@
             var matchEnd = cursorPos;
             var options = [];
             if (type === '@') {
-              options = PROJECT_ASSIGNEES.filter(function (a) { return a !== '尚未指派' && a.toLowerCase().includes(search.toLowerCase()); });
+              options = PROJECT_ASSIGNEES.filter(function (a) { return a.toLowerCase().includes(search.toLowerCase()); });
             } else if (type === '#') {
               options = DYNAMIC_PROJECT_TAGS.filter(function (t) { return t.toLowerCase().includes(search.toLowerCase()); });
               // 若搜尋的標籤不存在，允許新增

@@ -58,6 +58,35 @@
     return enabled ? '啟用' : '停用';
   }
 
+  function syncProjectPersonOptions(accounts) {
+    PROJECT_ASSIGNEES.length = 0;
+    accounts
+      .filter(function (a) { return a.enabled; })
+      .map(function (a) { return a.name; })
+      .sort(function (a, b) { return a.localeCompare(b, 'zh-Hant'); })
+      .forEach(function (n) { PROJECT_ASSIGNEES.push(n); });
+  }
+
+  function getProjectPersonOptions(accounts, extraNames) {
+    var seen = {};
+    var list = [];
+    accounts
+      .filter(function (a) { return a.enabled; })
+      .forEach(function (a) {
+        if (!seen[a.name]) {
+          seen[a.name] = true;
+          list.push(a.name);
+        }
+      });
+    (extraNames || []).forEach(function (name) {
+      if (name && !seen[name]) {
+        seen[name] = true;
+        list.push(name);
+      }
+    });
+    return list.sort(function (a, b) { return a.localeCompare(b, 'zh-Hant'); });
+  }
+
   window.AccountUtils = {
     hashPassword: hashPassword,
     createEmptyPermissions: createEmptyPermissions,
@@ -65,6 +94,8 @@
     isAllSelected: isAllSelected,
     setAllPermissions: setAllPermissions,
     formatDistricts: formatDistricts,
-    formatEnabled: formatEnabled
+    formatEnabled: formatEnabled,
+    syncProjectPersonOptions: syncProjectPersonOptions,
+    getProjectPersonOptions: getProjectPersonOptions
   };
 })();

@@ -102,9 +102,9 @@
           workCategory: formData.workCategory,
           currentStage: '立案時間',
           stageDate: todayDate,
-          stageAssignee: '管理員',
+          stageAssignee: formData.contactPerson || '',
           isClosed: false,
-          history: [{ stage: '立案時間', date: todayDate, assignee: '管理員' }],
+          history: [{ stage: '立案時間', date: todayDate, assignee: formData.contactPerson || '' }],
           comments: [],
           details: {
             workCategory: formData.workCategory,
@@ -168,7 +168,7 @@
                     name: 'contactPerson', value: formData.contactPerson, onChange: handleChange, className: inputCls
                   },
                     h('option', { value: '' }, '請選擇'),
-                    ASSIGNEES.map(function (opt) { return h('option', { key: opt, value: opt }, opt); })
+                    PROJECT_ASSIGNEES.map(function (opt) { return h('option', { key: opt, value: opt }, opt); })
                   )
                 ),
                 h('div', null,

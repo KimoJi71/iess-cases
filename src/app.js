@@ -123,7 +123,13 @@
   var setEquipmentCustomer = makeSetter('equipmentCustomer');
   var setEquipmentStore = makeSetter('equipmentStore');
   var setPersonnelStatus = makeSetter('personnelStatus');
-  var setAccounts = makeSetter('accounts');
+  function setAccounts(v) {
+    store.set(function (s) {
+      var next = typeof v === 'function' ? v(s.accounts) : v;
+      AccountUtils.syncProjectPersonOptions(next);
+      return { accounts: next };
+    });
+  }
 
   function setDistricts(v) {
     store.set(function (s) {
@@ -305,7 +311,7 @@
       case 'project-edit':
         return h(EditProjectForm, {
           editingCase: s.editingCase, cases: s.projectCases, setCases: setProjectCases,
-          stores: s.stores, setView: setView, showToast: showToast
+          stores: s.stores, accounts: s.accounts, setView: setView, showToast: showToast
         });
       case 'survey-list':
         return h(SurveyList, {
@@ -650,6 +656,7 @@
 
   DistrictUtils.syncDistrictOptions(INITIAL_DISTRICTS);
   AssigneeUtils.syncAssigneeOptions(INITIAL_ASSIGNEES);
+  AccountUtils.syncProjectPersonOptions(INITIAL_ACCOUNTS);
 
   var root = document.getElementById('root');
   function draw() {

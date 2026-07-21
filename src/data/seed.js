@@ -968,7 +968,7 @@ const INITIAL_PROJECT_CASES = [{
   workCategory: '新開',
   currentStage: '現勘',
   stageDate: todayDate,
-  stageAssignee: '工程A組',
+  stageAssignee: '王小明',
   planDate: '',
   planTimeStart: '',
   planTimeEnd: '',
@@ -976,33 +976,33 @@ const INITIAL_PROJECT_CASES = [{
   history: [{
     stage: '立案時間',
     date: todayDate,
-    assignee: '管理員'
+    assignee: '系統管理員'
   }, {
     stage: '工程發包作業',
     date: todayDate,
-    assignee: '採購部'
+    assignee: '王小明'
   }, {
     stage: '現勘',
     date: todayDate,
-    assignee: '工程A組'
+    assignee: '王小明'
   }],
   comments: [{
     id: 1,
-    author: '管理員',
+    author: '系統管理員',
     timestamp: `${todayDate} 09:00`,
-    content: '工程已立案，請採購部協助後續。',
+    content: '工程已立案，請王小明協助後續。',
     attachment: null
   }, {
     id: 2,
-    author: '採購部',
+    author: '王小明',
     timestamp: `${todayDate} 10:30`,
-    content: '@工程A組 已安排發包，請確認 #現勘 時間。',
+    content: '@王小明 已安排發包，請確認 #現勘 時間。',
     attachment: '發包明細.pdf'
   }],
   details: {
     storeAddress: '台北市中山區中山北路X號',
     serviceLevel: '維修(無簽約客戶)',
-    contactPerson: 'A組',
+    contactPerson: '王小明',
     suggestedContractor: '內部工程組',
     entryDate: todayDate,
     remarks: '需避開營業尖峰時段',
@@ -1029,7 +1029,7 @@ const INITIAL_PROJECT_CASES = [{
   workCategory: '整裝',
   currentStage: '設備訂貨作業',
   stageDate: todayDate,
-  stageAssignee: '採購部',
+  stageAssignee: '王小明',
   planDate: '',
   planTimeStart: '',
   planTimeEnd: '',
@@ -1037,25 +1037,25 @@ const INITIAL_PROJECT_CASES = [{
   history: [{
     stage: '立案時間',
     date: yesterdayDate,
-    assignee: '管理員'
+    assignee: '系統管理員'
   }, {
     stage: '工程發包作業',
     date: yesterdayDate,
-    assignee: '採購部'
+    assignee: '王小明'
   }, {
     stage: '現勘',
     date: todayDate,
-    assignee: '工程B組'
+    assignee: '王小明'
   }, {
     stage: '設備訂貨作業',
     date: todayDate,
-    assignee: '採購部'
+    assignee: '王小明'
   }],
   comments: [],
   details: {
     storeAddress: '台中市中區建國路X號',
     serviceLevel: '保修(一年兩次)',
-    contactPerson: 'B組',
+    contactPerson: '王小明',
     suggestedContractor: '機電維護商',
     entryDate: yesterdayDate,
     remarks: '',
@@ -1070,12 +1070,12 @@ const INITIAL_PROJECT_CASES = [{
   workCategory: '汰換',
   currentStage: '現勘',
   stageDate: todayDate,
-  stageAssignee: '尚未指派',
+  stageAssignee: '',
   planDate: '',
   planTimeStart: '',
   planTimeEnd: '',
   isClosed: false,
-  history: [{ stage: '立案時間', date: todayDate, assignee: '管理員' }],
+  history: [{ stage: '立案時間', date: todayDate, assignee: '系統管理員' }],
   comments: [],
   details: {
     storeAddress: '高雄市左營區博愛路X號',

@@ -110,12 +110,12 @@
           workCategory: formData.workCategory,
           currentStage: '立案時間',
           stageDate: todayDate,
-          stageAssignee: '管理員',
+          stageAssignee: formData.contactPerson || '',
           isClosed: false,
           history: [{
             stage: '立案時間',
             date: todayDate,
-            assignee: '管理員'
+            assignee: formData.contactPerson || ''
           }],
           comments: [],
           details: Object.assign({}, formData, { equipment: equipmentList })
@@ -204,7 +204,7 @@
         className: 'w-full p-2.5 border rounded-md outline-none focus:ring-2 focus:ring-blue-500'
       }, h('option', {
         value: ''
-      }, '請選擇'), ASSIGNEES.map(function (opt) {
+      }, '請選擇'), PROJECT_ASSIGNEES.map(function (opt) {
         return h('option', { key: opt, value: opt }, opt);
       }))), h('div', null, h('label', {
         className: 'block text-sm font-medium text-gray-700 mb-1'
@@ -507,6 +507,7 @@
     var cases = props.cases;
     var setCases = props.setCases;
     var stores = props.stores;
+    var accounts = props.accounts || [];
     var setView = props.setView;
     var showToast = props.showToast;
 
@@ -538,6 +539,10 @@
 
     return stateful(function (rerender) {
       var storeOptions = ScheduleUtils.getStoreNamesForCustomer(stores, formData.customerName);
+      var contactPersonOptions = AccountUtils.getProjectPersonOptions(accounts, [detailsData.contactPerson]);
+      var stagePersonOptions = AccountUtils.getProjectPersonOptions(accounts, PROJECT_STAGES.map(function (stage) {
+        return stagesData[stage].assignee;
+      }).concat([detailsData.contactPerson]));
 
       function syncProjectStoreFields() {
         var synced = ScheduleUtils.applyStoreSnapshot({
@@ -746,7 +751,7 @@
         className: inputCls
       }, h('option', {
         value: ''
-      }, '請選擇'), ASSIGNEES.map(function (opt) {
+      }, '請選擇'), contactPersonOptions.map(function (opt) {
         return h('option', { key: opt, value: opt }, opt);
       }))), h('div', null, h('label', {
         className: 'block text-sm font-medium text-gray-700 mb-1'
@@ -925,7 +930,7 @@
           className: 'w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500'
         }, h('option', {
           value: ''
-        }, '尚未指派'), PROJECT_ASSIGNEES.map(function (opt) {
+        }, '尚未指派'), stagePersonOptions.map(function (opt) {
           return h('option', { key: opt, value: opt }, opt);
         })))));
       })))), h('div', {

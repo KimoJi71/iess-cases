@@ -45,7 +45,7 @@ const EQUIPMENT_CATEGORIES = ['室內機', '室外機', '全熱交換器', '風�
 const EQUIPMENT_BRANDS = ['大金', '日立', '國際', '三菱', '冰點', '其他'];
 const EQUIPMENT_TYPES = ['內', '外', '無'];
 const PROJECT_STAGES = ['立案時間', '工程發包作業', '現勘', '設備訂貨作業', '廠商驗收作業', '客戶驗收', '發票請款作業'];
-const PROJECT_ASSIGNEES = ['管理員', '採購部', '工程A組', '工程B組', '晉詮人員', '機電維護商', '尚未指派'];
+const PROJECT_ASSIGNEES = [];
 const PROJECT_TOPIC_TAGS = ['現勘', '設備', '材料', '施工', '驗收', '請款'];
 let DYNAMIC_PROJECT_TAGS = [...PROJECT_TOPIC_TAGS];
 
