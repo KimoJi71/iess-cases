@@ -1185,6 +1185,48 @@ const INITIAL_DISTRICTS = [
   { id: 'DIST4', name: '東區', createdDate: todayDate }
 ];
 
+const INITIAL_DEVICE_CATEGORIES = [{
+  id: 'DCAT1',
+  category: '分離式',
+  brand: '日立',
+  deviceName: '分離式冷氣',
+  specification: '3.5匹',
+  model: 'RAS-100',
+  refrigerant: 'R410A',
+  powerSource: '220V',
+  createdDate: todayDate
+}, {
+  id: 'DCAT2',
+  category: '分離式',
+  brand: '日立',
+  deviceName: '分離式冷氣',
+  specification: '2.0匹',
+  model: 'RAS-50',
+  refrigerant: 'R410A',
+  powerSource: '110V',
+  createdDate: todayDate
+}, {
+  id: 'DCAT3',
+  category: '分離式',
+  brand: '大金',
+  deviceName: '吊隱式冷氣',
+  specification: '4.0匹',
+  model: 'FXYP100',
+  refrigerant: 'R32',
+  powerSource: '220V',
+  createdDate: todayDate
+}, {
+  id: 'DCAT4',
+  category: '冰水',
+  brand: '三菱重工',
+  deviceName: '冰水主機',
+  specification: '5.0匹',
+  model: 'PA-063',
+  refrigerant: 'R134a',
+  powerSource: '380V',
+  createdDate: todayDate
+}];
+
 const INITIAL_ASSIGNEES = [
   { id: 'ASG1', name: 'A組', districts: ['北區', '東區'], memberIds: ['ACC2'], createdDate: todayDate },
   { id: 'ASG2', name: 'B組', districts: ['中區'], memberIds: ['ACC3'], createdDate: todayDate },

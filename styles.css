@@ -414,6 +414,30 @@ body {
   flex-shrink: 0;
 }
 
+@media (min-width: 768px) {
+  .app-sidebar-slot {
+    display: flex;
+    align-self: stretch;
+    min-height: 0;
+  }
+
+  .app-sidebar {
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .app-sidebar__header {
+    flex-shrink: 0;
+  }
+
+  .app-sidebar > nav {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+  }
+}
+
 @media (max-width: 767px) {
   .app-sidebar-slot {
     position: fixed;
@@ -435,8 +459,15 @@ body {
 
   .app-sidebar {
     height: 100%;
+    min-height: 0;
+    overflow: hidden;
     width: 100% !important;
     border-right: none;
+  }
+
+  .app-sidebar > nav {
+    min-height: 0;
+    overflow-y: auto;
   }
 
   .app-sidebar__header {

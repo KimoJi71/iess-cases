@@ -42,7 +42,8 @@
   var PERMISSIONS_SUBMENU_DEFAULT_VIEW = {
     '帳號管理': 'account-list',
     '行政區域管理': 'district-list',
-    '指派人員管理': 'assignee-list'
+    '指派人員管理': 'assignee-list',
+    '設備分類管理': 'device-category-list'
   };
 
   var WARROOM_SUBMENUS = Object.keys(WARROOM_SUBMENU_DEFAULT_VIEW);
@@ -91,6 +92,7 @@
     personnelStatus: INITIAL_PERSONNEL_STATUS,
     accounts: INITIAL_ACCOUNTS,
     districts: INITIAL_DISTRICTS,
+    deviceCategories: INITIAL_DEVICE_CATEGORIES,
     assignees: INITIAL_ASSIGNEES,
     editingCase: null,
     viewingCase: null,
@@ -136,6 +138,14 @@
       var next = typeof v === 'function' ? v(s.districts) : v;
       DistrictUtils.syncDistrictOptions(next);
       return { districts: next };
+    });
+  }
+
+  function setDeviceCategories(v) {
+    store.set(function (s) {
+      var next = typeof v === 'function' ? v(s.deviceCategories) : v;
+      DeviceCategoryUtils.syncDeviceCategoryOptions(next);
+      return { deviceCategories: next };
     });
   }
 
@@ -550,6 +560,30 @@
           setView: setView,
           showToast: showToast
         });
+      case 'device-category-list':
+        return h(DeviceCategoryList, {
+          deviceCategories: s.deviceCategories,
+          setDeviceCategories: setDeviceCategories,
+          equipments: s.equipments,
+          setEditingCase: setEditingCase,
+          setView: setView,
+          showToast: showToast
+        });
+      case 'device-category-add':
+        return h(DeviceCategoryForm, {
+          deviceCategories: s.deviceCategories,
+          setDeviceCategories: setDeviceCategories,
+          setView: setView,
+          showToast: showToast
+        });
+      case 'device-category-edit':
+        return h(DeviceCategoryForm, {
+          deviceCategories: s.deviceCategories,
+          setDeviceCategories: setDeviceCategories,
+          targetCase: s.editingCase,
+          setView: setView,
+          showToast: showToast
+        });
       default:
         return null;
     }
@@ -655,6 +689,7 @@
   }
 
   DistrictUtils.syncDistrictOptions(INITIAL_DISTRICTS);
+  DeviceCategoryUtils.syncDeviceCategoryOptions(INITIAL_DEVICE_CATEGORIES);
   AssigneeUtils.syncAssigneeOptions(INITIAL_ASSIGNEES);
   AccountUtils.syncProjectPersonOptions(INITIAL_ACCOUNTS);
 
