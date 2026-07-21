@@ -9,7 +9,6 @@
 
   var h = global.IESS.h;
   var stateful = global.IESS.stateful;
-  var deferRerenderWhileComposing = global.IESS.deferRerenderWhileComposing;
 
   function extractSelectOptions(children) {
     var options = [];
@@ -50,10 +49,13 @@
     var filterText = '';
     var hasTyped = false;
     var activeIndex = 0;
+    var isComposing = false;
     var rootEl = null;
+    var inputEl = null;
+    var menuEl = null;
     var blurTimer = null;
 
-    return stateful(function (rerender) {
+    return stateful(function () {
       var options = props.options || [];
       var value = props.value != null ? String(props.value) : '';
       var disabled = !!props.disabled;
@@ -62,28 +64,6 @@
       var name = props.name || '';
       var onChange = props.onChange;
       var required = props.required;
-
-      function doRerender() {
-        return rerender();
-      }
-
-      function refocusInput() {
-        setTimeout(function () {
-          if (!rootEl || !isOpen) return;
-          var input = rootEl.querySelector('.searchable-select__input');
-          if (input) input.focus();
-        }, 0);
-      }
-
-      function safeRerender() {
-        var shouldRefocus = isOpen;
-        function run() {
-          doRerender();
-          if (shouldRefocus) refocusInput();
-        }
-        if (deferRerenderWhileComposing(run)) return;
-        run();
-      }
 
       function clearBlurTimer() {
         if (blurTimer) {
@@ -119,12 +99,97 @@
         });
       }
 
+      function removeMenu() {
+        if (menuEl && menuEl.parentNode) menuEl.parentNode.removeChild(menuEl);
+        menuEl = null;
+      }
+
+      function syncMenu() {
+        if (!rootEl || !isOpen || disabled || readOnly) {
+          removeMenu();
+          return;
+        }
+
+        var list = filteredOptions();
+        if (activeIndex >= list.length) activeIndex = 0;
+
+        if (!menuEl) {
+          menuEl = document.createElement('ul');
+          menuEl.className = 'searchable-select__menu';
+          menuEl.setAttribute('role', 'listbox');
+          rootEl.appendChild(menuEl);
+        }
+
+        menuEl.innerHTML = '';
+
+        if (!list.length) {
+          var empty = document.createElement('li');
+          empty.className = 'searchable-select__empty';
+          empty.setAttribute('role', 'presentation');
+          empty.textContent = '找不到符合的選項';
+          menuEl.appendChild(empty);
+          return;
+        }
+
+        list.forEach(function (opt, idx) {
+          var item = document.createElement('li');
+          item.setAttribute('role', 'presentation');
+
+          var btn = document.createElement('button');
+          btn.type = 'button';
+          btn.setAttribute('role', 'option');
+          btn.textContent = opt.label;
+          btn.className = 'searchable-select__option';
+          if (idx === activeIndex) btn.className += ' searchable-select__option--active';
+          if (String(opt.value) === value) btn.className += ' searchable-select__option--selected';
+          if (opt.disabled) {
+            btn.className += ' searchable-select__option--disabled';
+            btn.disabled = true;
+          }
+          btn.setAttribute('aria-selected', String(opt.value) === value ? 'true' : 'false');
+
+          btn.addEventListener('mousedown', function (e) { e.preventDefault(); });
+          btn.addEventListener('mouseenter', function () {
+            activeIndex = idx;
+            syncMenu();
+          });
+          btn.addEventListener('click', function () {
+            chooseOption(opt);
+          });
+
+          item.appendChild(btn);
+          menuEl.appendChild(item);
+        });
+
+        var activeBtn = menuEl.querySelector('.searchable-select__option--active');
+        if (activeBtn) activeBtn.scrollIntoView({ block: 'nearest' });
+      }
+
+      function syncClosedInput() {
+        if (!inputEl || disabled) return;
+        inputEl.readOnly = readOnly || !isOpen;
+        if (!isOpen && !hasTyped) {
+          inputEl.value = getLabel(value);
+        }
+        inputEl.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+      }
+
       function openMenu() {
         if (disabled || readOnly) return;
         clearBlurTimer();
         isOpen = true;
         activeIndex = 0;
-        safeRerender();
+        if (inputEl) {
+          inputEl.readOnly = false;
+          if (!hasTyped) inputEl.value = getLabel(value);
+          setTimeout(function () {
+            if (inputEl) {
+              try { inputEl.select(); } catch (err) { /* ignore */ }
+            }
+          }, 0);
+        }
+        syncMenu();
+        syncClosedInput();
       }
 
       function closeMenu() {
@@ -133,7 +198,8 @@
         filterText = '';
         hasTyped = false;
         activeIndex = 0;
-        safeRerender();
+        removeMenu();
+        syncClosedInput();
       }
 
       function scheduleClose() {
@@ -141,7 +207,7 @@
         blurTimer = setTimeout(function () {
           if (rootEl && rootEl.contains(document.activeElement)) return;
           closeMenu();
-        }, 120);
+        }, 150);
       }
 
       function emitChange(nextValue) {
@@ -155,44 +221,53 @@
         closeMenu();
       }
 
-      function handleFocus(e) {
-        hasTyped = false;
-        filterText = '';
+      function applyFilterFromInput() {
+        if (!inputEl) return;
+        filterText = inputEl.value;
+        hasTyped = true;
+        activeIndex = 0;
+        syncMenu();
+      }
+
+      function handleFocus() {
         openMenu();
-        if (e && e.target && typeof e.target.select === 'function') {
-          setTimeout(function () {
-            try { e.target.select(); } catch (err) { /* ignore */ }
-          }, 0);
-        }
       }
 
       function handleBlur() {
         scheduleClose();
       }
 
-      function handleInput(e) {
-        hasTyped = true;
-        filterText = e.target.value;
-        isOpen = true;
-        activeIndex = 0;
-        safeRerender();
+      function handleInput() {
+        applyFilterFromInput();
+      }
+
+      function handleCompositionStart() {
+        isComposing = true;
+      }
+
+      function handleCompositionEnd() {
+        isComposing = false;
+        applyFilterFromInput();
       }
 
       function handleKeyDown(e) {
         if (disabled || readOnly) return;
+        if (e.isComposing || isComposing) return;
+
         var list = filteredOptions();
+
         if (e.key === 'ArrowDown') {
           e.preventDefault();
           if (!isOpen) openMenu();
           else if (list.length) activeIndex = (activeIndex + 1) % list.length;
-          safeRerender();
+          syncMenu();
           return;
         }
         if (e.key === 'ArrowUp') {
           e.preventDefault();
           if (!isOpen) openMenu();
           else if (list.length) activeIndex = (activeIndex - 1 + list.length) % list.length;
-          safeRerender();
+          syncMenu();
           return;
         }
         if (e.key === 'Enter') {
@@ -208,13 +283,6 @@
         }
       }
 
-      var visibleOptions = isOpen ? filteredOptions() : [];
-      if (activeIndex >= visibleOptions.length) activeIndex = 0;
-
-      var displayValue = isOpen
-        ? (hasTyped ? filterText : getLabel(value))
-        : getLabel(value);
-      var placeholder = getPlaceholder();
       var inputCls = 'searchable-select__input ' + className;
       if (disabled) inputCls += ' bg-gray-50 cursor-not-allowed';
       else if (readOnly) inputCls += ' bg-gray-50 cursor-default';
@@ -224,52 +292,31 @@
         ref: function (node) { rootEl = node; }
       },
         h('input', {
-          type: 'search',
+          type: 'text',
           role: 'combobox',
-          'aria-expanded': isOpen ? 'true' : 'false',
+          'aria-expanded': 'false',
           'aria-autocomplete': 'list',
           name: name,
-          value: displayValue,
-          placeholder: placeholder,
+          defaultValue: getLabel(value),
+          placeholder: getPlaceholder(),
           disabled: disabled,
-          readOnly: readOnly || (!isOpen && !disabled),
+          readOnly: disabled || readOnly || !isOpen,
           required: required,
           className: inputCls,
           autoComplete: 'off',
           autoCorrect: 'off',
           spellCheck: false,
+          ref: function (node) {
+            inputEl = node;
+            syncClosedInput();
+          },
           onFocus: handleFocus,
           onBlur: handleBlur,
           onInput: handleInput,
+          onCompositionStart: handleCompositionStart,
+          onCompositionEnd: handleCompositionEnd,
           onKeyDown: handleKeyDown
-        }),
-        isOpen && !disabled && !readOnly && h('ul', {
-          className: 'searchable-select__menu',
-          role: 'listbox'
-        },
-          visibleOptions.length
-            ? visibleOptions.map(function (opt, idx) {
-              var isActive = idx === activeIndex;
-              var isSelected = String(opt.value) === value;
-              var itemCls = 'searchable-select__option';
-              if (isActive) itemCls += ' searchable-select__option--active';
-              if (isSelected) itemCls += ' searchable-select__option--selected';
-              if (opt.disabled) itemCls += ' searchable-select__option--disabled';
-              return h('li', { key: opt.value + '-' + idx, role: 'presentation' },
-                h('button', {
-                  type: 'button',
-                  role: 'option',
-                  'aria-selected': isSelected ? 'true' : 'false',
-                  disabled: opt.disabled,
-                  className: itemCls,
-                  onMouseDown: function (e) { e.preventDefault(); },
-                  onMouseEnter: function () { activeIndex = idx; safeRerender(); },
-                  onClick: function () { chooseOption(opt); }
-                }, opt.label)
-              );
-            })
-            : h('li', { className: 'searchable-select__empty', role: 'presentation' }, '找不到符合的選項')
-        )
+        })
       );
     });
   }
