@@ -50,6 +50,18 @@
         }).catch(function () { /* onError 已提示 */ });
       }
 
+      function handleCopy(surveyCase) {
+        var copied = JSON.parse(JSON.stringify(surveyCase));
+        copied.id = 'S' + Date.now();
+        copied.fillDate = todayDate;
+        copied.fileName = copied.customerName && copied.storeName
+          ? copied.customerName + '_' + copied.storeName
+          : '';
+        copied._isCopy = true;
+        setEditingCase(copied);
+        setView('survey-edit');
+      }
+
       return h('div', {
         className: 'bg-white p-6 rounded-lg shadow-sm border border-gray-100'
       },
@@ -140,6 +152,12 @@
                       className: 'p-1.5 text-blue-600 hover:bg-blue-100 rounded',
                       title: '編輯'
                     }, Icons.Edit({ className: 'h-4 w-4' })),
+                    iconActionBtn({
+                      label: '複製現勘表',
+                      onClick: function () { handleCopy(c); },
+                      className: 'p-1.5 text-gray-600 hover:bg-gray-100 rounded',
+                      icon: Icons.Copy({ className: 'h-4 w-4' })
+                    }),
                     h('button', {
                       onClick: function () { handleExportPDF(c); },
                       className: 'p-1.5 text-emerald-600 hover:bg-emerald-100 rounded',

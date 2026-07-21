@@ -332,12 +332,13 @@
         });
       case 'survey-add':
         return h(SurveyForm, {
-          cases: s.surveyCases, setCases: setSurveyCases, setView: setView, showToast: showToast
+          cases: s.surveyCases, setCases: setSurveyCases, stores: s.stores,
+          setView: setView, showToast: showToast
         });
       case 'survey-edit':
         return h(SurveyForm, {
-          cases: s.surveyCases, setCases: setSurveyCases, targetCase: s.editingCase,
-          setView: setView, showToast: showToast
+          cases: s.surveyCases, setCases: setSurveyCases, stores: s.stores,
+          targetCase: s.editingCase, setView: setView, showToast: showToast
         });
       case 'customer-list':
         return h(CustomerList, {

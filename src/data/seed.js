@@ -1120,14 +1120,14 @@ const INITIAL_SURVEY_CASES = [{
   customerName: '全家便利商店',
   storeName: '中山店',
   surveyData: { projectType: '新開', locationArea: '百貨' },
-  fileName: `全家便利商店_中山店_現勘表_${todayDate.replace(/-/g, '')}`
+  fileName: '全家便利商店_中山店'
 }, {
   id: 'S20260709002',
   fillDate: yesterdayDate,
   customerName: '星巴克',
   storeName: '站前店',
   surveyData: { equipmentList: [{ category: '分離式冷氣', brand: '大金', name: '室外機', model: 'RXQ10', area: '後場' }] },
-  fileName: `星巴克_站前店_現勘表_${yesterdayDate.replace(/-/g, '')}`
+  fileName: '星巴克_站前店'
 }];
 
 function syncRecordStoreFields(record, stores) {

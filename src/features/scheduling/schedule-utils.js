@@ -143,6 +143,19 @@
       .map(function (s) { return s.storeName; });
   }
 
+  function getCustomerNamesFromStores(stores) {
+    if (!stores) return [];
+    var seen = {};
+    var names = [];
+    stores.forEach(function (s) {
+      if (s.customerName && !seen[s.customerName]) {
+        seen[s.customerName] = true;
+        names.push(s.customerName);
+      }
+    });
+    return names.sort();
+  }
+
   function resolveMaintenanceReferenceDate(maintenanceCase) {
     if (!maintenanceCase) return '';
     if (maintenanceCase.planDate) return maintenanceCase.planDate;
@@ -438,6 +451,7 @@
     resolveStore: resolveStore,
     applyStoreSnapshot: applyStoreSnapshot,
     getStoreNamesForCustomer: getStoreNamesForCustomer,
+    getCustomerNamesFromStores: getCustomerNamesFromStores,
     resolveMaintenanceReferenceDate: resolveMaintenanceReferenceDate,
     formatMaintenancePeriod: formatMaintenancePeriod,
     formatTimeRange: formatTimeRange,

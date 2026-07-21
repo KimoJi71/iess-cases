@@ -1,10 +1,23 @@
 /*
  * features/project/survey-form.js — 專案管理：現勘表（新增／編輯）
- * props: { cases, setCases, setView, showToast, targetCase }
+ * props: { cases, setCases, setView, showToast, targetCase, stores }
  */
 (function () {
   'use strict';
   var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful;
+
+  function buildDefaultSurveyFileName(customerName, storeName) {
+    if (!customerName || !storeName) return '';
+    return customerName + '_' + storeName;
+  }
+
+  function resolveUniqueSurveyFileName(name, cases, excludeId) {
+    var taken = cases.filter(function (c) { return c.id !== excludeId; }).map(function (c) { return c.fileName; });
+    if (taken.indexOf(name) === -1) return name;
+    var n = 1;
+    while (taken.indexOf(name + '(' + n + ')') !== -1) n++;
+    return name + '(' + n + ')';
+  }
 
   function SurveyForm(props) {
     var cases = props.cases;
@@ -12,8 +25,10 @@
     var setView = props.setView;
     var showToast = props.showToast;
     var targetCase = props.targetCase;
+    var stores = props.stores || [];
 
-    var isEdit = !!targetCase;
+    var isCopy = !!(targetCase && targetCase._isCopy);
+    var isEdit = !!targetCase && !isCopy && cases.some(function (c) { return c.id === targetCase.id; });
     var formData = targetCase
       ? Object.assign({}, targetCase)
       : {
@@ -21,8 +36,14 @@
           storeName: '',
           storeAddress: '',
           fillDate: todayDate,
+          fileName: '',
           surveyData: {} // 儲存各類型動態題目答案
         };
+    if (formData._isCopy) delete formData._isCopy;
+    if (!isEdit && formData.customerName && formData.storeName && !formData.fileName) {
+      formData.fileName = buildDefaultSurveyFileName(formData.customerName, formData.storeName);
+    }
+    var fileNameManuallyEdited = isEdit;
     // 室外機施工內容 - 可隱藏題目的顯示切換
     var showOutdoorHideable = true;
     // 沿用設備 - 可隱藏題目的顯示切換
@@ -30,20 +51,35 @@
     var activeSurveyTab = SURVEY_TYPES[0];
 
     return stateful(function (rerender) {
+      var customerOptions = ScheduleUtils.getCustomerNamesFromStores(stores);
+      var storeOptions = ScheduleUtils.getStoreNamesForCustomer(stores, formData.customerName);
+
+      function syncSurveyStoreFields() {
+        var synced = ScheduleUtils.applyStoreSnapshot(formData, stores);
+        formData.storeAddress = synced.storeAddress || '';
+        formData.district = synced.district || '';
+        formData.serviceLevel = synced.serviceLevel || formData.serviceLevel;
+      }
+
       // ===== 事件處理器（對應原 useState/setFormData） =====
       function handleChange(e) {
         var name = e.target.name;
         var value = e.target.value;
-        formData[name] = value;
-        if (name === 'storeName') {
-          var addressMap = {
-            '台北信義店': '台北市信義區松智路X號',
-            '台中旗艦店': '台中市西屯區台灣大道X號',
-            '高雄左營店': '高雄市左營區博愛路X號',
-            '站前店': '台中市中區建國路X號',
-            '中山店': '台北市中山區中山北路X號'
-          };
-          formData.storeAddress = addressMap[value] || '自動帶入地址';
+        if (name === 'fileName') {
+          fileNameManuallyEdited = true;
+          formData.fileName = value;
+        } else {
+          formData[name] = value;
+          if (name === 'customerName') {
+            formData.storeName = '';
+            formData.storeAddress = '';
+          }
+          if (name === 'storeName') {
+            syncSurveyStoreFields();
+          }
+          if (!isEdit && !fileNameManuallyEdited && (name === 'customerName' || name === 'storeName')) {
+            formData.fileName = buildDefaultSurveyFileName(formData.customerName, formData.storeName);
+          }
         }
         rerender();
       }
@@ -465,32 +501,35 @@
         }, renderPipingSingleSelect('特製風箱（單選）', 'customBox', DUCT_CUSTOM_BOX_OPTIONS)));
         const handleSubmit = e => {
           e.preventDefault();
+          if (formData.customerName && formData.storeName) {
+            syncSurveyStoreFields();
+          }
           if (!formData.customerName || !formData.storeName || !formData.storeAddress) {
             showToast('客戶名稱、門市名稱與門市地址皆為必填', 'error');
             return;
           }
-          const fileName = `${formData.customerName}_${formData.storeName}_現勘表_${formData.fillDate.replace(/-/g, '')}`;
+          var baseFileName = (formData.fileName || buildDefaultSurveyFileName(formData.customerName, formData.storeName)).trim();
+          if (!baseFileName) {
+            showToast('檔案名稱不可為空', 'error');
+            return;
+          }
+          var fileName = resolveUniqueSurveyFileName(baseFileName, cases, isEdit ? formData.id : null);
+          var payload = Object.assign({}, formData, { fileName: fileName });
           if (isEdit) {
-            setCases(cases.map(c => c.id === formData.id ? {
-              ...formData,
-              fileName
-            } : c));
+            setCases(cases.map(function (c) {
+              return c.id === formData.id ? payload : c;
+            }));
             showToast('現勘表更新成功');
           } else {
-            const newCase = {
-              id: `S${Date.now()}`,
-              ...formData,
-              fileName
-            };
-            setCases([newCase, ...cases]);
-            showToast('現勘表建立成功');
+            setCases([Object.assign({ id: 'S' + Date.now() }, payload)].concat(cases));
+            showToast(isCopy ? '現勘表複製成功' : '現勘表建立成功');
           }
           setView('survey-list');
         };
         return h("div", {
           className: "max-w-5xl mx-auto bg-white rounded-lg shadow-sm border border-gray-100 relative"
         }, PageHeader({
-          title: isEdit ? '編輯現勘表' : '新增現勘表',
+          title: isCopy ? '複製現勘表' : (isEdit ? '編輯現勘表' : '新增現勘表'),
           onClose: () => setView('survey-list'),
           wrapperClass: 'flex justify-between items-center p-6 border-b border-gray-200 sticky top-0 z-10 bg-white rounded-t-lg'
         }), h("form", {
@@ -513,10 +552,9 @@
         }, h("option", {
           value: "",
           disabled: true
-        }, "\u8ACB\u9078\u64C7"), CUSTOMER_OPTIONS.map(opt => h("option", {
-          key: opt,
-          value: opt
-        }, opt)))), h("div", null, h("label", {
+        }, "\u8ACB\u9078\u64C7"), customerOptions.map(function (opt) {
+          return h("option", { key: opt, value: opt }, opt);
+        }))), h("div", null, h("label", {
           className: "block text-sm font-medium text-gray-700 mb-1"
         }, "\u9580\u5E02\u540D\u7A31 ", h("span", {
           className: "text-red-500"
@@ -529,10 +567,9 @@
         }, h("option", {
           value: "",
           disabled: true
-        }, "\u8ACB\u9078\u64C7"), STORE_OPTIONS.map(opt => h("option", {
-          key: opt,
-          value: opt
-        }, opt)))), h("div", {
+        }, "\u8ACB\u9078\u64C7"), storeOptions.map(function (opt) {
+          return h("option", { key: opt, value: opt }, opt);
+        }))), h("div", {
           className: "col-span-full"
         }, h("label", {
           className: "block text-sm font-medium text-gray-700 mb-1"
@@ -544,7 +581,7 @@
           disabled: true,
           name: "storeAddress",
           value: formData.storeAddress,
-          placeholder: "\u9078\u64C7\u9580\u5E02\u5F8C\u81EA\u52D5\u5E36\u5165",
+          placeholder: "\u8ACB\u5148\u9078\u64C7\u5BA2\u6236\u8207\u9580\u5E02",
           className: "w-full p-2 bg-gray-50 border rounded-md text-gray-500 cursor-not-allowed outline-none"
         })), h("div", null, h("label", {
           className: "block text-sm font-medium text-gray-700 mb-1"
@@ -555,7 +592,23 @@
           onChange: handleChange,
           required: true,
           className: "w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
-        }))), h("div", {
+        })), h("div", {
+          className: "col-span-full"
+        }, h("label", {
+          className: "block text-sm font-medium text-gray-700 mb-1"
+        }, "\u6A94\u6848\u540D\u7A31 ", h("span", {
+          className: "text-red-500"
+        }, "*")), h("input", {
+          type: "text",
+          required: true,
+          name: "fileName",
+          value: formData.fileName || '',
+          onChange: handleChange,
+          placeholder: "\u9078\u64C7\u5BA2\u6236\u8207\u9580\u5E02\u5F8C\u81EA\u52D5\u5E36\u5165",
+          className: "w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+        }), h("p", {
+          className: "text-xs text-gray-400 mt-1"
+        }, "\u9810\u8A2D\u70BA\u5BA2\u6236\u540D\u7A31\u8207\u9580\u5E02\u540D\u7A31\uFF0C\u82E5\u91CD\u8907\u5247\u81EA\u52D5\u52A0\u4E0A (1)\u3001(2) \u2026 \u5340\u9694"))), h("div", {
           className: "mt-8"
         }, h("div", {
           className: "flex flex-wrap gap-1 border-b border-gray-200 mb-6 -mx-1"
