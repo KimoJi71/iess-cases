@@ -43,6 +43,7 @@
     var cases = props.cases;
     var setCases = props.setCases;
     var stores = props.stores;
+    var customers = props.customers;
     var setView = props.setView;
     var showToast = props.showToast;
 
@@ -66,6 +67,7 @@
     return stateful(function (rerender) {
       var isOther = isOtherWorkCategory(formData.workCategory);
       var storeOptions = ScheduleUtils.getStoreNamesForCustomer(stores, formData.customerName);
+      var customerOptions = CustomerUtils.getCustomerNameOptions(customers, formData.customerName);
 
       function handleChange(e) {
         var name = e.target.name;
@@ -138,7 +140,7 @@
       }, h("option", {
         value: "",
         disabled: true
-      }, "請選擇"), CUSTOMER_OPTIONS.map(function (opt) { return h("option", {
+      }, "請選擇"), customerOptions.map(function (opt) { return h("option", {
         key: opt,
         value: opt
       }, opt); }))), h("div", null, h("label", {
@@ -282,6 +284,7 @@
     var cases = props.cases;
     var setCases = props.setCases;
     var stores = props.stores;
+    var customers = props.customers;
     var setView = props.setView;
     var showToast = props.showToast;
 
@@ -303,6 +306,7 @@
       var cat2Options = Object.keys(PROCESS_METHOD_CATEGORIES[newRecord.category1] || {});
       var cat3Options = newRecord.category2 ? PROCESS_METHOD_CATEGORIES[newRecord.category1][newRecord.category2] || [] : [];
       var storeOptions = ScheduleUtils.getStoreNamesForCustomer(stores, formData.customerName);
+      var customerOptions = CustomerUtils.getCustomerNameOptions(customers, formData.customerName);
 
       function handleCat1Change(e) {
         var val = e.target.value;
@@ -406,7 +410,7 @@
       }, h("option", {
         value: "",
         disabled: true
-      }, "請選擇"), CUSTOMER_OPTIONS.map(function (opt) { return h("option", {
+      }, "請選擇"), customerOptions.map(function (opt) { return h("option", {
         key: opt,
         value: opt
       }, opt); }))), h("div", null, h("span", {

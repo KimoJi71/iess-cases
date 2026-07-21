@@ -26,6 +26,7 @@
     var showToast = props.showToast;
     var targetCase = props.targetCase;
     var stores = props.stores || [];
+    var customers = props.customers || [];
 
     var isCopy = !!(targetCase && targetCase._isCopy);
     var isEdit = !!targetCase && !isCopy && cases.some(function (c) { return c.id === targetCase.id; });
@@ -51,7 +52,7 @@
     var activeSurveyTab = SURVEY_TYPES[0];
 
     return stateful(function (rerender) {
-      var customerOptions = ScheduleUtils.getCustomerNamesFromStores(stores);
+      var customerOptions = ScheduleUtils.getCustomerNamesFromStores(stores, customers, formData.customerName);
       var storeOptions = ScheduleUtils.getStoreNamesForCustomer(stores, formData.customerName);
 
       function syncSurveyStoreFields() {

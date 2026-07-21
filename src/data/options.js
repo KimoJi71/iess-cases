@@ -36,6 +36,7 @@ const MAINTENANCE_STATUS_OPTIONS = ['未保養', '已預約', '已完成'];
 const DISTRICT_OPTIONS = ['北區', '中區', '南區', '東區'];
 const SERVICE_LEVEL_OPTIONS = ['保修(一年一次)', '保修(一年兩次)', '保養(一年一次)', '維修(無簽約客戶)'];
 const MAINTENANCE_INTERVAL_OPTIONS = ['每季', '每半年', '每年'];
+const CUSTOMER_ENABLED_FILTERS = ['全部', '啟用', '停用'];
 const STORE_STATUS_OPTIONS = ['正常營業', '整裝', '撤店'];
 const WORK_ORDER_APPLY_OPTIONS = ['是', '否'];
 

@@ -17,6 +17,7 @@ const INITIAL_CUSTOMERS = [{
   fax: '02-2712-3457',
   address: '台北市信義區松高路11號',
   remarks: '全台門市統一窗口。',
+  enabled: true,
   createdDate: todayDate,
   contacts: [{
     id: 101,
@@ -42,6 +43,7 @@ const INITIAL_CUSTOMERS = [{
   fax: '02-8780-1235',
   address: '台北市大安區復興南路一段39號',
   remarks: '',
+  enabled: true,
   createdDate: yesterdayDate,
   contacts: [{
     id: 201,
@@ -61,6 +63,7 @@ const INITIAL_CUSTOMERS = [{
   fax: '03-322-8889',
   address: '桃園市中壢區中央西路二段100號',
   remarks: '保養以桃竹苗門市優先排程。',
+  enabled: true,
   createdDate: twoDaysAgoDate,
   contacts: []
 }, {
@@ -74,6 +77,7 @@ const INITIAL_CUSTOMERS = [{
   fax: '',
   address: '台北市中山區中山北路X號',
   remarks: '無簽約客戶，以單次維修為主。',
+  enabled: false,
   createdDate: twoDaysAgoDate,
   contacts: []
 }, {
@@ -87,6 +91,7 @@ const INITIAL_CUSTOMERS = [{
   fax: '',
   address: '台中市中區建國路X號',
   remarks: '',
+  enabled: true,
   createdDate: twoDaysAgoDate,
   contacts: []
 }];

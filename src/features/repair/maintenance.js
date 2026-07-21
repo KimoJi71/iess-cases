@@ -40,6 +40,7 @@
     var setCases = props.setCases;
     var stores = props.stores;
     var setStores = props.setStores;
+    var customers = props.customers;
     var setViewingCase = props.setViewingCase;
     var setEditingCase = props.setEditingCase;
     var setView = props.setView;
@@ -61,6 +62,8 @@
     var dragProps = useDragScroll();
 
     return stateful(function (rerender) {
+      var customerFilterOptions = CustomerUtils.getCustomerNameOptions(customers);
+
       function handleSearch() {
         appliedFilters = {
           start: filterMonthStart,
@@ -132,7 +135,7 @@
         className: "w-full p-2 border rounded-md outline-none bg-white"
       }, h("option", {
         value: "全部"
-      }, "全部"), CUSTOMER_OPTIONS.map(function (opt) {
+      }, "全部"), customerFilterOptions.map(function (opt) {
         return h("option", { key: opt, value: opt }, opt);
       }))), h("div", { className: "min-w-0" }, h("label", {
         className: "block text-xs text-gray-500 mb-1"

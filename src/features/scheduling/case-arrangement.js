@@ -248,7 +248,7 @@
     return stateful(function (rerender) {
       rerenderRef = rerender;
       var pendingItems = getPendingList();
-      var customerNames = customers.map(function (c) { return c.name; });
+      var customerNames = CustomerUtils.getCustomerNameOptions(customers, pendingCustomer);
 
       function handleCalSearch() {
         appliedCal = { start: calStart, end: calEnd, assignee: calAssignee };

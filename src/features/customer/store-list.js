@@ -56,6 +56,7 @@
 
     return stateful(function (rerender) {
       var filteredStores = getFilteredStores();
+      var customerSelectOptions = CustomerUtils.getCustomerNameOptions(customers, storeCustomer);
 
       function handleSearch() { appliedKeyword = keyword; rerender(); }
       function handleKeyDown(e) { if (e.key === 'Enter') handleSearch(); }
@@ -81,7 +82,9 @@
                 className: 'w-56 p-2.5 border rounded-md outline-none focus:border-blue-500 bg-white'
               },
                 h('option', { value: '' }, '請選擇客戶'),
-                customers.map(function (c) { return h('option', { key: c.id, value: c.name }, c.name); })
+                customerSelectOptions.map(function (name) {
+                  return h('option', { key: name, value: name }, name);
+                })
               )
             ),
             h('div', null,

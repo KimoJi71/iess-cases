@@ -77,7 +77,7 @@
     stores.forEach(function (store) {
       if (!store.lastMaintenanceDate || store.storeStatus !== '正常營業') return;
       var cust = customerMap[store.customerName];
-      if (!cust || !cust.maintenanceInterval) return;
+      if (!cust || cust.enabled === false || !cust.maintenanceInterval) return;
       var months = INTERVAL_MONTHS[cust.maintenanceInterval];
       if (!months) return;
 
@@ -143,17 +143,27 @@
       .map(function (s) { return s.storeName; });
   }
 
-  function getCustomerNamesFromStores(stores) {
+  function getCustomerNamesFromStores(stores, customers, selectedName) {
     if (!stores) return [];
+    var enabledNames = null;
+    if (customers) {
+      enabledNames = {};
+      CustomerUtils.getEnabledCustomers(customers).forEach(function (c) {
+        if (c.name) enabledNames[c.name] = true;
+      });
+    }
     var seen = {};
     var names = [];
     stores.forEach(function (s) {
-      if (s.customerName && !seen[s.customerName]) {
-        seen[s.customerName] = true;
-        names.push(s.customerName);
-      }
+      if (!s.customerName || seen[s.customerName]) return;
+      if (enabledNames && !enabledNames[s.customerName] && s.customerName !== selectedName) return;
+      seen[s.customerName] = true;
+      names.push(s.customerName);
     });
-    return names.sort();
+    if (selectedName && !seen[selectedName]) {
+      names.push(selectedName);
+    }
+    return names.sort(function (a, b) { return a.localeCompare(b, 'zh-Hant'); });
   }
 
   function resolveMaintenanceReferenceDate(maintenanceCase) {

@@ -49,6 +49,7 @@
     return stateful(function (rerender) {
       var filtered = getFilteredEquipments();
       var storeOptions = getStoreOptions();
+      var customerSelectOptions = CustomerUtils.getCustomerNameOptions(customers, equipmentCustomer);
       var canQuery = !!(equipmentCustomer && equipmentStore);
 
       function handleDelete(id) {
@@ -75,7 +76,9 @@
                 className: 'w-56 p-2.5 border rounded-md outline-none focus:border-blue-500 bg-white'
               },
                 h('option', { value: '' }, '請選擇客戶'),
-                customers.map(function (c) { return h('option', { key: c.id, value: c.name }, c.name); })
+                customerSelectOptions.map(function (name) {
+                  return h('option', { key: name, value: name }, name);
+                })
               )
             ),
             h('div', null,

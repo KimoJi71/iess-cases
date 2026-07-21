@@ -25,7 +25,8 @@
       phone: (targetCase && targetCase.phone) || '',
       fax: (targetCase && targetCase.fax) || '',
       address: (targetCase && targetCase.address) || '',
-      remarks: (targetCase && targetCase.remarks) || ''
+      remarks: (targetCase && targetCase.remarks) || '',
+      enabled: targetCase ? targetCase.enabled !== false : true
     };
     var contacts = (targetCase && targetCase.contacts)
       ? targetCase.contacts.map(function (ct) { return Object.assign({}, ct); })
@@ -162,6 +163,21 @@
               }, MAINTENANCE_INTERVAL_OPTIONS.map(function (opt) {
                 return h('option', { key: opt, value: opt }, opt);
               }))
+            ),
+            h('div', null,
+              h('label', { className: 'block text-sm mb-1' }, '啟用狀態'),
+              h('select', {
+                name: 'enabled',
+                value: formData.enabled ? 'true' : 'false',
+                onChange: function (e) {
+                  formData.enabled = e.target.value === 'true';
+                  rerender();
+                },
+                className: 'w-full p-2.5 border rounded-md outline-none focus:border-blue-500 bg-white'
+              },
+                h('option', { value: 'true' }, '啟用'),
+                h('option', { value: 'false' }, '停用')
+              )
             ),
             h('div', null,
               h('label', { className: 'block text-sm mb-1' }, '公司電話'),

@@ -10,6 +10,7 @@
   function ProjectList(props) {
     var cases = props.cases;
     var setCases = props.setCases;
+    var customers = props.customers;
     var setEditingCase = props.setEditingCase;
     var setView = props.setView;
     var showToast = props.showToast;
@@ -29,6 +30,8 @@
     var dragProps = useDragScroll();
 
     return stateful(function (rerender) {
+      var customerFilterOptions = CustomerUtils.getCustomerNameOptions(customers);
+
       function handleSearch() {
         appliedFilters = {
           start: startDate,
@@ -101,7 +104,7 @@
         value: filterCustomer,
         onChange: function (e) { filterCustomer = e.target.value; rerender(); },
         className: 'w-full p-2 border rounded-md outline-none bg-white'
-      }, h('option', { value: '全部' }, '全部'), CUSTOMER_OPTIONS.map(function (opt) {
+      }, h('option', { value: '全部' }, '全部'), customerFilterOptions.map(function (opt) {
         return h('option', { key: opt, value: opt }, opt);
       }))), h('div', { className: 'min-w-0' }, h('label', {
         className: 'block text-xs text-gray-500 mb-1'

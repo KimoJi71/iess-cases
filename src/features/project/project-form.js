@@ -302,6 +302,7 @@
     var cases = props.cases;
     var setCases = props.setCases;
     var stores = props.stores;
+    var customers = props.customers;
     var deviceCategories = props.deviceCategories || [];
     var setView = props.setView;
     var showToast = props.showToast;
@@ -325,6 +326,7 @@
 
     return stateful(function (rerender) {
       var storeOptions = ScheduleUtils.getStoreNamesForCustomer(stores, formData.customerName);
+      var customerOptions = CustomerUtils.getCustomerNameOptions(customers, formData.customerName);
 
       function syncProjectStoreFields() {
         var synced = ScheduleUtils.applyStoreSnapshot(formData, stores);
@@ -451,7 +453,7 @@
       }, h('option', {
         value: '',
         disabled: true
-      }, '請選擇'), CUSTOMER_OPTIONS.map(function (opt) {
+      }, '請選擇'), customerOptions.map(function (opt) {
         return h('option', { key: opt, value: opt }, opt);
       }))), h('div', null, h('label', {
         className: 'block text-sm font-medium text-gray-700 mb-1'
@@ -614,6 +616,7 @@
     var cases = props.cases;
     var setCases = props.setCases;
     var stores = props.stores;
+    var customers = props.customers;
     var accounts = props.accounts || [];
     var deviceCategories = props.deviceCategories || [];
     var setView = props.setView;
@@ -648,6 +651,7 @@
 
     return stateful(function (rerender) {
       var storeOptions = ScheduleUtils.getStoreNamesForCustomer(stores, formData.customerName);
+      var customerOptions = CustomerUtils.getCustomerNameOptions(customers, formData.customerName);
       var contactPersonOptions = AccountUtils.getProjectPersonOptions(accounts, [detailsData.contactPerson]);
       var stagePersonOptions = AccountUtils.getProjectPersonOptions(accounts, PROJECT_STAGES.map(function (stage) {
         return stagesData[stage].assignee;
@@ -807,7 +811,7 @@
       }, h('option', {
         value: '',
         disabled: true
-      }, '請選擇'), CUSTOMER_OPTIONS.map(function (opt) {
+      }, '請選擇'), customerOptions.map(function (opt) {
         return h('option', { key: opt, value: opt }, opt);
       }))), h('div', null, h('label', {
         className: 'block text-sm font-medium text-gray-700 mb-1'
