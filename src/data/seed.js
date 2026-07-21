@@ -1002,7 +1002,7 @@ const INITIAL_PROJECT_CASES = [{
   details: {
     storeAddress: '台北市中山區中山北路X號',
     serviceLevel: '維修(無簽約客戶)',
-    contactPerson: '李店長 0912-345-678',
+    contactPerson: 'A組',
     suggestedContractor: '內部工程組',
     entryDate: todayDate,
     remarks: '需避開營業尖峰時段',
@@ -1055,7 +1055,7 @@ const INITIAL_PROJECT_CASES = [{
   details: {
     storeAddress: '台中市中區建國路X號',
     serviceLevel: '保修(一年兩次)',
-    contactPerson: '陳副理',
+    contactPerson: 'B組',
     suggestedContractor: '機電維護商',
     entryDate: yesterdayDate,
     remarks: '',

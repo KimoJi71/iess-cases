@@ -44,7 +44,8 @@
     if (cases.some(function (c) { return c.assignee === name; })) return true;
     if (maintenanceCases.some(function (c) { return c.assignee === name; })) return true;
     if (projectCases.some(function (c) {
-      return c.assignee === name || c.stageAssignee === name;
+      return c.assignee === name || c.stageAssignee === name
+        || (c.details && c.details.contactPerson === name);
     })) return true;
     return false;
   }
@@ -94,6 +95,10 @@
       var next = Object.assign({}, c);
       if (c.assignee === oldName) { next.assignee = newName; changed = true; }
       if (c.stageAssignee === oldName) { next.stageAssignee = newName; changed = true; }
+      if (c.details && c.details.contactPerson === oldName) {
+        next.details = Object.assign({}, c.details, { contactPerson: newName });
+        changed = true;
+      }
       return changed ? next : c;
     });
     return {

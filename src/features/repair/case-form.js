@@ -181,15 +181,12 @@
         className: "w-full p-2.5 bg-gray-50 border rounded-md text-gray-500 cursor-not-allowed"
       })), h("div", null, h("label", {
         className: "block text-sm font-medium text-gray-700 mb-1"
-      }, "服務等級"), h("select", {
-        name: "serviceLevel",
-        value: formData.serviceLevel,
-        onChange: handleChange,
-        className: "w-full p-2.5 border rounded-md outline-none"
-      }, SERVICE_LEVEL_OPTIONS.map(function (opt) { return h("option", {
-        key: opt,
-        value: opt
-      }, opt); }))), h("div", {
+      }, "服務等級"), h("input", {
+        type: "text",
+        disabled: true,
+        value: formData.serviceLevel || "—",
+        className: "w-full p-2.5 bg-gray-50 border rounded-md text-gray-500 cursor-not-allowed"
+      })), h("div", {
         className: "col-span-full font-semibold text-lg text-blue-800 border-b pb-2 mt-4 mb-2"
       }, "叫修內容"), h("div", null, h("label", {
         className: "block text-sm mb-1"
@@ -440,15 +437,12 @@
         value: opt
       }, opt); }))), h("div", null, h("span", {
         className: "text-gray-500 block mb-1"
-      }, "服務等級"), h("select", {
-        name: "serviceLevel",
-        value: formData.serviceLevel,
-        onChange: handleChange,
-        className: "w-full p-2 border rounded-md outline-none"
-      }, SERVICE_LEVEL_OPTIONS.map(function (opt) { return h("option", {
-        key: opt,
-        value: opt
-      }, opt); }))), h("div", {
+      }, "服務等級"), h("input", {
+        type: "text",
+        disabled: true,
+        value: formData.serviceLevel || "—",
+        className: "w-full p-2 border rounded-md bg-gray-50 text-gray-500 cursor-not-allowed"
+      })), h("div", {
         className: "col-span-full md:col-span-4"
       }, h("span", {
         className: "text-gray-500 block mb-1"

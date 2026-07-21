@@ -163,11 +163,13 @@
                   h('input', { type: 'text', value: store.serviceLevel || '—', disabled: true, className: disabledCls })
                 ),
                 h('div', null,
-                  h('label', { className: 'block text-sm font-medium text-gray-700 mb-1' }, '工程聯絡人'),
-                  h('input', {
-                    type: 'text', name: 'contactPerson', value: formData.contactPerson, onChange: handleChange,
-                    placeholder: '請輸入聯絡人姓名/電話', className: inputCls
-                  })
+                  h('label', { className: 'block text-sm font-medium text-gray-700 mb-1' }, '負責人員'),
+                  h('select', {
+                    name: 'contactPerson', value: formData.contactPerson, onChange: handleChange, className: inputCls
+                  },
+                    h('option', { value: '' }, '請選擇'),
+                    ASSIGNEES.map(function (opt) { return h('option', { key: opt, value: opt }, opt); })
+                  )
                 ),
                 h('div', null,
                   h('label', { className: 'block text-sm font-medium text-gray-700 mb-1' }, '建議施作單位'),

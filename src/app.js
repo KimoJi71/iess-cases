@@ -305,7 +305,7 @@
       case 'project-edit':
         return h(EditProjectForm, {
           editingCase: s.editingCase, cases: s.projectCases, setCases: setProjectCases,
-          setView: setView, showToast: showToast
+          stores: s.stores, setView: setView, showToast: showToast
         });
       case 'survey-list':
         return h(SurveyList, {

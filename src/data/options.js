@@ -44,7 +44,7 @@ const PROJECT_WORK_CATEGORIES = ['新開', '汰換', '撤店', '整裝', '加裝
 const EQUIPMENT_CATEGORIES = ['室內機', '室外機', '全熱交換器', '風機', '水泵', '其他'];
 const EQUIPMENT_BRANDS = ['大金', '日立', '國際', '三菱', '冰點', '其他'];
 const EQUIPMENT_TYPES = ['內', '外', '無'];
-const PROJECT_STAGES = ['立案時間', '工程發包作業', '現勘', '設備訂貨作業', '廠商驗收作業', '發票請款作業'];
+const PROJECT_STAGES = ['立案時間', '工程發包作業', '現勘', '設備訂貨作業', '廠商驗收作業', '客戶驗收', '發票請款作業'];
 const PROJECT_ASSIGNEES = ['管理員', '採購部', '工程A組', '工程B組', '晉詮人員', '機電維護商', '尚未指派'];
 const PROJECT_TOPIC_TAGS = ['現勘', '設備', '材料', '施工', '驗收', '請款'];
 let DYNAMIC_PROJECT_TAGS = [...PROJECT_TOPIC_TAGS];
@@ -124,6 +124,11 @@ const today = new Date();
 const todayDate = today.toISOString().split('T')[0];
 const yesterdayDate = new Date(Date.now() - 86400000).toISOString().split('T')[0];
 const twoDaysAgoDate = new Date(Date.now() - 86400000 * 2).toISOString().split('T')[0];
+const oneMonthAgoDate = (function () {
+  var d = new Date();
+  d.setMonth(d.getMonth() - 1);
+  return d.toISOString().split('T')[0];
+})();
 const currentMonthStr = today.toISOString().slice(0, 7);
 
 // 案件排程專用選項
