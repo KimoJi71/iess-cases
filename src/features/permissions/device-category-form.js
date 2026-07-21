@@ -7,13 +7,13 @@
   var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful;
 
   var FIELDS = [
-    { name: 'category', label: '設備分類' },
-    { name: 'brand', label: '品牌' },
-    { name: 'deviceName', label: '設備名稱' },
-    { name: 'specification', label: '設備規格' },
-    { name: 'model', label: '型號' },
-    { name: 'refrigerant', label: '冷媒' },
-    { name: 'powerSource', label: '電源' }
+    { name: 'category', label: '設備分類', required: true },
+    { name: 'brand', label: '品牌', required: true },
+    { name: 'deviceName', label: '設備名稱', required: true },
+    { name: 'specification', label: '設備規格', required: true },
+    { name: 'model', label: '型號', required: true },
+    { name: 'refrigerant', label: '冷媒', required: false },
+    { name: 'powerSource', label: '電源', required: false }
   ];
 
   function DeviceCategoryForm(props) {
@@ -38,7 +38,9 @@
       function handleSubmit(e) {
         e.preventDefault();
         var normalized = DeviceCategoryUtils.normalizeRecord(formData);
-        var missing = FIELDS.find(function (field) { return !normalized[field.name]; });
+        var missing = FIELDS.find(function (field) {
+          return field.required && !normalized[field.name];
+        });
         if (missing) {
           showToast(missing.label + '為必填', 'error');
           return;
@@ -80,7 +82,9 @@
             FIELDS.map(function (field) {
               return h('div', { key: field.name },
                 h('label', { className: 'block text-sm mb-1' },
-                  field.label, ' ', h('span', { className: 'text-red-500' }, '*')),
+                  field.label,
+                  field.required && ' ',
+                  field.required && h('span', { className: 'text-red-500' }, '*')),
                 h('input', {
                   type: 'text',
                   name: field.name,
