@@ -2,7 +2,7 @@
  * features/repair/maintenance.js — 保養：保養列表 + 保養明細檢視/編輯
  * props:
  *   MaintenanceList         { cases, setCases, stores, setStores, setViewingCase, setEditingCase, setView, showToast }
- *   MaintenanceViewEditForm { targetCase, cases, setCases, stores, setStores, setView, mode, showToast }
+ *   MaintenanceViewEditForm { targetCase, cases, setCases, stores, setStores, setView, mode, showToast, backView }
  */
 (function () {
   'use strict';
@@ -90,9 +90,11 @@
       function handleCloseCase(id) {
         var target = cases.find(function (c) { return c.id === id; });
         if (!target) return;
+        var completionDate = resolveMaintenanceCompletionDate(target);
         var closedCase = Object.assign({}, target, {
           isClosed: true,
-          status: '已完成'
+          status: '已完成',
+          repairDate: completionDate
         });
         updateStoreLastMaintenanceDate(stores, setStores, closedCase);
         setCases(cases.map(function (c) {
@@ -281,6 +283,7 @@
     var setView = props.setView;
     var mode = props.mode;
     var showToast = props.showToast;
+    var backView = props.backView === undefined ? 'maintenance-list' : props.backView;
 
     var customers = props.customers;
     var formData = targetCase;
@@ -331,7 +334,7 @@
         setCases(cases.map(function (c) {
           return c.id === updatedData.id ? updatedData : c;
         }));
-        setView('maintenance-list');
+        setView(backView);
       }
 
       return h("div", {
@@ -339,7 +342,7 @@
       }, PageHeader({
         title: isEdit ? '編輯保養明細' : '查看保養明細',
         badge: formData.caseNumber || '待產生編號',
-        onClose: function () { setView('maintenance-list'); },
+        onClose: function () { setView(backView); },
         wrapperClass: 'flex justify-between items-center p-6 border-b border-gray-200 sticky top-0 z-10 bg-white rounded-t-lg'
       }), h("div", {
         className: "p-6 space-y-8"
@@ -428,7 +431,7 @@
       })))), isEdit && h("div", {
         className: "mt-8 pt-6 border-t flex justify-end gap-4"
       }, h("button", {
-        onClick: function () { setView('maintenance-list'); },
+        onClick: function () { setView(backView); },
         className: "px-6 py-2.5 border rounded-md"
       }, "取消"), h("button", {
         onClick: handleSubmit,

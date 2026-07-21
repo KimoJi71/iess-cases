@@ -1,14 +1,33 @@
 /*
  * features/repair/case-review.js — 案件銷案審核列表（列入績效）
- * props: { cases, setCases, setViewingCase, setView, showToast }
+ * props: { cases, setCases, maintenanceCases, setMaintenanceCases, setViewingCase, setView, showToast }
  */
 (function () {
   'use strict';
   var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful, useDragScroll = IESS.useDragScroll;
 
+  function isMaintenancePlanCase(c) {
+    return c && c.sourceType === 'maintenance';
+  }
+
+  function getReviewCaseDate(c) {
+    if (!c) return '';
+    if (c.repairDate) return String(c.repairDate).slice(0, 10);
+    if (c.planDate) return String(c.planDate).slice(0, 10);
+    if (isMaintenancePlanCase(c)) {
+      if (c.isClosed) return todayDate;
+      if (window.ScheduleUtils) {
+        return ScheduleUtils.resolveMaintenanceReferenceDate(c);
+      }
+    }
+    return '';
+  }
+
   function CaseReviewList(props) {
     var cases = props.cases;
     var setCases = props.setCases;
+    var maintenanceCases = props.maintenanceCases || [];
+    var setMaintenanceCases = props.setMaintenanceCases;
     var setViewingCase = props.setViewingCase;
     var setView = props.setView;
     var showToast = props.showToast;
@@ -16,7 +35,7 @@
     var startDate = todayDate;
     var endDate = todayDate;
     var appliedDateRange = { start: todayDate, end: todayDate };
-    var includeConfirmModal = { show: false, caseId: null };
+    var includeConfirmModal = { show: false, caseId: null, sourceType: 'repair' };
     var dragProps = useDragScroll();
 
     return stateful(function (rerender) {
@@ -25,17 +44,30 @@
         rerender();
       }
 
-      var filteredCases = cases.filter(function (c) {
-        return c.isClosed && !c.isPerformanceIncluded &&
-          (c.repairDate || '').slice(0, 10) >= appliedDateRange.start &&
-          (c.repairDate || '').slice(0, 10) <= appliedDateRange.end;
-      }).sort(function (a, b) { return new Date(b.repairDate) - new Date(a.repairDate); });
+      var allReviewCases = cases.concat(maintenanceCases.map(function (c) {
+        return Object.assign({}, c, { sourceType: 'maintenance' });
+      }));
 
-      function handleIncludePerformance(caseId) {
-        setCases(cases.map(function (c) {
-          return c.id === caseId ? Object.assign({}, c, { isPerformanceIncluded: true }) : c;
-        }));
-        includeConfirmModal = { show: false, caseId: null };
+      var filteredCases = allReviewCases.filter(function (c) {
+        var reviewDate = getReviewCaseDate(c).slice(0, 10);
+        return c.isClosed && !c.isPerformanceIncluded &&
+          reviewDate >= appliedDateRange.start &&
+          reviewDate <= appliedDateRange.end;
+      }).sort(function (a, b) {
+        return new Date(getReviewCaseDate(b)) - new Date(getReviewCaseDate(a));
+      });
+
+      function handleIncludePerformance(caseId, sourceType) {
+        if (sourceType === 'maintenance') {
+          setMaintenanceCases(maintenanceCases.map(function (c) {
+            return c.id === caseId ? Object.assign({}, c, { isPerformanceIncluded: true }) : c;
+          }));
+        } else {
+          setCases(cases.map(function (c) {
+            return c.id === caseId ? Object.assign({}, c, { isPerformanceIncluded: true }) : c;
+          }));
+        }
+        includeConfirmModal = { show: false, caseId: null, sourceType: 'repair' };
         showToast('已成功列入案件績效');
       }
 
@@ -87,30 +119,41 @@
               filteredCases.length === 0 ? h('tr', null,
                 h('td', { colspan: '12', className: 'text-center p-8 text-gray-400' }, '無資料符合目前搜尋區間')
               ) : filteredCases.map(function (c) {
-                return h('tr', { key: c.id, className: 'hover:bg-gray-50 transition-colors' },
+                var isMaintenance = isMaintenancePlanCase(c);
+                return h('tr', { key: c.sourceType + '-' + c.id, className: 'hover:bg-gray-50 transition-colors' },
                   h('td', { className: 'p-3' },
                     h('div', { className: 'flex items-center justify-center space-x-2' },
                       h('button', {
-                        onClick: function () { setViewingCase(c); setView('review-view'); },
+                        onClick: function () {
+                          setViewingCase(c);
+                          setView(isMaintenance ? 'review-maintenance-view' : 'review-view');
+                        },
                         className: 'p-1.5 text-blue-600 hover:bg-blue-100 rounded',
                         title: '查看明細'
                       }, Icons.Eye({ className: 'h-4 w-4' })),
                       h('button', {
-                        onClick: function () { includeConfirmModal = { show: true, caseId: c.id }; rerender(); },
+                        onClick: function () {
+                          includeConfirmModal = {
+                            show: true,
+                            caseId: c.id,
+                            sourceType: isMaintenance ? 'maintenance' : 'repair'
+                          };
+                          rerender();
+                        },
                         className: 'p-1.5 text-amber-500 hover:bg-amber-100 rounded',
                         title: '列入案件績效'
                       }, Icons.Star({ className: 'h-4 w-4' }))
                     )
                   ),
-                  h('td', { className: 'p-3' }, IESS.caseDateTime.format(c.repairDate)),
+                  h('td', { className: 'p-3' }, IESS.caseDateTime.format(getReviewCaseDate(c))),
                   h('td', { className: 'p-3 font-medium text-blue-700' }, c.caseNumber),
                   h('td', { className: 'p-3' }, c.customerName),
                   h('td', { className: 'p-3' }, c.storeName),
                   h('td', { className: 'p-3' }, c.district),
                   h('td', { className: 'p-3' }, c.serviceLevel),
-                  h('td', { className: 'p-3' }, c.workCategory),
-                  h('td', { className: 'p-3' }, c.repairItem),
-                  h('td', { className: 'p-3' }, c.repairReason),
+                  h('td', { className: 'p-3' }, isMaintenance ? '例行保養' : c.workCategory),
+                  h('td', { className: 'p-3' }, isMaintenance ? '' : c.repairItem),
+                  h('td', { className: 'p-3' }, isMaintenance ? '' : c.repairReason),
                   h('td', { className: 'p-3 max-w-[150px] truncate', title: c.actualReason }, c.actualReason || '-'),
                   h('td', { className: 'p-3' }, c.assignee)
                 );
@@ -130,11 +173,16 @@
               '確定要將此案件列入績效計算嗎？操作後將從此審核列表中移除。'),
             h('div', { className: 'flex justify-end space-x-3' },
               h('button', {
-                onClick: function () { includeConfirmModal = { show: false, caseId: null }; rerender(); },
+                onClick: function () {
+                  includeConfirmModal = { show: false, caseId: null, sourceType: 'repair' };
+                  rerender();
+                },
                 className: 'px-4 py-2 border rounded-md text-gray-600 hover:bg-gray-50 transition-colors'
               }, '取消'),
               h('button', {
-                onClick: function () { handleIncludePerformance(includeConfirmModal.caseId); },
+                onClick: function () {
+                  handleIncludePerformance(includeConfirmModal.caseId, includeConfirmModal.sourceType);
+                },
                 className: 'px-4 py-2 bg-amber-500 text-white rounded-md hover:bg-amber-600 transition-colors'
               }, '確認列入')
             )

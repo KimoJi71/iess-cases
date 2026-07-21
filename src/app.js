@@ -263,8 +263,9 @@
         return h(ViewCaseForm, { viewingCase: s.viewingCase, setView: setView, backView: 'record-list' });
       case 'review-list':
         return h(CaseReviewList, {
-          cases: s.cases, setCases: setCasesData, setViewingCase: setViewingCase,
-          setView: setView, showToast: showToast
+          cases: s.cases, setCases: setCasesData,
+          maintenanceCases: s.maintenanceCases, setMaintenanceCases: setMaintenanceCases,
+          setViewingCase: setViewingCase, setView: setView, showToast: showToast
         });
       case 'review-view':
         return h(ViewCaseForm, { viewingCase: s.viewingCase, setView: setView, backView: 'review-list' });
@@ -278,7 +279,12 @@
       case 'maintenance-view':
         return h(MaintenanceViewEditForm, {
           targetCase: s.viewingCase, stores: s.stores, customers: s.customers,
-          setView: setView, mode: 'view', showToast: showToast
+          setView: setView, mode: 'view', showToast: showToast, backView: 'maintenance-list'
+        });
+      case 'review-maintenance-view':
+        return h(MaintenanceViewEditForm, {
+          targetCase: s.viewingCase, stores: s.stores, customers: s.customers,
+          setView: setView, mode: 'view', showToast: showToast, backView: 'review-list'
         });
       case 'maintenance-edit':
         return h(MaintenanceViewEditForm, {
