@@ -233,4 +233,5 @@
   global.IESS.mount = mount;
   global.IESS.stateful = stateful;
   global.IESS.useDragScroll = useDragScroll;
+  global.IESS.deferRerenderWhileComposing = deferRerenderWhileComposing;
 })(window);
