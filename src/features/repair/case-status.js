@@ -89,6 +89,17 @@
     formData.planTimeEnd = '';
   }
 
+  function hasProcessData(c) {
+    if (!c) return false;
+    if (c.actualReason && String(c.actualReason).trim()) return true;
+    if (c.processRecords && c.processRecords.length > 0) return true;
+    if (c.processStatus) return true;
+    if (c.reRepairDate) return true;
+    if (c.completionDate) return true;
+    if (c.secondRepairDate) return true;
+    return false;
+  }
+
   function applyProcessStatusChange(formData, newStatus, savedProcessStatus, now) {
     var stamp = now || global.IESS.caseDateTime.now();
 
@@ -124,6 +135,7 @@
     showsInterimCompleteButton: showsInterimCompleteButton,
     getInterimCompleteLabel: getInterimCompleteLabel,
     applyProcessStatusChange: applyProcessStatusChange,
+    hasProcessData: hasProcessData,
     getCaseListDispatchStatus: getCaseListDispatchStatus,
     getCaseListDispatchBadgeClass: getCaseListDispatchBadgeClass,
     RE_REPAIR_STATUSES: RE_REPAIR_STATUSES,

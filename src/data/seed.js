@@ -489,6 +489,40 @@ const INITIAL_EQUIPMENTS = [{
   voltage: '220V',
   createdDate: twoDaysAgoDate
 }, {
+  id: 'E4',
+  customerName: '全家便利商店',
+  storeName: '中山店',
+  category: '分離式',
+  brand: '大金',
+  name: '收銀台空調 FXMQ125',
+  model: 'FXMQ125',
+  area: '收銀台上方',
+  manufactureDate: '2021-06-01',
+  installDate: '2021-07-15',
+  assetNumber: 'AST-FM-001',
+  serialNumber: 'SN-FM-001',
+  horsepower: '3.0',
+  indoorOutdoor: '室內機',
+  voltage: '220V',
+  createdDate: twoDaysAgoDate
+}, {
+  id: 'E5',
+  customerName: '統一超商',
+  storeName: '站前店',
+  category: '分離式',
+  brand: '大金',
+  name: '休息區空調 FXMQ80',
+  model: 'FXMQ80',
+  area: '休息區',
+  manufactureDate: '2022-01-10',
+  installDate: '2022-02-20',
+  assetNumber: 'AST-UC-001',
+  serialNumber: 'SN-UC-001',
+  horsepower: '2.5',
+  indoorOutdoor: '室內機',
+  voltage: '220V',
+  createdDate: yesterdayDate
+}, {
   id: 'E6',
   customerName: '屈臣氏',
   storeName: '台中旗艦店',
@@ -505,6 +539,57 @@ const INITIAL_EQUIPMENTS = [{
   indoorOutdoor: '無',
   voltage: '380V',
   createdDate: todayDate
+}, {
+  id: 'E7',
+  customerName: '星巴克',
+  storeName: '中山店',
+  category: '分離式',
+  brand: '日立',
+  name: '大廳主機 RAS-80',
+  model: 'RAS-80',
+  area: '大廳',
+  manufactureDate: '2019-04-01',
+  installDate: '2019-05-15',
+  assetNumber: 'AST-SB-002',
+  serialNumber: 'SN-SB-002',
+  horsepower: '2.5',
+  indoorOutdoor: '室內機',
+  voltage: '220V',
+  createdDate: twoDaysAgoDate
+}, {
+  id: 'E8',
+  customerName: '統一超商',
+  storeName: '中山店',
+  category: '分離式',
+  brand: '大金',
+  name: '收銀台空調 FXMQ50',
+  model: 'FXMQ50',
+  area: '收銀台',
+  manufactureDate: '2020-08-20',
+  installDate: '2020-09-10',
+  assetNumber: 'AST-UC-002',
+  serialNumber: 'SN-UC-002',
+  horsepower: '2.0',
+  indoorOutdoor: '室內機',
+  voltage: '220V',
+  createdDate: twoDaysAgoDate
+}, {
+  id: 'E9',
+  customerName: '全家便利商店',
+  storeName: '站前店',
+  category: '分離式',
+  brand: '日立',
+  name: '頂樓室外機 RAS-80',
+  model: 'RAS-80',
+  area: '頂樓',
+  manufactureDate: '2018-11-05',
+  installDate: '2018-12-01',
+  assetNumber: 'AST-FM-002',
+  serialNumber: 'SN-FM-002',
+  horsepower: '3.0',
+  indoorOutdoor: '室外機',
+  voltage: '220V',
+  createdDate: twoDaysAgoDate
 }];
 
 // --- 初始模擬案件列表 (維修) ---
@@ -774,7 +859,14 @@ const INITIAL_CASES = [{
   serviceLevel: '保養(一年一次)',
   storeAddress: '高雄市左營區博愛路X號',
   reporter: '林店長',
-  equipment: null,
+  equipment: {
+    id: 'E3',
+    customerName: '萊爾富',
+    storeName: '高雄左營店',
+    area: '賣場區',
+    type: '外',
+    model: 'FXYP100'
+  },
   processRecords: [],
   reRepairDate: '',
   secondRepairDate: '',
@@ -802,7 +894,14 @@ const INITIAL_CASES = [{
   serviceLevel: '保修(一年兩次)',
   storeAddress: '台北市中山區中山北路X號',
   reporter: '陳副理',
-  equipment: null,
+  equipment: {
+    id: 'E7',
+    customerName: '星巴克',
+    storeName: '中山店',
+    area: '大廳',
+    type: '內',
+    model: 'RAS-80'
+  },
   processRecords: [],
   reRepairDate: '',
   secondRepairDate: '',
@@ -830,7 +929,14 @@ const INITIAL_CASES = [{
   serviceLevel: '保修(一年一次)',
   storeAddress: '台中市西屯區台灣大道X號',
   reporter: '張小姐',
-  equipment: null,
+  equipment: {
+    id: 'E6',
+    customerName: '屈臣氏',
+    storeName: '台中旗艦店',
+    area: '機房',
+    type: '無',
+    model: 'PA-063'
+  },
   processRecords: [],
   reRepairDate: '',
   secondRepairDate: '',
@@ -858,7 +964,14 @@ const INITIAL_CASES = [{
   serviceLevel: '維修(無簽約客戶)',
   storeAddress: '台北市中山區中山北路X號',
   reporter: '王專員',
-  equipment: null,
+  equipment: {
+    id: 'E8',
+    customerName: '統一超商',
+    storeName: '中山店',
+    area: '收銀台',
+    type: '內',
+    model: 'FXMQ50'
+  },
   processRecords: [],
   reRepairDate: '',
   secondRepairDate: '',
@@ -886,7 +999,14 @@ const INITIAL_CASES = [{
   serviceLevel: '維修(無簽約客戶)',
   storeAddress: '台中市中區建國路X號',
   reporter: '李先生',
-  equipment: null,
+  equipment: {
+    id: 'E9',
+    customerName: '全家便利商店',
+    storeName: '站前店',
+    area: '頂樓',
+    type: '外',
+    model: 'RAS-80'
+  },
   processRecords: [],
   reRepairDate: '',
   secondRepairDate: '',
@@ -897,6 +1017,17 @@ const INITIAL_CASES = [{
   planTimeEnd: '',
   isPerformanceIncluded: true
 }];
+
+function caseHasProcessData(c) {
+  if (!c) return false;
+  if (c.actualReason && String(c.actualReason).trim()) return true;
+  if (c.processRecords && c.processRecords.length > 0) return true;
+  if (c.processStatus) return true;
+  if (c.reRepairDate) return true;
+  if (c.completionDate) return true;
+  if (c.secondRepairDate) return true;
+  return false;
+}
 
 INITIAL_CASES.forEach(function (c, i) {
   if (!c.createdAt) {
@@ -911,7 +1042,17 @@ INITIAL_CASES.forEach(function (c, i) {
   if (c.isClosed && !c.closeDate) {
     c.closeDate = c.completionDate || c.repairDate || '';
   }
-  if (!c.equipment && !c.isClosed) c.processStatus = null;
+  if (!c.equipment) {
+    if (!c.isClosed) c.processStatus = null;
+    if (caseHasProcessData(c)) {
+      c.actualReason = '';
+      c.processRecords = [];
+      c.processStatus = null;
+      c.reRepairDate = '';
+      c.secondRepairDate = '';
+      c.completionDate = '';
+    }
+  }
   if (c.isListClosed == null) c.isListClosed = false;
 });
 

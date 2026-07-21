@@ -1,6 +1,6 @@
 /*
  * features/customer/store-history.js — 客戶建檔（門市管理）：門市歷史紀錄（整頁）
- * props: { store, cases, maintenanceCases, projectCases, equipments, setViewingCase, setEditingCase, setHistoryStore, setView }
+ * props: { store, cases, maintenanceCases, projectCases, equipments, openStoreHistoryDetail, setHistoryStore, setView }
  */
 (function () {
   'use strict';
@@ -13,8 +13,7 @@
     var maintenanceCases = props.maintenanceCases || [];
     var projectCases = props.projectCases || [];
     var equipments = props.equipments || [];
-    var setViewingCase = props.setViewingCase;
-    var setEditingCase = props.setEditingCase;
+    var openStoreHistoryDetail = props.openStoreHistoryDetail;
     var setHistoryStore = props.setHistoryStore;
     var setView = props.setView;
 
@@ -73,12 +72,13 @@
       var sourceCase = findSourceCase(rec);
       if (!sourceCase) return;
       if (rec.sourceType === 'project') {
-        setEditingCase(sourceCase);
-        setView('store-history-project-view');
+        openStoreHistoryDetail('store-history-project-view', sourceCase);
         return;
       }
-      setViewingCase(sourceCase);
-      setView(rec.sourceType === 'maintenance' ? 'store-history-maintenance-view' : 'store-history-repair-view');
+      openStoreHistoryDetail(
+        rec.sourceType === 'maintenance' ? 'store-history-maintenance-view' : 'store-history-repair-view',
+        sourceCase
+      );
     }
 
     function viewBtn(rec) {

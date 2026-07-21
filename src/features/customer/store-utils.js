@@ -184,6 +184,16 @@
     });
   }
 
+  function withStoreHistoryContext(record, store) {
+    if (!record || !store) return record;
+    return Object.assign({}, record, {
+      customerName: record.customerName || store.customerName || '',
+      storeName: record.storeName || store.storeName || '',
+      storeAddress: record.storeAddress || buildFullAddress(store) || '',
+      serviceLevel: record.serviceLevel || store.serviceLevel || ''
+    });
+  }
+
   window.StoreUtils = {
     formatStoreArea: formatStoreArea,
     getStoreArea: getStoreArea,
@@ -196,6 +206,7 @@
     matchesStoreRecord: matchesStoreRecord,
     buildRepairMaintenanceHistoryRows: buildRepairMaintenanceHistoryRows,
     buildProjectHistoryRows: buildProjectHistoryRows,
-    formatHistoryDateTime: formatHistoryDateTime
+    formatHistoryDateTime: formatHistoryDateTime,
+    withStoreHistoryContext: withStoreHistoryContext
   };
 })();

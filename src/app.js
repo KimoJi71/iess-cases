@@ -117,6 +117,28 @@
   var setViewingCase = makeSetter('viewingCase');
   var setHistoryStore = makeSetter('historyStore');
   var setStatusFilter = makeSetter('statusFilter');
+
+  function openStoreHistory(storeRecord) {
+    store.set({
+      historyStore: storeRecord,
+      view: 'store-history',
+      viewingCase: null,
+      editingCase: null
+    });
+  }
+
+  function openStoreHistoryDetail(view, record) {
+    store.set(function (s) {
+      var enriched = StoreUtils.withStoreHistoryContext(record, s.historyStore);
+      var next = { view: view };
+      if (view === 'store-history-project-view') {
+        next.editingCase = enriched;
+      } else {
+        next.viewingCase = enriched;
+      }
+      return next;
+    });
+  }
   var setStoreCustomer = makeSetter('storeCustomer');
   var setCasesData = makeSetter('cases');
   var setMaintenanceCases = makeSetter('maintenanceCases');
@@ -354,7 +376,7 @@
         return h(StoreList, {
           stores: s.stores, setStores: setStores, customers: s.customers,
           storeCustomer: s.storeCustomer, setStoreCustomer: setStoreCustomer,
-          setEditingCase: setEditingCase, setHistoryStore: setHistoryStore,
+          setEditingCase: setEditingCase, openStoreHistory: openStoreHistory,
           setView: setView, showToast: showToast
         });
       case 'store-history':
@@ -364,23 +386,25 @@
           maintenanceCases: s.maintenanceCases,
           projectCases: s.projectCases,
           equipments: s.equipments,
-          setViewingCase: setViewingCase,
-          setEditingCase: setEditingCase,
+          openStoreHistoryDetail: openStoreHistoryDetail,
           setHistoryStore: setHistoryStore,
           setView: setView
         });
       case 'store-history-repair-view':
         return h(ViewCaseForm, {
-          viewingCase: s.viewingCase, setView: setView, backView: 'store-history'
+          viewingCase: StoreUtils.withStoreHistoryContext(s.viewingCase, s.historyStore),
+          setView: setView, backView: 'store-history'
         });
       case 'store-history-maintenance-view':
         return h(MaintenanceViewEditForm, {
-          targetCase: s.viewingCase, stores: s.stores, customers: s.customers,
+          targetCase: StoreUtils.withStoreHistoryContext(s.viewingCase, s.historyStore),
+          stores: s.stores, customers: s.customers,
           setView: setView, mode: 'view', showToast: showToast, backView: 'store-history'
         });
       case 'store-history-project-view':
         return h(EditProjectForm, {
-          editingCase: s.editingCase, cases: s.projectCases, setCases: setProjectCases,
+          editingCase: StoreUtils.withStoreHistoryContext(s.editingCase, s.historyStore),
+          cases: s.projectCases, setCases: setProjectCases,
           stores: s.stores, customers: s.customers, accounts: s.accounts,
           deviceCategories: s.deviceCategories, setView: setView, showToast: showToast,
           backView: 'store-history',

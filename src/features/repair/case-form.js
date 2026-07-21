@@ -379,6 +379,10 @@
         rerender();
       }
       function handleSubmit() {
+        if (caseStatus.hasProcessData(formData) && !formData.equipment) {
+          showToast('有處理資料時必須先掃描設備', 'error');
+          return;
+        }
         formData.planDate = formData.expectedDate || formData.planDate || '';
         formData.planTimeStart = formData.expectedTimeStart || formData.planTimeStart || '';
         formData.planTimeEnd = formData.expectedTimeEnd || formData.planTimeEnd || '';

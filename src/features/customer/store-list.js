@@ -1,6 +1,6 @@
 /*
  * features/customer/store-list.js — 客戶建檔（門市管理）：門市列表
- * props: { stores, setStores, customers, storeCustomer, setStoreCustomer, setEditingCase, setHistoryStore, setView, showToast }
+ * props: { stores, setStores, customers, storeCustomer, setStoreCustomer, setEditingCase, openStoreHistory, setView, showToast }
  */
 (function () {
   'use strict';
@@ -14,7 +14,7 @@
     var storeCustomer = props.storeCustomer;
     var setStoreCustomer = props.setStoreCustomer;
     var setEditingCase = props.setEditingCase;
-    var setHistoryStore = props.setHistoryStore;
+    var openStoreHistory = props.openStoreHistory;
     var setView = props.setView;
     var showToast = props.showToast;
 
@@ -25,8 +25,7 @@
     var dragProps = useDragScroll();
 
     function openHistory(store) {
-      setHistoryStore(store);
-      setView('store-history');
+      openStoreHistory(store);
     }
 
     function getFilteredStores() {
