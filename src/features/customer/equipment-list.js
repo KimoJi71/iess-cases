@@ -49,7 +49,7 @@
     return stateful(function (rerender) {
       var filtered = getFilteredEquipments();
       var storeOptions = getStoreOptions();
-      var customerSelectOptions = CustomerUtils.getCustomerNameOptions(customers, equipmentCustomer);
+      var customerSelectOptions = CustomerUtils.getCustomerNameOptions(customers, equipmentCustomer, true);
       var canQuery = !!(equipmentCustomer && equipmentStore);
 
       function handleDelete(id) {

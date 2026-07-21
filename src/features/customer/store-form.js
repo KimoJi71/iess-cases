@@ -46,8 +46,21 @@
     var contactModal = { show: false };
     var currentContact = { id: null, title: '', name: '', phone: '', email: '' };
 
-    var MAX_PHOTOS = 5;
+    var MAX_FILES = 5;
     var inputCls = 'w-full p-2.5 border rounded-md outline-none focus:border-blue-500';
+
+    function isPdfFile(file) {
+      return file.type === 'application/pdf' || /\.pdf$/i.test(file.name);
+    }
+    function isImageFile(file) {
+      return file.type === 'image/png' || file.type === 'image/jpeg';
+    }
+    function getFileType(item) {
+      if (item.type) return item.type;
+      if (item.url && item.url.indexOf('data:application/pdf') === 0) return 'pdf';
+      if (/\.pdf$/i.test(item.name || '')) return 'pdf';
+      return 'image';
+    }
 
     return stateful(function (rerender) {
       function handleChange(e) {
@@ -90,17 +103,16 @@
         contacts = contacts.filter(function (ct) { return ct.id !== id; });
         rerender();
       }
-      function handlePhotoSelect(e) {
+      function handleFileSelect(e) {
         var files = Array.prototype.slice.call(e.target.files || []);
-        var allowed = ['image/png', 'image/jpeg'];
-        var valid = files.filter(function (f) { return allowed.includes(f.type); });
+        var valid = files.filter(function (f) { return isImageFile(f) || isPdfFile(f); });
         if (valid.length !== files.length) {
-          showToast('僅接受 png / jpg / jpeg 圖片檔案', 'error');
+          showToast('僅接受 png / jpg / jpeg 圖片或 PDF 檔案', 'error');
         }
-        var remaining = MAX_PHOTOS - photos.length;
+        var remaining = MAX_FILES - photos.length;
         if (valid.length > remaining) {
           valid = valid.slice(0, Math.max(0, remaining));
-          showToast('門市照片最多只可上傳 ' + MAX_PHOTOS + ' 張', 'error');
+          showToast('檔案最多只可上傳 ' + MAX_FILES + ' 個', 'error');
         }
         valid.forEach(function (f, i) {
           var reader = new FileReader();
@@ -108,7 +120,8 @@
             photos = photos.concat([{
               id: Date.now() + i,
               name: f.name,
-              url: ev.target.result
+              url: ev.target.result,
+              type: isPdfFile(f) ? 'pdf' : 'image'
             }]);
             rerender();
           };
@@ -220,8 +233,7 @@
               }, DISTRICT_OPTIONS.map(function (opt) { return h('option', { key: opt, value: opt }, opt); }))
             ),
             h('div', null,
-              h('label', { className: 'block text-sm mb-1' }, '服務等級 ',
-                h('span', { className: 'text-xs text-gray-400' }, '(客戶帶入)')),
+              h('label', { className: 'block text-sm mb-1' }, '服務等級 '),
               h('input', {
                 type: 'text',
                 value: autoServiceLevel || '—',
@@ -252,7 +264,7 @@
                 className: 'w-full p-2.5 border rounded-md outline-none bg-white'
               }, WORK_ORDER_APPLY_OPTIONS.map(function (opt) { return h('option', { key: opt, value: opt }, opt); }))
             ),
-            field('最後叫修日期', 'lastRepairDate', { type: 'date' }),
+            field('上次維修日期', 'lastRepairDate', { type: 'date' }),
             field('上次保養日期', 'lastMaintenanceDate', { type: 'date' }),
             field('室內高度', 'indoorHeight'),
             field('室外高度', 'outdoorHeight'),
@@ -320,38 +332,48 @@
             h('div', { className: 'flex items-center justify-between border-b pb-2 mb-4' },
               h('h3', { className: 'font-semibold text-lg text-blue-800' }, '檔案資料 ',
                 h('span', { className: 'text-sm font-normal text-gray-400' },
-                  '(門市照片 png / jpg / jpeg，最多 ' + MAX_PHOTOS + ' 張 ' + photos.length + '/' + MAX_PHOTOS + ')')),
+                  '(png / jpg / jpeg / PDF，最多 ' + MAX_FILES + ' 個 ' + photos.length + '/' + MAX_FILES + ')')),
               h('label', {
                 className: 'flex items-center gap-1.5 text-sm border px-3 py-1.5 rounded-md transition-colors ' +
-                  (photos.length >= MAX_PHOTOS
+                  (photos.length >= MAX_FILES
                     ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
                     : 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 cursor-pointer')
               }, Icons.Paperclip({ className: 'h-4 w-4' }), ' 上傳檔案',
                 h('input', {
                   ref: function (el) { photoInputEl = el; },
                   type: 'file',
-                  accept: 'image/png,image/jpeg,.png,.jpg,.jpeg',
+                  accept: 'image/png,image/jpeg,.png,.jpg,.jpeg,application/pdf,.pdf',
                   multiple: true,
-                  disabled: photos.length >= MAX_PHOTOS,
-                  onChange: handlePhotoSelect,
+                  disabled: photos.length >= MAX_FILES,
+                  onChange: handleFileSelect,
                   className: 'hidden'
                 })
               )
             ),
             photos.length === 0
-              ? h('div', { className: 'text-center text-gray-400 py-6 border border-dashed rounded-md' }, '尚未上傳門市照片')
+              ? h('div', { className: 'text-center text-gray-400 py-6 border border-dashed rounded-md' }, '尚未上傳檔案')
               : h('div', { className: 'flex flex-wrap gap-3' },
                   photos.map(function (p) {
+                    var fileType = getFileType(p);
                     return h('div', { key: p.id, className: 'relative w-32 group' },
-                      p.url
-                        ? h('img', {
-                            src: p.url,
-                            alt: p.name,
-                            className: 'w-32 h-24 object-cover rounded-md border border-gray-200 bg-gray-50'
-                          })
-                        : h('div', {
-                            className: 'w-32 h-24 flex items-center justify-center rounded-md border border-gray-200 bg-gray-100 text-gray-400'
-                          }, Icons.FileText({ className: 'h-7 w-7' })),
+                      fileType === 'pdf'
+                        ? h('a', {
+                            href: p.url,
+                            target: '_blank',
+                            rel: 'noopener noreferrer',
+                            title: '開啟 PDF：' + p.name,
+                            className: 'w-32 h-24 flex flex-col items-center justify-center rounded-md border border-gray-200 bg-red-50 text-red-600 hover:bg-red-100 transition-colors'
+                          }, Icons.FileText({ className: 'h-7 w-7' }),
+                            h('span', { className: 'text-xs mt-1 font-medium' }, 'PDF'))
+                        : p.url
+                          ? h('img', {
+                              src: p.url,
+                              alt: p.name,
+                              className: 'w-32 h-24 object-cover rounded-md border border-gray-200 bg-gray-50'
+                            })
+                          : h('div', {
+                              className: 'w-32 h-24 flex items-center justify-center rounded-md border border-gray-200 bg-gray-100 text-gray-400'
+                            }, Icons.FileText({ className: 'h-7 w-7' })),
                       h('div', { className: 'mt-1 text-xs text-gray-600 truncate', title: p.name }, p.name),
                       iconActionBtn({
                         label: '刪除檔案',

@@ -30,7 +30,11 @@
     var dragProps = useDragScroll();
 
     return stateful(function (rerender) {
-      var customerFilterOptions = CustomerUtils.getCustomerNameOptions(customers);
+      var customerFilterOptions = CustomerUtils.getCustomerNameOptions(
+        customers,
+        filterCustomer !== '全部' ? filterCustomer : null,
+        true
+      );
 
       function handleSearch() {
         appliedFilters = {

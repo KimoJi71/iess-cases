@@ -10,6 +10,14 @@
   var h = global.IESS.h;
   var stateful = global.IESS.stateful;
 
+  function renderChevron(className) {
+    var Icons = global.IESS.Icons;
+    if (Icons && Icons.ChevronDown) {
+      return Icons.ChevronDown({ className: className });
+    }
+    return null;
+  }
+
   function extractSelectOptions(children) {
     var options = [];
     function walk(child) {
@@ -211,6 +219,17 @@
         if (activeBtn) activeBtn.scrollIntoView({ block: 'nearest' });
       }
 
+      function syncToggle() {
+        if (!rootEl) return;
+        var btn = rootEl.querySelector('.searchable-select__toggle');
+        var chevron = rootEl.querySelector('.searchable-select__chevron');
+        if (btn) btn.setAttribute('aria-label', isOpen ? '收合選項' : '展開選項');
+        if (chevron) {
+          if (isOpen) chevron.classList.add('searchable-select__chevron--open');
+          else chevron.classList.remove('searchable-select__chevron--open');
+        }
+      }
+
       function syncClosedInput() {
         if (!inputEl || disabled) return;
         inputEl.readOnly = readOnly || !isOpen;
@@ -218,6 +237,7 @@
           inputEl.value = getLabel(value);
         }
         inputEl.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        syncToggle();
       }
 
       function openMenu() {
@@ -334,6 +354,20 @@
         }
       }
 
+      function handleToggleMouseDown(e) {
+        e.preventDefault();
+      }
+
+      function handleToggleClick(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (disabled || readOnly) return;
+        clearBlurTimer();
+        if (isOpen) closeMenu();
+        else openMenu();
+        if (inputEl) inputEl.focus();
+      }
+
       var inputCls = 'searchable-select__input ' + className;
       if (disabled) inputCls += ' bg-gray-50 cursor-not-allowed';
       else if (readOnly) inputCls += ' bg-gray-50 cursor-default';
@@ -370,7 +404,17 @@
           onCompositionStart: handleCompositionStart,
           onCompositionEnd: handleCompositionEnd,
           onKeyDown: handleKeyDown
-        })
+        }),
+        h('button', {
+          type: 'button',
+          className: 'searchable-select__toggle',
+          disabled: disabled,
+          tabIndex: -1,
+          'data-no-tooltip': true,
+          'aria-label': isOpen ? '收合選項' : '展開選項',
+          onMouseDown: handleToggleMouseDown,
+          onClick: handleToggleClick
+        }, renderChevron('searchable-select__chevron'))
       );
     });
   }

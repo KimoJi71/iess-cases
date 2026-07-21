@@ -56,7 +56,7 @@
 
     return stateful(function (rerender) {
       var filteredStores = getFilteredStores();
-      var customerSelectOptions = CustomerUtils.getCustomerNameOptions(customers, storeCustomer);
+      var customerSelectOptions = CustomerUtils.getCustomerNameOptions(customers, storeCustomer, true);
 
       function handleSearch() { appliedKeyword = keyword; rerender(); }
       function handleKeyDown(e) { if (e.key === 'Enter') handleSearch(); }

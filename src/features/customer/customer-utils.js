@@ -13,10 +13,15 @@
     return customers.filter(isEnabled);
   }
 
-  function getCustomerNameOptions(customers, selectedName) {
+  function getCustomerNameOptions(customers, selectedName, includeDisabled) {
     var names = [];
     var seen = {};
-    getEnabledCustomers(customers).forEach(function (c) {
+    var enabledByName = {};
+    (customers || []).forEach(function (c) {
+      if (c.name) enabledByName[c.name] = isEnabled(c);
+    });
+    var source = includeDisabled ? (customers || []) : getEnabledCustomers(customers);
+    source.forEach(function (c) {
       if (c.name && !seen[c.name]) {
         seen[c.name] = true;
         names.push(c.name);
@@ -25,7 +30,14 @@
     if (selectedName && !seen[selectedName]) {
       names.push(selectedName);
     }
-    return names.sort(function (a, b) { return a.localeCompare(b, 'zh-Hant'); });
+    return names.sort(function (a, b) {
+      if (includeDisabled) {
+        var aEnabled = enabledByName[a] !== false;
+        var bEnabled = enabledByName[b] !== false;
+        if (aEnabled !== bEnabled) return aEnabled ? -1 : 1;
+      }
+      return a.localeCompare(b, 'zh-Hant');
+    });
   }
 
   window.CustomerUtils = {
