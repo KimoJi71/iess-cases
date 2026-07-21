@@ -316,12 +316,14 @@
       case 'project-add':
         return h(AddProjectForm, {
           cases: s.projectCases, setCases: setProjectCases, stores: s.stores,
+          deviceCategories: s.deviceCategories,
           setView: setView, showToast: showToast
         });
       case 'project-edit':
         return h(EditProjectForm, {
           editingCase: s.editingCase, cases: s.projectCases, setCases: setProjectCases,
-          stores: s.stores, accounts: s.accounts, setView: setView, showToast: showToast
+          stores: s.stores, accounts: s.accounts, deviceCategories: s.deviceCategories,
+          setView: setView, showToast: showToast
         });
       case 'survey-list':
         return h(SurveyList, {

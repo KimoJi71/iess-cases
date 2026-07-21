@@ -1008,10 +1008,10 @@ const INITIAL_PROJECT_CASES = [{
     remarks: '需避開營業尖峰時段',
     equipment: [{
       id: 1,
-      category: '室內機',
-      name: '1F賣場空調',
+      category: '分離式',
       brand: '大金',
-      type: '內',
+      deviceName: '卡式嵌入機',
+      specification: '4.0匹',
       model: 'FXMQ125',
       area: '賣場區',
       assetNumber: 'A-001',
@@ -1224,6 +1224,16 @@ const INITIAL_DEVICE_CATEGORIES = [{
   model: 'PA-063',
   refrigerant: 'R134a',
   powerSource: '380V',
+  createdDate: todayDate
+}, {
+  id: 'DCAT5',
+  category: '分離式',
+  brand: '大金',
+  deviceName: '卡式嵌入機',
+  specification: '4.0匹',
+  model: 'FXMQ125',
+  refrigerant: 'R32',
+  powerSource: '220V',
   createdDate: todayDate
 }];
 

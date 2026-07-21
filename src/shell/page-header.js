@@ -11,6 +11,7 @@
 (function () {
   'use strict';
   var h = IESS.h, Icons = IESS.Icons;
+  var iconActionBtn = IESS.iconActionBtn;
 
   function PageHeader(opts) {
     var wrapperClass = opts.wrapperClass ||
@@ -25,12 +26,8 @@
             }, opts.badge)
           : null
       ),
-      h('button', {
-        type: 'button',
-        onClick: opts.onClose,
-        title: '關閉並返回列表',
-        className: 'shrink-0 p-2.5 sm:p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors'
-      }, Icons.X({ className: 'h-6 w-6' }))
+      iconActionBtn({ label: '關閉並返回列表', onClick: opts.onClose,
+        className: 'shrink-0 p-2.5 sm:p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors', icon: Icons.X({ className: 'h-6 w-6' }) })
     );
   }
 

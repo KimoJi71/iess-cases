@@ -1053,6 +1053,7 @@
         }, "cm")), h("button", {
           type: "button",
           onClick: () => removeHole(index),
+          title: "刪除此洗孔",
           className: "text-red-500 hover:text-red-700 p-1"
         }, Icons.Trash2({
           className: "h-4 w-4"
@@ -1294,6 +1295,7 @@
         }, "設備 #", index + 1), h("button", {
           type: "button",
           onClick: () => removeEquipment(index),
+          title: "刪除此設備",
           className: "text-red-500 hover:text-red-700 p-1"
         }, Icons.Trash2({
           className: "h-4 w-4"

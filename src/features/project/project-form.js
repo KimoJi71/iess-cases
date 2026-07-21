@@ -1,16 +1,308 @@
 /*
  * features/project/project-form.js — 工程立案：新增立案單 / 編輯工程案件
- * AddProjectForm  props: { cases, setCases, setView, showToast }
- * EditProjectForm props: { editingCase, cases, setCases, stores, setView, showToast }
+ * AddProjectForm  props: { cases, setCases, stores, deviceCategories, setView, showToast }
+ * EditProjectForm props: { editingCase, cases, setCases, stores, accounts, deviceCategories, setView, showToast }
  */
 (function () {
   'use strict';
   var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful, useDragScroll = IESS.useDragScroll, TimeInput24 = IESS.TimeInput24;
+  var iconActionBtn = IESS.iconActionBtn;
+
+  function defaultEquip() {
+    return {
+      category: '',
+      brand: '',
+      deviceName: '',
+      specification: '',
+      model: '',
+      area: '',
+      manufactureDate: '',
+      installDate: '',
+      assetNumber: '',
+      serialNumber: ''
+    };
+  }
+
+  function normalizeEquip(eq, deviceCategories) {
+    if (!eq) return defaultEquip();
+    if (deviceCategories && deviceCategories.length) {
+      return DeviceCategoryUtils.resolveProjectEquip(eq, deviceCategories);
+    }
+    return {
+      category: eq.category || '',
+      brand: eq.brand || '',
+      deviceName: eq.deviceName || eq.name || '',
+      specification: eq.specification || '',
+      model: eq.model || '',
+      area: eq.area || '',
+      manufactureDate: eq.manufactureDate || '',
+      installDate: eq.installDate || '',
+      assetNumber: eq.assetNumber || '',
+      serialNumber: eq.serialNumber || ''
+    };
+  }
+
+  function applyEquipFieldChange(currentEquip, name, value) {
+    var next = Object.assign({}, currentEquip);
+    next[name] = value;
+    if (name === 'category') {
+      next.brand = '';
+      next.deviceName = '';
+      next.specification = '';
+      next.model = '';
+    } else if (name === 'brand') {
+      next.deviceName = '';
+      next.specification = '';
+      next.model = '';
+    } else if (name === 'deviceName') {
+      next.specification = '';
+      next.model = '';
+    } else if (name === 'specification') {
+      next.model = '';
+    }
+    return next;
+  }
+
+  function getEquipFieldOptions(deviceCategories, currentEquip) {
+    var filters = { category: currentEquip.category };
+    var withCurrent = DeviceCategoryUtils.withCurrentValue;
+    return {
+      category: withCurrent(
+        DeviceCategoryUtils.uniqueFieldValues(deviceCategories, 'category'),
+        currentEquip.category
+      ),
+      brand: currentEquip.category
+        ? withCurrent(
+          DeviceCategoryUtils.uniqueFieldValues(deviceCategories, 'brand', filters),
+          currentEquip.brand
+        )
+        : [],
+      deviceName: currentEquip.category && currentEquip.brand
+        ? withCurrent(
+          DeviceCategoryUtils.uniqueFieldValues(deviceCategories, 'deviceName', Object.assign({}, filters, { brand: currentEquip.brand })),
+          currentEquip.deviceName
+        )
+        : [],
+      specification: currentEquip.category && currentEquip.brand && currentEquip.deviceName
+        ? withCurrent(
+          DeviceCategoryUtils.uniqueFieldValues(deviceCategories, 'specification', Object.assign({}, filters, {
+            brand: currentEquip.brand,
+            deviceName: currentEquip.deviceName
+          })),
+          currentEquip.specification
+        )
+        : [],
+      model: currentEquip.category && currentEquip.brand && currentEquip.deviceName && currentEquip.specification
+        ? withCurrent(
+          DeviceCategoryUtils.uniqueFieldValues(deviceCategories, 'model', Object.assign({}, filters, {
+            brand: currentEquip.brand,
+            deviceName: currentEquip.deviceName,
+            specification: currentEquip.specification
+          })),
+          currentEquip.model
+        )
+        : withCurrent([], currentEquip.model)
+    };
+  }
+
+  function renderEquipSelect(label, name, options, currentEquip, onChange, opts) {
+    opts = opts || {};
+    var disabled = !!opts.disabled;
+    if (name === 'category') {
+      disabled = disabled || options.length === 0;
+    } else if (opts.waitFor) {
+      disabled = disabled || !currentEquip[opts.waitFor] || options.length === 0;
+    } else {
+      disabled = disabled || options.length === 0;
+    }
+    return h('div', null,
+      h('label', { className: 'block text-sm text-gray-600 mb-1' },
+        label,
+        opts.required && h('span', { className: 'text-red-500' }, ' *')),
+      h('select', {
+        name: name,
+        value: currentEquip[name] || '',
+        onChange: onChange,
+        disabled: disabled,
+        className: 'w-full p-2 border rounded focus:ring-1 focus:ring-indigo-500 outline-none' + (disabled ? ' bg-gray-100 text-gray-400 cursor-not-allowed' : '')
+      },
+        h('option', { value: '', disabled: true }, disabled ? (opts.emptyHint || '請先選擇上層欄位') : '請選擇'),
+        options.map(function (opt) {
+          return h('option', { key: opt, value: opt }, opt);
+        })
+      )
+    );
+  }
+
+  function ProjectEquipModal(props) {
+    var deviceCategories = props.deviceCategories || [];
+    var editingId = props.editingId;
+    var onClose = props.onClose;
+    var onSave = props.onSave;
+    var showToast = props.showToast;
+    var currentEquip = normalizeEquip(props.initialEquip, deviceCategories);
+
+    return stateful(function (rerender) {
+      function handleEquipChange(e) {
+        currentEquip = applyEquipFieldChange(currentEquip, e.target.name, e.target.value);
+        rerender();
+      }
+
+      function handleSaveClick() {
+        if (!currentEquip.category) {
+          showToast('設備分類為必填', 'error');
+          return;
+        }
+        if (!currentEquip.model) {
+          showToast('型號為必填', 'error');
+          return;
+        }
+        onSave(currentEquip);
+      }
+
+      var fieldOptions = getEquipFieldOptions(deviceCategories, currentEquip);
+
+      return h('div', { className: 'fixed inset-0 bg-black/40 flex items-center justify-center z-[70] p-4 overflow-y-auto' },
+        h('div', { className: 'bg-white rounded-lg shadow-xl p-6 w-full sm:w-[600px] max-w-full m-auto flex flex-col max-h-[90vh] min-w-0' },
+          h('div', { className: 'flex items-center justify-between mb-4 border-b pb-3 shrink-0' },
+            h('h3', { className: 'text-lg font-bold text-gray-800' }, editingId ? '編輯設備' : '新增設備'),
+            h('button', {
+              type: 'button',
+              onClick: onClose,
+              title: '關閉',
+              className: 'text-gray-500 hover:bg-gray-100 p-1 rounded-full'
+            }, Icons.X({ className: 'h-5 w-5' }))),
+          h('div', { className: 'overflow-y-auto pr-2 space-y-4 flex-1' },
+            h('div', { className: 'grid grid-cols-1 sm:grid-cols-2 gap-4' },
+              renderEquipSelect('設備分類', 'category', fieldOptions.category, currentEquip, handleEquipChange, {
+                required: true,
+                emptyHint: '尚無設備分類資料'
+              }),
+              renderEquipSelect('品牌', 'brand', fieldOptions.brand, currentEquip, handleEquipChange, {
+                waitFor: 'category',
+                emptyHint: '請先選擇設備分類'
+              }),
+              renderEquipSelect('設備名稱', 'deviceName', fieldOptions.deviceName, currentEquip, handleEquipChange, {
+                waitFor: 'brand',
+                emptyHint: '請先選擇品牌'
+              }),
+              renderEquipSelect('設備規格', 'specification', fieldOptions.specification, currentEquip, handleEquipChange, {
+                waitFor: 'deviceName',
+                emptyHint: '請先選擇設備名稱'
+              }),
+              h('div', { className: 'col-span-2' },
+                renderEquipSelect('型號', 'model', fieldOptions.model, currentEquip, handleEquipChange, {
+                  required: true,
+                  waitFor: 'specification',
+                  emptyHint: '請先選擇設備規格'
+                })),
+              h('div', { className: 'col-span-2' },
+                h('label', { className: 'block text-sm text-gray-600 mb-1' }, '設備區域'),
+                h('input', {
+                  type: 'text',
+                  name: 'area',
+                  value: currentEquip.area,
+                  onChange: handleEquipChange,
+                  className: 'w-full p-2 border rounded focus:ring-1 focus:ring-indigo-500 outline-none',
+                  placeholder: '例如：天花板上方'
+                })),
+              h('div', null,
+                h('label', { className: 'block text-sm text-gray-600 mb-1' }, '出廠日期'),
+                h('input', {
+                  type: 'date',
+                  name: 'manufactureDate',
+                  value: currentEquip.manufactureDate,
+                  onChange: handleEquipChange,
+                  className: 'w-full p-2 border rounded focus:ring-1 focus:ring-indigo-500 outline-none'
+                })),
+              h('div', null,
+                h('label', { className: 'block text-sm text-gray-600 mb-1' }, '安裝日期'),
+                h('input', {
+                  type: 'date',
+                  name: 'installDate',
+                  value: currentEquip.installDate,
+                  onChange: handleEquipChange,
+                  className: 'w-full p-2 border rounded focus:ring-1 focus:ring-indigo-500 outline-none'
+                })),
+              h('div', null,
+                h('label', { className: 'block text-sm text-gray-600 mb-1' }, '資產編號'),
+                h('input', {
+                  type: 'text',
+                  name: 'assetNumber',
+                  value: currentEquip.assetNumber,
+                  onChange: handleEquipChange,
+                  className: 'w-full p-2 border rounded focus:ring-1 focus:ring-indigo-500 outline-none',
+                  placeholder: '選填'
+                })),
+              h('div', null,
+                h('label', { className: 'block text-sm text-gray-600 mb-1' }, '流水序號'),
+                h('input', {
+                  type: 'text',
+                  name: 'serialNumber',
+                  value: currentEquip.serialNumber,
+                  onChange: handleEquipChange,
+                  className: 'w-full p-2 border rounded focus:ring-1 focus:ring-indigo-500 outline-none',
+                  placeholder: '選填'
+                })))),
+          h('div', { className: 'flex justify-end space-x-3 mt-6 pt-4 border-t shrink-0' },
+            h('button', {
+              type: 'button',
+              onClick: onClose,
+              className: 'px-4 py-2 border rounded text-gray-600 hover:bg-gray-50 transition-colors'
+            }, '取消'),
+            h('button', {
+              type: 'button',
+              onClick: handleSaveClick,
+              className: 'px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition-colors'
+            }, editingId ? '更新設備' : '暫存設備'))));
+    });
+  }
+
+  function renderEquipmentTableRow(eq, p) {
+    return h('tr', { key: eq.id, className: 'hover:bg-gray-50' },
+      h('td', { className: 'p-3' },
+        h('div', { className: 'font-medium text-gray-800' }, eq.category || '-'),
+        h('div', { className: 'text-xs text-gray-500' }, eq.deviceName || eq.name || '')),
+      h('td', { className: 'p-3' }, eq.brand || '-'),
+      h('td', { className: 'p-3' }, eq.specification || '-'),
+      h('td', { className: 'p-3 font-medium text-indigo-600' }, eq.model || '-'),
+      h('td', { className: 'p-3' }, eq.area || '-'),
+      h('td', { className: 'p-3' },
+        h('div', { className: 'text-xs' }, '出：', eq.manufactureDate || '-'),
+        h('div', { className: 'text-xs' }, '裝：', eq.installDate || '-')),
+      h('td', { className: 'p-3' }, eq.assetNumber || '-'),
+      h('td', { className: 'p-3' }, eq.serialNumber || '-'),
+      h('td', { className: 'p-3 text-center' },
+        h('div', { className: 'flex items-center justify-center gap-1' },
+          p.onEdit && h('button', {
+            type: 'button',
+            onClick: function () { p.onEdit(eq); },
+            className: 'p-1.5 text-blue-600 hover:bg-blue-100 rounded transition-colors',
+            title: '編輯設備'
+          }, Icons.Edit({ className: 'h-4 w-4' })),
+          iconActionBtn({ label: '移除此設備', type: 'button',
+            onClick: function () { p.onDelete(eq.id); },
+            className: 'p-1.5 text-red-500 hover:bg-red-100 rounded transition-colors', icon: Icons.Trash2({ className: 'h-4 w-4' }) }))));
+  }
+
+  function equipmentTableHeaders(includeEdit) {
+    return h('tr', null,
+      h('th', { className: 'p-3 font-semibold' }, '設備分類'),
+      h('th', { className: 'p-3 font-semibold' }, '品牌'),
+      h('th', { className: 'p-3 font-semibold' }, '設備規格'),
+      h('th', { className: 'p-3 font-semibold' }, '型號'),
+      h('th', { className: 'p-3 font-semibold' }, '設備區域'),
+      h('th', { className: 'p-3 font-semibold' }, '出廠 / 安裝日期'),
+      h('th', { className: 'p-3 font-semibold' }, '資產編號'),
+      h('th', { className: 'p-3 font-semibold' }, '流水序號'),
+      h('th', { className: 'p-3 font-semibold text-center w-24' }, '操作'));
+  }
 
   function AddProjectForm(props) {
     var cases = props.cases;
     var setCases = props.setCases;
     var stores = props.stores;
+    var deviceCategories = props.deviceCategories || [];
     var setView = props.setView;
     var showToast = props.showToast;
 
@@ -29,19 +321,7 @@
     var showAddContractor = false;
     var newContractor = '';
     var equipmentList = [];
-    var equipModal = { show: false };
-    var currentEquip = {
-      category: '室內機',
-      name: '預設空調設備',
-      area: '',
-      brand: '大金',
-      manufactureDate: '',
-      type: '內',
-      installDate: '',
-      model: '',
-      assetNumber: '',
-      serialNumber: ''
-    };
+    var equipModal = { show: false, editingId: null, initialEquip: null };
 
     return stateful(function (rerender) {
       var storeOptions = ScheduleUtils.getStoreNamesForCustomer(stores, formData.customerName);
@@ -66,18 +346,27 @@
         }
         rerender();
       }
-      function handleEquipChange(e) {
-        currentEquip[e.target.name] = e.target.value;
+      function openEquipModal(eq) {
+        equipModal = {
+          show: true,
+          editingId: eq ? eq.id : null,
+          initialEquip: eq ? normalizeEquip(eq, deviceCategories) : defaultEquip()
+        };
         rerender();
       }
-      function handleSaveEquipment() {
-        if (!currentEquip.model) {
-          showToast('設備型號為必填', 'error');
-          return;
+      function handleEquipSaved(equip) {
+        if (equipModal.editingId) {
+          equipmentList = equipmentList.map(function (item) {
+            return item.id === equipModal.editingId
+              ? Object.assign({}, equip, { id: item.id })
+              : item;
+          });
+          showToast('設備更新成功');
+        } else {
+          equipmentList = equipmentList.concat([Object.assign({}, equip, { id: Date.now() })]);
+          showToast('設備暫存成功');
         }
-        equipmentList = equipmentList.concat([Object.assign({}, currentEquip, { id: Date.now() })]);
-        equipModal = { show: false };
-        showToast('設備暫存成功');
+        equipModal = { show: false, editingId: null, initialEquip: null };
         rerender();
       }
       function handleDeleteEquipment(id) {
@@ -219,14 +508,11 @@
         value: ''
       }, '請選擇單位'), contractors.map(function (c) {
         return h('option', { key: c, value: c }, c);
-      })), h('button', {
-        type: 'button',
+      })), iconActionBtn({ label: '新增單位選項', type: 'button',
         onClick: function () { showAddContractor = true; rerender(); },
-        className: 'px-3 border border-gray-300 rounded-md bg-gray-50 text-gray-600 hover:bg-gray-100 transition-colors',
-        title: '新增單位選項'
-      }, Icons.Plus({
+        className: 'px-3 border border-gray-300 rounded-md bg-gray-50 text-gray-600 hover:bg-gray-100 transition-colors', icon: Icons.Plus({
         className: 'h-5 w-5'
-      })))), h('div', null, h('label', {
+      }) }))), h('div', null, h('label', {
         className: 'block text-sm font-medium text-gray-700 mb-1'
       }, '進場日期'), h('input', {
         type: 'date',
@@ -251,22 +537,7 @@
         className: 'text-lg font-bold text-blue-800'
       }, '2. 設備資料'), h('button', {
         type: 'button',
-        onClick: function () {
-          currentEquip = {
-            category: '室內機',
-            name: '預設空調設備',
-            area: '',
-            brand: '大金',
-            manufactureDate: '',
-            type: '內',
-            installDate: '',
-            model: '',
-            assetNumber: '',
-            serialNumber: ''
-          };
-          equipModal = { show: true };
-          rerender();
-        },
+        onClick: function () { openEquipModal(null); },
         className: 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100 px-4 py-2 rounded-md flex items-center gap-2 font-medium transition-colors border border-indigo-200'
       }, Icons.Plus({
         className: 'h-4 w-4'
@@ -276,53 +547,16 @@
         className: 'w-full text-left text-sm text-gray-600 whitespace-nowrap'
       }, h('thead', {
         className: 'bg-gray-50 text-gray-700 border-b'
-      }, h('tr', null, h('th', {
-        className: 'p-3 font-semibold'
-      }, '設備分類'), h('th', {
-        className: 'p-3 font-semibold'
-      }, '品牌 / 內外'), h('th', {
-        className: 'p-3 font-semibold'
-      }, '型號'), h('th', {
-        className: 'p-3 font-semibold'
-      }, '設備區域'), h('th', {
-        className: 'p-3 font-semibold'
-      }, '資產編號'), h('th', {
-        className: 'p-3 font-semibold text-center w-20'
-      }, '操作'))), h('tbody', {
+      }, equipmentTableHeaders()), h('tbody', {
         className: 'divide-y divide-gray-100'
       }, equipmentList.length === 0 ? h('tr', null, h('td', {
-        colspan: '6',
+        colspan: '9',
         className: 'text-center p-8 text-gray-400 bg-gray-50/50'
       }, '尚未加入任何設備資料')) : equipmentList.map(function (eq) {
-        return h('tr', {
-          key: eq.id,
-          className: 'hover:bg-gray-50'
-        }, h('td', {
-          className: 'p-3'
-        }, h('div', {
-          className: 'font-medium text-gray-800'
-        }, eq.category), h('div', {
-          className: 'text-xs text-gray-500'
-        }, eq.name)), h('td', {
-          className: 'p-3'
-        }, eq.brand, ' ', h('span', {
-          className: 'text-gray-400'
-        }, '|'), ' ', eq.type), h('td', {
-          className: 'p-3 font-medium text-indigo-600'
-        }, eq.model), h('td', {
-          className: 'p-3'
-        }, eq.area || '-'), h('td', {
-          className: 'p-3'
-        }, eq.assetNumber || '-'), h('td', {
-          className: 'p-3 text-center'
-        }, h('button', {
-          type: 'button',
-          onClick: function () { handleDeleteEquipment(eq.id); },
-          className: 'p-1.5 text-red-500 hover:bg-red-100 rounded transition-colors',
-          title: '移除此設備'
-        }, Icons.Trash2({
-          className: 'h-4 w-4'
-        }))));
+        return renderEquipmentTableRow(eq, {
+          onEdit: openEquipModal,
+          onDelete: handleDeleteEquipment
+        });
       })))))), h('div', {
         className: 'mt-8 pt-6 border-t flex justify-end gap-4'
       }, h('button', {
@@ -334,130 +568,18 @@
         className: 'px-8 py-2.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center gap-2 font-bold shadow-sm transition-colors'
       }, Icons.Save({
         className: 'h-5 w-5'
-      }), ' 儲存立案單'))), equipModal.show && h('div', {
-        className: 'fixed inset-0 bg-black/40 flex items-center justify-center z-50'
-      }, h('div', {
-        className: 'bg-white rounded-lg shadow-xl p-6 w-[600px] max-w-full m-4 flex flex-col max-h-[90vh]'
-      }, h('div', {
-        className: 'flex items-center justify-between mb-4 border-b pb-3 shrink-0'
-      }, h('h3', {
-        className: 'text-lg font-bold text-gray-800'
-      }, '新增 / 編輯設備'), h('button', {
-        onClick: function () { equipModal = { show: false }; rerender(); },
-        className: 'text-gray-500 hover:bg-gray-100 p-1 rounded-full'
-      }, Icons.X({
-        className: 'h-5 w-5'
-      }))), h('div', {
-        className: 'overflow-y-auto pr-2 space-y-4 flex-1'
-      }, h('div', {
-        className: 'grid grid-cols-2 gap-4'
-      }, h('div', null, h('label', {
-        className: 'block text-sm text-gray-600 mb-1'
-      }, '設備分類'), h('select', {
-        name: 'category',
-        value: currentEquip.category,
-        onChange: handleEquipChange,
-        className: 'w-full p-2 border rounded focus:ring-1 focus:ring-indigo-500 outline-none'
-      }, EQUIPMENT_CATEGORIES.map(function (opt) {
-        return h('option', { key: opt, value: opt }, opt);
-      }))), h('div', null, h('label', {
-        className: 'block text-sm text-gray-600 mb-1'
-      }, '設備名稱'), h('input', {
-        type: 'text',
-        name: 'name',
-        value: currentEquip.name,
-        onChange: handleEquipChange,
-        className: 'w-full p-2 border rounded focus:ring-1 focus:ring-indigo-500 outline-none',
-        placeholder: '例如：1F營業廳空調'
-      })), h('div', {
-        className: 'col-span-2'
-      }, h('label', {
-        className: 'block text-sm text-gray-600 mb-1'
-      }, '設備區域'), h('input', {
-        type: 'text',
-        name: 'area',
-        value: currentEquip.area,
-        onChange: handleEquipChange,
-        className: 'w-full p-2 border rounded focus:ring-1 focus:ring-indigo-500 outline-none',
-        placeholder: '例如：天花板上方'
-      })), h('div', null, h('label', {
-        className: 'block text-sm text-gray-600 mb-1'
-      }, '品牌'), h('select', {
-        name: 'brand',
-        value: currentEquip.brand,
-        onChange: handleEquipChange,
-        className: 'w-full p-2 border rounded focus:ring-1 focus:ring-indigo-500 outline-none'
-      }, EQUIPMENT_BRANDS.map(function (opt) {
-        return h('option', { key: opt, value: opt }, opt);
-      }))), h('div', null, h('label', {
-        className: 'block text-sm text-gray-600 mb-1'
-      }, '內 / 外'), h('select', {
-        name: 'type',
-        value: currentEquip.type,
-        onChange: handleEquipChange,
-        className: 'w-full p-2 border rounded focus:ring-1 focus:ring-indigo-500 outline-none'
-      }, EQUIPMENT_TYPES.map(function (opt) {
-        return h('option', { key: opt, value: opt }, opt);
-      }))), h('div', {
-        className: 'col-span-2'
-      }, h('label', {
-        className: 'block text-sm text-gray-600 mb-1'
-      }, '型號 ', h('span', {
-        className: 'text-red-500'
-      }, '*')), h('input', {
-        type: 'text',
-        name: 'model',
-        value: currentEquip.model,
-        onChange: handleEquipChange,
-        className: 'w-full p-2 border rounded focus:ring-1 focus:ring-indigo-500 outline-none',
-        placeholder: '輸入設備型號',
-        required: true
-      })), h('div', null, h('label', {
-        className: 'block text-sm text-gray-600 mb-1'
-      }, '出廠日期'), h('input', {
-        type: 'date',
-        name: 'manufactureDate',
-        value: currentEquip.manufactureDate,
-        onChange: handleEquipChange,
-        className: 'w-full p-2 border rounded focus:ring-1 focus:ring-indigo-500 outline-none'
-      })), h('div', null, h('label', {
-        className: 'block text-sm text-gray-600 mb-1'
-      }, '安裝日期'), h('input', {
-        type: 'date',
-        name: 'installDate',
-        value: currentEquip.installDate,
-        onChange: handleEquipChange,
-        className: 'w-full p-2 border rounded focus:ring-1 focus:ring-indigo-500 outline-none'
-      })), h('div', null, h('label', {
-        className: 'block text-sm text-gray-600 mb-1'
-      }, '資產編號'), h('input', {
-        type: 'text',
-        name: 'assetNumber',
-        value: currentEquip.assetNumber,
-        onChange: handleEquipChange,
-        className: 'w-full p-2 border rounded focus:ring-1 focus:ring-indigo-500 outline-none',
-        placeholder: '選填'
-      })), h('div', null, h('label', {
-        className: 'block text-sm text-gray-600 mb-1'
-      }, '流水序號 (QR Code)'), h('input', {
-        type: 'text',
-        name: 'serialNumber',
-        value: currentEquip.serialNumber,
-        onChange: handleEquipChange,
-        className: 'w-full p-2 border rounded focus:ring-1 focus:ring-indigo-500 outline-none',
-        placeholder: '選填'
-      })))), h('div', {
-        className: 'flex justify-end space-x-3 mt-6 pt-4 border-t shrink-0'
-      }, h('button', {
-        type: 'button',
-        onClick: function () { equipModal = { show: false }; rerender(); },
-        className: 'px-4 py-2 border rounded text-gray-600 hover:bg-gray-50 transition-colors'
-      }, '取消'), h('button', {
-        type: 'button',
-        onClick: handleSaveEquipment,
-        className: 'px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition-colors'
-      }, '暫存設備')))), showAddContractor && h('div', {
-        className: 'fixed inset-0 bg-black/40 flex items-center justify-center z-[60]'
+      }), ' 儲存立案單'))), equipModal.show && h(ProjectEquipModal, {
+        initialEquip: equipModal.initialEquip,
+        editingId: equipModal.editingId,
+        deviceCategories: deviceCategories,
+        showToast: showToast,
+        onClose: function () {
+          equipModal = { show: false, editingId: null, initialEquip: null };
+          rerender();
+        },
+        onSave: handleEquipSaved
+      }), showAddContractor && h('div', {
+        className: 'fixed inset-0 bg-black/40 flex items-center justify-center z-[70]'
       }, h('div', {
         className: 'bg-white rounded-lg shadow-xl p-6 w-80 max-w-full m-4'
       }, h('h3', {
@@ -487,42 +609,29 @@
     });
   }
 
-  function defaultEquip() {
-    return {
-      category: '室內機',
-      name: '預設空調設備',
-      area: '',
-      brand: '大金',
-      manufactureDate: '',
-      type: '內',
-      installDate: '',
-      model: '',
-      assetNumber: '',
-      serialNumber: ''
-    };
-  }
-
   function EditProjectForm(props) {
     var editingCase = props.editingCase;
     var cases = props.cases;
     var setCases = props.setCases;
     var stores = props.stores;
     var accounts = props.accounts || [];
+    var deviceCategories = props.deviceCategories || [];
     var setView = props.setView;
     var showToast = props.showToast;
 
     var formData = JSON.parse(JSON.stringify(editingCase));
     if (!formData.details) formData.details = {};
     var detailsData = formData.details;
-    var equipmentList = (detailsData.equipment || []).slice();
+    var equipmentList = (detailsData.equipment || []).slice().map(function (eq) {
+      return Object.assign({ id: eq.id }, normalizeEquip(eq, deviceCategories));
+    });
     var contractors = ['內部工程組', '外包廠商A', '外包廠商B', '機電維護商'];
     if (detailsData.suggestedContractor && contractors.indexOf(detailsData.suggestedContractor) === -1) {
       contractors = contractors.concat([detailsData.suggestedContractor]);
     }
     var showAddContractor = false;
     var newContractor = '';
-    var equipModal = { show: false, editingId: null };
-    var currentEquip = defaultEquip();
+    var equipModal = { show: false, editingId: null, initialEquip: null };
     var dragProps = useDragScroll();
     var initialStages = {};
     PROJECT_STAGES.forEach(function (s) {
@@ -577,39 +686,28 @@
         rerender();
       }
 
-      function handleEquipChange(e) {
-        currentEquip[e.target.name] = e.target.value;
-        rerender();
-      }
-
       function openEquipModal(eq) {
-        if (eq) {
-          currentEquip = Object.assign({}, eq);
-          equipModal = { show: true, editingId: eq.id };
-        } else {
-          currentEquip = defaultEquip();
-          equipModal = { show: true, editingId: null };
-        }
+        equipModal = {
+          show: true,
+          editingId: eq ? eq.id : null,
+          initialEquip: eq ? normalizeEquip(eq, deviceCategories) : defaultEquip()
+        };
         rerender();
       }
 
-      function handleSaveEquipment() {
-        if (!currentEquip.model) {
-          showToast('設備型號為必填', 'error');
-          return;
-        }
+      function handleEquipSaved(equip) {
         if (equipModal.editingId) {
-          equipmentList = equipmentList.map(function (eq) {
-            return eq.id === equipModal.editingId
-              ? Object.assign({}, currentEquip, { id: eq.id })
-              : eq;
+          equipmentList = equipmentList.map(function (item) {
+            return item.id === equipModal.editingId
+              ? Object.assign({}, equip, { id: item.id })
+              : item;
           });
           showToast('設備更新成功');
         } else {
-          equipmentList = equipmentList.concat([Object.assign({}, currentEquip, { id: Date.now() })]);
+          equipmentList = equipmentList.concat([Object.assign({}, equip, { id: Date.now() })]);
           showToast('設備新增成功');
         }
-        equipModal = { show: false, editingId: null };
+        equipModal = { show: false, editingId: null, initialEquip: null };
         rerender();
       }
 
@@ -766,14 +864,11 @@
         value: ''
       }, '請選擇單位'), contractors.map(function (c) {
         return h('option', { key: c, value: c }, c);
-      })), h('button', {
-        type: 'button',
+      })), iconActionBtn({ label: '新增單位選項', type: 'button',
         onClick: function () { showAddContractor = true; rerender(); },
-        className: 'px-3 border border-gray-300 rounded-md bg-gray-50 text-gray-600 hover:bg-gray-100 transition-colors',
-        title: '新增單位選項'
-      }, Icons.Plus({
+        className: 'px-3 border border-gray-300 rounded-md bg-gray-50 text-gray-600 hover:bg-gray-100 transition-colors', icon: Icons.Plus({
         className: 'h-5 w-5'
-      })))), h('div', null, h('label', {
+      }) }))), h('div', null, h('label', {
         className: 'block text-sm font-medium text-gray-700 mb-1'
       }, '進場日期'), h('input', {
         type: 'date',
@@ -817,74 +912,16 @@
         className: 'w-full text-left text-sm text-gray-600 whitespace-nowrap'
       }, h('thead', {
         className: 'bg-gray-50 text-gray-700 border-b'
-      }, h('tr', null, h('th', {
-        className: 'p-3 font-semibold'
-      }, '設備分類'), h('th', {
-        className: 'p-3 font-semibold'
-      }, '品牌 / 內外'), h('th', {
-        className: 'p-3 font-semibold'
-      }, '型號'), h('th', {
-        className: 'p-3 font-semibold'
-      }, '設備區域'), h('th', {
-        className: 'p-3 font-semibold'
-      }, '出廠 / 安裝日期'), h('th', {
-        className: 'p-3 font-semibold'
-      }, '資產編號'), h('th', {
-        className: 'p-3 font-semibold'
-      }, '流水序號'), h('th', {
-        className: 'p-3 font-semibold text-center w-24'
-      }, '操作'))), h('tbody', {
+      }, equipmentTableHeaders()), h('tbody', {
         className: 'divide-y divide-gray-100'
       }, equipmentList.length === 0 ? h('tr', null, h('td', {
-        colspan: '8',
+        colspan: '9',
         className: 'text-center p-8 text-gray-400 bg-gray-50/50'
       }, '尚未加入任何設備資料')) : equipmentList.map(function (eq) {
-        return h('tr', {
-          key: eq.id,
-          className: 'hover:bg-gray-50'
-        }, h('td', {
-          className: 'p-3'
-        }, h('div', {
-          className: 'font-medium text-gray-800'
-        }, eq.category), h('div', {
-          className: 'text-xs text-gray-500'
-        }, eq.name)), h('td', {
-          className: 'p-3'
-        }, eq.brand, ' ', h('span', {
-          className: 'text-gray-400'
-        }, '|'), ' ', eq.type), h('td', {
-          className: 'p-3 font-medium text-indigo-600'
-        }, eq.model), h('td', {
-          className: 'p-3'
-        }, eq.area || '-'), h('td', {
-          className: 'p-3'
-        }, h('div', {
-          className: 'text-xs'
-        }, '出：', eq.manufactureDate || '-'), h('div', {
-          className: 'text-xs'
-        }, '裝：', eq.installDate || '-')), h('td', {
-          className: 'p-3'
-        }, eq.assetNumber || '-'), h('td', {
-          className: 'p-3'
-        }, eq.serialNumber || '-'), h('td', {
-          className: 'p-3 text-center'
-        }, h('div', {
-          className: 'flex items-center justify-center gap-1'
-        }, h('button', {
-          type: 'button',
-          onClick: function () { openEquipModal(eq); },
-          className: 'p-1.5 text-blue-600 hover:bg-blue-100 rounded transition-colors',
-          title: '編輯設備'
-        }, Icons.Edit({
-          className: 'h-4 w-4'
-        })), h('button', {
-          type: 'button',
-          onClick: function () { handleDeleteEquipment(eq.id); },
-          className: 'p-1.5 text-red-500 hover:bg-red-100 rounded transition-colors',
-          title: '移除此設備'
-        }, Icons.Trash2({
-          className: 'h-4 w-4'
-        })))));
+        return renderEquipmentTableRow(eq, {
+          onEdit: openEquipModal,
+          onDelete: handleDeleteEquipment
+        });
       }))))), h('section', {
         className: 'bg-white p-6 rounded-lg shadow-sm border border-indigo-100 ring-1 ring-indigo-50'
       }, h('h3', {
@@ -945,130 +982,18 @@
         className: 'px-8 py-2.5 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 flex items-center gap-2 font-bold shadow-sm transition-colors'
       }, Icons.Save({
         className: 'h-5 w-5'
-      }), ' 儲存更新'))), equipModal.show && h('div', {
-        className: 'fixed inset-0 bg-black/40 flex items-center justify-center z-50'
-      }, h('div', {
-        className: 'bg-white rounded-lg shadow-xl p-6 w-[600px] max-w-full m-4 flex flex-col max-h-[90vh]'
-      }, h('div', {
-        className: 'flex items-center justify-between mb-4 border-b pb-3 shrink-0'
-      }, h('h3', {
-        className: 'text-lg font-bold text-gray-800'
-      }, equipModal.editingId ? '編輯設備' : '新增設備'), h('button', {
-        type: 'button',
-        onClick: function () { equipModal = { show: false, editingId: null }; rerender(); },
-        className: 'text-gray-500 hover:bg-gray-100 p-1 rounded-full'
-      }, Icons.X({
-        className: 'h-5 w-5'
-      }))), h('div', {
-        className: 'overflow-y-auto pr-2 space-y-4 flex-1'
-      }, h('div', {
-        className: 'grid grid-cols-2 gap-4'
-      }, h('div', null, h('label', {
-        className: 'block text-sm text-gray-600 mb-1'
-      }, '設備分類'), h('select', {
-        name: 'category',
-        value: currentEquip.category,
-        onChange: handleEquipChange,
-        className: 'w-full p-2 border rounded focus:ring-1 focus:ring-indigo-500 outline-none'
-      }, EQUIPMENT_CATEGORIES.map(function (opt) {
-        return h('option', { key: opt, value: opt }, opt);
-      }))), h('div', null, h('label', {
-        className: 'block text-sm text-gray-600 mb-1'
-      }, '設備名稱'), h('input', {
-        type: 'text',
-        name: 'name',
-        value: currentEquip.name,
-        onChange: handleEquipChange,
-        className: 'w-full p-2 border rounded focus:ring-1 focus:ring-indigo-500 outline-none',
-        placeholder: '例如：1F營業廳空調'
-      })), h('div', {
-        className: 'col-span-2'
-      }, h('label', {
-        className: 'block text-sm text-gray-600 mb-1'
-      }, '設備區域'), h('input', {
-        type: 'text',
-        name: 'area',
-        value: currentEquip.area,
-        onChange: handleEquipChange,
-        className: 'w-full p-2 border rounded focus:ring-1 focus:ring-indigo-500 outline-none',
-        placeholder: '例如：天花板上方'
-      })), h('div', null, h('label', {
-        className: 'block text-sm text-gray-600 mb-1'
-      }, '品牌'), h('select', {
-        name: 'brand',
-        value: currentEquip.brand,
-        onChange: handleEquipChange,
-        className: 'w-full p-2 border rounded focus:ring-1 focus:ring-indigo-500 outline-none'
-      }, EQUIPMENT_BRANDS.map(function (opt) {
-        return h('option', { key: opt, value: opt }, opt);
-      }))), h('div', null, h('label', {
-        className: 'block text-sm text-gray-600 mb-1'
-      }, '內 / 外'), h('select', {
-        name: 'type',
-        value: currentEquip.type,
-        onChange: handleEquipChange,
-        className: 'w-full p-2 border rounded focus:ring-1 focus:ring-indigo-500 outline-none'
-      }, EQUIPMENT_TYPES.map(function (opt) {
-        return h('option', { key: opt, value: opt }, opt);
-      }))), h('div', {
-        className: 'col-span-2'
-      }, h('label', {
-        className: 'block text-sm text-gray-600 mb-1'
-      }, '型號 ', h('span', {
-        className: 'text-red-500'
-      }, '*')), h('input', {
-        type: 'text',
-        name: 'model',
-        value: currentEquip.model,
-        onChange: handleEquipChange,
-        className: 'w-full p-2 border rounded focus:ring-1 focus:ring-indigo-500 outline-none',
-        placeholder: '輸入設備型號'
-      })), h('div', null, h('label', {
-        className: 'block text-sm text-gray-600 mb-1'
-      }, '出廠日期'), h('input', {
-        type: 'date',
-        name: 'manufactureDate',
-        value: currentEquip.manufactureDate,
-        onChange: handleEquipChange,
-        className: 'w-full p-2 border rounded focus:ring-1 focus:ring-indigo-500 outline-none'
-      })), h('div', null, h('label', {
-        className: 'block text-sm text-gray-600 mb-1'
-      }, '安裝日期'), h('input', {
-        type: 'date',
-        name: 'installDate',
-        value: currentEquip.installDate,
-        onChange: handleEquipChange,
-        className: 'w-full p-2 border rounded focus:ring-1 focus:ring-indigo-500 outline-none'
-      })), h('div', null, h('label', {
-        className: 'block text-sm text-gray-600 mb-1'
-      }, '資產編號'), h('input', {
-        type: 'text',
-        name: 'assetNumber',
-        value: currentEquip.assetNumber,
-        onChange: handleEquipChange,
-        className: 'w-full p-2 border rounded focus:ring-1 focus:ring-indigo-500 outline-none',
-        placeholder: '選填'
-      })), h('div', null, h('label', {
-        className: 'block text-sm text-gray-600 mb-1'
-      }, '流水序號 (QR Code)'), h('input', {
-        type: 'text',
-        name: 'serialNumber',
-        value: currentEquip.serialNumber,
-        onChange: handleEquipChange,
-        className: 'w-full p-2 border rounded focus:ring-1 focus:ring-indigo-500 outline-none',
-        placeholder: '選填'
-      })))), h('div', {
-        className: 'flex justify-end space-x-3 mt-6 pt-4 border-t shrink-0'
-      }, h('button', {
-        type: 'button',
-        onClick: function () { equipModal = { show: false, editingId: null }; rerender(); },
-        className: 'px-4 py-2 border rounded text-gray-600 hover:bg-gray-50 transition-colors'
-      }, '取消'), h('button', {
-        type: 'button',
-        onClick: handleSaveEquipment,
-        className: 'px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition-colors'
-      }, equipModal.editingId ? '更新設備' : '新增設備')))), showAddContractor && h('div', {
-        className: 'fixed inset-0 bg-black/40 flex items-center justify-center z-[60]'
+      }), ' 儲存更新'))), equipModal.show && h(ProjectEquipModal, {
+        initialEquip: equipModal.initialEquip,
+        editingId: equipModal.editingId,
+        deviceCategories: deviceCategories,
+        showToast: showToast,
+        onClose: function () {
+          equipModal = { show: false, editingId: null, initialEquip: null };
+          rerender();
+        },
+        onSave: handleEquipSaved
+      }), showAddContractor && h('div', {
+        className: 'fixed inset-0 bg-black/40 flex items-center justify-center z-[70]'
       }, h('div', {
         className: 'bg-white rounded-lg shadow-xl p-6 w-80 max-w-full m-4'
       }, h('h3', {

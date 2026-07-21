@@ -5,6 +5,7 @@
 (function () {
   'use strict';
   var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful, useDragScroll = IESS.useDragScroll;
+  var iconActionBtn = IESS.iconActionBtn;
 
   function StoreList(props) {
     var stores = props.stores;
@@ -153,11 +154,8 @@
                               className: 'p-1.5 text-red-600 hover:bg-red-100 rounded',
                               title: '刪除'
                             }, Icons.Trash2({ className: 'h-4 w-4' })),
-                            h('button', {
-                              onClick: function () { openHistory(s); },
-                              className: 'p-1.5 text-gray-500 hover:bg-gray-100 rounded',
-                              title: '歷史紀錄'
-                            }, Icons.Clock({ className: 'h-4 w-4' }))
+                            iconActionBtn({ label: '歷史紀錄', onClick: function () { openHistory(s); },
+                              className: 'p-1.5 text-gray-500 hover:bg-gray-100 rounded', icon: Icons.Clock({ className: 'h-4 w-4' }) })
                           )
                         ),
                         h('td', { className: 'p-3' }, s.district || '—'),

@@ -12,15 +12,7 @@
   }
 
   function iconActionBtn(opts) {
-    return h('span', { className: 'icon-tooltip' },
-      h('button', {
-        type: 'button',
-        onClick: opts.onClick,
-        className: opts.className,
-        'aria-label': opts.label
-      }, opts.icon),
-      h('span', { className: 'icon-tooltip__tip', role: 'tooltip' }, opts.label)
-    );
+    return IESS.iconActionBtn(opts);
   }
 
   function CaseList(props) {

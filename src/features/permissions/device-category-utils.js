@@ -83,12 +83,129 @@
     return [n.category, n.brand, n.model].filter(Boolean).join(' / ');
   }
 
+  function uniqueFieldValues(deviceCategories, field, filters) {
+    filters = filters || {};
+    var seen = {};
+    var result = [];
+    (deviceCategories || []).forEach(function (dc) {
+      var match = Object.keys(filters).every(function (key) {
+        return !filters[key] || String(dc[key] || '').trim() === filters[key];
+      });
+      if (!match) return;
+      var val = String(dc[field] || '').trim();
+      if (!val || seen[val]) return;
+      seen[val] = true;
+      result.push(val);
+    });
+    return result;
+  }
+
+  function withCurrentValue(options, currentValue) {
+    var val = String(currentValue || '').trim();
+    if (!val || options.indexOf(val) >= 0) return options;
+    return options.concat([val]);
+  }
+
+  function findRecordByModel(deviceCategories, model) {
+    var target = String(model || '').trim();
+    if (!target) return null;
+    for (var i = 0; i < (deviceCategories || []).length; i++) {
+      if (String(deviceCategories[i].model || '').trim() === target) {
+        return deviceCategories[i];
+      }
+    }
+    return null;
+  }
+
+  function findBestMatchingRecord(deviceCategories, equip) {
+    var list = deviceCategories || [];
+    if (!list.length || !equip) return null;
+
+    var model = String(equip.model || '').trim();
+    if (model) {
+      var byModel = findRecordByModel(list, model);
+      if (byModel) return byModel;
+    }
+
+    var category = String(equip.category || '').trim();
+    var brand = String(equip.brand || '').trim();
+    var deviceName = String(equip.deviceName || equip.name || '').trim();
+    var specification = String(equip.specification || '').trim();
+
+    var best = null;
+    var bestScore = 0;
+    list.forEach(function (dc) {
+      var score = 0;
+      if (model && String(dc.model || '').trim() === model) score += 8;
+      if (category && String(dc.category || '').trim() === category) score += 4;
+      if (brand && String(dc.brand || '').trim() === brand) score += 2;
+      if (deviceName && String(dc.deviceName || '').trim() === deviceName) score += 2;
+      if (specification && String(dc.specification || '').trim() === specification) score += 1;
+      if (score > bestScore) {
+        bestScore = score;
+        best = dc;
+      }
+    });
+    return bestScore >= 4 ? best : null;
+  }
+
+  function resolveProjectEquip(equip, deviceCategories) {
+    if (!equip) {
+      return {
+        category: '',
+        brand: '',
+        deviceName: '',
+        specification: '',
+        model: '',
+        area: '',
+        manufactureDate: '',
+        installDate: '',
+        assetNumber: '',
+        serialNumber: ''
+      };
+    }
+
+    var matched = findBestMatchingRecord(deviceCategories, equip);
+    if (matched) {
+      return {
+        category: matched.category || '',
+        brand: matched.brand || '',
+        deviceName: matched.deviceName || '',
+        specification: matched.specification || '',
+        model: matched.model || '',
+        area: equip.area || '',
+        manufactureDate: equip.manufactureDate || '',
+        installDate: equip.installDate || '',
+        assetNumber: equip.assetNumber || '',
+        serialNumber: equip.serialNumber || ''
+      };
+    }
+
+    return {
+      category: equip.category || '',
+      brand: equip.brand || '',
+      deviceName: equip.deviceName || equip.name || '',
+      specification: equip.specification || '',
+      model: equip.model || '',
+      area: equip.area || '',
+      manufactureDate: equip.manufactureDate || '',
+      installDate: equip.installDate || '',
+      assetNumber: equip.assetNumber || '',
+      serialNumber: equip.serialNumber || ''
+    };
+  }
+
   window.DeviceCategoryUtils = {
     FIELD_KEYS: FIELD_KEYS,
     normalizeRecord: normalizeRecord,
     syncDeviceCategoryOptions: syncDeviceCategoryOptions,
     findDuplicate: findDuplicate,
     isDeviceCategoryInUse: isDeviceCategoryInUse,
-    formatRecordLabel: formatRecordLabel
+    formatRecordLabel: formatRecordLabel,
+    uniqueFieldValues: uniqueFieldValues,
+    withCurrentValue: withCurrentValue,
+    findRecordByModel: findRecordByModel,
+    findBestMatchingRecord: findBestMatchingRecord,
+    resolveProjectEquip: resolveProjectEquip
   };
 })();

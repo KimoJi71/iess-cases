@@ -5,6 +5,7 @@
 (function () {
   'use strict';
   var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful, useDragScroll = IESS.useDragScroll;
+  var iconActionBtn = IESS.iconActionBtn;
 
   function isMaintenancePlanCase(c) {
     return c && c.sourceType === 'maintenance';
@@ -131,8 +132,7 @@
                         className: 'p-1.5 text-blue-600 hover:bg-blue-100 rounded',
                         title: '查看明細'
                       }, Icons.Eye({ className: 'h-4 w-4' })),
-                      h('button', {
-                        onClick: function () {
+                      iconActionBtn({ label: '列入案件績效', onClick: function () {
                           includeConfirmModal = {
                             show: true,
                             caseId: c.id,
@@ -140,9 +140,7 @@
                           };
                           rerender();
                         },
-                        className: 'p-1.5 text-amber-500 hover:bg-amber-100 rounded',
-                        title: '列入案件績效'
-                      }, Icons.Star({ className: 'h-4 w-4' }))
+                        className: 'p-1.5 text-amber-500 hover:bg-amber-100 rounded', icon: Icons.Star({ className: 'h-4 w-4' }) })
                     )
                   ),
                   h('td', { className: 'p-3' }, IESS.caseDateTime.format(getReviewCaseDate(c))),

@@ -8,6 +8,7 @@
 (function () {
   'use strict';
   var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful, useDragScroll = IESS.useDragScroll;
+  var iconActionBtn = IESS.iconActionBtn;
 
   function defaultEquip() {
     return {
@@ -177,11 +178,8 @@
                     h('select', { name: 'suggestedContractor', value: formData.suggestedContractor, onChange: handleChange, className: inputCls },
                       h('option', { value: '' }, '請選擇單位'),
                       contractors.map(function (c) { return h('option', { key: c, value: c }, c); })),
-                    h('button', {
-                      type: 'button', onClick: function () { showAddContractor = true; rerender(); },
-                      className: 'px-3 border border-gray-300 rounded-md bg-gray-50 text-gray-600 hover:bg-gray-100 transition-colors',
-                      title: '新增單位選項'
-                    }, Icons.Plus({ className: 'h-5 w-5' })))
+                    iconActionBtn({ label: '新增單位選項', type: 'button', onClick: function () { showAddContractor = true; rerender(); },
+                      className: 'px-3 border border-gray-300 rounded-md bg-gray-50 text-gray-600 hover:bg-gray-100 transition-colors', icon: Icons.Plus({ className: 'h-5 w-5' }) }))
                 ),
                 h('div', null,
                   h('label', { className: 'block text-sm font-medium text-gray-700 mb-1' }, '進場日期'),
@@ -257,6 +255,7 @@
               h('h3', { className: 'text-lg font-bold text-gray-800' }, '新增 / 編輯設備'),
               h('button', {
                 type: 'button', onClick: function () { equipModal = { show: false }; rerender(); },
+                title: '關閉',
                 className: 'text-gray-500 hover:bg-gray-100 p-1 rounded-full'
               }, Icons.X({ className: 'h-5 w-5' }))
             ),

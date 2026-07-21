@@ -5,6 +5,7 @@
 (function () {
   'use strict';
   var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful, useDragScroll = IESS.useDragScroll;
+  var iconActionBtn = IESS.iconActionBtn;
 
   function ProjectList(props) {
     var cases = props.cases;
@@ -167,16 +168,13 @@
         })), h('button', {
           onClick: function () { historyModal = { show: true, caseData: c }; rerender(); },
           className: 'p-1.5 text-indigo-500 hover:bg-indigo-100 rounded',
-          title: '案件歷程 (註記說明)'
+          title: '案件歷程'
         }, Icons.Clock({
           className: 'h-4 w-4'
-        })), h('button', {
-          onClick: function () { closeConfirmModal = { show: true, id: c.id }; rerender(); },
-          className: 'p-1.5 text-green-600 hover:bg-green-100 rounded',
-          title: '編輯結案狀態'
-        }, Icons.CheckCircle({
+        })), iconActionBtn({ label: '編輯結案狀態', onClick: function () { closeConfirmModal = { show: true, id: c.id }; rerender(); },
+          className: 'p-1.5 text-green-600 hover:bg-green-100 rounded', icon: Icons.CheckCircle({
           className: 'h-4 w-4'
-        })))), h('td', {
+        }) }))), h('td', {
           className: 'p-3 font-medium text-blue-700'
         }, c.projectNumber), h('td', {
           className: 'p-3'

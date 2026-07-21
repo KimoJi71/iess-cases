@@ -39,6 +39,14 @@ body {
   box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
 }
 
+.searchable-select__menu--portal {
+  position: fixed;
+  z-index: 100;
+  top: auto;
+  left: auto;
+  right: auto;
+}
+
 .searchable-select__option {
   display: block;
   width: 100%;
@@ -307,7 +315,7 @@ body {
   opacity: 0;
   visibility: hidden;
   transition: opacity 0.1s ease, visibility 0.1s ease;
-  z-index: 50;
+  z-index: 100;
 }
 
 .icon-tooltip:hover .icon-tooltip__tip,

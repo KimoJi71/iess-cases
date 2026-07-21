@@ -5,6 +5,7 @@
 (function () {
   'use strict';
   var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful, useDragScroll = IESS.useDragScroll;
+  var iconActionBtn = IESS.iconActionBtn;
 
   function enabledBadge(enabled) {
     return h('span', {
@@ -116,11 +117,8 @@
                             title: '刪除',
                             disabled: a.username === 'admin'
                           }, Icons.Trash2({ className: 'h-4 w-4 ' + (a.username === 'admin' ? 'opacity-30' : '') })),
-                          h('button', {
-                            onClick: function () { setEditingCase(a); setView('account-permissions'); },
-                            className: 'p-1.5 text-amber-600 hover:bg-amber-100 rounded',
-                            title: '權限設定'
-                          }, Icons.Settings({ className: 'h-4 w-4' }))
+                          iconActionBtn({ label: '權限設定', onClick: function () { setEditingCase(a); setView('account-permissions'); },
+                            className: 'p-1.5 text-amber-600 hover:bg-amber-100 rounded', icon: Icons.Settings({ className: 'h-4 w-4' }) })
                         )
                       ),
                       h('td', { className: 'p-3 font-medium text-gray-800' }, a.name),

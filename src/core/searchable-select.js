@@ -54,6 +54,7 @@
     var inputEl = null;
     var menuEl = null;
     var blurTimer = null;
+    var menuScrollHandler = null;
 
     return stateful(function () {
       var options = props.options || [];
@@ -86,20 +87,56 @@
         return '請選擇';
       }
 
-      function selectableOptions() {
+      function menuOptions() {
         return options.filter(function (opt) {
-          return !(opt.disabled && opt.value === '');
+          if (opt.value === '' || opt.disabled) return false;
+          return true;
         });
       }
 
       function filteredOptions() {
         var query = normalizeQuery(filterText);
-        return selectableOptions().filter(function (opt) {
+        return menuOptions().filter(function (opt) {
           return optionMatchesQuery(opt, query);
         });
       }
 
+      function findActiveIndex(list) {
+        for (var i = 0; i < list.length; i++) {
+          if (String(list[i].value) === value) return i;
+        }
+        return 0;
+      }
+
+      function positionMenu() {
+        if (!menuEl || !inputEl) return;
+        var rect = inputEl.getBoundingClientRect();
+        menuEl.style.position = 'fixed';
+        menuEl.style.top = (rect.bottom + 2) + 'px';
+        menuEl.style.left = rect.left + 'px';
+        menuEl.style.width = rect.width + 'px';
+        menuEl.style.right = 'auto';
+        menuEl.style.zIndex = '100';
+      }
+
+      function bindMenuListeners() {
+        if (menuScrollHandler) return;
+        menuScrollHandler = function () {
+          if (isOpen) positionMenu();
+        };
+        window.addEventListener('scroll', menuScrollHandler, true);
+        window.addEventListener('resize', menuScrollHandler);
+      }
+
+      function unbindMenuListeners() {
+        if (!menuScrollHandler) return;
+        window.removeEventListener('scroll', menuScrollHandler, true);
+        window.removeEventListener('resize', menuScrollHandler);
+        menuScrollHandler = null;
+      }
+
       function removeMenu() {
+        unbindMenuListeners();
         if (menuEl && menuEl.parentNode) menuEl.parentNode.removeChild(menuEl);
         menuEl = null;
       }
@@ -115,11 +152,16 @@
 
         if (!menuEl) {
           menuEl = document.createElement('ul');
-          menuEl.className = 'searchable-select__menu';
+          menuEl.className = 'searchable-select__menu searchable-select__menu--portal';
           menuEl.setAttribute('role', 'listbox');
-          rootEl.appendChild(menuEl);
+          menuEl.addEventListener('mousedown', function (e) {
+            e.preventDefault();
+          });
+          document.body.appendChild(menuEl);
+          bindMenuListeners();
         }
 
+        positionMenu();
         menuEl.innerHTML = '';
 
         if (!list.length) {
@@ -148,13 +190,17 @@
           }
           btn.setAttribute('aria-selected', String(opt.value) === value ? 'true' : 'false');
 
-          btn.addEventListener('mousedown', function (e) { e.preventDefault(); });
-          btn.addEventListener('mouseenter', function () {
-            activeIndex = idx;
-            syncMenu();
+          btn.addEventListener('mousedown', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (!opt.disabled) chooseOption(opt);
           });
-          btn.addEventListener('click', function () {
-            chooseOption(opt);
+          btn.addEventListener('mouseenter', function () {
+            if (activeIndex === idx) return;
+            var prev = menuEl.querySelector('.searchable-select__option--active');
+            if (prev) prev.classList.remove('searchable-select__option--active');
+            activeIndex = idx;
+            btn.classList.add('searchable-select__option--active');
           });
 
           item.appendChild(btn);
@@ -178,7 +224,7 @@
         if (disabled || readOnly) return;
         clearBlurTimer();
         isOpen = true;
-        activeIndex = 0;
+        activeIndex = findActiveIndex(filteredOptions());
         if (inputEl) {
           inputEl.readOnly = false;
           if (!hasTyped) inputEl.value = getLabel(value);
@@ -205,7 +251,9 @@
       function scheduleClose() {
         clearBlurTimer();
         blurTimer = setTimeout(function () {
-          if (rootEl && rootEl.contains(document.activeElement)) return;
+          var active = document.activeElement;
+          if (rootEl && rootEl.contains(active)) return;
+          if (menuEl && menuEl.contains(active)) return;
           closeMenu();
         }, 150);
       }
@@ -217,8 +265,11 @@
 
       function chooseOption(option) {
         if (!option || option.disabled) return;
-        emitChange(option.value);
+        var nextValue = option.value;
         closeMenu();
+        setTimeout(function () {
+          emitChange(nextValue);
+        }, 0);
       }
 
       function applyFilterFromInput() {
@@ -289,7 +340,10 @@
 
       return h('div', {
         className: 'searchable-select',
-        ref: function (node) { rootEl = node; }
+        ref: function (node) {
+          if (rootEl && rootEl !== node) removeMenu();
+          rootEl = node;
+        }
       },
         h('input', {
           type: 'text',

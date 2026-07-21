@@ -5,6 +5,7 @@
 (function () {
   'use strict';
   var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful;
+  var iconActionBtn = IESS.iconActionBtn;
 
   function ProjectHistoryModal(props) {
     var caseData = props.caseData;
@@ -25,11 +26,24 @@
     var fileInputRef = null;
     var messagesEndRef = null;
     var menuRef = null;
+    var inputRef = null;
 
     // 捲動到最新訊息（對應 useEffect，依賴 caseData.comments）
     var lastComments = undefined;
 
     return stateful(function (rerender) {
+      function focusChatInput(cursorPos) {
+        setTimeout(function () {
+          var input = inputRef || document.getElementById('chatInput');
+          if (input) {
+            input.focus();
+            if (cursorPos != null) {
+              try { input.setSelectionRange(cursorPos, cursorPos); } catch (e) { /* 略過 */ }
+            }
+          }
+        }, 0);
+      }
+
       function handleInputChange(e) {
         var val = e.target.value;
         inputText = val;
@@ -67,10 +81,12 @@
               };
               selectedIndex = 0;
               rerender();
-            } else {
-              tagMenu = Object.assign({}, tagMenu, { show: false });
-              rerender();
+              // 選單插入 DOM 後路徑式 focus 還原會失效，需明確還原游標
+              focusChatInput(cursorPos);
+              return;
             }
+            tagMenu = Object.assign({}, tagMenu, { show: false });
+            rerender();
             return;
           }
         }
@@ -85,8 +101,10 @@
         }
         var before = inputText.slice(0, tagMenu.matchStart);
         var after = inputText.slice(tagMenu.matchEnd);
-        var newText = before + tagMenu.type + option + ' ' + after;
+        var tagType = tagMenu.type;
+        var newText = before + tagType + option + ' ' + after;
         inputText = newText;
+        var newCursorPos = before.length + tagType.length + option.length + 1;
         tagMenu = {
           show: false,
           type: '',
@@ -97,40 +115,35 @@
         };
         rerender();
 
-        // 延遲讓 textarea 重新 focus 並設定正確的光標位置
-        setTimeout(function () {
-          var input = document.getElementById('chatInput');
-          if (input) {
-            input.focus();
-            var newCursorPos = before.length + option.length + 2;
-            input.setSelectionRange(newCursorPos, newCursorPos);
-          }
-        }, 0);
+        focusChatInput(newCursorPos);
       }
 
       function scrollMenuItemIntoView(index) {
-        if (menuRef) {
-          var items = menuRef.querySelectorAll('button');
-          if (items[index]) items[index].scrollIntoView({
-            block: 'nearest'
-          });
+        if (!menuRef) return;
+        var items = menuRef.querySelectorAll('[data-tag-option]');
+        if (items[index]) {
+          items[index].scrollIntoView({ block: 'nearest' });
         }
+      }
+
+      function moveTagSelection(delta, cursorPos) {
+        if (!tagMenu.show || tagMenu.options.length === 0) return;
+        var len = tagMenu.options.length;
+        selectedIndex = (selectedIndex + delta + len) % len;
+        rerender();
+        focusChatInput(cursorPos);
+        setTimeout(function () { scrollMenuItemIntoView(selectedIndex); }, 0);
       }
 
       function handleKeyDown(e) {
         if (tagMenu.show) {
+          var cursorPos = e.target.selectionStart;
           if (e.key === 'ArrowDown') {
             e.preventDefault();
-            var next = (selectedIndex + 1) % tagMenu.options.length;
-            scrollMenuItemIntoView(next);
-            selectedIndex = next;
-            rerender();
+            moveTagSelection(1, cursorPos);
           } else if (e.key === 'ArrowUp') {
             e.preventDefault();
-            var nextUp = (selectedIndex - 1 + tagMenu.options.length) % tagMenu.options.length;
-            scrollMenuItemIntoView(nextUp);
-            selectedIndex = nextUp;
-            rerender();
+            moveTagSelection(-1, cursorPos);
           } else if (e.key === 'Enter') {
             e.preventDefault();
             handleTagSelect(tagMenu.options[selectedIndex]);
@@ -138,6 +151,7 @@
             e.preventDefault();
             tagMenu = Object.assign({}, tagMenu, { show: false });
             rerender();
+            focusChatInput(cursorPos);
           }
         } else {
           if (e.key === 'Enter' && !e.shiftKey) {
@@ -216,6 +230,7 @@
         className: 'text-sm font-normal text-indigo-700 bg-indigo-100 px-2 py-0.5 rounded'
       }, caseData.projectNumber)), h('button', {
         onClick: onClose,
+        title: '關閉',
         className: 'text-gray-500 hover:bg-gray-200 p-1.5 rounded-full transition-colors'
       }, Icons.X({
         className: 'h-5 w-5'
@@ -253,6 +268,7 @@
         className: 'p-4 border-t bg-white shrink-0 relative rounded-b-lg'
       }, tagMenu.show && h('div', {
         ref: function (node) { menuRef = node; },
+        onMouseDown: function (e) { e.preventDefault(); },
         className: 'absolute bottom-full mb-2 left-4 bg-white border border-gray-200 rounded-md shadow-lg py-1 w-48 max-h-48 overflow-y-auto z-10'
       }, h('div', {
         className: 'px-3 py-1 text-xs font-bold text-gray-400 bg-gray-50 border-b border-gray-100 mb-1 flex justify-between'
@@ -263,8 +279,12 @@
         var isNew = tagMenu.type === '#' && !DYNAMIC_PROJECT_TAGS.includes(opt);
         return h('button', {
           key: opt + '-' + idx,
-          onClick: function () { handleTagSelect(opt); },
-          onMouseEnter: function () { selectedIndex = idx; rerender(); },
+          type: 'button',
+          'data-tag-option': 'true',
+          onMouseDown: function (e) {
+            e.preventDefault();
+            handleTagSelect(opt);
+          },
           className: 'w-full text-left px-3 py-2 text-sm flex items-center justify-between transition-colors ' + (isSelected ? 'bg-indigo-100 text-indigo-800 font-medium' : 'text-gray-700 hover:bg-indigo-50')
         }, h('span', null, opt), isNew && h('span', {
           className: 'text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded shadow-sm border border-green-200'
@@ -279,6 +299,7 @@
         className: 'truncate'
       }, attachment.name)), h('button', {
         onClick: function () { attachment = null; rerender(); },
+        title: '移除附件',
         className: 'text-gray-400 hover:text-red-500 p-1'
       }, Icons.X({
         className: 'h-4 w-4'
@@ -288,6 +309,7 @@
         className: 'flex-1 bg-gray-50 border border-gray-300 rounded-lg focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-indigo-500 transition-all flex items-end'
       }, h('textarea', {
         id: 'chatInput',
+        ref: function (node) { inputRef = node; },
         value: inputText,
         onChange: handleInputChange,
         onKeyDown: handleKeyDown,
@@ -302,20 +324,12 @@
         onChange: handleFileSelect,
         accept: '.pdf',
         className: 'hidden'
-      }), h('button', {
-        onClick: function () { if (fileInputRef) fileInputRef.click(); },
-        className: 'p-2 rounded-full transition-colors ' + (attachment ? 'bg-indigo-100 text-indigo-600' : 'text-gray-400 hover:bg-gray-200 hover:text-gray-600'),
-        title: '上傳 PDF 附件'
-      }, Icons.Paperclip({
+      }), iconActionBtn({ label: '上傳 PDF 附件', onClick: function () { if (fileInputRef) fileInputRef.click(); },
+        className: 'p-2 rounded-full transition-colors ' + (attachment ? 'bg-indigo-100 text-indigo-600' : 'text-gray-400 hover:bg-gray-200 hover:text-gray-600'), icon: Icons.Paperclip({
         className: 'h-5 w-5'
-      })))), h('button', {
-        onClick: handleSend,
+      }) }))), iconActionBtn({ label: '發送 (Enter)', onClick: handleSend,
         disabled: !inputText.trim() && !attachment,
-        className: 'p-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0',
-        title: '發送 (Enter)'
-      }, Icons.Send({
-        className: 'h-5 w-5'
-      }))))));
+        className: 'p-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0', icon: Icons.Send({ className: 'h-5 w-5' }) })))));
     });
   }
 

@@ -5,6 +5,7 @@
 (function () {
   'use strict';
   var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful;
+  var iconActionBtn = IESS.iconActionBtn;
 
   function StoreForm(props) {
     var stores = props.stores;
@@ -304,12 +305,9 @@
                                 className: 'p-1.5 text-blue-600 hover:bg-blue-100 rounded',
                                 title: '編輯承辦資料'
                               }, Icons.Edit({ className: 'h-4 w-4' })),
-                              h('button', {
-                                type: 'button',
+                              iconActionBtn({ label: '刪除承辦資料', type: 'button',
                                 onClick: function () { handleDeleteContact(ct.id); },
-                                className: 'p-1.5 text-red-600 hover:bg-red-100 rounded',
-                                title: '刪除承辦資料'
-                              }, Icons.Trash2({ className: 'h-4 w-4' }))
+                                className: 'p-1.5 text-red-600 hover:bg-red-100 rounded', icon: Icons.Trash2({ className: 'h-4 w-4' }) })
                             )
                           )
                         );
@@ -355,12 +353,12 @@
                             className: 'w-32 h-24 flex items-center justify-center rounded-md border border-gray-200 bg-gray-100 text-gray-400'
                           }, Icons.FileText({ className: 'h-7 w-7' })),
                       h('div', { className: 'mt-1 text-xs text-gray-600 truncate', title: p.name }, p.name),
-                      h('button', {
-                        type: 'button',
+                      iconActionBtn({
+                        label: '刪除檔案',
                         onClick: function () { handleDeletePhoto(p.id); },
                         className: 'absolute -top-2 -right-2 p-1 bg-white border border-gray-200 rounded-full text-red-500 hover:bg-red-50 shadow-sm',
-                        title: '刪除檔案'
-                      }, Icons.X({ className: 'h-3.5 w-3.5' }))
+                        icon: Icons.X({ className: 'h-3.5 w-3.5' })
+                      })
                     );
                   })
                 )
@@ -385,6 +383,7 @@
               h('h3', { className: 'text-lg font-bold text-gray-800' }, currentContact.id ? '編輯承辦資料' : '新增承辦資料'),
               h('button', {
                 onClick: function () { contactModal = { show: false }; rerender(); },
+                title: '關閉',
                 className: 'p-1.5 hover:bg-gray-100 rounded-full'
               }, Icons.X({ className: 'h-5 w-5' }))
             ),

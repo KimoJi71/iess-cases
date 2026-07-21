@@ -5,6 +5,7 @@
 (function () {
   'use strict';
   var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful, useDragScroll = IESS.useDragScroll;
+  var iconActionBtn = IESS.iconActionBtn;
 
   function SurveyList(props) {
     var cases = props.cases;
@@ -144,11 +145,8 @@
                       className: 'p-1.5 text-emerald-600 hover:bg-emerald-100 rounded',
                       title: '下載 PDF'
                     }, Icons.Download({ className: 'h-4 w-4' })),
-                    h('button', {
-                      onClick: function () { deleteConfirmModal = { show: true, id: c.id }; rerender(); },
-                      className: 'p-1.5 text-red-500 hover:bg-red-100 rounded',
-                      title: '刪除'
-                    }, Icons.Trash2({ className: 'h-4 w-4' }))
+                    iconActionBtn({ label: '刪除', onClick: function () { deleteConfirmModal = { show: true, id: c.id }; rerender(); },
+                      className: 'p-1.5 text-red-500 hover:bg-red-100 rounded', icon: Icons.Trash2({ className: 'h-4 w-4' }) })
                   )
                 ),
                 h('td', {

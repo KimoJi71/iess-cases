@@ -5,6 +5,7 @@
 (function () {
   'use strict';
   var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful;
+  var iconActionBtn = IESS.iconActionBtn;
 
   function CustomerForm(props) {
     var cases = props.cases;
@@ -242,12 +243,9 @@
                                 className: 'p-1.5 text-blue-600 hover:bg-blue-100 rounded',
                                 title: '編輯承辦資料'
                               }, Icons.Edit({ className: 'h-4 w-4' })),
-                              h('button', {
-                                type: 'button',
+                              iconActionBtn({ label: '刪除承辦資料', type: 'button',
                                 onClick: function () { handleDeleteContact(ct.id); },
-                                className: 'p-1.5 text-red-600 hover:bg-red-100 rounded',
-                                title: '刪除承辦資料'
-                              }, Icons.Trash2({ className: 'h-4 w-4' }))
+                                className: 'p-1.5 text-red-600 hover:bg-red-100 rounded', icon: Icons.Trash2({ className: 'h-4 w-4' }) })
                             )
                           )
                         );
@@ -277,6 +275,7 @@
                 currentContact.id ? '編輯承辦資料' : '新增承辦資料'),
               h('button', {
                 onClick: function () { contactModal = { show: false }; rerender(); },
+                title: '關閉',
                 className: 'p-1.5 hover:bg-gray-100 rounded-full'
               }, Icons.X({ className: 'h-5 w-5' }))
             ),

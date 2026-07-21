@@ -5,6 +5,7 @@
 (function () {
   'use strict';
   var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful, useDragScroll = IESS.useDragScroll;
+  var iconActionBtn = IESS.iconActionBtn;
 
   var COLUMNS = [
     { key: 'category', label: '設備分類' },
@@ -119,8 +120,7 @@
                             className: 'p-1.5 text-blue-600 hover:bg-blue-100 rounded',
                             title: '編輯'
                           }, Icons.Edit({ className: 'h-4 w-4' })),
-                          h('button', {
-                            onClick: function () {
+                          iconActionBtn({ label: '刪除', onClick: function () {
                               deleteModal = {
                                 show: true,
                                 id: dc.id,
@@ -128,9 +128,7 @@
                               };
                               rerender();
                             },
-                            className: 'p-1.5 text-red-600 hover:bg-red-100 rounded',
-                            title: '刪除'
-                          }, Icons.Trash2({ className: 'h-4 w-4' }))
+                            className: 'p-1.5 text-red-600 hover:bg-red-100 rounded', icon: Icons.Trash2({ className: 'h-4 w-4' }) })
                         )
                       ),
                       COLUMNS.map(function (col) {

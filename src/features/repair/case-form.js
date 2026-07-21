@@ -679,6 +679,7 @@
       }, h("button", {
         type: "button",
         onClick: function () { handleRemoveRecord(r.id); },
+        title: "移除此處理方式",
         className: "text-red-500"
       }, Icons.X({
         className: "h-4 w-4"
