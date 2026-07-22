@@ -28,6 +28,43 @@
     return !!((c && c.expectedTimeStart) || (c && c.planTimeStart));
   }
 
+  function getExpectedScheduleDate(c) {
+    return (c && (c.expectedDate || c.planDate)) || '';
+  }
+
+  function getExpectedScheduleTimeStart(c) {
+    return (c && (c.expectedTimeStart || c.planTimeStart)) || '';
+  }
+
+  function isExpectedScheduleOverdue(c) {
+    var date = getExpectedScheduleDate(c);
+    if (!date) return false;
+    if (date < todayDate) return true;
+    if (date > todayDate) return false;
+
+    var timeStart = getExpectedScheduleTimeStart(c);
+    if (!timeStart) return false;
+
+    var parts = timeStart.split(':');
+    var now = new Date();
+    var scheduled = new Date(now);
+    scheduled.setHours(parseInt(parts[0], 10), parseInt(parts[1] || '0', 10), 0, 0);
+    return now > scheduled;
+  }
+
+  function getCaseListIndicatorClass(c) {
+    if (c && c.processStatus === '案件完成') {
+      return 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]';
+    }
+    if (c && c.workCategory === '緊急叫修') {
+      return 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]';
+    }
+    if (isExpectedScheduleOverdue(c)) {
+      return 'bg-yellow-400 shadow-[0_0_8px_rgba(250,204,21,0.6)]';
+    }
+    return 'bg-gray-300';
+  }
+
   function isDispatched(c) {
     return hasValidAssignee(c) && hasExpectedDate(c) && hasExpectedTime(c);
   }
@@ -137,6 +174,8 @@
     hasProcessData: hasProcessData,
     getCaseListDispatchStatus: getCaseListDispatchStatus,
     getCaseListDispatchBadgeClass: getCaseListDispatchBadgeClass,
+    getCaseListIndicatorClass: getCaseListIndicatorClass,
+    isExpectedScheduleOverdue: isExpectedScheduleOverdue,
     RE_REPAIR_STATUSES: RE_REPAIR_STATUSES,
     CLOSE_BUTTON_STATUSES: CLOSE_BUTTON_STATUSES
   };

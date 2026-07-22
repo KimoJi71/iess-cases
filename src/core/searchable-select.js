@@ -58,13 +58,14 @@
     var hasTyped = false;
     var activeIndex = 0;
     var isComposing = false;
+    var pendingValue = null;
     var rootEl = null;
     var inputEl = null;
     var menuEl = null;
     var blurTimer = null;
     var menuScrollHandler = null;
 
-    return stateful(function () {
+    return stateful(function (rerender) {
       var options = props.options || [];
       var value = props.value != null ? String(props.value) : '';
       var disabled = !!props.disabled;
@@ -73,6 +74,10 @@
       var name = props.name || '';
       var onChange = props.onChange;
       var required = props.required;
+
+      if (pendingValue != null && String(pendingValue) === String(value)) {
+        pendingValue = null;
+      }
 
       function clearBlurTimer() {
         if (blurTimer) {
@@ -86,6 +91,15 @@
           if (String(options[i].value) === String(val)) return options[i].label;
         }
         return val || '';
+      }
+
+      function getEffectiveValue() {
+        return pendingValue != null ? pendingValue : value;
+      }
+
+      function getDisplayValue() {
+        if (isOpen && hasTyped) return filterText;
+        return getLabel(getEffectiveValue());
       }
 
       function getPlaceholder() {
@@ -110,8 +124,9 @@
       }
 
       function findActiveIndex(list) {
+        var current = getEffectiveValue();
         for (var i = 0; i < list.length; i++) {
-          if (String(list[i].value) === value) return i;
+          if (String(list[i].value) === current) return i;
         }
         return 0;
       }
@@ -181,6 +196,7 @@
           return;
         }
 
+        var currentValue = getEffectiveValue();
         list.forEach(function (opt, idx) {
           var item = document.createElement('li');
           item.setAttribute('role', 'presentation');
@@ -191,12 +207,12 @@
           btn.textContent = opt.label;
           btn.className = 'searchable-select__option';
           if (idx === activeIndex) btn.className += ' searchable-select__option--active';
-          if (String(opt.value) === value) btn.className += ' searchable-select__option--selected';
+          if (String(opt.value) === currentValue) btn.className += ' searchable-select__option--selected';
           if (opt.disabled) {
             btn.className += ' searchable-select__option--disabled';
             btn.disabled = true;
           }
-          btn.setAttribute('aria-selected', String(opt.value) === value ? 'true' : 'false');
+          btn.setAttribute('aria-selected', String(opt.value) === currentValue ? 'true' : 'false');
 
           btn.addEventListener('mousedown', function (e) {
             e.preventDefault();
@@ -219,43 +235,21 @@
         if (activeBtn) activeBtn.scrollIntoView({ block: 'nearest' });
       }
 
-      function syncToggle() {
-        if (!rootEl) return;
-        var btn = rootEl.querySelector('.searchable-select__toggle');
-        var chevron = rootEl.querySelector('.searchable-select__chevron');
-        if (btn) btn.setAttribute('aria-label', isOpen ? '收合選項' : '展開選項');
-        if (chevron) {
-          if (isOpen) chevron.classList.add('searchable-select__chevron--open');
-          else chevron.classList.remove('searchable-select__chevron--open');
-        }
-      }
-
-      function syncClosedInput() {
-        if (!inputEl || disabled) return;
-        inputEl.readOnly = readOnly || !isOpen;
-        if (!isOpen && !hasTyped) {
-          inputEl.value = getLabel(value);
-        }
-        inputEl.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-        syncToggle();
-      }
-
       function openMenu() {
         if (disabled || readOnly) return;
         clearBlurTimer();
         isOpen = true;
+        hasTyped = false;
+        filterText = '';
         activeIndex = findActiveIndex(filteredOptions());
-        if (inputEl) {
-          inputEl.readOnly = false;
-          if (!hasTyped) inputEl.value = getLabel(value);
-          setTimeout(function () {
-            if (inputEl) {
-              try { inputEl.select(); } catch (err) { /* ignore */ }
-            }
-          }, 0);
-        }
+        rerender();
         syncMenu();
-        syncClosedInput();
+        setTimeout(function () {
+          if (inputEl) {
+            inputEl.focus();
+            try { inputEl.select(); } catch (err) { /* ignore */ }
+          }
+        }, 0);
       }
 
       function closeMenu() {
@@ -265,7 +259,7 @@
         hasTyped = false;
         activeIndex = 0;
         removeMenu();
-        syncClosedInput();
+        rerender();
       }
 
       function scheduleClose() {
@@ -285,23 +279,30 @@
 
       function chooseOption(option) {
         if (!option || option.disabled) return;
-        var nextValue = option.value;
+        pendingValue = option.value;
         closeMenu();
-        setTimeout(function () {
-          emitChange(nextValue);
-        }, 0);
+        emitChange(option.value);
+        rerender();
       }
 
       function applyFilterFromInput() {
-        if (!inputEl) return;
-        filterText = inputEl.value;
+        filterText = inputEl ? inputEl.value : '';
         hasTyped = true;
         activeIndex = 0;
         syncMenu();
+        rerender();
+      }
+
+      function handleInputMouseDown(e) {
+        if (disabled || readOnly) return;
+        if (!isOpen) {
+          e.preventDefault();
+          openMenu();
+        }
       }
 
       function handleFocus() {
-        openMenu();
+        if (!isOpen) openMenu();
       }
 
       function handleBlur() {
@@ -309,6 +310,7 @@
       }
 
       function handleInput() {
+        if (!isOpen || isComposing) return;
         applyFilterFromInput();
       }
 
@@ -318,7 +320,7 @@
 
       function handleCompositionEnd() {
         isComposing = false;
-        applyFilterFromInput();
+        if (isOpen) applyFilterFromInput();
       }
 
       function handleKeyDown(e) {
@@ -365,12 +367,12 @@
         clearBlurTimer();
         if (isOpen) closeMenu();
         else openMenu();
-        if (inputEl) inputEl.focus();
       }
 
       var inputCls = 'searchable-select__input ' + className;
       if (disabled) inputCls += ' bg-gray-50 cursor-not-allowed';
       else if (readOnly) inputCls += ' bg-gray-50 cursor-default';
+      else if (!isOpen) inputCls += ' cursor-pointer';
 
       return h('div', {
         className: 'searchable-select',
@@ -382,10 +384,10 @@
         h('input', {
           type: 'text',
           role: 'combobox',
-          'aria-expanded': 'false',
+          'aria-expanded': isOpen ? 'true' : 'false',
           'aria-autocomplete': 'list',
           name: name,
-          defaultValue: getLabel(value),
+          value: getDisplayValue(),
           placeholder: getPlaceholder(),
           disabled: disabled,
           readOnly: disabled || readOnly || !isOpen,
@@ -396,8 +398,8 @@
           spellCheck: false,
           ref: function (node) {
             inputEl = node;
-            syncClosedInput();
           },
+          onMouseDown: handleInputMouseDown,
           onFocus: handleFocus,
           onBlur: handleBlur,
           onInput: handleInput,
@@ -414,7 +416,7 @@
           'aria-label': isOpen ? '收合選項' : '展開選項',
           onMouseDown: handleToggleMouseDown,
           onClick: handleToggleClick
-        }, renderChevron('searchable-select__chevron'))
+        }, renderChevron('searchable-select__chevron' + (isOpen ? ' searchable-select__chevron--open' : '')))
       );
     });
   }

@@ -14,7 +14,7 @@
   for (i = 0; i < 60; i++) MINUTES.push(String(i).padStart(2, '0'));
 
   function parseTime(val) {
-    if (!val) return { hour: '09', minute: '00' };
+    if (!val) return { hour: '', minute: '' };
     var parts = String(val).split(':');
     var hour = Math.min(23, Math.max(0, parseInt(parts[0], 10) || 0));
     var minute = Math.min(59, Math.max(0, parseInt(parts[1] || '0', 10)));
@@ -35,7 +35,11 @@
 
     function emit(hour, minute) {
       if (readOnly || disabled || !onChange) return;
-      onChange({ target: { name: name, value: hour + ':' + minute } });
+      if (!hour) {
+        onChange({ target: { name: name, value: '' } });
+        return;
+      }
+      onChange({ target: { name: name, value: hour + ':' + (minute || '00') } });
     }
 
     var selectCls = 'p-2 border rounded-md outline-none focus:border-blue-500 bg-white min-w-0 flex-1';
@@ -54,19 +58,25 @@
         onChange: function (e) { emit(e.target.value, parsed.minute); },
         className: selectCls,
         'aria-label': '小時'
-      }, HOURS.map(function (hr) {
-        return h('option', { key: hr, value: hr }, hr);
-      })),
+      },
+        h('option', { key: '', value: '' }, '—'),
+        HOURS.map(function (hr) {
+          return h('option', { key: hr, value: hr }, hr);
+        })
+      ),
       h('span', { className: 'text-gray-500 font-medium shrink-0' }, ':'),
       h('select', {
         value: parsed.minute,
-        disabled: disabled,
+        disabled: disabled || !parsed.hour,
         onChange: function (e) { emit(parsed.hour, e.target.value); },
         className: selectCls,
         'aria-label': '分鐘'
-      }, MINUTES.map(function (mn) {
-        return h('option', { key: mn, value: mn }, mn);
-      }))
+      },
+        h('option', { key: '', value: '' }, '—'),
+        MINUTES.map(function (mn) {
+          return h('option', { key: mn, value: mn }, mn);
+        })
+      )
     );
   }
 

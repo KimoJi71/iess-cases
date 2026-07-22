@@ -18,14 +18,65 @@
     '加裝': '#7c3aed'
   };
 
-  function formatScheduleEventTitle(workCategory, assignee, customerName, storeName, storeAddress) {
+  function formatScheduleEventTitle(workCategory, assignee, customerName, storeName, storeAddress, options) {
+    options = options || {};
     var wc = workCategory || '其他';
-    var person = assignee || '未指派';
-    if (wc === '保養' || wc === '保養清潔') {
-      var addr = storeAddress || '';
-      return '[保養] ' + customerName + ' / ' + storeName + (addr ? ' / ' + addr : '');
+    var lines = [
+      '[' + wc + ']',
+      assignee || '未指派',
+      customerName || '',
+      storeName || '',
+      storeAddress || ''
+    ];
+    if (options.sourceType === 'repair' && options.equipmentName) {
+      lines.push(options.equipmentName);
     }
-    return '[' + wc + '] ' + person + ' ' + customerName + ' ' + storeName;
+    return lines.join('\n');
+  }
+
+  function getRepairEquipmentName(c) {
+    if (!c || !c.equipment) return '';
+    return c.equipment.deviceName || c.equipment.name || '';
+  }
+
+  function getProjectStoreAddress(c) {
+    return (c.details && c.details.storeAddress) || c.storeAddress || '';
+  }
+
+  function collectProjectScheduleEntries(c) {
+    var entries = [];
+    var seen = {};
+
+    function pushEntry(stageKey, sched, assignee) {
+      if (!sched.planDate || !sched.planTimeStart) return;
+      var key = sched.planDate + '|' + sched.planTimeStart + '|' + (assignee || '');
+      if (seen[key]) return;
+      seen[key] = true;
+      entries.push({
+        stageKey: stageKey,
+        planDate: sched.planDate,
+        planTimeStart: sched.planTimeStart,
+        planTimeEnd: sched.planTimeEnd || '',
+        assignee: assignee || c.stageAssignee || '',
+        workCategory: c.workCategory
+      });
+    }
+
+    pushEntry('current', {
+      planDate: c.planDate,
+      planTimeStart: c.planTimeStart,
+      planTimeEnd: c.planTimeEnd
+    }, c.stageAssignee);
+
+    (c.history || []).forEach(function (entry) {
+      pushEntry(entry.stage || ('stage-' + entries.length), {
+        planDate: entry.date,
+        planTimeStart: entry.timeStart,
+        planTimeEnd: entry.timeEnd
+      }, entry.assignee);
+    });
+
+    return entries;
   }
 
   function addMonthsToMonth(dateStr, months) {
@@ -201,8 +252,8 @@
     return '未保養';
   }
 
-  function getPendingCases(maintenanceCases, cases, projectCases, filters, stores) {
-    if (!filters || !filters.workCategory || !filters.customer || !filters.storeArea) {
+  function getPendingCases(maintenanceCases, cases, projectCases, filters, stores, assignees) {
+    if (!filters || !filters.workCategory || !filters.customer || !filters.assignee) {
       return [];
     }
     var items = [];
@@ -243,10 +294,19 @@
         assignee: c.stageAssignee
       });
     });
+
+    var selectedAssignee = (assignees || []).find(function (a) {
+      return a.name === filters.assignee;
+    });
+
     return items.filter(function (item) {
       if (item.workCategory !== filters.workCategory) return false;
       if (item.customerName !== filters.customer) return false;
-      if (item.storeArea !== filters.storeArea) return false;
+      if (!selectedAssignee) return false;
+      if (!StoreUtils.assigneeCoversArea(selectedAssignee, item.storeArea)) return false;
+      if (filters.storeAreas && filters.storeAreas.length > 0) {
+        if (filters.storeAreas.indexOf(item.storeArea) === -1) return false;
+      }
       return true;
     });
   }
@@ -256,12 +316,12 @@
     function inRange(dateStr) {
       return dateStr && dateStr >= rangeStart && dateStr <= rangeEnd;
     }
-    function tryPush(sourceType, sourceId, sched, customerName, storeName, storeAddress) {
+    function tryPush(sourceType, sourceId, sched, customerName, storeName, storeAddress, equipmentName, eventId) {
       if (!sched.planDate || !sched.planTimeStart) return;
       if (!inRange(sched.planDate)) return;
       if (assigneeFilter !== '全部' && sched.assignee !== assigneeFilter) return;
       items.push({
-        id: sourceType + '-' + sourceId,
+        id: eventId || (sourceType + '-' + sourceId),
         sourceType: sourceType,
         sourceId: sourceId,
         assignee: sched.assignee,
@@ -271,6 +331,7 @@
         customerName: customerName,
         storeName: storeName,
         storeAddress: storeAddress || '',
+        equipmentName: equipmentName || '',
         workCategory: sched.workCategory || '其他'
       });
     }
@@ -284,10 +345,19 @@
       }, c.customerName, c.storeName, c.storeAddress || '');
     });
     cases.forEach(function (c) {
-      tryPush('repair', c.id, getRepairSchedule(c), c.customerName, c.storeName);
+      tryPush('repair', c.id, getRepairSchedule(c), c.customerName, c.storeName, c.storeAddress || '', getRepairEquipmentName(c));
     });
     projectCases.forEach(function (c) {
-      tryPush('project', c.id, getProjectSchedule(c), c.customerName, c.storeName);
+      var addr = getProjectStoreAddress(c);
+      collectProjectScheduleEntries(c).forEach(function (entry) {
+        tryPush('project', c.id, {
+          planDate: entry.planDate,
+          planTimeStart: entry.planTimeStart,
+          planTimeEnd: entry.planTimeEnd,
+          assignee: entry.assignee,
+          workCategory: entry.workCategory
+        }, c.customerName, c.storeName, addr, '', 'project-' + c.id + '-' + entry.stageKey);
+      });
     });
     return items.sort(function (a, b) {
       if (a.date !== b.date) return a.date.localeCompare(b.date);
@@ -295,14 +365,17 @@
     });
   }
 
-  function buildEvent(sourceType, sourceId, sched, customerName, storeName, storeAddress) {
+  function buildEvent(sourceType, sourceId, sched, customerName, storeName, storeAddress, equipmentName, eventId) {
     if (!sched.planDate || !sched.planTimeStart) return null;
     var endTime = sched.planTimeEnd || sched.planTimeStart;
     var wc = sched.workCategory || '其他';
     var assignee = sched.assignee || '';
     return {
-      id: sourceType + '-' + sourceId,
-      title: formatScheduleEventTitle(wc, assignee, customerName, storeName, storeAddress),
+      id: eventId || (sourceType + '-' + sourceId),
+      title: formatScheduleEventTitle(wc, assignee, customerName, storeName, storeAddress, {
+        sourceType: sourceType,
+        equipmentName: equipmentName
+      }),
       start: sched.planDate + 'T' + formatTime24(sched.planTimeStart) + ':00',
       end: sched.planDate + 'T' + formatTime24(endTime) + ':00',
       backgroundColor: CATEGORY_COLORS[wc] || '#64748b',
@@ -313,7 +386,9 @@
         workCategory: wc,
         assignee: assignee,
         customerName: customerName,
-        storeName: storeName
+        storeName: storeName,
+        storeAddress: storeAddress || '',
+        equipmentName: equipmentName || ''
       }
     };
   }
@@ -327,7 +402,7 @@
           planTimeEnd: item.timeEnd,
           assignee: item.assignee,
           workCategory: item.workCategory
-        }, item.customerName, item.storeName, item.storeAddress);
+        }, item.customerName, item.storeName, item.storeAddress, item.equipmentName, item.id);
       })
       .filter(Boolean);
   }
@@ -342,7 +417,10 @@
         var wc = item.workCategory;
         return {
           id: 'ps-' + item.id,
-          title: '[' + wc + '] ' + item.assignee + ' ' + item.customerName + ' ' + item.storeName,
+          title: formatScheduleEventTitle(wc, item.assignee, item.customerName, item.storeName, item.storeAddress, {
+            sourceType: item.sourceType,
+            equipmentName: item.equipmentName
+          }),
           start: item.date + 'T' + formatTime24(item.timeStart) + ':00',
           end: item.date + 'T' + formatTime24(item.timeEnd) + ':00',
           backgroundColor: CATEGORY_COLORS[wc] || '#64748b',
@@ -352,7 +430,9 @@
             customerName: item.customerName,
             storeName: item.storeName,
             workCategory: wc,
-            timeRange: formatTimeRange(item.timeStart, item.timeEnd)
+            timeRange: formatTimeRange(item.timeStart, item.timeEnd),
+            storeAddress: item.storeAddress || '',
+            equipmentName: item.equipmentName || ''
           }
         };
       });

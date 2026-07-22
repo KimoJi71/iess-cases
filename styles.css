@@ -136,6 +136,14 @@ body {
   font-size: 0.875rem;
 }
 
+/* ===== FullCalendar schedule events ===== */
+.fc-schedule-event {
+  white-space: pre-line;
+  line-height: 1.25;
+  font-size: 0.75rem;
+  overflow: hidden;
+}
+
 /* ===== App Header ===== */
 .app-header {
   position: relative;

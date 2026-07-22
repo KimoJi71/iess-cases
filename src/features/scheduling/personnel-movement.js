@@ -71,7 +71,7 @@
             h('label', { className: 'block text-xs text-gray-500 mb-1' }, '指定日期'),
             h('input', {
               type: 'date', value: calDate,
-              onChange: function (e) { calDate = e.target.value; },
+              onChange: function (e) { calDate = e.target.value; rerender(); },
               className: 'p-2 border rounded-md outline-none focus:border-blue-500'
             })
           ),
@@ -79,7 +79,7 @@
             h('label', { className: 'block text-xs text-gray-500 mb-1' }, '指派人員'),
             h('select', {
               value: calAssignee,
-              onChange: function (e) { calAssignee = e.target.value; },
+              onChange: function (e) { calAssignee = e.target.value; rerender(); },
               className: 'p-2 border rounded-md outline-none focus:border-blue-500 bg-white min-w-[120px]'
             },
               h('option', { value: '全部' }, '全部'),

@@ -107,9 +107,7 @@
     }
 
     function getIndicatorColor(c) {
-      if (c.workCategory === '緊急叫修') return 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]';
-      if (c.expectedDate && c.expectedDate < todayDate) return 'bg-yellow-400 shadow-[0_0_8px_rgba(250,204,21,0.6)]';
-      return 'bg-gray-300';
+      return caseStatus.getCaseListIndicatorClass(c);
     }
 
     function renderRowActions(c, rerender) {

@@ -57,6 +57,12 @@
         : undefined;
 
       var timeFormat = { hour: '2-digit', minute: '2-digit', hour12: false };
+      var startEditable = options.eventStartEditable !== undefined
+        ? options.eventStartEditable
+        : !options.readOnly;
+      var durationEditable = options.eventDurationEditable !== undefined
+        ? options.eventDurationEditable
+        : !options.readOnly;
 
       calendar = new FullCalendar.Calendar(containerEl, {
         initialView: 'timeGridWeek',
@@ -68,10 +74,16 @@
         height: 'auto',
         slotLabelFormat: timeFormat,
         eventTimeFormat: timeFormat,
-        editable: !options.readOnly,
-        eventStartEditable: !options.readOnly,
-        eventDurationEditable: !options.readOnly,
+        editable: startEditable || durationEditable,
+        eventStartEditable: startEditable,
+        eventDurationEditable: durationEditable,
         droppable: !options.readOnly && !!options.onDrop,
+        eventContent: function (info) {
+          var wrap = document.createElement('div');
+          wrap.className = 'fc-schedule-event';
+          wrap.textContent = info.event.title || '';
+          return { domNodes: [wrap] };
+        },
         events: options.initialEvents || [],
         eventClick: function (info) {
           if (!options.onEventClick) return;
@@ -118,11 +130,12 @@
     function buildPreviewTitle(ds) {
       if (window.ScheduleUtils && ScheduleUtils.formatScheduleEventTitle) {
         return ScheduleUtils.formatScheduleEventTitle(
-          ds.workCategory, ds.assignee, ds.customerName, ds.storeName
+          ds.workCategory, ds.assignee, ds.customerName, ds.storeName, ds.storeAddress || '',
+          { sourceType: ds.sourceType, equipmentName: ds.equipmentName || '' }
         );
       }
-      return '[' + (ds.workCategory || '其他') + '] ' + (ds.assignee || '未指派') + ' ' +
-        ds.customerName + ' ' + ds.storeName;
+      return '[' + (ds.workCategory || '其他') + ']\n' + (ds.assignee || '未指派') + '\n' +
+        ds.customerName + '\n' + ds.storeName;
     }
 
     function initExternalDrag(containerEl) {

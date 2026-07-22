@@ -69,13 +69,12 @@
                 h('th', { className: 'p-3 font-semibold' }, '叫修原因'),
                 h('th', { className: 'p-3 font-semibold max-w-[150px]' }, '故障描述'),
                 h('th', { className: 'p-3 font-semibold max-w-[150px]' }, '實際原因'),
-                h('th', { className: 'p-3 font-semibold' }, '指派人員'),
-                h('th', { className: 'p-3 font-semibold' }, '案件狀態')
+                h('th', { className: 'p-3 font-semibold' }, '指派人員')
               )
             ),
             h('tbody', { className: 'divide-y divide-gray-100' },
               filteredCases.length === 0 ? h('tr', null,
-                h('td', { colspan: '13', className: 'text-center p-8 text-gray-400' }, '無資料符合目前搜尋區間')
+                h('td', { colspan: '12', className: 'text-center p-8 text-gray-400' }, '無資料符合目前搜尋區間')
               ) : filteredCases.map(function (c) {
                 return h('tr', { key: c.id, className: 'hover:bg-gray-50 transition-colors' },
                   h('td', { className: 'p-3 text-center' },
@@ -95,12 +94,7 @@
                   h('td', { className: 'p-3' }, c.repairReason),
                   h('td', { className: 'p-3 max-w-[150px] truncate', title: c.faultDesc }, c.faultDesc),
                   h('td', { className: 'p-3 max-w-[150px] truncate', title: c.actualReason }, c.actualReason || '-'),
-                  h('td', { className: 'p-3' }, c.assignee),
-                  h('td', { className: 'p-3' },
-                    h('span', {
-                      className: 'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200'
-                    }, c.processStatus || '—')
-                  )
+                  h('td', { className: 'p-3' }, c.assignee)
                 );
               })
             )
