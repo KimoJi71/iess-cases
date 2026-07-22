@@ -40,6 +40,12 @@
     return names.join('、');
   }
 
+  function formatLeader(accounts, assignee) {
+    if (!assignee || !assignee.leaderId) return '—';
+    var account = accounts.find(function (a) { return a.id === assignee.leaderId; });
+    return account ? account.name : '—';
+  }
+
   function isAssigneeInUse(name, cases, maintenanceCases, projectCases) {
     if (cases.some(function (c) { return c.assignee === name; })) return true;
     if (maintenanceCases.some(function (c) { return c.assignee === name; })) return true;
@@ -74,10 +80,20 @@
 
   function removeMemberFromAll(assignees, accountId) {
     return assignees.map(function (a) {
-      if (!a.memberIds || a.memberIds.indexOf(accountId) === -1) return a;
-      return Object.assign({}, a, {
-        memberIds: a.memberIds.filter(function (id) { return id !== accountId; })
-      });
+      var changed = false;
+      var next = a;
+      if (a.memberIds && a.memberIds.indexOf(accountId) !== -1) {
+        next = Object.assign({}, next, {
+          memberIds: a.memberIds.filter(function (id) { return id !== accountId; })
+        });
+        changed = true;
+      }
+      if (a.leaderId === accountId) {
+        next = changed ? next : Object.assign({}, a);
+        next.leaderId = '';
+        changed = true;
+      }
+      return changed ? next : a;
     });
   }
 
@@ -114,6 +130,7 @@
     getMemberIds: getMemberIds,
     findAssigneeForMember: findAssigneeForMember,
     formatMembers: formatMembers,
+    formatLeader: formatLeader,
     isAssigneeInUse: isAssigneeInUse,
     findDuplicateName: findDuplicateName,
     applyMemberIds: applyMemberIds,

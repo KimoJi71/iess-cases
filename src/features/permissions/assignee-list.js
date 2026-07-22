@@ -7,6 +7,16 @@
   var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful, useDragScroll = IESS.useDragScroll;
   var iconActionBtn = IESS.iconActionBtn;
 
+  function renderEllipsisCell(value, extraClass) {
+    var text = value == null || value === '' ? '—' : String(value);
+    return h('td', { className: 'p-3 max-w-0 ' + (extraClass || '') },
+      h('div', {
+        className: 'truncate',
+        title: text !== '—' ? text : undefined
+      }, text)
+    );
+  }
+
   function AssigneeList(props) {
     var assignees = props.assignees;
     var setAssignees = props.setAssignees;
@@ -30,6 +40,7 @@
         list = assignees.filter(function (a) {
           return [
             a.name,
+            AssigneeUtils.formatLeader(accounts, a),
             AccountUtils.formatDistricts(a.districts),
             AssigneeUtils.formatMembers(accounts, a)
           ].filter(Boolean).some(function (v) {
@@ -78,7 +89,7 @@
                 value: keyword,
                 onChange: function (e) { keyword = e.target.value; rerender(); },
                 onKeyDown: handleKeyDown,
-                placeholder: '名稱 / 公司區域 / 成員',
+                placeholder: '名稱 / 組長 / 公司區域 / 成員',
                 className: 'w-72 p-2.5 border rounded-md outline-none focus:border-blue-500'
               })
             ),
@@ -96,21 +107,22 @@
         h('div', Object.assign({}, dragProps, {
           className: 'overflow-x-auto border rounded-lg cursor-grab active:cursor-grabbing'
         }),
-          h('table', { className: 'w-full text-left text-sm text-gray-600 whitespace-nowrap select-none' },
+          h('table', { className: 'w-full table-fixed text-left text-sm text-gray-600 select-none' },
             h('thead', { className: 'bg-gray-50 text-gray-700 border-b' },
               h('tr', null,
                 h('th', { className: 'p-3 font-semibold text-center w-36' }, '操作'),
-                h('th', { className: 'p-3 font-semibold' }, '指派人員名稱'),
-                h('th', { className: 'p-3 font-semibold' }, '負責公司區域'),
+                h('th', { className: 'p-3 font-semibold w-32' }, '指派人員名稱'),
+                h('th', { className: 'p-3 font-semibold w-24' }, '組長'),
+                h('th', { className: 'p-3 font-semibold w-64' }, '負責公司區域'),
                 h('th', { className: 'p-3 font-semibold' }, '成員名單')
               )
             ),
             h('tbody', { className: 'divide-y divide-gray-100' },
               filteredAssignees.length === 0
-                ? h('tr', null, h('td', { colspan: 4, className: 'p-10 text-center text-gray-400 text-base' }, '無資料'))
+                ? h('tr', null, h('td', { colspan: 5, className: 'p-10 text-center text-gray-400 text-base' }, '無資料'))
                 : filteredAssignees.map(function (a) {
                     return h('tr', { key: a.id, className: 'hover:bg-blue-50/50 transition-colors' },
-                      h('td', { className: 'p-3' },
+                      h('td', { className: 'p-3 whitespace-nowrap' },
                         h('div', { className: 'flex items-center justify-center space-x-2' },
                           h('button', {
                             onClick: function () { setEditingCase(a); setView('assignee-edit'); },
@@ -124,10 +136,10 @@
                             className: 'p-1.5 text-red-600 hover:bg-red-100 rounded', icon: Icons.Trash2({ className: 'h-4 w-4' }) })
                         )
                       ),
-                      h('td', { className: 'p-3 font-medium text-gray-800' }, a.name),
-                      h('td', { className: 'p-3' }, AccountUtils.formatDistricts(a.districts)),
-                      h('td', { className: 'p-3 max-w-md truncate', title: AssigneeUtils.formatMembers(accounts, a) },
-                        AssigneeUtils.formatMembers(accounts, a))
+                      renderEllipsisCell(a.name, 'font-medium text-gray-800'),
+                      renderEllipsisCell(AssigneeUtils.formatLeader(accounts, a)),
+                      renderEllipsisCell(AccountUtils.formatDistricts(a.districts)),
+                      renderEllipsisCell(AssigneeUtils.formatMembers(accounts, a))
                     );
                   })
             )

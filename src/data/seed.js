@@ -1693,14 +1693,14 @@ const INITIAL_DEVICE_CATEGORIES = [{
 }];
 
 const INITIAL_ASSIGNEES = [
-  { id: 'ASG1', name: 'A組', districts: ['台北市信義區', '台北市中山區'], memberIds: ['ACC2'], createdDate: todayDate },
-  { id: 'ASG2', name: 'B組', districts: ['台中市中區', '台中市西屯區'], memberIds: ['ACC3'], createdDate: todayDate },
+  { id: 'ASG1', name: 'A組', leaderId: 'ACC2', districts: ['台北市信義區', '台北市中山區'], memberIds: ['ACC2'], createdDate: todayDate },
+  { id: 'ASG2', name: 'B組', leaderId: 'ACC3', districts: ['台中市中區', '台中市西屯區'], memberIds: ['ACC3'], createdDate: todayDate },
   { id: 'ASG3', name: 'C組', districts: ['高雄市左營區'], memberIds: [], createdDate: todayDate },
   { id: 'ASG4', name: 'D組', districts: ['台北市信義區'], memberIds: [], createdDate: todayDate },
   { id: 'ASG5', name: '晉詮人員', districts: ['台北市信義區', '台北市中山區', '台中市中區', '台中市西屯區', '高雄市左營區'], memberIds: [], createdDate: todayDate },
   { id: 'ASG6', name: '協力廠商', districts: ['台北市信義區', '台北市中山區', '高雄市左營區'], memberIds: [], createdDate: todayDate },
   { id: 'ASG7', name: '案件待辦', districts: ['台北市信義區', '台北市中山區', '台中市中區', '台中市西屯區', '高雄市左營區'], memberIds: [], createdDate: todayDate },
-  { id: 'ASG8', name: '管理員', districts: ['台北市信義區', '台北市中山區', '台中市中區', '台中市西屯區', '高雄市左營區'], memberIds: ['ACC1'], createdDate: todayDate },
+  { id: 'ASG8', name: '管理員', leaderId: 'ACC1', districts: ['台北市信義區', '台北市中山區', '台中市中區', '台中市西屯區', '高雄市左營區'], memberIds: ['ACC1'], createdDate: todayDate },
   { id: 'ASG9', name: '督導', districts: ['台北市信義區', '台北市中山區', '台中市中區', '台中市西屯區'], memberIds: [], createdDate: todayDate }
 ];
 
