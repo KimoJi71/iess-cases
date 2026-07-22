@@ -1711,6 +1711,7 @@ const INITIAL_ACCOUNTS = [{
   passwordHash: AccountUtils.hashPassword('admin'),
   email: 'admin@jinchuan.example.com',
   enabled: true,
+  level: 0,
   permissions: _buildAllPermissions(),
   createdDate: todayDate
 }, {
@@ -1720,6 +1721,7 @@ const INITIAL_ACCOUNTS = [{
   passwordHash: AccountUtils.hashPassword('Pass1234'),
   email: 'wangxm@jinchuan.example.com',
   enabled: true,
+  level: 1,
   permissions: _buildLimitedPermissions(),
   createdDate: yesterdayDate
 }, {
@@ -1729,6 +1731,7 @@ const INITIAL_ACCOUNTS = [{
   passwordHash: AccountUtils.hashPassword('Pass5678'),
   email: 'limeih@jinchuan.example.com',
   enabled: false,
+  level: 1,
   permissions: _buildLimitedPermissions(),
   createdDate: twoDaysAgoDate
 }];

@@ -553,7 +553,8 @@
           accounts: s.accounts,
           setAccounts: setAccounts,
           setView: setView,
-          showToast: showToast
+          showToast: showToast,
+          currentAccountId: s.currentAccountId
         });
       case 'account-edit':
         return h(AccountForm, {
@@ -561,15 +562,8 @@
           setAccounts: setAccounts,
           targetCase: s.editingCase,
           setView: setView,
-          showToast: showToast
-        });
-      case 'account-permissions':
-        return h(AccountPermissions, {
-          accounts: s.accounts,
-          setAccounts: setAccounts,
-          targetCase: s.editingCase,
-          setView: setView,
-          showToast: showToast
+          showToast: showToast,
+          currentAccountId: s.currentAccountId
         });
       case 'assignee-list':
         return h(AssigneeList, {

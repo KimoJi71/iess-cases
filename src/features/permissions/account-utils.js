@@ -87,6 +87,22 @@
     return list.sort(function (a, b) { return a.localeCompare(b, 'zh-Hant'); });
   }
 
+  function getAccountLevel(account) {
+    if (!account) return 1;
+    if (typeof account.level !== 'number') return 1;
+    return account.level === 0 ? 0 : 1;
+  }
+
+  function getDefaultAccountLevel() {
+    return 1;
+  }
+
+  function canEditPassword(operator, target) {
+    if (!operator || !target) return false;
+    if (operator.id === target.id) return true;
+    return getAccountLevel(operator) <= getAccountLevel(target);
+  }
+
   window.AccountUtils = {
     hashPassword: hashPassword,
     createEmptyPermissions: createEmptyPermissions,
@@ -96,6 +112,9 @@
     formatDistricts: formatDistricts,
     formatEnabled: formatEnabled,
     syncProjectPersonOptions: syncProjectPersonOptions,
-    getProjectPersonOptions: getProjectPersonOptions
+    getProjectPersonOptions: getProjectPersonOptions,
+    getAccountLevel: getAccountLevel,
+    getDefaultAccountLevel: getDefaultAccountLevel,
+    canEditPassword: canEditPassword
   };
 })();

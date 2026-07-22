@@ -1,10 +1,11 @@
 /*
  * features/permissions/account-form.js — 帳號管理：新增/編輯帳號表單
- * props: { accounts, setAccounts, setView, showToast, targetCase }
+ * props: { accounts, setAccounts, setView, showToast, targetCase, currentAccountId }
  */
 (function () {
   'use strict';
   var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful;
+  var clonePermissions = AccountPermissionHelpers.clonePermissions;
 
   function AccountForm(props) {
     var accounts = props.accounts;
@@ -12,7 +13,11 @@
     var targetCase = props.targetCase;
     var setView = props.setView;
     var showToast = props.showToast;
+    var currentAccountId = props.currentAccountId;
     var isEdit = !!targetCase;
+
+    var currentOperator = accounts.find(function (a) { return a.id === currentAccountId; }) || null;
+    var canEditTargetPassword = !isEdit || AccountUtils.canEditPassword(currentOperator, targetCase);
 
     var formData = {
       name: (targetCase && targetCase.name) || '',
@@ -21,12 +26,54 @@
       email: (targetCase && targetCase.email) || '',
       enabled: targetCase ? !!targetCase.enabled : true
     };
+    var permissions = clonePermissions((targetCase && targetCase.permissions) || {});
 
     return stateful(function (rerender) {
       function handleChange(e) {
         var name = e.target.name;
         var value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
         formData[name] = value;
+        rerender();
+      }
+
+      function togglePermission(fn, op) {
+        var row = permissions[fn];
+        row[op] = !row[op];
+        if ((op === 'edit' || op === 'close') && row[op]) {
+          row.view = true;
+        }
+        if (op === 'view' && !row.view) {
+          row.edit = false;
+          row.close = false;
+        }
+        permissions = AccountUtils.normalizePermissions(permissions);
+        rerender();
+      }
+
+      function toggleGroupPermission(node, op) {
+        var leaves = AccountPermissionHelpers.collectLeafFunctions(node);
+        var allChecked = leaves.every(function (fn) {
+          return !!(permissions[fn] && permissions[fn][op]);
+        });
+        var nextValue = !allChecked;
+        leaves.forEach(function (fn) {
+          var row = permissions[fn];
+          row[op] = nextValue;
+          if ((op === 'edit' || op === 'close') && nextValue) {
+            row.view = true;
+          }
+          if (op === 'view' && !nextValue) {
+            row.edit = false;
+            row.close = false;
+          }
+        });
+        permissions = AccountUtils.normalizePermissions(permissions);
+        rerender();
+      }
+
+      function toggleSelectAll() {
+        var allSelected = AccountUtils.isAllSelected(permissions);
+        permissions = AccountUtils.setAllPermissions(permissions, !allSelected);
         rerender();
       }
 
@@ -45,6 +92,11 @@
           return;
         }
 
+        if (isEdit && formData.password && !canEditTargetPassword) {
+          showToast('無法變更此帳號密碼', 'error');
+          return;
+        }
+
         var duplicate = accounts.some(function (a) {
           return a.username === formData.username && (!isEdit || a.id !== targetCase.id);
         });
@@ -53,6 +105,8 @@
           return;
         }
 
+        var normalizedPermissions = AccountUtils.normalizePermissions(permissions);
+
         if (isEdit) {
           setAccounts(accounts.map(function (a) {
             if (a.id !== targetCase.id) return a;
@@ -60,9 +114,11 @@
               name: formData.name.trim(),
               username: formData.username.trim(),
               email: formData.email.trim(),
-              enabled: formData.enabled
+              enabled: formData.enabled,
+              level: AccountUtils.getAccountLevel(a),
+              permissions: normalizedPermissions
             });
-            if (formData.password) {
+            if (formData.password && canEditTargetPassword) {
               updated.passwordHash = AccountUtils.hashPassword(formData.password);
             }
             return updated;
@@ -76,7 +132,8 @@
             passwordHash: AccountUtils.hashPassword(formData.password),
             email: formData.email.trim(),
             enabled: formData.enabled,
-            permissions: AccountUtils.createEmptyPermissions(),
+            level: AccountUtils.getDefaultAccountLevel(),
+            permissions: normalizedPermissions,
             createdDate: todayDate
           };
           setAccounts([newAccount].concat(accounts));
@@ -86,7 +143,7 @@
       }
 
       return h('div', {
-        className: 'max-w-3xl mx-auto bg-white rounded-lg shadow-sm border border-gray-100 relative'
+        className: 'max-w-5xl mx-auto bg-white rounded-lg shadow-sm border border-gray-100 relative'
       },
         PageHeader({
           title: isEdit ? '編輯帳號' : '新增帳號',
@@ -127,10 +184,13 @@
                   name: 'password',
                   value: formData.password,
                   onChange: handleChange,
-                  placeholder: isEdit ? '留空則不變更密碼' : '請輸入密碼',
-                  className: 'w-full p-2.5 border rounded-md outline-none focus:border-blue-500'
+                  disabled: isEdit && !canEditTargetPassword,
+                  placeholder: isEdit
+                    ? (canEditTargetPassword ? '留空則不變更密碼' : '無法變更此帳號密碼')
+                    : '請輸入密碼',
+                  className: 'w-full p-2.5 border rounded-md outline-none focus:border-blue-500 disabled:bg-gray-100'
                 }),
-                h('p', { className: 'text-xs text-gray-400 mt-1' }, '密碼區分大小寫，儲存時將加密')
+                canEditTargetPassword && h('p', { className: 'text-xs text-gray-400 mt-1' }, '密碼區分大小寫，儲存時將加密')
               ),
               h('div', null,
                 h('label', { className: 'block text-sm mb-1' }, 'Email'),
@@ -158,6 +218,15 @@
                   h('option', { value: 'false' }, '停用')
                 )
               )
+            ),
+            h('div', { className: 'pt-6 border-t border-gray-200' },
+              h('h3', { className: 'text-base font-bold text-gray-800 mb-4' }, '權限設定'),
+              h(AccountPermissionsPanel, {
+                permissions: permissions,
+                togglePermission: togglePermission,
+                toggleGroupPermission: toggleGroupPermission,
+                toggleSelectAll: toggleSelectAll
+              })
             )
           ),
           h('div', { className: 'flex justify-end gap-3 mt-8 pt-6 border-t' },
