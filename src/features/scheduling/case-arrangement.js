@@ -73,8 +73,8 @@
     var bridge = null;
     var calendarEl = null;
     var scheduleModal = null;
-    var maintenanceEventModal = null;
     var rerenderRef = function () {};
+    var openEditScheduleModalRef = function () {};
 
     function getEvents() {
       return ScheduleUtils.getScheduledEvents(
@@ -184,12 +184,6 @@
       return null;
     }
 
-    function getRecordAddress(record) {
-      if (!record) return '';
-      var store = ScheduleUtils.resolveStore(stores, record.customerName, record.storeName);
-      return (store && StoreUtils.buildFullAddress(store)) || record.storeAddress || '';
-    }
-
     function refreshCalendar() {
       if (!bridge) return;
       bridge.setEvents(getEvents());
@@ -212,27 +206,6 @@
       rerenderRef();
     }
 
-    function handleMaintenanceComplete(sourceId) {
-      var target = maintenanceCases.find(function (c) { return c.id === sourceId; });
-      if (!target) return;
-      if (target.status === '已完成') {
-        showToast('此保養案件已完成');
-        return;
-      }
-      maintenanceCases = maintenanceCases.map(function (c) {
-        if (c.id !== sourceId) return c;
-        return Object.assign({}, c, {
-          status: '已完成',
-          completionDate: IESS.caseDateTime.now()
-        });
-      });
-      setMaintenanceCases(maintenanceCases);
-      maintenanceEventModal = null;
-      showToast('保養已完成，可至保養計劃進度進行結案');
-      rerenderRef();
-      setTimeout(function () { refreshCalendar(); }, 0);
-    }
-
     function initCalendar(el) {
       if (!el) return;
       if (bridge) bridge.destroy();
@@ -245,9 +218,10 @@
         eventDurationEditable: false,
         onEventClick: function (event) {
           var props = event.extendedProps || {};
-          if (props.isPreview || props.sourceType !== 'maintenance' || !props.sourceId) return;
-          maintenanceEventModal = { sourceId: props.sourceId };
-          rerenderRef();
+          if (props.isPreview || !props.sourceType || !props.sourceId) return;
+          if (props.sourceType === 'repair' || props.sourceType === 'maintenance') {
+            openEditScheduleModalRef(props.sourceType, props.sourceId);
+          }
         }
       });
       refreshCalendar();
@@ -312,6 +286,26 @@
       var pendingStoreAreaOptions = StoreUtils.getAreaOptionsFromStores(stores);
       var pendingFiltersReady = isPendingFiltersReady();
 
+      function buildScheduleModalState(sourceType, sourceId, assignee) {
+        var record = resolveCaseRecord(sourceType, sourceId);
+        if (!record) return null;
+        return {
+          mode: 'create',
+          item: {
+            sourceType: sourceType,
+            sourceId: sourceId,
+            customerName: record.customerName,
+            storeName: record.storeName,
+            workCategory: record.workCategory || '保養'
+          },
+          assignee: assignee,
+          planDate: record.expectedDate || record.planDate || calDate,
+          planTimeStart: record.expectedTimeStart || record.planTimeStart || '',
+          planTimeEnd: record.expectedTimeEnd || record.planTimeEnd || '',
+          formData: Object.assign({}, record)
+        };
+      }
+
       function openScheduleModal(item) {
         if (!appliedPending) {
           showToast('請先查詢待安排案件');
@@ -321,20 +315,48 @@
           showToast('請選擇指派人員');
           return;
         }
-        var record = resolveCaseRecord(item.sourceType, item.sourceId);
+        var nextModal = buildScheduleModalState(item.sourceType, item.sourceId, pendingAssignee);
+        if (!nextModal) {
+          showToast('找不到案件資料');
+          return;
+        }
+        scheduleModal = nextModal;
+        rerender();
+      }
+
+      function openEditScheduleModal(sourceType, sourceId) {
+        var record = resolveCaseRecord(sourceType, sourceId);
         if (!record) {
           showToast('找不到案件資料');
           return;
         }
+        var sched = sourceType === 'repair'
+          ? ScheduleUtils.getRepairSchedule(record)
+          : {
+            planDate: record.planDate,
+            planTimeStart: record.planTimeStart,
+            planTimeEnd: record.planTimeEnd,
+            assignee: record.assignee
+          };
         scheduleModal = {
-          item: item,
-          planDate: record.expectedDate || record.planDate || calDate,
-          planTimeStart: record.expectedTimeStart || record.planTimeStart || '',
-          planTimeEnd: record.expectedTimeEnd || record.planTimeEnd || '',
+          mode: 'edit',
+          item: {
+            sourceType: sourceType,
+            sourceId: sourceId,
+            customerName: record.customerName,
+            storeName: record.storeName,
+            workCategory: record.workCategory || '保養'
+          },
+          assignee: sched.assignee || record.assignee || '',
+          planDate: sched.planDate || calDate,
+          planTimeStart: sched.planTimeStart || '',
+          planTimeEnd: sched.planTimeEnd || '',
           formData: Object.assign({}, record)
         };
         rerender();
       }
+
+      openEditScheduleModalRef = openEditScheduleModal;
 
       function updateScheduleModalTime(field, value) {
         if (!scheduleModal) return;
@@ -375,7 +397,12 @@
       }
 
       function confirmScheduleModal() {
-        if (!scheduleModal || !pendingAssignee) return;
+        if (!scheduleModal) return;
+        var assignee = scheduleModal.assignee;
+        if (!assignee) {
+          showToast('請選擇指派人員');
+          return;
+        }
         if (!scheduleModal.planDate || !scheduleModal.planTimeStart || !scheduleModal.planTimeEnd) {
           showToast('請填寫預計日期與時間區間');
           return;
@@ -389,7 +416,7 @@
           planDate: scheduleModal.planDate,
           planTimeStart: scheduleModal.planTimeStart,
           planTimeEnd: scheduleModal.planTimeEnd,
-          assignee: pendingAssignee
+          assignee: assignee
         };
         applySchedule(item.sourceType, item.sourceId, payload, scheduleModal.formData);
       }
@@ -488,7 +515,7 @@
                   })
                 )
               ),
-              renderScheduleReadOnly('指派人員', pendingAssignee),
+              renderScheduleReadOnly('指派人員', scheduleModal.assignee),
               h('div', { className: 'col-span-full' },
                 renderScheduleFieldLabel(isOther ? '工作描述' : '故障描述'),
                 h('textarea', {
@@ -645,7 +672,7 @@
                   })
                 )
               ),
-              renderScheduleReadOnly('保養人員', pendingAssignee),
+              renderScheduleReadOnly('保養人員', scheduleModal.assignee),
               renderScheduleReadOnly('完成時間', IESS.caseDateTime.format(formData.completionDate))
             )
           )
@@ -664,10 +691,12 @@
 
       function renderScheduleModal() {
         if (!scheduleModal) return null;
+        var isEdit = scheduleModal.mode === 'edit';
         return h('div', { className: 'app-modal-overlay p-4' },
           h('div', { className: 'bg-white rounded-lg shadow-xl w-full max-w-5xl max-h-[90vh] overflow-y-auto' },
             h('div', { className: 'p-6 border-b border-gray-100' },
-              h('h3', { className: 'text-lg font-bold text-gray-800' }, '安排排程')
+              h('h3', { className: 'text-lg font-bold text-gray-800' },
+                isEdit ? '編輯排程' : '安排排程')
             ),
             h('div', { className: 'p-6 space-y-6' },
               h('div', { className: 'grid grid-cols-1 sm:grid-cols-3 gap-4' },
@@ -711,52 +740,6 @@
                 onClick: confirmScheduleModal,
                 className: 'px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700'
               }, '確認')
-            )
-          )
-        );
-      }
-
-      function renderDetailRow(label, value) {
-        return h('div', { className: 'text-sm' },
-          h('span', { className: 'text-gray-500' }, label + '：'),
-          h('span', { className: 'text-gray-800' }, value || '—')
-        );
-      }
-
-      function renderMaintenanceEventModal() {
-        if (!maintenanceEventModal) return null;
-        var record = resolveCaseRecord('maintenance', maintenanceEventModal.sourceId);
-        if (!record) return null;
-        var address = getRecordAddress(record);
-        var isCompleted = record.status === '已完成';
-        return h('div', { className: 'app-modal-overlay p-4' },
-          h('div', { className: 'bg-white rounded-lg shadow-xl w-full max-w-lg' },
-            h('div', { className: 'p-6 border-b border-gray-100' },
-              h('h3', { className: 'text-lg font-bold text-gray-800' }, '保養案件')
-            ),
-            h('div', { className: 'p-6 space-y-4' },
-              h('div', { className: 'space-y-2 bg-gray-50 border border-gray-200 rounded-md p-4' },
-                renderDetailRow('客戶名稱', record.customerName),
-                renderDetailRow('門市名稱', record.storeName),
-                renderDetailRow('門市地址', address),
-                renderDetailRow('服務等級', record.serviceLevel),
-                renderDetailRow('保養日期', record.planDate),
-                renderDetailRow('保養時間', ScheduleUtils.formatTimeRange(record.planTimeStart, record.planTimeEnd)),
-                renderDetailRow('保養人員', record.assignee),
-                renderDetailRow('保養狀態', record.status)
-              ),
-              isCompleted && h('p', { className: 'text-sm text-green-700 bg-green-50 border border-green-200 rounded-md p-3' },
-                '保養已完成，請至「保養計劃進度」進行結案。')
-            ),
-            h('div', { className: 'p-6 border-t border-gray-100 flex justify-end gap-3' },
-              h('button', {
-                onClick: function () { maintenanceEventModal = null; rerender(); },
-                className: 'px-4 py-2 border rounded-md text-gray-600 hover:bg-gray-50'
-              }, '關閉'),
-              !isCompleted && h('button', {
-                onClick: function () { handleMaintenanceComplete(maintenanceEventModal.sourceId); },
-                className: 'px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700'
-              }, '保養完成')
             )
           )
         );
@@ -908,8 +891,7 @@
             ref: initCalendar
           })
         ),
-        renderScheduleModal(),
-        renderMaintenanceEventModal()
+        renderScheduleModal()
       );
     });
   }

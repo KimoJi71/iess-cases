@@ -10,14 +10,46 @@
   var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful;
   var CalendarBridge = IESS.CalendarBridge;
 
+  var personnelCalState = null;
+
+  function loadPersonnelCalState() {
+    if (!personnelCalState) {
+      var today = CalendarBridge.formatDate(new Date());
+      var week = CalendarBridge.getWeekRange(today);
+      personnelCalState = {
+        calDate: today,
+        calAssignee: '全部',
+        appliedCal: { start: week.start, end: week.end, assignee: '全部' }
+      };
+    }
+    return personnelCalState;
+  }
+
+  function persistPersonnelCalState(calDate, calAssignee, appliedCal) {
+    personnelCalState = {
+      calDate: calDate,
+      calAssignee: calAssignee,
+      appliedCal: {
+        start: appliedCal.start,
+        end: appliedCal.end,
+        assignee: appliedCal.assignee
+      }
+    };
+  }
+
   function PersonnelMovement(props) {
     var maintenanceCases = props.maintenanceCases;
     var cases = props.cases;
     var projectCases = props.projectCases;
 
-    var calDate = CalendarBridge.formatDate(new Date());
-    var calAssignee = '全部';
-    var appliedCal = { start: calDate, end: calDate, assignee: '全部' };
+    var calState = loadPersonnelCalState();
+    var calDate = calState.calDate;
+    var calAssignee = calState.calAssignee;
+    var appliedCal = {
+      start: calState.appliedCal.start,
+      end: calState.appliedCal.end,
+      assignee: calState.appliedCal.assignee
+    };
 
     var bridge = null;
 
@@ -55,7 +87,9 @@
       var rows = getFilteredRows();
 
       function handleSearch() {
-        appliedCal = { start: calDate, end: calDate, assignee: calAssignee };
+        var week = CalendarBridge.getWeekRange(calDate);
+        appliedCal = { start: week.start, end: week.end, assignee: calAssignee };
+        persistPersonnelCalState(calDate, calAssignee, appliedCal);
         if (bridge) {
           bridge.gotoRange(appliedCal.start, appliedCal.end);
           bridge.setEvents(getEvents());
