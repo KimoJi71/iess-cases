@@ -28,6 +28,7 @@
 
     var closeConfirmModal = { show: false, caseId: null, mode: 'close' };
     var dragProps = useDragScroll();
+    var listPagination = IESS.createListPagination();
 
     function isActiveInList(c) {
       if (!c.isClosed) return true;
@@ -157,6 +158,7 @@
 
     return stateful(function (rerender) {
       var filteredCases = getFiltered();
+      var pageResult = listPagination.slice(filteredCases);
       var statusCounts = getStatusCounts();
       var modalCase = closeConfirmModal.show
         ? cases.find(function (c) { return c.id === closeConfirmModal.caseId; })
@@ -207,7 +209,9 @@
               )
             ),
             h('tbody', { className: 'divide-y divide-gray-100' },
-              filteredCases.map(function (c) {
+              pageResult.items.length === 0
+                ? h('tr', null, h('td', { colspan: 10, className: 'p-10 text-center text-gray-400 text-base' }, '無資料'))
+                : pageResult.items.map(function (c) {
                 return h('tr', { key: c.id, className: 'hover:bg-blue-50/50 transition-colors' },
                   h('td', { className: 'p-3' },
                     h('div', { className: 'flex items-center justify-center flex-wrap gap-1' },
@@ -250,6 +254,7 @@
             )
           )
         ),
+        listPagination.renderBar(pageResult, rerender),
         closeConfirmModal.show && h('div', {
           className: 'app-modal-overlay'
         },

@@ -521,7 +521,7 @@
         className: 'px-8 py-2.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center gap-2 font-bold shadow-sm transition-colors'
       }, Icons.Save({
         className: 'h-5 w-5'
-      }), ' 儲存立案單'))), equipModal.show && h(ProjectEquipModal, {
+      }), ' 儲存'))), equipModal.show && h(ProjectEquipModal, {
         initialEquip: equipModal.initialEquip,
         editingId: equipModal.editingId,
         deviceCategories: deviceCategories,
@@ -965,7 +965,7 @@
         className: 'px-8 py-2.5 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 flex items-center gap-2 font-bold shadow-sm transition-colors'
       }, Icons.Save({
         className: 'h-5 w-5'
-      }), ' 儲存更新'))), isEdit && equipModal.show && h(ProjectEquipModal, {
+      }), ' 儲存'))), isEdit && equipModal.show && h(ProjectEquipModal, {
         initialEquip: equipModal.initialEquip,
         editingId: equipModal.editingId,
         deviceCategories: deviceCategories,

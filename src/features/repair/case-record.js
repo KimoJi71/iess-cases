@@ -15,10 +15,12 @@
     var endDate = todayDate;
     var appliedDateRange = { start: todayDate, end: todayDate };
     var dragProps = useDragScroll();
+    var listPagination = IESS.createListPagination();
 
     return stateful(function (rerender) {
       function handleSearch() {
         appliedDateRange = { start: startDate, end: endDate };
+        listPagination.resetPage();
         rerender();
       }
 
@@ -27,6 +29,7 @@
         var date = (c.repairDate || '').slice(0, 10);
         return date >= appliedDateRange.start && date <= appliedDateRange.end;
       }).sort(function (a, b) { return new Date(b.repairDate) - new Date(a.repairDate); });
+      var pageResult = listPagination.slice(filteredCases);
 
       return h('div', {
         className: 'bg-white p-6 rounded-lg shadow-sm border border-gray-100'
@@ -75,7 +78,7 @@
             h('tbody', { className: 'divide-y divide-gray-100' },
               filteredCases.length === 0 ? h('tr', null,
                 h('td', { colspan: '12', className: 'text-center p-8 text-gray-400' }, '無資料符合目前搜尋區間')
-              ) : filteredCases.map(function (c) {
+              ) : pageResult.items.map(function (c) {
                 return h('tr', { key: c.id, className: 'hover:bg-gray-50 transition-colors' },
                   h('td', { className: 'p-3 text-center' },
                     h('button', {
@@ -99,7 +102,8 @@
               })
             )
           )
-        )
+        ),
+        listPagination.renderBar(pageResult, rerender)
       );
     });
   }

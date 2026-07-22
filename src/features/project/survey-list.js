@@ -6,6 +6,7 @@
   'use strict';
   var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful, useDragScroll = IESS.useDragScroll;
   var iconActionBtn = IESS.iconActionBtn;
+  var iconActionBtn = IESS.iconActionBtn;
 
   function SurveyList(props) {
     var cases = props.cases;
@@ -20,16 +21,19 @@
     var appliedDateRange = { start: todayDate, end: todayDate };
     var deleteConfirmModal = { show: false, id: null };
     var dragProps = useDragScroll();
+    var listPagination = IESS.createListPagination();
 
     return stateful(function (rerender) {
       function handleSearch() {
         appliedDateRange = { start: startDate, end: endDate };
+        listPagination.resetPage();
         rerender();
       }
 
       var filteredCases = cases.filter(function (c) {
         return c.fillDate >= appliedDateRange.start && c.fillDate <= appliedDateRange.end;
       }).sort(function (a, b) { return new Date(b.fillDate) - new Date(a.fillDate); });
+      var pageResult = listPagination.slice(filteredCases);
 
       function handleDelete(id) {
         setCases(cases.filter(function (c) { return c.id !== id; }));
@@ -95,11 +99,12 @@
               className: 'bg-blue-600 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors hover:bg-blue-700'
             }, Icons.Search({ className: 'h-4 w-4' }), ' 搜尋')
           ),
-          h('button', {
+          iconActionBtn({
+            label: '新增現勘表',
+            className: 'flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white p-2.5 rounded-full shadow-sm transition-colors shrink-0',
             onClick: function () { setView('survey-add'); },
-            className: 'flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white p-2.5 rounded-full shadow-sm transition-colors',
-            title: '新增現勘表'
-          }, Icons.Plus({ className: 'h-5 w-5' }))
+            icon: Icons.Plus({ className: 'h-5 w-5' })
+          })
         ),
         h('div', Object.assign({
           className: 'overflow-x-auto border rounded-lg cursor-grab active:cursor-grabbing'
@@ -133,7 +138,7 @@
             }, filteredCases.length === 0 ? h('tr', null, h('td', {
               colspan: '5',
               className: 'text-center p-8 text-gray-400'
-            }, '無資料符合目前搜尋區間')) : filteredCases.map(function (c) {
+            }, '無資料符合目前搜尋區間')) : pageResult.items.map(function (c) {
               return h('tr', {
                 key: c.id,
                 className: 'hover:bg-gray-50 transition-colors'
@@ -188,6 +193,7 @@
             }))
           )
         ),
+        listPagination.renderBar(pageResult, rerender),
         deleteConfirmModal.show && h('div', {
           className: 'app-modal-overlay'
         },

@@ -32,6 +32,7 @@
 
     var deleteModal = { show: false, id: null };
     var dragProps = useDragScroll();
+    var listPagination = IESS.createListPagination();
 
     function getStoreOptions() {
       if (!equipmentCustomer) return [];
@@ -80,6 +81,7 @@
 
     return stateful(function (rerender) {
       var filtered = getFilteredEquipments();
+      var pageResult = listPagination.slice(filtered);
       var storeOptions = getStoreOptions();
       var currentStore = getCurrentStore();
       var customerSelectOptions = CustomerUtils.getCustomerNameOptions(customers, equipmentCustomer, true);
@@ -139,6 +141,7 @@
                 onChange: function (e) {
                   setEquipmentCustomer(e.target.value);
                   setEquipmentStore('');
+                  listPagination.resetPage();
                 },
                 className: 'w-56 p-2.5 border rounded-md outline-none focus:border-blue-500 bg-white'
               },
@@ -153,7 +156,7 @@
                 h('span', { className: 'text-red-500' }, '*')),
               h('select', {
                 value: equipmentStore,
-                onChange: function (e) { setEquipmentStore(e.target.value); },
+                onChange: function (e) { setEquipmentStore(e.target.value); listPagination.resetPage(); },
                 disabled: !equipmentCustomer,
                 className: 'w-56 p-2.5 border rounded-md outline-none focus:border-blue-500 bg-white disabled:bg-gray-100'
               },
@@ -164,7 +167,11 @@
               )
             )
           ),
-          h('button', {
+          iconActionBtn({
+            label: '新增設備',
+            className: 'flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white p-2.5 rounded-full shadow-sm transition-colors shrink-0' +
+              (!canQuery ? ' opacity-50 cursor-not-allowed' : ''),
+            disabled: !canQuery,
             onClick: function () {
               if (!canQuery) {
                 showToast('請先篩選客戶與門市', 'error');
@@ -173,10 +180,8 @@
               setEditingCase(null);
               setView('equipment-add');
             },
-            disabled: !canQuery,
-            className: 'flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-md shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed',
-            title: '新增設備'
-          }, Icons.Plus({ className: 'h-5 w-5' }), ' 新增設備')
+            icon: Icons.Plus({ className: 'h-5 w-5' })
+          })
         ),
         canQuery && h('div', {
           className: 'flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg'
@@ -239,7 +244,7 @@
                       colspan: 12,
                       className: 'p-10 text-center text-gray-400 text-base'
                     }, '無資料'))
-                  : filtered.map(function (eq) {
+                  : pageResult.items.map(function (eq) {
                       return h('tr', { key: eq.id, className: 'hover:bg-blue-50/50 transition-colors' },
                         h('td', { className: 'p-3' },
                           h('div', { className: 'flex items-center justify-center space-x-2' },
@@ -268,6 +273,7 @@
               )
             )
           ),
+        listPagination.renderBar(pageResult, rerender),
         deleteModal.show && h('div', {
           className: 'app-modal-overlay'
         },

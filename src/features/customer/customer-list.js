@@ -5,6 +5,7 @@
 (function () {
   'use strict';
   var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful, useDragScroll = IESS.useDragScroll;
+  var iconActionBtn = IESS.iconActionBtn;
 
   function enabledBadge(enabled) {
     var isEnabled = enabled !== false;
@@ -26,6 +27,7 @@
     var appliedKeyword = '';
     var enabledFilter = '全部';
     var dragProps = useDragScroll();
+    var listPagination = IESS.createListPagination();
 
     return stateful(function (rerender) {
       var filteredCustomers = (function () {
@@ -43,10 +45,11 @@
         }
         return list.slice().sort(function (a, b) { return new Date(b.createdDate) - new Date(a.createdDate); });
       })();
+      var pageResult = listPagination.slice(filteredCustomers);
 
       function enabledFilterBtn(filter, label) {
         return h('button', {
-          onClick: function () { enabledFilter = filter; rerender(); },
+          onClick: function () { enabledFilter = filter; listPagination.resetPage(); rerender(); },
           className: 'px-4 py-2 rounded-full text-sm font-medium transition-all ' +
             (enabledFilter === filter
               ? 'bg-blue-100 text-blue-800 border-2 border-blue-500'
@@ -54,7 +57,7 @@
         }, label);
       }
 
-      function handleSearch() { appliedKeyword = keyword; rerender(); }
+      function handleSearch() { appliedKeyword = keyword; listPagination.resetPage(); rerender(); }
       function handleKeyDown(e) { if (e.key === 'Enter') handleSearch(); }
 
       return h('div', {
@@ -87,11 +90,12 @@
             }, Icons.Search({ className: 'h-4 w-4' }), ' 搜尋')
             )
           ),
-          h('button', {
+          iconActionBtn({
+            label: '新增客戶',
+            className: 'flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white p-2.5 rounded-full shadow-sm transition-colors shrink-0',
             onClick: function () { setView('customer-add'); },
-            className: 'flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-md shadow-sm transition-colors',
-            title: '新增客戶'
-          }, Icons.Plus({ className: 'h-5 w-5' }), ' 新增客戶')
+            icon: Icons.Plus({ className: 'h-5 w-5' })
+          })
         ),
         h('div', Object.assign({}, dragProps, {
           className: 'overflow-x-auto border rounded-lg cursor-grab active:cursor-grabbing'
@@ -110,7 +114,7 @@
               filteredCustomers.length === 0
                 ? h('tr', null,
                     h('td', { colspan: 3, className: 'p-10 text-center text-gray-400 text-base' }, '無資料'))
-                : filteredCustomers.map(function (c) {
+                : pageResult.items.map(function (c) {
                     return h('tr', { key: c.id, className: 'hover:bg-blue-50/50 transition-colors' },
                       h('td', { className: 'p-3' },
                         h('div', { className: 'flex items-center justify-center space-x-2' },
@@ -127,7 +131,8 @@
                   })
             )
           )
-        )
+        ),
+        listPagination.renderBar(pageResult, rerender)
       );
     });
   }

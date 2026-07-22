@@ -185,7 +185,8 @@ const PERMISSION_FUNCTIONS = [
   '案件績效統計',
   '帳號管理',
   '指派人員管理',
-  '設備分類管理'
+  '設備分類管理',
+  '處理方式與積分管理'
 ];
 const PERMISSION_TREE = [
   {
@@ -215,6 +216,6 @@ const PERMISSION_TREE = [
   },
   {
     id: '系統權限',
-    children: ['帳號管理', '指派人員管理', '設備分類管理']
+    children: ['帳號管理', '指派人員管理', '設備分類管理', '處理方式與積分管理']
   }
 ];

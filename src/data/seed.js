@@ -593,6 +593,22 @@ const INITIAL_EQUIPMENTS = [{
 }];
 
 // --- 初始模擬案件列表 (維修) ---
+function caseProcessRecordFromPm(pmId, qty, lineId) {
+  var pm = INITIAL_PROCESS_METHODS.find(function (m) { return m.id === pmId; });
+  if (!pm) return null;
+  return {
+    id: lineId,
+    processMethodId: pm.id,
+    category1: pm.category1,
+    category2: pm.category2,
+    category3: pm.category3,
+    specification: pm.specification,
+    unit: pm.unit,
+    points: pm.points,
+    qty: qty
+  };
+}
+
 const INITIAL_CASES = [{
   id: 'C20260709001',
   indicator: 'urgent',
@@ -682,13 +698,7 @@ const INITIAL_CASES = [{
     type: '內',
     model: 'FXYP100'
   },
-  processRecords: [{
-    id: 1,
-    category1: '工資',
-    category2: '分離式',
-    category3: '保養工資',
-    qty: 1
-  }],
+  processRecords: [caseProcessRecordFromPm('MS0001', 1, 1)],
   reRepairDate: yesterdayDate,
   secondRepairDate: '',
   completionDate: todayDate,
@@ -723,19 +733,10 @@ const INITIAL_CASES = [{
     type: '內',
     model: 'FXMQ125'
   },
-  processRecords: [{
-    id: 1,
-    category1: '工資',
-    category2: '分離式',
-    category3: '檢修工資',
-    qty: 1
-  }, {
-    id: 2,
-    category1: '材料',
-    category2: '保養材料',
-    category3: '過濾網',
-    qty: 2
-  }],
+  processRecords: [
+    caseProcessRecordFromPm('RG0004', 1, 1),
+    caseProcessRecordFromPm('MC0012', 2, 2)
+  ],
   reRepairDate: '',
   secondRepairDate: '',
   completionDate: twoDaysAgoDate,
@@ -770,13 +771,7 @@ const INITIAL_CASES = [{
     type: '內',
     model: 'FXMQ80'
   },
-  processRecords: [{
-    id: 1,
-    category1: '工資',
-    category2: '分離式',
-    category3: '檢修工資',
-    qty: 1
-  }],
+  processRecords: [caseProcessRecordFromPm('RG0002', 1, 1)],
   reRepairDate: '',
   secondRepairDate: '',
   completionDate: todayDate,
@@ -1691,6 +1686,7 @@ const INITIAL_DEVICE_CATEGORIES = [{
   powerSource: '220V',
   createdDate: todayDate
 }];
+
 
 const INITIAL_ASSIGNEES = [
   { id: 'ASG1', name: 'A組', leaderId: 'ACC2', districts: ['台北市信義區', '台北市中山區'], memberIds: ['ACC2'], createdDate: todayDate },

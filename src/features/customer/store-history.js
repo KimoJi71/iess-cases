@@ -25,6 +25,7 @@
     var keyword = '';
     var appliedFilter = { caseType: 'repair-maintenance', start: todayDate, end: todayDate, keyword: '' };
     var dragProps = useDragScroll();
+    var listPagination = IESS.createListPagination();
 
     function getRows() {
       if (!store) return [];
@@ -106,16 +107,19 @@
 
     return stateful(function (rerender) {
       var rows = getFilteredRows();
+      var pageResult = listPagination.slice(rows);
       var isProject = appliedFilter.caseType === 'project';
 
       function handleSearch() {
         appliedFilter = { caseType: caseType, start: startDate, end: endDate, keyword: keyword };
+        listPagination.resetPage();
         rerender();
       }
       function handleKeyDown(e) { if (e.key === 'Enter') handleSearch(); }
       function switchCaseType(nextType) {
         caseType = nextType;
         appliedFilter = Object.assign({}, appliedFilter, { caseType: nextType });
+        listPagination.resetPage();
         rerender();
       }
 
@@ -217,7 +221,7 @@
                       colspan: isProject ? 7 : 12,
                       className: 'p-10 text-center text-gray-400 text-base'
                     }, '無資料'))
-                  : rows.map(function (rec) {
+                  : pageResult.items.map(function (rec) {
                       if (isProject) {
                         return h('tr', { key: rec.id, className: 'hover:bg-blue-50/50 transition-colors' },
                           viewBtn(rec),
@@ -246,7 +250,8 @@
                     })
               )
             )
-          )
+          ),
+          listPagination.renderBar(pageResult, rerender)
         )
       );
     });

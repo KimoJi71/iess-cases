@@ -22,6 +22,7 @@
     var keyword = '';
     var appliedKeyword = '';
     var dragProps = useDragScroll();
+    var listPagination = IESS.createListPagination();
 
     function openHistory(store) {
       openStoreHistory(store);
@@ -54,9 +55,10 @@
 
     return stateful(function (rerender) {
       var filteredStores = getFilteredStores();
+      var pageResult = listPagination.slice(filteredStores);
       var customerSelectOptions = CustomerUtils.getCustomerNameOptions(customers, storeCustomer, true);
 
-      function handleSearch() { appliedKeyword = keyword; rerender(); }
+      function handleSearch() { appliedKeyword = keyword; listPagination.resetPage(); rerender(); }
       function handleKeyDown(e) { if (e.key === 'Enter') handleSearch(); }
 
       return h('div', { className: 'bg-white p-6 rounded-lg shadow-sm border border-gray-100' },
@@ -71,6 +73,7 @@
                   setStoreCustomer(e.target.value);
                   appliedKeyword = '';
                   keyword = '';
+                  listPagination.resetPage();
                 },
                 className: 'w-56 p-2.5 border rounded-md outline-none focus:border-blue-500 bg-white'
               },
@@ -98,7 +101,9 @@
               className: 'flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-md shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
             }, Icons.Search({ className: 'h-4 w-4' }), ' 搜尋')
           ),
-          h('button', {
+          iconActionBtn({
+            label: '新增門市',
+            className: 'flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white p-2.5 rounded-full shadow-sm transition-colors shrink-0',
             onClick: function () {
               if (!storeCustomer) {
                 showToast('請先篩選客戶', 'error');
@@ -107,9 +112,8 @@
               setEditingCase(null);
               setView('store-add');
             },
-            className: 'flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-md shadow-sm transition-colors',
-            title: '新增門市'
-          }, Icons.Plus({ className: 'h-5 w-5' }), ' 新增門市')
+            icon: Icons.Plus({ className: 'h-5 w-5' })
+          })
         ),
         !storeCustomer
           ? h('div', {
@@ -135,7 +139,7 @@
                       colspan: 6,
                       className: 'p-10 text-center text-gray-400 text-base'
                     }, '無資料'))
-                  : filteredStores.map(function (s) {
+                  : pageResult.items.map(function (s) {
                       return h('tr', { key: s.id, className: 'hover:bg-blue-50/50 transition-colors' },
                         h('td', { className: 'p-3' },
                           h('div', { className: 'flex items-center justify-center space-x-2' },
@@ -157,7 +161,8 @@
                     })
               )
             )
-          )
+          ),
+        listPagination.renderBar(pageResult, rerender)
       );
     });
   }

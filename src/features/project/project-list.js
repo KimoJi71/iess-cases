@@ -6,6 +6,7 @@
   'use strict';
   var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful, useDragScroll = IESS.useDragScroll;
   var iconActionBtn = IESS.iconActionBtn;
+  var iconActionBtn = IESS.iconActionBtn;
 
   // 需跨 store 重繪保留（例如送出歷程留言會更新 projectCases）
   var historyModal = { show: false, caseData: null };
@@ -47,6 +48,7 @@
       contactPerson: '全部'
     };
     var dragProps = useDragScroll();
+    var listPagination = IESS.createListPagination();
 
     return stateful(function (rerender) {
       syncOpenHistoryModal(cases);
@@ -63,6 +65,7 @@
           customer: filterCustomer,
           contactPerson: filterContactPerson
         };
+        listPagination.resetPage();
         rerender();
       }
 
@@ -76,6 +79,7 @@
         }
         return true;
       }).sort(function (a, b) { return new Date(b.creationDate) - new Date(a.creationDate); });
+      var pageResult = listPagination.slice(filteredCases);
 
       function handleAddComment(caseId, newComment) {
         setCases(function (prevCases) {
@@ -146,13 +150,12 @@
         className: 'w-full xl:w-auto bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-md flex items-center justify-center gap-1.5 whitespace-nowrap min-h-[42px] transition-colors'
       }, Icons.Search({
         className: 'h-4 w-4 shrink-0'
-      }), '搜尋')))), h('button', {
-        onClick: function () { setView('project-add'); },
+      }), '搜尋')))), iconActionBtn({
+        label: '新增立案單',
         className: 'flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white p-2.5 rounded-full shadow-sm transition-colors shrink-0',
-        title: '新增立案單'
-      }, Icons.Plus({
-        className: 'h-5 w-5'
-      }))), h('div', Object.assign({
+        onClick: function () { setView('project-add'); },
+        icon: Icons.Plus({ className: 'h-5 w-5' })
+      })), h('div', Object.assign({
         className: 'overflow-x-auto border rounded-lg cursor-grab active:cursor-grabbing'
       }, dragProps), h('table', {
         className: 'w-full text-left text-sm text-gray-600 whitespace-nowrap select-none'
@@ -180,7 +183,7 @@
       }, filteredCases.length === 0 ? h('tr', null, h('td', {
         colspan: 6 + PROJECT_STAGES.length,
         className: 'text-center p-8 text-gray-400'
-      }, '無資料符合目前搜尋區間')) : filteredCases.map(function (c) {
+      }, '無資料符合目前搜尋區間')) : pageResult.items.map(function (c) {
         return h('tr', {
           key: c.id,
           className: 'hover:bg-gray-50 transition-colors'
@@ -233,7 +236,7 @@
             className: 'flex items-center justify-center text-gray-300'
           }, '-'));
         }));
-      })))), historyModal.show && historyModal.caseData && h(ProjectHistoryModal, {
+      })))), listPagination.renderBar(pageResult, rerender), historyModal.show && historyModal.caseData && h(ProjectHistoryModal, {
         caseData: historyModal.caseData,
         onClose: function () { closeHistoryModal(setCases); },
         onAddComment: handleAddComment

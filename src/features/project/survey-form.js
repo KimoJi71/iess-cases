@@ -1871,7 +1871,7 @@
           className: "px-8 py-2.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center gap-2 font-bold shadow-sm transition-colors"
         }, Icons.Save({
           className: "h-5 w-5"
-        }), " \u5132\u5B58\u8868\u55AE")))));
+        }), " 儲存")))));
     });
   }
 

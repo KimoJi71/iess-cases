@@ -42,7 +42,8 @@
   var PERMISSIONS_SUBMENU_DEFAULT_VIEW = {
     '帳號管理': 'account-list',
     '指派人員管理': 'assignee-list',
-    '設備分類管理': 'device-category-list'
+    '設備分類管理': 'device-category-list',
+    '處理方式與積分管理': 'process-method-list'
   };
 
   var WARROOM_SUBMENUS = Object.keys(WARROOM_SUBMENU_DEFAULT_VIEW);
@@ -94,6 +95,7 @@
     personnelStatus: INITIAL_PERSONNEL_STATUS,
     accounts: INITIAL_ACCOUNTS,
     deviceCategories: INITIAL_DEVICE_CATEGORIES,
+    processMethods: INITIAL_PROCESS_METHODS,
     assignees: INITIAL_ASSIGNEES,
     editingCase: null,
     viewingCase: null,
@@ -193,6 +195,14 @@
       var next = typeof v === 'function' ? v(s.assignees) : v;
       AssigneeUtils.syncAssigneeOptions(next);
       return { assignees: next };
+    });
+  }
+
+  function setProcessMethods(v) {
+    store.set(function (s) {
+      var next = typeof v === 'function' ? v(s.processMethods) : v;
+      ProcessMethodUtils.syncProcessMethodOptions(next);
+      return { processMethods: next };
     });
   }
 
@@ -310,6 +320,7 @@
         return h(EditCaseForm, {
           editingCase: s.editingCase, cases: s.cases, setCases: setCasesData,
           stores: s.stores, customers: s.customers, equipments: s.equipments,
+          processMethods: s.processMethods,
           setView: setView, showToast: showToast,
           currentOperatorName: getCurrentOperatorName(s.accounts, s.currentAccountId)
         });
@@ -631,6 +642,32 @@
           setView: setView,
           showToast: showToast
         });
+      case 'process-method-list':
+        return h(ProcessMethodList, {
+          processMethods: s.processMethods,
+          setProcessMethods: setProcessMethods,
+          cases: s.cases,
+          maintenanceCases: s.maintenanceCases,
+          projectCases: s.projectCases,
+          setEditingCase: setEditingCase,
+          setView: setView,
+          showToast: showToast
+        });
+      case 'process-method-add':
+        return h(ProcessMethodForm, {
+          processMethods: s.processMethods,
+          setProcessMethods: setProcessMethods,
+          setView: setView,
+          showToast: showToast
+        });
+      case 'process-method-edit':
+        return h(ProcessMethodForm, {
+          processMethods: s.processMethods,
+          setProcessMethods: setProcessMethods,
+          targetCase: s.editingCase,
+          setView: setView,
+          showToast: showToast
+        });
       default:
         return null;
     }
@@ -736,6 +773,7 @@
   }
 
   DeviceCategoryUtils.syncDeviceCategoryOptions(INITIAL_DEVICE_CATEGORIES);
+  ProcessMethodUtils.syncProcessMethodOptions(INITIAL_PROCESS_METHODS);
   AssigneeUtils.syncAssigneeOptions(INITIAL_ASSIGNEES);
   AccountUtils.syncProjectPersonOptions(INITIAL_ACCOUNTS);
 

@@ -435,6 +435,7 @@
       }
 
       function renderRepairScheduleDetails(formData) {
+        var pmColumns = ProcessMethodUtils.CASE_DISPLAY_COLUMNS;
         var isOther = formData.workCategory === '其他';
         var customerOptions = CustomerUtils.getCustomerNameOptions(customers, formData.customerName);
         var storeOptions = ScheduleUtils.getStoreNamesForCustomer(stores, formData.customerName, formData.storeName);
@@ -575,22 +576,26 @@
                       h('table', { className: 'w-full text-left text-sm whitespace-nowrap' },
                         h('thead', { className: 'bg-gray-100' },
                           h('tr', null,
-                            h('th', { className: 'p-2 pl-4' }, '項目 (大/中/小類)'),
+                            pmColumns.map(function (col) {
+                              return h('th', { key: col.key, className: 'p-2 pl-4' }, col.label);
+                            }),
                             h('th', { className: 'p-2' }, '數量')
                           )
                         ),
                         h('tbody', { className: 'divide-y' },
                           (!formData.processRecords || !formData.processRecords.length)
                             ? h('tr', null,
-                                h('td', { colspan: '2', className: 'p-4 text-center text-gray-400' }, '無處理方式紀錄')
+                                h('td', { colspan: String(pmColumns.length + 1), className: 'p-4 text-center text-gray-400' }, '無處理方式紀錄')
                               )
                             : formData.processRecords.map(function (r, idx) {
                               return h('tr', { key: r.id || idx },
-                                h('td', { className: 'p-2 pl-4' },
-                                  r.category1, ' - ', r.category2, ' - ',
-                                  h('span', { className: 'font-medium text-gray-800' }, r.category3)
-                                ),
-                                h('td', { className: 'p-2' }, r.qty)
+                                pmColumns.map(function (col) {
+                                  return h('td', { key: col.key, className: 'p-2 pl-4' }, r[col.key] || '—');
+                                }),
+                                h('td', { className: 'p-2' },
+                                  r.qty,
+                                  r.unit ? h('span', { className: 'text-gray-500 ml-1' }, r.unit) : null
+                                )
                               );
                             })
                         )

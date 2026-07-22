@@ -52,6 +52,7 @@
     };
 
     var bridge = null;
+    var listPagination = IESS.createListPagination();
 
     function getEvents() {
       return ScheduleUtils.getPersonnelEvents(
@@ -85,11 +86,13 @@
 
     return stateful(function (rerender) {
       var rows = getFilteredRows();
+      var pageResult = listPagination.slice(rows);
 
       function handleSearch() {
         var week = CalendarBridge.getWeekRange(calDate);
         appliedCal = { start: week.start, end: week.end, assignee: calAssignee };
         persistPersonnelCalState(calDate, calAssignee, appliedCal);
+        listPagination.resetPage();
         if (bridge) {
           bridge.gotoRange(appliedCal.start, appliedCal.end);
           bridge.setEvents(getEvents());
@@ -153,7 +156,7 @@
                     className: 'px-4 py-8 text-center text-gray-400'
                   }, '查無符合條件的排程資料')
                 )
-                : rows.map(function (row) {
+                : pageResult.items.map(function (row) {
                   return h('tr', {
                     key: row.id,
                     className: 'border-b border-gray-100 hover:bg-gray-50'
@@ -178,7 +181,8 @@
                 })
             )
           )
-        )
+        ),
+        listPagination.renderBar(pageResult, rerender)
       );
     });
   }

@@ -197,22 +197,24 @@
                 }, (customerName || '') + ' / ' + (formData.storeName || targetCase.storeName || ''))
               ),
               h('div', { className: 'flex items-center gap-2 shrink-0' },
-                h('button', {
-                  type: 'button',
+                iconActionBtn({
+                  label: '新增叫修單',
+                  className: 'flex items-center justify-center bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 p-2 rounded-md transition-colors',
                   onClick: function () { setView('store-repair-add'); },
-                  className: 'flex items-center gap-1.5 text-sm bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 px-3 py-2 rounded-md transition-colors'
-                }, Icons.Wrench({ className: 'h-4 w-4' }), ' 新增叫修單'),
-                h('button', {
-                  type: 'button',
+                  icon: Icons.Wrench({ className: 'h-4 w-4' })
+                }),
+                iconActionBtn({
+                  label: '新增立案單',
+                  className: 'flex items-center justify-center bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 p-2 rounded-md transition-colors',
                   onClick: function () { setView('store-project-add'); },
-                  className: 'flex items-center gap-1.5 text-sm bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 px-3 py-2 rounded-md transition-colors'
-                }, Icons.FileText({ className: 'h-4 w-4' }), ' 新增立案單'),
-                h('button', {
-                  type: 'button',
+                  icon: Icons.FileText({ className: 'h-4 w-4' })
+                }),
+                iconActionBtn({
+                  label: '關閉並返回列表',
+                  className: 'ml-1 p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors',
                   onClick: navigateBack,
-                  title: '關閉並返回列表',
-                  className: 'ml-1 p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors'
-                }, Icons.X({ className: 'h-6 w-6' }))
+                  icon: Icons.X({ className: 'h-6 w-6' })
+                })
               )
             )
           : PageHeader({
@@ -483,7 +485,7 @@
               h('button', {
                 onClick: handleSaveContact,
                 className: 'flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors'
-              }, Icons.Save({ className: 'h-4 w-4' }), ' 儲存承辦')
+              }, Icons.Save({ className: 'h-4 w-4' }), ' 儲存')
             )
           )
         )

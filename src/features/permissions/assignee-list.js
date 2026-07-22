@@ -32,6 +32,7 @@
     var appliedKeyword = '';
     var deleteModal = { show: false, id: null, name: '' };
     var dragProps = useDragScroll();
+    var listPagination = IESS.createListPagination();
 
     function getFilteredAssignees() {
       var kw = appliedKeyword.trim().toLowerCase();
@@ -55,8 +56,9 @@
 
     return stateful(function (rerender) {
       var filteredAssignees = getFilteredAssignees();
+      var pageResult = listPagination.slice(filteredAssignees);
 
-      function handleSearch() { appliedKeyword = keyword; rerender(); }
+      function handleSearch() { appliedKeyword = keyword; listPagination.resetPage(); rerender(); }
       function handleKeyDown(e) { if (e.key === 'Enter') handleSearch(); }
 
       function handleDelete(id) {
@@ -98,11 +100,12 @@
               className: 'flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-md shadow-sm transition-colors'
             }, Icons.Search({ className: 'h-4 w-4' }), ' 搜尋')
           ),
-          h('button', {
+          iconActionBtn({
+            label: '新增指派人員',
+            className: 'flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white p-2.5 rounded-full shadow-sm transition-colors shrink-0',
             onClick: function () { setEditingCase(null); setView('assignee-add'); },
-            className: 'flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-md shadow-sm transition-colors',
-            title: '新增指派人員'
-          }, Icons.Plus({ className: 'h-5 w-5' }), ' 新增指派人員')
+            icon: Icons.Plus({ className: 'h-5 w-5' })
+          })
         ),
         h('div', Object.assign({}, dragProps, {
           className: 'overflow-x-auto border rounded-lg cursor-grab active:cursor-grabbing'
@@ -120,7 +123,7 @@
             h('tbody', { className: 'divide-y divide-gray-100' },
               filteredAssignees.length === 0
                 ? h('tr', null, h('td', { colspan: 5, className: 'p-10 text-center text-gray-400 text-base' }, '無資料'))
-                : filteredAssignees.map(function (a) {
+                : pageResult.items.map(function (a) {
                     return h('tr', { key: a.id, className: 'hover:bg-blue-50/50 transition-colors' },
                       h('td', { className: 'p-3 whitespace-nowrap' },
                         h('div', { className: 'flex items-center justify-center space-x-2' },
@@ -145,6 +148,7 @@
             )
           )
         ),
+        listPagination.renderBar(pageResult, rerender),
         deleteModal.show && h('div', {
           className: 'app-modal-overlay'
         },

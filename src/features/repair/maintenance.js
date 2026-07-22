@@ -83,6 +83,7 @@
     };
     var dragProps = useDragScroll();
     var closeConfirmModal = { show: false, caseId: null };
+    var listPagination = IESS.createListPagination();
 
     return stateful(function (rerender) {
       var customerFilterOptions = CustomerUtils.getCustomerNameOptions(
@@ -99,6 +100,7 @@
           storeArea: filterStoreArea,
           status: filterStatus
         };
+        listPagination.resetPage();
         rerender();
       }
 
@@ -116,6 +118,7 @@
         var bDate = b.planDate || b.dueMonth || '1970-01-01';
         return new Date(bDate) - new Date(aDate);
       });
+      var pageResult = listPagination.slice(filteredCases);
 
       var storeAreaOptions = StoreUtils.getAreaOptionsFromStores(stores);
 
@@ -210,7 +213,7 @@
       }, filteredCases.length === 0 ? h("tr", null, h("td", {
         colspan: "12",
         className: "text-center p-8 text-gray-400"
-      }, "無符合條件之保養資料")) : filteredCases.map(function (c) {
+      }, "無符合條件之保養資料")) : pageResult.items.map(function (c) {
         var canClose = canCloseMaintenanceCase(c);
         return h("tr", {
           key: c.id,
@@ -271,6 +274,7 @@
           className: "p-3"
         }, c.assignee));
       })))),
+      listPagination.renderBar(pageResult, rerender),
       closeConfirmModal.show && h("div", {
         className: "app-modal-overlay"
       }, h("div", {
@@ -473,7 +477,7 @@
           className: "px-8 py-2.5 bg-blue-600 text-white rounded-md"
         }, Icons.Save({
           className: "inline h-4 w-4 mr-2"
-        }), "儲存狀態")
+        }), "儲存")
       )));
     });
   }

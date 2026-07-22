@@ -40,10 +40,12 @@
     var appliedDateRange = { start: todayDate, end: todayDate };
     var includeConfirmModal = { show: false, caseId: null, sourceType: 'repair' };
     var dragProps = useDragScroll();
+    var listPagination = IESS.createListPagination();
 
     return stateful(function (rerender) {
       function handleSearch() {
         appliedDateRange = { start: startDate, end: endDate };
+        listPagination.resetPage();
         rerender();
       }
 
@@ -59,6 +61,7 @@
       }).sort(function (a, b) {
         return new Date(getReviewCaseDate(b)) - new Date(getReviewCaseDate(a));
       });
+      var pageResult = listPagination.slice(filteredCases);
 
       function handleIncludePerformance(caseId, sourceType) {
         if (sourceType === 'maintenance') {
@@ -123,7 +126,7 @@
             h('tbody', { className: 'divide-y divide-gray-100' },
               filteredCases.length === 0 ? h('tr', null,
                 h('td', { colspan: '12', className: 'text-center p-8 text-gray-400' }, '無資料符合目前搜尋區間')
-              ) : filteredCases.map(function (c) {
+              ) : pageResult.items.map(function (c) {
                 var isMaintenance = isMaintenancePlanCase(c);
                 return h('tr', { key: c.sourceType + '-' + c.id, className: 'hover:bg-gray-50 transition-colors' },
                   h('td', { className: 'p-3' },
@@ -163,6 +166,7 @@
             )
           )
         ),
+        listPagination.renderBar(pageResult, rerender),
         includeConfirmModal.show && h('div', {
           className: 'app-modal-overlay'
         },
