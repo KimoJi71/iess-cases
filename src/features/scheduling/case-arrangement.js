@@ -11,7 +11,7 @@
  */
 (function () {
   'use strict';
-  var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful;
+  var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful, TimeInput24 = IESS.TimeInput24;
   var CalendarBridge = IESS.CalendarBridge;
 
   function CaseArrangement(props) {
@@ -28,11 +28,9 @@
     var assignees = props.assignees || [];
     var showToast = props.showToast;
 
-    var weekRange = CalendarBridge.getWeekRange(new Date());
-    var calStart = weekRange.start;
-    var calEnd = weekRange.end;
+    var calDate = CalendarBridge.formatDate(new Date());
     var calAssignee = '全部';
-    var appliedCal = { start: calStart, end: calEnd, assignee: '全部' };
+    var appliedCal = { start: calDate, end: calDate, assignee: '全部' };
 
     var pendingWorkCategory = '';
     var pendingCustomer = '';
@@ -42,7 +40,8 @@
 
     var bridge = null;
     var calendarEl = null;
-    var pendingListEl = null;
+    var scheduleModal = null;
+    var maintenanceEventModal = null;
     var rerenderRef = function () {};
 
     function getEvents() {
@@ -153,36 +152,56 @@
       }
     }
 
+    function resolveCaseRecord(sourceType, sourceId) {
+      if (sourceType === 'maintenance') {
+        return maintenanceCases.find(function (c) { return c.id === sourceId; }) || null;
+      }
+      if (sourceType === 'repair') {
+        return cases.find(function (c) { return c.id === sourceId; }) || null;
+      }
+      if (sourceType === 'project') {
+        return projectCases.find(function (c) { return c.id === sourceId; }) || null;
+      }
+      return null;
+    }
+
+    function getRecordAddress(record) {
+      if (!record) return '';
+      var store = ScheduleUtils.resolveStore(stores, record.customerName, record.storeName);
+      return (store && StoreUtils.buildFullAddress(store)) || record.storeAddress || '';
+    }
+
     function refreshCalendar() {
       if (!bridge) return;
       bridge.setEvents(getEvents());
-      if (pendingListEl) {
-        bridge.initExternalDrag(pendingListEl);
-      }
     }
 
-    function addHour(timeStr, hours) {
-      var parts = timeStr.split(':');
-      var h = parseInt(parts[0], 10) + hours;
-      if (h > 23) h = 23;
-      return String(h).padStart(2, '0') + ':' + (parts[1] || '00');
+    function applySchedule(sourceType, sourceId, payload) {
+      patchLocalCaseSchedule(sourceType, sourceId, payload);
+      applyScheduleFromPayload(sourceType, sourceId, payload);
+      showToast('排程已儲存');
+      scheduleModal = null;
+      rerenderRef();
+      setTimeout(function () { refreshCalendar(); }, 0);
     }
 
-    function applyDropSchedule(data, dateStr, timeStr) {
-      if (!appliedPending || !appliedPending.assignee) {
-        showToast('請先查詢待安排案件並選擇指派人員');
+    function handleMaintenanceComplete(sourceId) {
+      var target = maintenanceCases.find(function (c) { return c.id === sourceId; });
+      if (!target) return;
+      if (target.status === '已完成') {
+        showToast('此保養案件已完成');
         return;
       }
-      var timeStart = timeStr || '09:00';
-      var payload = {
-        planDate: dateStr,
-        planTimeStart: timeStart,
-        planTimeEnd: addHour(timeStart, 2),
-        assignee: appliedPending.assignee
-      };
-      patchLocalCaseSchedule(data.sourceType, data.sourceId, payload);
-      applyScheduleFromPayload(data.sourceType, data.sourceId, payload);
-      showToast('排程已儲存');
+      maintenanceCases = maintenanceCases.map(function (c) {
+        if (c.id !== sourceId) return c;
+        return Object.assign({}, c, {
+          status: '已完成',
+          completionDate: IESS.caseDateTime.now()
+        });
+      });
+      setMaintenanceCases(maintenanceCases);
+      maintenanceEventModal = null;
+      showToast('保養已完成，可至保養計劃進度進行結案');
       rerenderRef();
       setTimeout(function () { refreshCalendar(); }, 0);
     }
@@ -195,10 +214,13 @@
         rangeStart: appliedCal.start,
         rangeEnd: appliedCal.end,
         initialEvents: getEvents(),
-        onDrop: function (data, dateStr, timeStr) {
-          applyDropSchedule(data, dateStr, timeStr);
-        },
-        onEventChange: handleEventChange
+        onEventChange: handleEventChange,
+        onEventClick: function (event) {
+          var props = event.extendedProps || {};
+          if (props.isPreview || props.sourceType !== 'maintenance' || !props.sourceId) return;
+          maintenanceEventModal = { sourceId: props.sourceId };
+          rerenderRef();
+        }
       });
       refreshCalendar();
     }
@@ -250,7 +272,7 @@
       var customerNames = CustomerUtils.getCustomerNameOptions(customers, pendingCustomer);
 
       function handleCalSearch() {
-        appliedCal = { start: calStart, end: calEnd, assignee: calAssignee };
+        appliedCal = { start: calDate, end: calDate, assignee: calAssignee };
         if (bridge) {
           bridge.gotoRange(appliedCal.start, appliedCal.end);
           bridge.setEvents(getEvents());
@@ -280,23 +302,189 @@
       var pendingStoreAreaOptions = StoreUtils.getAreaOptionsFromStores(stores);
       var pendingFiltersReady = isPendingFiltersReady();
 
+      function openScheduleModal(item) {
+        if (!appliedPending || !appliedPending.assignee) {
+          showToast('請先查詢待安排案件並選擇指派人員');
+          return;
+        }
+        scheduleModal = {
+          item: item,
+          planDate: appliedCal.start || calDate,
+          planTimeStart: '09:00',
+          planTimeEnd: '11:00'
+        };
+        rerender();
+      }
+
+      function confirmScheduleModal() {
+        if (!scheduleModal || !appliedPending || !appliedPending.assignee) return;
+        if (!scheduleModal.planDate || !scheduleModal.planTimeStart || !scheduleModal.planTimeEnd) {
+          showToast('請填寫日期與時間區間');
+          return;
+        }
+        if (scheduleModal.planTimeEnd <= scheduleModal.planTimeStart) {
+          showToast('結束時間需晚於開始時間');
+          return;
+        }
+        var item = scheduleModal.item;
+        applySchedule(item.sourceType, item.sourceId, {
+          planDate: scheduleModal.planDate,
+          planTimeStart: scheduleModal.planTimeStart,
+          planTimeEnd: scheduleModal.planTimeEnd,
+          assignee: appliedPending.assignee
+        });
+      }
+
+      function renderDetailRow(label, value) {
+        return h('div', { className: 'text-sm' },
+          h('span', { className: 'text-gray-500' }, label + '：'),
+          h('span', { className: 'text-gray-800' }, value || '—')
+        );
+      }
+
+      function renderScheduleModalDetails(item) {
+        var record = resolveCaseRecord(item.sourceType, item.sourceId);
+        var address = getRecordAddress(record || item);
+        var rows = [
+          renderDetailRow('工項分類', item.workCategory),
+          renderDetailRow('客戶名稱', item.customerName),
+          renderDetailRow('門市名稱', item.storeName),
+          renderDetailRow('門市地址', address),
+          renderDetailRow('指派人員', appliedPending && appliedPending.assignee)
+        ];
+        if (item.sourceType === 'repair' && record) {
+          rows.push(
+            renderDetailRow('叫修項目', record.repairItem),
+            renderDetailRow('叫修原因', record.repairReason),
+            renderDetailRow('故障描述', record.faultDesc)
+          );
+        }
+        if (item.sourceType === 'maintenance' && record) {
+          rows.push(
+            renderDetailRow('服務等級', record.serviceLevel),
+            renderDetailRow('保養月份', record.dueMonth || (record.planDate && record.planDate.slice(0, 7)))
+          );
+        }
+        if (item.sourceType === 'project' && record) {
+          rows.push(
+            renderDetailRow('目前階段', record.currentStage),
+            renderDetailRow('負責人員', record.stageAssignee)
+          );
+        }
+        return h('div', { className: 'space-y-2 bg-gray-50 border border-gray-200 rounded-md p-4' }, rows);
+      }
+
+      function renderScheduleModal() {
+        if (!scheduleModal) return null;
+        return h('div', { className: 'app-modal-overlay p-4' },
+          h('div', { className: 'bg-white rounded-lg shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto' },
+            h('div', { className: 'p-6 border-b border-gray-100' },
+              h('h3', { className: 'text-lg font-bold text-gray-800' }, '安排排程')
+            ),
+            h('div', { className: 'p-6 space-y-4' },
+              h('div', { className: 'grid grid-cols-1 sm:grid-cols-3 gap-4' },
+                h('div', null,
+                  h('label', { className: 'block text-xs text-gray-500 mb-1' }, '日期'),
+                  h('input', {
+                    type: 'date',
+                    value: scheduleModal.planDate,
+                    onChange: function (e) {
+                      scheduleModal = Object.assign({}, scheduleModal, { planDate: e.target.value });
+                      rerender();
+                    },
+                    className: 'w-full p-2 border rounded-md outline-none focus:border-blue-500'
+                  })
+                ),
+                h('div', null,
+                  h('label', { className: 'block text-xs text-gray-500 mb-1' }, '開始時間'),
+                  h(TimeInput24, {
+                    value: scheduleModal.planTimeStart,
+                    onChange: function (e) {
+                      scheduleModal = Object.assign({}, scheduleModal, { planTimeStart: e.target.value });
+                      rerender();
+                    },
+                    className: 'w-full'
+                  })
+                ),
+                h('div', null,
+                  h('label', { className: 'block text-xs text-gray-500 mb-1' }, '結束時間'),
+                  h(TimeInput24, {
+                    value: scheduleModal.planTimeEnd,
+                    onChange: function (e) {
+                      scheduleModal = Object.assign({}, scheduleModal, { planTimeEnd: e.target.value });
+                      rerender();
+                    },
+                    className: 'w-full'
+                  })
+                )
+              ),
+              h('div', null,
+                h('h4', { className: 'text-sm font-bold text-gray-700 mb-2' }, '案件詳細內容'),
+                renderScheduleModalDetails(scheduleModal.item)
+              )
+            ),
+            h('div', { className: 'p-6 border-t border-gray-100 flex justify-end gap-3' },
+              h('button', {
+                onClick: function () { scheduleModal = null; rerender(); },
+                className: 'px-4 py-2 border rounded-md text-gray-600 hover:bg-gray-50'
+              }, '取消'),
+              h('button', {
+                onClick: confirmScheduleModal,
+                className: 'px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700'
+              }, '確認')
+            )
+          )
+        );
+      }
+
+      function renderMaintenanceEventModal() {
+        if (!maintenanceEventModal) return null;
+        var record = resolveCaseRecord('maintenance', maintenanceEventModal.sourceId);
+        if (!record) return null;
+        var address = getRecordAddress(record);
+        var isCompleted = record.status === '已完成';
+        return h('div', { className: 'app-modal-overlay p-4' },
+          h('div', { className: 'bg-white rounded-lg shadow-xl w-full max-w-lg' },
+            h('div', { className: 'p-6 border-b border-gray-100' },
+              h('h3', { className: 'text-lg font-bold text-gray-800' }, '保養案件')
+            ),
+            h('div', { className: 'p-6 space-y-4' },
+              h('div', { className: 'space-y-2 bg-gray-50 border border-gray-200 rounded-md p-4' },
+                renderDetailRow('客戶名稱', record.customerName),
+                renderDetailRow('門市名稱', record.storeName),
+                renderDetailRow('門市地址', address),
+                renderDetailRow('服務等級', record.serviceLevel),
+                renderDetailRow('保養日期', record.planDate),
+                renderDetailRow('保養時間', ScheduleUtils.formatTimeRange(record.planTimeStart, record.planTimeEnd)),
+                renderDetailRow('保養人員', record.assignee),
+                renderDetailRow('保養狀態', record.status)
+              ),
+              isCompleted && h('p', { className: 'text-sm text-green-700 bg-green-50 border border-green-200 rounded-md p-3' },
+                '保養已完成，請至「保養計劃進度」進行結案。')
+            ),
+            h('div', { className: 'p-6 border-t border-gray-100 flex justify-end gap-3' },
+              h('button', {
+                onClick: function () { maintenanceEventModal = null; rerender(); },
+                className: 'px-4 py-2 border rounded-md text-gray-600 hover:bg-gray-50'
+              }, '關閉'),
+              !isCompleted && h('button', {
+                onClick: function () { handleMaintenanceComplete(maintenanceEventModal.sourceId); },
+                className: 'px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700'
+              }, '保養完成')
+            )
+          )
+        );
+      }
+
       setTimeout(function () { refreshCalendar(); }, 0);
 
       return h('div', { className: 'bg-white p-6 rounded-lg shadow-sm border border-gray-100' },
         h('div', { className: 'flex flex-wrap items-end gap-3 mb-6' },
             h('div', null,
-              h('label', { className: 'block text-xs text-gray-500 mb-1' }, '開始日期'),
+              h('label', { className: 'block text-xs text-gray-500 mb-1' }, '指定日期'),
               h('input', {
-                type: 'date', value: calStart,
-                onChange: function (e) { calStart = e.target.value; },
-                className: 'p-2 border rounded-md outline-none focus:border-blue-500'
-              })
-            ),
-            h('div', null,
-              h('label', { className: 'block text-xs text-gray-500 mb-1' }, '結束日期'),
-              h('input', {
-                type: 'date', value: calEnd,
-                onChange: function (e) { calEnd = e.target.value; },
+                type: 'date', value: calDate,
+                onChange: function (e) { calDate = e.target.value; },
                 className: 'p-2 border rounded-md outline-none focus:border-blue-500'
               })
             ),
@@ -325,7 +513,7 @@
               h('h3', { className: 'text-sm font-bold text-gray-700 mb-3' }, '待安排案件'),
               h('div', { className: 'space-y-2' },
                 h('div', null,
-                  h('label', { className: 'block text-xs text-gray-500 mb-1' }, '工作項目類別'),
+                  h('label', { className: 'block text-xs text-gray-500 mb-1' }, '工項分類'),
                   h('select', {
                     value: pendingWorkCategory,
                     onChange: function (e) { pendingWorkCategory = e.target.value; rerender(); },
@@ -388,10 +576,7 @@
                 }, '查詢')
               )
             ),
-            h('div', {
-              ref: function (el) { pendingListEl = el; },
-              className: 'max-h-[520px] overflow-y-auto'
-            },
+            h('div', { className: 'max-h-[520px] overflow-y-auto' },
               !appliedPending
                 ? h('p', { className: 'text-sm text-gray-400 text-center py-8' }, '請先選擇篩選條件後查詢')
                 : pendingItems.length === 0
@@ -399,13 +584,8 @@
                 : pendingItems.map(function (item) {
                   return h('div', {
                     key: item.sourceType + '-' + item.sourceId,
-                    className: 'pending-item p-3 mb-2 bg-gray-50 border border-gray-200 rounded-md cursor-grab active:cursor-grabbing',
-                    'data-source-type': item.sourceType,
-                    'data-source-id': item.sourceId,
-                    'data-customer-name': item.customerName,
-                    'data-store-name': item.storeName,
-                    'data-work-category': item.workCategory,
-                    'data-assignee': appliedPending.assignee
+                    onClick: function () { openScheduleModal(item); },
+                    className: 'p-3 mb-2 bg-gray-50 border border-gray-200 rounded-md cursor-pointer hover:bg-blue-50 hover:border-blue-200 transition-colors'
                   },
                     h('div', { className: 'font-medium text-sm text-gray-800' }, item.customerName),
                     h('div', { className: 'text-sm text-gray-600' }, item.storeName),
@@ -419,7 +599,9 @@
             className: 'flex-1 min-h-[520px] border border-gray-200 rounded-lg p-2 bg-white',
             ref: initCalendar
           })
-        )
+        ),
+        renderScheduleModal(),
+        renderMaintenanceEventModal()
       );
     });
   }

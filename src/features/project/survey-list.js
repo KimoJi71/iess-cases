@@ -189,7 +189,7 @@
           )
         ),
         deleteConfirmModal.show && h('div', {
-          className: 'fixed inset-0 bg-black/40 flex items-center justify-center z-50'
+          className: 'app-modal-overlay'
         },
           h('div', {
             className: 'bg-white rounded-lg shadow-xl p-6 w-96 max-w-full m-4'

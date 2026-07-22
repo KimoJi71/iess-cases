@@ -1029,6 +1029,21 @@ function caseHasProcessData(c) {
   return false;
 }
 
+function snapshotCaseEquipment(equipmentRef) {
+  if (!equipmentRef) return null;
+  var master = null;
+  if (equipmentRef.id) {
+    master = INITIAL_EQUIPMENTS.find(function (e) { return e.id === equipmentRef.id; });
+  }
+  if (!master && equipmentRef.customerName && equipmentRef.storeName) {
+    var matched = INITIAL_EQUIPMENTS.filter(function (e) {
+      return e.customerName === equipmentRef.customerName && e.storeName === equipmentRef.storeName;
+    });
+    if (matched.length === 1) master = matched[0];
+  }
+  return master ? Object.assign({}, master) : equipmentRef;
+}
+
 INITIAL_CASES.forEach(function (c, i) {
   if (!c.createdAt) {
     var hour = 8 + (i % 10);
@@ -1041,6 +1056,9 @@ INITIAL_CASES.forEach(function (c, i) {
   });
   if (c.isClosed && !c.closeDate) {
     c.closeDate = c.completionDate || c.repairDate || '';
+  }
+  if (c.equipment) {
+    c.equipment = snapshotCaseEquipment(c.equipment);
   }
   if (!c.equipment) {
     if (!c.isClosed) c.processStatus = null;
@@ -1714,3 +1732,23 @@ const INITIAL_ACCOUNTS = [{
   permissions: _buildLimitedPermissions(),
   createdDate: twoDaysAgoDate
 }];
+
+var LEGACY_REPORTER_TO_ACCOUNT = {
+  '林店長': '王小明',
+  '陳副理': '王小明',
+  '王專員': '系統管理員',
+  '張小姐': '李美華',
+  '李先生': '李美華'
+};
+
+function resolveAccountReporterName(reporter) {
+  var accountNames = INITIAL_ACCOUNTS.map(function (a) { return a.name; });
+  if (!reporter) return accountNames[0] || '系統管理員';
+  if (LEGACY_REPORTER_TO_ACCOUNT[reporter]) return LEGACY_REPORTER_TO_ACCOUNT[reporter];
+  if (accountNames.indexOf(reporter) !== -1) return reporter;
+  return accountNames[0] || '系統管理員';
+}
+
+INITIAL_CASES.forEach(function (c) {
+  c.reporter = resolveAccountReporterName(c.reporter);
+});

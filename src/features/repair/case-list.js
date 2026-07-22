@@ -30,7 +30,8 @@
     var dragProps = useDragScroll();
 
     function isActiveInList(c) {
-      return !c.isClosed;
+      if (!c.isClosed) return true;
+      return caseStatus.isTransferStatus(c.processStatus) && c.isListClosed;
     }
 
     function getFiltered() {
@@ -71,42 +72,41 @@
       if (!target) return;
 
       updateStoreLastRepairDate(target);
+      var stamp = IESS.caseDateTime.now();
 
-      if (target.processStatus === '案件完成') {
+      if (caseStatus.isTransferStatus(target.processStatus)) {
         setCases(cases.map(function (c) {
-          return c.id === caseId ? Object.assign({}, c, {
+          if (c.id !== caseId) return c;
+          return Object.assign({}, c, {
             isClosed: true,
-            closeDate: IESS.caseDateTime.now()
-          }) : c;
+            isListClosed: true,
+            closeDate: stamp
+          });
         }));
-        showToast('案件已結案，並移至「案件銷案審核」列表');
+        showToast('案件已結案，並移至「案件銷案審核」列表，請完成後點選「' +
+          caseStatus.getInterimCompleteLabel(target.processStatus) + '」');
         return;
       }
 
-      if (target.processStatus === '待汰換' || target.processStatus === '轉原廠') {
-        setCases(cases.map(function (c) {
-          return c.id === caseId ? Object.assign({}, c, { isListClosed: true }) : c;
-        }));
-        showToast('案件已結案，請完成後點選「' + caseStatus.getInterimCompleteLabel(target.processStatus) + '」');
-      }
+      setCases(cases.map(function (c) {
+        if (c.id !== caseId) return c;
+        return Object.assign({}, c, {
+          isClosed: true,
+          closeDate: stamp
+        });
+      }));
+      showToast('案件已結案，並移至「案件銷案審核」列表');
     }
 
     function handleInterimComplete(caseId) {
       setCases(cases.map(function (c) {
-        return c.id === caseId
-          ? Object.assign({}, c, {
-            isClosed: true,
-            isListClosed: false,
-            closeDate: IESS.caseDateTime.now()
-          })
-          : c;
+        if (c.id !== caseId) return c;
+        return Object.assign({}, c, { isListClosed: false });
       }));
-      showToast('案件已完成，並移至「案件銷案審核」列表');
+      showToast('案件已完成，已自案件處理列表移除');
     }
 
     function getIndicatorColor(c) {
-      if (c.processStatus === '案件完成') return 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]';
-      if (c.isListClosed) return 'bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.6)]';
       if (c.workCategory === '緊急叫修') return 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]';
       if (c.expectedDate && c.expectedDate < todayDate) return 'bg-yellow-400 shadow-[0_0_8px_rgba(250,204,21,0.6)]';
       return 'bg-gray-300';
@@ -253,7 +253,7 @@
           )
         ),
         closeConfirmModal.show && h('div', {
-          className: 'fixed inset-0 bg-black/40 flex items-center justify-center z-50'
+          className: 'app-modal-overlay'
         },
           h('div', { className: 'bg-white rounded-lg shadow-xl p-6 w-96 max-w-full m-4' },
             h('div', { className: 'flex items-center space-x-3 text-yellow-600 mb-4' },
@@ -266,10 +266,10 @@
             ),
             h('p', { className: 'text-gray-600 mb-6' },
               closeConfirmModal.mode === 'complete'
-                ? '確定要將此案件標記為已完成嗎？完成後將移至「案件銷案審核」列表。'
-                : modalCase && modalCase.processStatus === '案件完成'
-                  ? '確定要將此案件結案嗎？結案後將移至「案件銷案審核」列表。'
-                  : '確定要將此案件結案嗎？結案後案件仍會保留在列表上，待完成後請點選對應完成按鈕。'
+                ? '確定要標記為已完成嗎？完成後將自案件處理列表移除（仍保留於案件銷案審核）。'
+                : modalCase && caseStatus.isTransferStatus(modalCase.processStatus)
+                  ? '確定要將此案件結案嗎？結案後將同步移至「案件銷案審核」列表，並保留於本列表，待完成後請點選對應完成按鈕。'
+                  : '確定要將此案件結案嗎？結案後將移至「案件銷案審核」列表。'
             ),
             h('div', { className: 'flex justify-end space-x-3' },
               h('button', {

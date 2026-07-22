@@ -117,6 +117,7 @@
                 )
               )
             ),
+            h(ReadOnlyField, { label: '備註', value: viewingCase && viewingCase.remarks, fullWidth: true }),
             h('div', { className: 'grid grid-cols-1 md:grid-cols-2 gap-6' },
               h(ReadOnlyField, { label: '處理狀態', value: (viewingCase && viewingCase.processStatus) || '—' })
             ),

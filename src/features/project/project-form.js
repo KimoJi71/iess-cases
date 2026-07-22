@@ -113,7 +113,7 @@
 
       var fieldOptions = DeviceCategoryUtils.getEquipFieldOptions(deviceCategories, currentEquip);
 
-      return h('div', { className: 'fixed inset-0 bg-black/40 flex items-center justify-center z-[70] p-4 overflow-y-auto' },
+      return h('div', { className: 'app-modal-overlay p-4 overflow-y-auto' },
         h('div', { className: 'bg-white rounded-lg shadow-xl p-6 w-full sm:w-[600px] max-w-full m-auto flex flex-col max-h-[90vh] min-w-0' },
           h('div', { className: 'flex items-center justify-between mb-4 border-b pb-3 shrink-0' },
             h('h3', { className: 'text-lg font-bold text-gray-800' }, editingId ? '編輯設備' : '新增設備'),
@@ -532,7 +532,7 @@
         },
         onSave: handleEquipSaved
       }), showAddContractor && h('div', {
-        className: 'fixed inset-0 bg-black/40 flex items-center justify-center z-[70]'
+        className: 'app-modal-overlay'
       }, h('div', {
         className: 'bg-white rounded-lg shadow-xl p-6 w-80 max-w-full m-4'
       }, h('h3', {
@@ -976,7 +976,7 @@
         },
         onSave: handleEquipSaved
       }), isEdit && showAddContractor && h('div', {
-        className: 'fixed inset-0 bg-black/40 flex items-center justify-center z-[70]'
+        className: 'app-modal-overlay'
       }, h('div', {
         className: 'bg-white rounded-lg shadow-xl p-6 w-80 max-w-full m-4'
       }, h('h3', {

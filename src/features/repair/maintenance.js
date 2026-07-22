@@ -35,6 +35,29 @@
     }));
   }
 
+  function closeMaintenanceCase(id, cases, setCases, stores, setStores, showToast) {
+    var target = cases.find(function (c) { return c.id === id; });
+    if (!target) return;
+    var stamp = IESS.caseDateTime.now();
+    var completionDate = target.completionDate || resolveMaintenanceCompletionDate(target);
+    var closedCase = Object.assign({}, target, {
+      isClosed: true,
+      status: '已完成',
+      completionDate: completionDate,
+      closeDate: stamp,
+      repairDate: completionDate
+    });
+    updateStoreLastMaintenanceDate(stores, setStores, closedCase);
+    setCases(cases.map(function (c) {
+      return c.id === id ? closedCase : c;
+    }));
+    showToast('保養單已結案並移至銷案審核');
+  }
+
+  function canCloseMaintenanceCase(c) {
+    return !!(c && c.status === '已完成' && !c.isClosed);
+  }
+
   function MaintenanceList(props) {
     var cases = props.cases;
     var setCases = props.setCases;
@@ -58,8 +81,8 @@
       storeArea: '全部',
       status: '全部'
     };
-    var closeConfirmModal = { show: false, id: null };
     var dragProps = useDragScroll();
+    var closeConfirmModal = { show: false, caseId: null };
 
     return stateful(function (rerender) {
       var customerFilterOptions = CustomerUtils.getCustomerNameOptions(
@@ -93,26 +116,6 @@
         var bDate = b.planDate || b.dueMonth || '1970-01-01';
         return new Date(bDate) - new Date(aDate);
       });
-
-      function handleCloseCase(id) {
-        var target = cases.find(function (c) { return c.id === id; });
-        if (!target) return;
-        var stamp = IESS.caseDateTime.now();
-        var completionDate = target.completionDate || resolveMaintenanceCompletionDate(target);
-        var closedCase = Object.assign({}, target, {
-          isClosed: true,
-          status: '已完成',
-          completionDate: completionDate,
-          closeDate: stamp,
-          repairDate: completionDate
-        });
-        updateStoreLastMaintenanceDate(stores, setStores, closedCase);
-        setCases(cases.map(function (c) {
-          return c.id === id ? closedCase : c;
-        }));
-        closeConfirmModal = { show: false, id: null };
-        showToast('保養單已結案並移至銷案審核');
-      }
 
       var storeAreaOptions = StoreUtils.getAreaOptionsFromStores(stores);
 
@@ -179,7 +182,7 @@
       }, h("thead", {
         className: "bg-gray-50 text-gray-700 border-b"
       }, h("tr", null, h("th", {
-        className: "p-3 font-semibold text-center w-28"
+        className: "p-3 font-semibold text-center min-w-[88px]"
       }, "操作"), h("th", {
         className: "p-3 font-semibold"
       }, "案件編號"), h("th", {
@@ -208,13 +211,14 @@
         colspan: "12",
         className: "text-center p-8 text-gray-400"
       }, "無符合條件之保養資料")) : filteredCases.map(function (c) {
+        var canClose = canCloseMaintenanceCase(c);
         return h("tr", {
           key: c.id,
           className: "hover:bg-blue-50/50 transition-colors"
         }, h("td", {
           className: "p-3"
         }, h("div", {
-          className: "flex items-center justify-center space-x-2"
+          className: "flex items-center justify-center flex-wrap gap-1"
         }, h("button", {
           onClick: function () {
             setEditingCase(c);
@@ -225,12 +229,15 @@
         }, Icons.Edit({
           className: "h-4 w-4"
         })), h("button", {
+          type: "button",
+          disabled: !canClose,
           onClick: function () {
-            closeConfirmModal = { show: true, id: c.id };
+            if (!canClose) return;
+            closeConfirmModal = { show: true, caseId: c.id };
             rerender();
           },
-          className: "p-1.5 text-green-600 hover:bg-green-100 rounded",
-          title: "案件結案"
+          className: "p-1.5 text-green-600 hover:bg-green-100 rounded disabled:text-gray-300 disabled:hover:bg-transparent disabled:cursor-not-allowed",
+          title: canClose ? "案件結案" : "保養完成後方可結案"
         }, Icons.CheckCircle({
           className: "h-4 w-4"
         })))), h("td", {
@@ -263,8 +270,9 @@
         }, IESS.caseDateTime.format(c.completionDate)), h("td", {
           className: "p-3"
         }, c.assignee));
-      })))), closeConfirmModal.show && h("div", {
-        className: "fixed inset-0 bg-black/40 flex items-center justify-center z-50"
+      })))),
+      closeConfirmModal.show && h("div", {
+        className: "app-modal-overlay"
       }, h("div", {
         className: "bg-white rounded-lg shadow-xl p-6 w-96 max-w-full m-4"
       }, h("div", {
@@ -279,12 +287,16 @@
         className: "flex justify-end space-x-3"
       }, h("button", {
         onClick: function () {
-          closeConfirmModal = { show: false, id: null };
+          closeConfirmModal = { show: false, caseId: null };
           rerender();
         },
         className: "px-4 py-2 border rounded-md text-gray-600 hover:bg-gray-50 transition-colors"
       }, "取消"), h("button", {
-        onClick: function () { handleCloseCase(closeConfirmModal.id); },
+        onClick: function () {
+          closeMaintenanceCase(closeConfirmModal.caseId, cases, setCases, stores, setStores, showToast);
+          closeConfirmModal = { show: false, caseId: null };
+          rerender();
+        },
         className: "px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
       }, "確認結案")))));
     });
@@ -450,16 +462,19 @@
         label: '完成時間',
         value: IESS.caseDateTime.format(formData.completionDate)
       }))), isEdit && h("div", {
-        className: "mt-8 pt-6 border-t flex justify-end gap-4"
-      }, h("button", {
-        onClick: function () { setView(backView); },
-        className: "px-6 py-2.5 border rounded-md"
-      }, "取消"), h("button", {
-        onClick: handleSubmit,
-        className: "px-8 py-2.5 bg-blue-600 text-white rounded-md"
-      }, Icons.Save({
-        className: "inline h-4 w-4 mr-2"
-      }), "儲存狀態"))));
+        className: "mt-8 pt-6 border-t flex justify-end gap-3"
+      },
+        h("button", {
+          onClick: function () { setView(backView); },
+          className: "px-6 py-2.5 border rounded-md"
+        }, "取消"),
+        h("button", {
+          onClick: handleSubmit,
+          className: "px-8 py-2.5 bg-blue-600 text-white rounded-md"
+        }, Icons.Save({
+          className: "inline h-4 w-4 mr-2"
+        }), "儲存狀態")
+      )));
     });
   }
 

@@ -27,6 +27,7 @@
     var messagesEndRef = null;
     var menuRef = null;
     var inputRef = null;
+    var isComposing = false;
 
     // 捲動到最新訊息（對應 useEffect，依賴 caseData.comments）
     var lastComments = undefined;
@@ -136,6 +137,7 @@
       }
 
       function handleKeyDown(e) {
+        if (isComposing || e.isComposing || e.keyCode === 229) return;
         if (tagMenu.show) {
           var cursorPos = e.target.selectionStart;
           if (e.key === 'ArrowDown') {
@@ -195,7 +197,6 @@
           matchStart: 0,
           matchEnd: 0
         };
-        rerender();
       }
 
       function renderContent(text) {
@@ -217,7 +218,7 @@
       }
 
       return h('div', {
-        className: 'fixed inset-0 bg-black/40 flex items-center justify-center z-50'
+        className: 'app-modal-overlay'
       }, h('div', {
         className: 'bg-white rounded-lg shadow-xl w-[600px] max-w-full m-4 flex flex-col h-[80vh]'
       }, h('div', {
@@ -229,7 +230,12 @@
       }), '案件歷程 ', h('span', {
         className: 'text-sm font-normal text-indigo-700 bg-indigo-100 px-2 py-0.5 rounded'
       }, caseData.projectNumber)), h('button', {
-        onClick: onClose,
+        type: 'button',
+        onClick: function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          onClose();
+        },
         title: '關閉',
         className: 'text-gray-500 hover:bg-gray-200 p-1.5 rounded-full transition-colors'
       }, Icons.X({
@@ -312,6 +318,8 @@
         ref: function (node) { inputRef = node; },
         value: inputText,
         onChange: handleInputChange,
+        onCompositionStart: function () { isComposing = true; },
+        onCompositionEnd: function () { isComposing = false; },
         onKeyDown: handleKeyDown,
         placeholder: '輸入註記說明... (使用 @ 標註人員，# 加入標籤)',
         className: 'w-full bg-transparent border-none focus:ring-0 resize-none p-3 text-sm outline-none',

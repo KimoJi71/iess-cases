@@ -40,6 +40,20 @@
     formData.storeAddress = synced.storeAddress || '';
   }
 
+  function ReporterField(p) {
+    return h('div', null,
+      h(p.labelTag || 'label', { className: p.labelClassName || 'block text-sm mb-1' }, '叫修人員'),
+      h('input', {
+        type: 'text',
+        name: 'reporter',
+        value: p.value || '—',
+        disabled: true,
+        readOnly: true,
+        className: p.inputClassName || 'w-full p-2.5 border rounded-md bg-gray-50 text-gray-500 cursor-not-allowed'
+      })
+    );
+  }
+
   function AddCaseForm(props) {
     var cases = props.cases;
     var setCases = props.setCases;
@@ -47,6 +61,7 @@
     var customers = props.customers;
     var setView = props.setView;
     var showToast = props.showToast;
+    var currentOperatorName = props.currentOperatorName || '';
 
     var formData = {
       workCategory: '一般叫修',
@@ -62,7 +77,7 @@
       expectedDate: '',
       expectedTimeStart: '',
       expectedTimeEnd: '',
-      reporter: '',
+      reporter: currentOperatorName,
       serviceLevel: '維修(無簽約客戶)'
     };
 
@@ -161,21 +176,9 @@
       }, "請選擇"), storeOptions.map(function (opt) { return h("option", {
         key: opt,
         value: opt
-      }, opt); }))), h("div", null, h("label", {
-        className: "block text-sm mb-1"
-      }, "叫修人員"), h("select", {
-        required: true,
-        name: "reporter",
-        value: formData.reporter,
-        onChange: handleChange,
-        className: "w-full p-2.5 border rounded-md outline-none"
-      }, h("option", {
-        value: "",
-        disabled: true
-      }, "請選擇"), REPORTER_OPTIONS.map(function (opt) { return h("option", {
-        key: opt,
-        value: opt
-      }, opt); }))), h("div", {
+      }, opt); }))), ReporterField({
+        value: formData.reporter
+      }), h("div", {
         className: "col-span-full md:col-span-2"
       }, h("label", {
         className: "block text-sm font-medium text-gray-500 mb-1"
@@ -449,20 +452,12 @@
       }, "請選擇"), storeOptions.map(function (opt) { return h("option", {
         key: opt,
         value: opt
-      }, opt); }))), h("div", null, h("span", {
-        className: "text-gray-500 block mb-1"
-      }, "叫修人員"), h("select", {
-        name: "reporter",
-        value: formData.reporter,
-        onChange: handleChange,
-        className: "w-full p-2 border rounded-md outline-none"
-      }, h("option", {
-        value: "",
-        disabled: true
-      }, "請選擇"), REPORTER_OPTIONS.map(function (opt) { return h("option", {
-        key: opt,
-        value: opt
-      }, opt); }))), h("div", null, h("span", {
+      }, opt); }))), ReporterField({
+        labelTag: 'span',
+        labelClassName: 'text-gray-500 block mb-1',
+        inputClassName: 'w-full p-2 border rounded-md bg-gray-50 text-gray-500 cursor-not-allowed',
+        value: formData.reporter
+      }), h("div", null, h("span", {
         className: "text-gray-500 block mb-1"
       }, "服務等級"), h("input", {
         type: "text",
@@ -694,7 +689,17 @@
         className: "text-red-500"
       }, Icons.X({
         className: "h-4 w-4"
-      })))); }))))), h("div", {
+      })))); }))))), h("div", null, h("label", {
+        className: "block text-sm mb-1"
+      }, "備註"), h("textarea", {
+        name: "remarks",
+        value: formData.remarks || '',
+        onChange: handleChange,
+        disabled: !formData.equipment,
+        rows: "4",
+        className: "w-full p-2 border rounded-md outline-none disabled:bg-gray-100 disabled:cursor-not-allowed",
+        placeholder: formData.equipment ? "請輸入備註..." : "請先掃描設備"
+      })), h("div", {
         className: "grid grid-cols-1 md:grid-cols-2 gap-6"
       }, h("div", null, h("label", {
         className: "block text-sm mb-1"

@@ -71,8 +71,13 @@
         editable: !options.readOnly,
         eventStartEditable: !options.readOnly,
         eventDurationEditable: !options.readOnly,
-        droppable: !options.readOnly,
+        droppable: !options.readOnly && !!options.onDrop,
         events: options.initialEvents || [],
+        eventClick: function (info) {
+          if (!options.onEventClick) return;
+          info.jsEvent.preventDefault();
+          options.onEventClick(info.event);
+        },
         visibleRange: options.rangeStart && options.rangeEnd ? {
           start: options.rangeStart,
           end: endPlusOne

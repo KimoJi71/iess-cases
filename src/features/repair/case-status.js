@@ -11,7 +11,6 @@
 
   var RE_REPAIR_STATUSES = ['待料件', '待報價', '尚未處理完成'];
   var CLOSE_BUTTON_STATUSES = ['待汰換', '轉原廠', '案件完成'];
-  var INTERIM_CLOSE_STATUSES = ['待汰換', '轉原廠'];
   var TRANSFER_STATUSES = ['待汰換', '轉原廠'];
 
   var UNASSIGNED_ASSIGNEES = ['', '案件待辦', '尚未指派'];
@@ -54,11 +53,11 @@
   }
 
   function showsCaseCloseButton(c) {
-    return CLOSE_BUTTON_STATUSES.indexOf(c.processStatus) !== -1 && !c.isListClosed;
+    return CLOSE_BUTTON_STATUSES.indexOf(c.processStatus) !== -1 && !c.isClosed;
   }
 
   function showsInterimCompleteButton(c) {
-    return c.isListClosed && INTERIM_CLOSE_STATUSES.indexOf(c.processStatus) !== -1;
+    return !!(c.isClosed && c.isListClosed && isTransferStatus(c.processStatus));
   }
 
   function getInterimCompleteLabel(status) {

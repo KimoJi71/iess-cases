@@ -152,7 +152,7 @@ const currentMonthStr = today.toISOString().slice(0, 7);
 
 // 案件排程專用選項
 const SCHEDULE_ASSIGNEE_OPTIONS = ['A組', 'B組', 'C組', 'D組', '督導', '協力廠商', '案件待辦'];
-const SCHEDULE_WORK_CATEGORY_OPTIONS = ['保養', '保養清潔', '一般叫修', '緊急叫修', '新開', '汰換', '撤店', '整裝', '加裝'];
+const SCHEDULE_WORK_CATEGORY_OPTIONS = ['一般叫修', '緊急叫修', '保養清潔', '其他', '保養'];
 
 // 報表統計專用選項
 const PERFORMANCE_ASSIGNEES = ['A組', 'B組', 'C組', 'D組', '晉詮人員', '協力廠商'];

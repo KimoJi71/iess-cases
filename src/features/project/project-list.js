@@ -7,6 +7,27 @@
   var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful, useDragScroll = IESS.useDragScroll;
   var iconActionBtn = IESS.iconActionBtn;
 
+  // 需跨 store 重繪保留（例如送出歷程留言會更新 projectCases）
+  var historyModal = { show: false, caseData: null };
+  var closeConfirmModal = { show: false, id: null };
+
+  function syncOpenHistoryModal(cases) {
+    if (!historyModal.show || !historyModal.caseData) return;
+    var freshCase = (cases || []).find(function (item) {
+      return item.id === historyModal.caseData.id;
+    });
+    if (freshCase) {
+      historyModal = { show: true, caseData: freshCase };
+    } else {
+      historyModal = { show: false, caseData: null };
+    }
+  }
+
+  function closeHistoryModal(setCases) {
+    historyModal = { show: false, caseData: null };
+    setCases(function (prevCases) { return prevCases; });
+  }
+
   function ProjectList(props) {
     var cases = props.cases;
     var setCases = props.setCases;
@@ -25,11 +46,10 @@
       customer: '全部',
       contactPerson: '全部'
     };
-    var historyModal = { show: false, caseData: null };
-    var closeConfirmModal = { show: false, id: null };
     var dragProps = useDragScroll();
 
     return stateful(function (rerender) {
+      syncOpenHistoryModal(cases);
       var customerFilterOptions = CustomerUtils.getCustomerNameOptions(
         customers,
         filterCustomer !== '全部' ? filterCustomer : null,
@@ -58,18 +78,17 @@
       }).sort(function (a, b) { return new Date(b.creationDate) - new Date(a.creationDate); });
 
       function handleAddComment(caseId, newComment) {
-        setCases(cases.map(function (c) {
-          if (c.id === caseId) {
+        setCases(function (prevCases) {
+          return prevCases.map(function (c) {
+            if (c.id !== caseId) return c;
             var updatedComments = (c.comments || []).concat([newComment]);
-            if (historyModal.caseData && historyModal.caseData.id === caseId) {
-              historyModal = Object.assign({}, historyModal, {
-                caseData: Object.assign({}, historyModal.caseData, { comments: updatedComments })
-              });
+            var updatedCase = Object.assign({}, c, { comments: updatedComments });
+            if (historyModal.show && historyModal.caseData && historyModal.caseData.id === caseId) {
+              historyModal = { show: true, caseData: updatedCase };
             }
-            return Object.assign({}, c, { comments: updatedComments });
-          }
-          return c;
-        }));
+            return updatedCase;
+          });
+        });
       }
 
       function handleCloseProject(id) {
@@ -216,10 +235,10 @@
         }));
       })))), historyModal.show && historyModal.caseData && h(ProjectHistoryModal, {
         caseData: historyModal.caseData,
-        onClose: function () { historyModal = { show: false, caseData: null }; rerender(); },
+        onClose: function () { closeHistoryModal(setCases); },
         onAddComment: handleAddComment
       }), closeConfirmModal.show && h('div', {
-        className: 'fixed inset-0 bg-black/40 flex items-center justify-center z-50'
+        className: 'app-modal-overlay'
       }, h('div', {
         className: 'bg-white rounded-lg shadow-xl p-6 w-96 max-w-full m-4'
       }, h('div', {
@@ -230,7 +249,7 @@
         className: 'text-lg font-bold text-gray-800'
       }, '確認結案')), h('p', {
         className: 'text-gray-600 mb-6'
-      }, '確定要將此工程立案單標記為結案嗎？結案後狀態將更新並移至「案件銷案審核」列表。'), h('div', {
+      }, '確定要將此工程立案單標記為結案嗎？'), h('div', {
         className: 'flex justify-end space-x-3'
       }, h('button', {
         onClick: function () { closeConfirmModal = { show: false, id: null }; rerender(); },

@@ -18,9 +18,13 @@
     '加裝': '#7c3aed'
   };
 
-  function formatScheduleEventTitle(workCategory, assignee, customerName, storeName) {
+  function formatScheduleEventTitle(workCategory, assignee, customerName, storeName, storeAddress) {
     var wc = workCategory || '其他';
     var person = assignee || '未指派';
+    if (wc === '保養' || wc === '保養清潔') {
+      var addr = storeAddress || '';
+      return '[保養] ' + customerName + ' / ' + storeName + (addr ? ' / ' + addr : '');
+    }
     return '[' + wc + '] ' + person + ' ' + customerName + ' ' + storeName;
   }
 
@@ -252,7 +256,7 @@
     function inRange(dateStr) {
       return dateStr && dateStr >= rangeStart && dateStr <= rangeEnd;
     }
-    function tryPush(sourceType, sourceId, sched, customerName, storeName) {
+    function tryPush(sourceType, sourceId, sched, customerName, storeName, storeAddress) {
       if (!sched.planDate || !sched.planTimeStart) return;
       if (!inRange(sched.planDate)) return;
       if (assigneeFilter !== '全部' && sched.assignee !== assigneeFilter) return;
@@ -266,6 +270,7 @@
         timeEnd: sched.planTimeEnd || sched.planTimeStart,
         customerName: customerName,
         storeName: storeName,
+        storeAddress: storeAddress || '',
         workCategory: sched.workCategory || '其他'
       });
     }
@@ -276,7 +281,7 @@
         planTimeEnd: c.planTimeEnd,
         assignee: c.assignee,
         workCategory: getMaintenanceWorkCategory(c)
-      }, c.customerName, c.storeName);
+      }, c.customerName, c.storeName, c.storeAddress || '');
     });
     cases.forEach(function (c) {
       tryPush('repair', c.id, getRepairSchedule(c), c.customerName, c.storeName);
@@ -290,14 +295,14 @@
     });
   }
 
-  function buildEvent(sourceType, sourceId, sched, customerName, storeName) {
+  function buildEvent(sourceType, sourceId, sched, customerName, storeName, storeAddress) {
     if (!sched.planDate || !sched.planTimeStart) return null;
     var endTime = sched.planTimeEnd || sched.planTimeStart;
     var wc = sched.workCategory || '其他';
     var assignee = sched.assignee || '';
     return {
       id: sourceType + '-' + sourceId,
-      title: formatScheduleEventTitle(wc, assignee, customerName, storeName),
+      title: formatScheduleEventTitle(wc, assignee, customerName, storeName, storeAddress),
       start: sched.planDate + 'T' + formatTime24(sched.planTimeStart) + ':00',
       end: sched.planDate + 'T' + formatTime24(endTime) + ':00',
       backgroundColor: CATEGORY_COLORS[wc] || '#64748b',
@@ -322,7 +327,7 @@
           planTimeEnd: item.timeEnd,
           assignee: item.assignee,
           workCategory: item.workCategory
-        }, item.customerName, item.storeName);
+        }, item.customerName, item.storeName, item.storeAddress);
       })
       .filter(Boolean);
   }

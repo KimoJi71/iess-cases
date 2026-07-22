@@ -99,8 +99,14 @@
     viewingCase: null,
     historyStore: null,
     customerBackView: '',
-    statusFilter: '未處理'
+    statusFilter: '未處理',
+    currentAccountId: 'ACC1'
   });
+
+  function getCurrentOperatorName(accounts, accountId) {
+    var account = (accounts || []).find(function (a) { return a.id === accountId; });
+    return (account && account.name) || '系統管理員';
+  }
 
   // --- 各種 setter（提供給 view 作為 props） ---
   function makeSetter(key) {
@@ -297,13 +303,15 @@
       case 'add':
         return h(AddCaseForm, {
           cases: s.cases, setCases: setCasesData, stores: s.stores, customers: s.customers,
-          setView: setView, showToast: showToast
+          setView: setView, showToast: showToast,
+          currentOperatorName: getCurrentOperatorName(s.accounts, s.currentAccountId)
         });
       case 'edit':
         return h(EditCaseForm, {
           editingCase: s.editingCase, cases: s.cases, setCases: setCasesData,
           stores: s.stores, customers: s.customers, equipments: s.equipments,
-          setView: setView, showToast: showToast
+          setView: setView, showToast: showToast,
+          currentOperatorName: getCurrentOperatorName(s.accounts, s.currentAccountId)
         });
       case 'record-list':
         return h(CaseRecordList, {

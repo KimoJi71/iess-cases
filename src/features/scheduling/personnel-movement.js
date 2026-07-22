@@ -15,11 +15,9 @@
     var cases = props.cases;
     var projectCases = props.projectCases;
 
-    var weekRange = CalendarBridge.getWeekRange(new Date());
-    var calStart = weekRange.start;
-    var calEnd = weekRange.end;
+    var calDate = CalendarBridge.formatDate(new Date());
     var calAssignee = '全部';
-    var appliedCal = { start: calStart, end: calEnd, assignee: '全部' };
+    var appliedCal = { start: calDate, end: calDate, assignee: '全部' };
 
     var bridge = null;
 
@@ -57,7 +55,7 @@
       var rows = getFilteredRows();
 
       function handleSearch() {
-        appliedCal = { start: calStart, end: calEnd, assignee: calAssignee };
+        appliedCal = { start: calDate, end: calDate, assignee: calAssignee };
         if (bridge) {
           bridge.gotoRange(appliedCal.start, appliedCal.end);
           bridge.setEvents(getEvents());
@@ -70,18 +68,10 @@
       return h('div', { className: 'bg-white p-6 rounded-lg shadow-sm border border-gray-100' },
         h('div', { className: 'flex flex-wrap items-end gap-3 mb-6' },
           h('div', null,
-            h('label', { className: 'block text-xs text-gray-500 mb-1' }, '開始日期'),
+            h('label', { className: 'block text-xs text-gray-500 mb-1' }, '指定日期'),
             h('input', {
-              type: 'date', value: calStart,
-              onChange: function (e) { calStart = e.target.value; },
-              className: 'p-2 border rounded-md outline-none focus:border-blue-500'
-            })
-          ),
-          h('div', null,
-            h('label', { className: 'block text-xs text-gray-500 mb-1' }, '結束日期'),
-            h('input', {
-              type: 'date', value: calEnd,
-              onChange: function (e) { calEnd = e.target.value; },
+              type: 'date', value: calDate,
+              onChange: function (e) { calDate = e.target.value; },
               className: 'p-2 border rounded-md outline-none focus:border-blue-500'
             })
           ),
