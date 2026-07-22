@@ -31,7 +31,8 @@
       if (!c.isPerformanceIncluded) return;
       var date = c.completionDate || c.repairDate;
       if (!isDateInRange(date, quarterRange.start, quarterRange.end)) return;
-      if (counts[c.assignee] !== undefined) counts[c.assignee]++;
+      var assigneeKey = AssigneeUtils.getPerformanceAssignee(c);
+      if (counts[assigneeKey] !== undefined) counts[assigneeKey]++;
     });
 
     return assignees.map(function (a) {

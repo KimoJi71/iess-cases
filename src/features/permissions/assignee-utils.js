@@ -3,6 +3,7 @@
  */
 (function () {
   'use strict';
+  var global = window;
 
   function syncAssigneeOptions(assignees) {
     var names = assignees.slice().sort(function (a, b) {
@@ -24,14 +25,6 @@
     return (assignee && assignee.memberIds) ? assignee.memberIds.slice() : [];
   }
 
-  function findAssigneeForMember(assignees, accountId) {
-    for (var i = 0; i < assignees.length; i++) {
-      var ids = assignees[i].memberIds || [];
-      if (ids.indexOf(accountId) !== -1) return assignees[i].name;
-    }
-    return '';
-  }
-
   function formatMembers(accounts, assignee) {
     var ids = getMemberIds(assignee);
     var names = accounts.filter(function (a) { return ids.indexOf(a.id) !== -1; })
@@ -46,14 +39,49 @@
     return account ? account.name : '—';
   }
 
-  function isAssigneeInUse(name, cases, maintenanceCases, projectCases) {
-    if (cases.some(function (c) { return c.assignee === name; })) return true;
-    if (maintenanceCases.some(function (c) { return c.assignee === name; })) return true;
-    if (projectCases.some(function (c) {
-      return c.assignee === name || c.stageAssignee === name
-        || (c.details && c.details.contactPerson === name);
+  function isRepairCaseOpen(c) {
+    if (!c) return false;
+    if (!c.isClosed) return true;
+    if (c.isListClosed && global.IESS && IESS.caseStatus
+      && IESS.caseStatus.isTransferStatus(c.processStatus)) {
+      return true;
+    }
+    return false;
+  }
+
+  function projectReferencesAssignee(c, name) {
+    if (!c || !name) return false;
+    return c.assignee === name || c.stageAssignee === name
+      || (c.details && c.details.contactPerson === name);
+  }
+
+  function hasOpenCasesForAssignee(name, cases, maintenanceCases, projectCases) {
+    if ((cases || []).some(function (c) {
+      return isRepairCaseOpen(c) && c.assignee === name;
+    })) return true;
+    if ((maintenanceCases || []).some(function (c) {
+      return !c.isClosed && c.assignee === name;
+    })) return true;
+    if ((projectCases || []).some(function (c) {
+      return !c.isClosed && projectReferencesAssignee(c, name);
     })) return true;
     return false;
+  }
+
+  function buildPerformanceSnapshot(record, assignees) {
+    var assigneeName = (record && record.assignee) || '';
+    var assignee = (assignees || []).find(function (a) { return a.name === assigneeName; });
+    return {
+      isPerformanceIncluded: true,
+      performanceAssignee: assigneeName,
+      performanceMemberIds: assignee ? getMemberIds(assignee) : []
+    };
+  }
+
+  function getPerformanceAssignee(record) {
+    if (!record) return '';
+    if (record.performanceAssignee) return record.performanceAssignee;
+    return record.assignee || '';
   }
 
   function findDuplicateName(assignees, name, excludeId) {
@@ -64,17 +92,9 @@
   }
 
   function applyMemberIds(assignees, assigneeId, memberIds) {
-    var idSet = {};
-    memberIds.forEach(function (id) { idSet[id] = true; });
     return assignees.map(function (a) {
-      if (a.id === assigneeId) {
-        return Object.assign({}, a, { memberIds: memberIds.slice() });
-      }
-      var next = (a.memberIds || []).filter(function (id) { return !idSet[id]; });
-      if (next.length !== (a.memberIds || []).length) {
-        return Object.assign({}, a, { memberIds: next });
-      }
-      return a;
+      if (a.id !== assigneeId) return a;
+      return Object.assign({}, a, { memberIds: memberIds.slice() });
     });
   }
 
@@ -128,10 +148,11 @@
     syncAssigneeOptions: syncAssigneeOptions,
     getAssigneeNames: getAssigneeNames,
     getMemberIds: getMemberIds,
-    findAssigneeForMember: findAssigneeForMember,
     formatMembers: formatMembers,
     formatLeader: formatLeader,
-    isAssigneeInUse: isAssigneeInUse,
+    hasOpenCasesForAssignee: hasOpenCasesForAssignee,
+    buildPerformanceSnapshot: buildPerformanceSnapshot,
+    getPerformanceAssignee: getPerformanceAssignee,
     findDuplicateName: findDuplicateName,
     applyMemberIds: applyMemberIds,
     removeMemberFromAll: removeMemberFromAll,

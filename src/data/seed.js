@@ -1755,3 +1755,10 @@ function resolveAccountReporterName(reporter) {
 INITIAL_CASES.forEach(function (c) {
   c.reporter = resolveAccountReporterName(c.reporter);
 });
+
+INITIAL_CASES.forEach(function (c) {
+  if (!c.isPerformanceIncluded || c.performanceAssignee) return;
+  c.performanceAssignee = c.assignee || '';
+  var performanceAssignee = INITIAL_ASSIGNEES.find(function (a) { return a.name === c.assignee; });
+  c.performanceMemberIds = performanceAssignee ? performanceAssignee.memberIds.slice() : [];
+});

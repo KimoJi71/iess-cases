@@ -72,6 +72,8 @@
           secondRepairDate: '',
           completionDate: '',
           isPerformanceIncluded: false,
+          performanceAssignee: '',
+          performanceMemberIds: [],
           isListClosed: false
         });
         setCases([newCase].concat(cases));

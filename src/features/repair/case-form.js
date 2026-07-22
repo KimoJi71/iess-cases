@@ -126,6 +126,8 @@
           planTimeStart: formData.expectedTimeStart || '',
           planTimeEnd: formData.expectedTimeEnd || '',
           isPerformanceIncluded: false,
+          performanceAssignee: '',
+          performanceMemberIds: [],
           isListClosed: false
         });
         setCases([newCase].concat(cases));

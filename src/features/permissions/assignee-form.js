@@ -267,15 +267,12 @@
             ),
             h('div', null,
               h('label', { className: 'block text-sm mb-2' }, '成員名單'),
-              h('p', { className: 'text-xs text-gray-400 mb-3' }, '勾選帳號以加入此指派人員；已歸屬其他指派人員的帳號儲存後將改為本組'),
+              h('p', { className: 'text-xs text-gray-400 mb-3' }, '勾選帳號以加入此指派人員；同一帳號可同時歸屬多個指派人員'),
               sortedAccounts.length === 0
                 ? h('p', { className: 'text-gray-400 text-sm' }, '尚無帳號資料')
                 : h('div', { className: 'grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-64 overflow-y-auto border rounded-md p-3' },
                     sortedAccounts.map(function (acc) {
                       var checked = memberIds.indexOf(acc.id) !== -1;
-                      var otherAssignee = !checked
-                        ? AssigneeUtils.findAssigneeForMember(assignees, acc.id)
-                        : '';
                       return h('label', {
                         key: acc.id,
                         className: 'inline-flex items-center gap-2 px-3 py-2 border rounded-md cursor-pointer ' +
@@ -286,10 +283,7 @@
                           checked: checked,
                           onChange: function () { toggleMember(acc.id); }
                         }),
-                        h('span', null, acc.name),
-                        otherAssignee
-                          ? h('span', { className: 'text-xs text-gray-400' }, '（' + otherAssignee + '）')
-                          : null
+                        h('span', null, acc.name)
                       );
                     })
                   )

@@ -66,10 +66,10 @@
           rerender();
           return;
         }
-        if (AssigneeUtils.isAssigneeInUse(
+        if (AssigneeUtils.hasOpenCasesForAssignee(
           target.name, cases, maintenanceCases, projectCases
         )) {
-          showToast('此指派人員已被帳號或案件使用，無法刪除', 'error');
+          showToast('此指派人員仍有未結案案件，無法刪除', 'error');
           deleteModal = { show: false, id: null, name: '' };
           rerender();
           return;
@@ -154,7 +154,7 @@
               h('h3', { className: 'text-lg font-bold text-gray-800' }, '確認刪除')
             ),
             h('p', { className: 'text-gray-600 mb-6' },
-              '確定要刪除指派人員「' + deleteModal.name + '」嗎？若已被帳號或案件使用則無法刪除。'),
+              '確定要刪除指派人員「' + deleteModal.name + '」嗎？若仍有未結案案件則無法刪除；已結案且列入績效之案件仍保留原指派人員紀錄。'),
             h('div', { className: 'flex justify-end space-x-3' },
               h('button', {
                 onClick: function () { deleteModal = { show: false, id: null, name: '' }; rerender(); },

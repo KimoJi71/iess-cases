@@ -30,6 +30,7 @@
     var setCases = props.setCases;
     var maintenanceCases = props.maintenanceCases || [];
     var setMaintenanceCases = props.setMaintenanceCases;
+    var assignees = props.assignees || [];
     var setViewingCase = props.setViewingCase;
     var setView = props.setView;
     var showToast = props.showToast;
@@ -62,11 +63,13 @@
       function handleIncludePerformance(caseId, sourceType) {
         if (sourceType === 'maintenance') {
           setMaintenanceCases(maintenanceCases.map(function (c) {
-            return c.id === caseId ? Object.assign({}, c, { isPerformanceIncluded: true }) : c;
+            if (c.id !== caseId) return c;
+            return Object.assign({}, c, AssigneeUtils.buildPerformanceSnapshot(c, assignees));
           }));
         } else {
           setCases(cases.map(function (c) {
-            return c.id === caseId ? Object.assign({}, c, { isPerformanceIncluded: true }) : c;
+            if (c.id !== caseId) return c;
+            return Object.assign({}, c, AssigneeUtils.buildPerformanceSnapshot(c, assignees));
           }));
         }
         includeConfirmModal = { show: false, caseId: null, sourceType: 'repair' };

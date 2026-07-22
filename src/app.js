@@ -323,6 +323,7 @@
         return h(CaseReviewList, {
           cases: s.cases, setCases: setCasesData,
           maintenanceCases: s.maintenanceCases, setMaintenanceCases: setMaintenanceCases,
+          assignees: s.assignees,
           setViewingCase: setViewingCase, setView: setView, showToast: showToast
         });
       case 'review-view':
