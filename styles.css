@@ -523,7 +523,7 @@ body {
   .app-sidebar__header {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-end;
     gap: 0.5rem;
   }
 
@@ -618,6 +618,10 @@ body {
 
 @media (min-width: 768px) {
   .app-sidebar__close {
+    display: none;
+  }
+
+  .app-sidebar__header {
     display: none;
   }
 }

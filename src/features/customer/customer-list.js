@@ -5,7 +5,6 @@
 (function () {
   'use strict';
   var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful, useDragScroll = IESS.useDragScroll;
-  var iconActionBtn = IESS.iconActionBtn;
 
   function enabledBadge(enabled) {
     var isEnabled = enabled !== false;
@@ -26,7 +25,6 @@
     var keyword = '';
     var appliedKeyword = '';
     var enabledFilter = '全部';
-    var deleteModal = { show: false, id: null };
     var dragProps = useDragScroll();
 
     return stateful(function (rerender) {
@@ -58,11 +56,6 @@
 
       function handleSearch() { appliedKeyword = keyword; rerender(); }
       function handleKeyDown(e) { if (e.key === 'Enter') handleSearch(); }
-      function handleDelete(id) {
-        setCases(cases.filter(function (c) { return c.id !== id; }));
-        deleteModal = { show: false, id: null };
-        showToast('客戶已刪除');
-      }
 
       return h('div', {
         className: 'bg-white p-6 rounded-lg shadow-sm border border-gray-100'
@@ -125,36 +118,13 @@
                             onClick: function () { setEditingCase(c); setView('customer-edit'); },
                             className: 'p-1.5 text-blue-600 hover:bg-blue-100 rounded',
                             title: '編輯'
-                          }, Icons.Edit({ className: 'h-4 w-4' })),
-                          iconActionBtn({ label: '刪除', onClick: function () { deleteModal = { show: true, id: c.id }; rerender(); },
-                            className: 'p-1.5 text-red-600 hover:bg-red-100 rounded', icon: Icons.Trash2({ className: 'h-4 w-4' }) })
+                          }, Icons.Edit({ className: 'h-4 w-4' }))
                         )
                       ),
                       h('td', { className: 'p-3 font-medium text-gray-800' }, c.name),
                       h('td', { className: 'p-3' }, enabledBadge(c.enabled))
                     );
                   })
-            )
-          )
-        ),
-        deleteModal.show && h('div', {
-          className: 'fixed inset-0 bg-black/40 flex items-center justify-center z-50'
-        },
-          h('div', { className: 'bg-white rounded-lg shadow-xl p-6 w-96 max-w-full m-4' },
-            h('div', { className: 'flex items-center space-x-3 text-red-600 mb-4' },
-              Icons.AlertCircle({ className: 'h-6 w-6' }),
-              h('h3', { className: 'text-lg font-bold text-gray-800' }, '確認刪除')
-            ),
-            h('p', { className: 'text-gray-600 mb-6' }, '確定要刪除此客戶嗎？刪除後將無法復原。'),
-            h('div', { className: 'flex justify-end space-x-3' },
-              h('button', {
-                onClick: function () { deleteModal = { show: false, id: null }; rerender(); },
-                className: 'px-4 py-2 border rounded-md text-gray-600 hover:bg-gray-50 transition-colors'
-              }, '取消'),
-              h('button', {
-                onClick: function () { handleDelete(deleteModal.id); },
-                className: 'px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors'
-              }, '確認刪除')
             )
           )
         )

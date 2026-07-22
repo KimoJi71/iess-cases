@@ -19,6 +19,39 @@
     return name + '(' + n + ')';
   }
 
+  function renderSurveyEquipSelect(label, name, options, equip, onChange, opts) {
+    opts = opts || {};
+    var disabled = !!opts.disabled;
+    if (name === 'category') {
+      disabled = disabled || options.length === 0;
+    } else if (opts.waitFor) {
+      disabled = disabled || !equip[opts.waitFor] || options.length === 0;
+    } else {
+      disabled = disabled || options.length === 0;
+    }
+    return h('div', null,
+      h('label', { className: 'block text-sm font-bold text-gray-700 mb-1' }, label),
+      h('select', {
+        value: equip[name] || '',
+        onChange: onChange,
+        disabled: disabled,
+        className: 'w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 bg-white' +
+          (disabled ? ' bg-gray-100 text-gray-400 cursor-not-allowed' : '')
+      },
+        h('option', { value: '', disabled: true }, disabled ? (opts.emptyHint || '請先選擇上層欄位') : '請選擇'),
+        options.map(function (opt) {
+          return h('option', { key: opt, value: opt }, opt);
+        })
+      )
+    );
+  }
+
+  function normalizeSurveyEquip(eq, deviceCategories) {
+    var base = DeviceCategoryUtils.resolveProjectEquip(eq, deviceCategories);
+    base.name = base.deviceName || eq.name || '';
+    return base;
+  }
+
   function SurveyForm(props) {
     var cases = props.cases;
     var setCases = props.setCases;
@@ -27,6 +60,7 @@
     var targetCase = props.targetCase;
     var stores = props.stores || [];
     var customers = props.customers || [];
+    var deviceCategories = props.deviceCategories || [];
 
     var isCopy = !!(targetCase && targetCase._isCopy);
     var isEdit = !!targetCase && !isCopy && cases.some(function (c) { return c.id === targetCase.id; });
@@ -53,7 +87,7 @@
 
     return stateful(function (rerender) {
       var customerOptions = ScheduleUtils.getCustomerNamesFromStores(stores, customers, formData.customerName);
-      var storeOptions = ScheduleUtils.getStoreNamesForCustomer(stores, formData.customerName);
+      var storeOptions = ScheduleUtils.getStoreNamesForCustomer(stores, formData.customerName, formData.storeName);
 
       function syncSurveyStoreFields() {
         var synced = ScheduleUtils.applyStoreSnapshot(formData, stores);
@@ -122,8 +156,16 @@
       function handleEquipmentChange(index, field, value) {
         var sd = formData.surveyData || (formData.surveyData = {});
         var list = (sd.equipmentList || []).slice();
-        list[index] = Object.assign({}, list[index]);
-        list[index][field] = value;
+        var current = normalizeSurveyEquip(list[index] || {}, deviceCategories);
+        if (['category', 'brand', 'deviceName', 'specification', 'model'].indexOf(field) >= 0) {
+          current = DeviceCategoryUtils.applyEquipFieldChange(current, field, value);
+          if (field === 'deviceName') {
+            current.name = current.deviceName;
+          }
+        } else {
+          current[field] = value;
+        }
+        list[index] = current;
         sd.equipmentList = list;
         rerender();
       }
@@ -132,7 +174,9 @@
         sd.equipmentList = (sd.equipmentList || []).concat([{
           category: '',
           brand: '',
+          deviceName: '',
           name: '',
+          specification: '',
           model: '',
           area: ''
         }]);
@@ -1340,7 +1384,10 @@
           className: "text-center text-gray-400 text-sm py-6 border-2 border-dashed border-gray-200 rounded-lg"
         }, "尚未新增設備，請點選「增加設備」") : h("div", {
           className: "space-y-4"
-        }, (formData.surveyData?.equipmentList || []).map((eq, index) => h("div", {
+        }, (formData.surveyData?.equipmentList || []).map((eq, index) => {
+          var normalizedEq = normalizeSurveyEquip(eq, deviceCategories);
+          var fieldOptions = DeviceCategoryUtils.getEquipFieldOptions(deviceCategories, normalizedEq);
+          return h("div", {
           key: index,
           className: "bg-white p-4 rounded-lg border border-gray-200"
         }, h("div", {
@@ -1357,74 +1404,37 @@
         }))), h("div", {
           className: "grid grid-cols-1 md:grid-cols-2 gap-4"
         },
-        /* 設備分類 — 下拉單選 */
-        h("div", null, h("label", {
-          className: "block text-sm font-bold text-gray-700 mb-1"
-        }, "設備分類"), h("select", {
-          value: eq.category || '',
-          onChange: e => handleEquipmentChange(index, 'category', e.target.value),
-          className: "w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
-        }, h("option", {
-          value: "",
-          disabled: true
-        }, "請選擇(單選)"), EQUIP_CATEGORY_OPTIONS.map(o => h("option", {
-          key: o,
-          value: o
-        }, o)))),
-        /* 品牌 — 抓設備清單資料 */
-        h("div", null, h("label", {
-          className: "block text-sm font-bold text-gray-700 mb-1"
-        }, "品牌"), h("select", {
-          value: eq.brand || '',
-          onChange: e => handleEquipmentChange(index, 'brand', e.target.value),
-          className: "w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
-        }, h("option", {
-          value: "",
-          disabled: true
-        }, "抓設備清單資料"), EQUIP_BRAND_OPTIONS.map(o => h("option", {
-          key: o,
-          value: o
-        }, o)))),
-        /* 設備名稱 — 抓設備清單資料 */
-        h("div", null, h("label", {
-          className: "block text-sm font-bold text-gray-700 mb-1"
-        }, "設備名稱"), h("select", {
-          value: eq.name || '',
-          onChange: e => handleEquipmentChange(index, 'name', e.target.value),
-          className: "w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
-        }, h("option", {
-          value: "",
-          disabled: true
-        }, "抓設備清單資料"), EQUIP_NAME_OPTIONS.map(o => h("option", {
-          key: o,
-          value: o
-        }, o)))),
-        /* 型號 — 抓設備清單資料 */
-        h("div", null, h("label", {
-          className: "block text-sm font-bold text-gray-700 mb-1"
-        }, "型號"), h("select", {
-          value: eq.model || '',
-          onChange: e => handleEquipmentChange(index, 'model', e.target.value),
-          className: "w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
-        }, h("option", {
-          value: "",
-          disabled: true
-        }, "抓設備清單資料"), EQUIP_MODEL_OPTIONS.map(o => h("option", {
-          key: o,
-          value: o
-        }, o)))),
-        /* 設備區域 — 填寫 */
+        renderSurveyEquipSelect('設備分類', 'category', fieldOptions.category, normalizedEq, e => handleEquipmentChange(index, 'category', e.target.value), {
+          emptyHint: '尚無設備分類資料'
+        }),
+        renderSurveyEquipSelect('品牌', 'brand', fieldOptions.brand, normalizedEq, e => handleEquipmentChange(index, 'brand', e.target.value), {
+          waitFor: 'category',
+          emptyHint: '請先選擇設備分類'
+        }),
+        renderSurveyEquipSelect('設備名稱', 'deviceName', fieldOptions.deviceName, normalizedEq, e => handleEquipmentChange(index, 'deviceName', e.target.value), {
+          waitFor: 'brand',
+          emptyHint: '請先選擇品牌'
+        }),
+        renderSurveyEquipSelect('設備規格', 'specification', fieldOptions.specification, normalizedEq, e => handleEquipmentChange(index, 'specification', e.target.value), {
+          waitFor: 'deviceName',
+          emptyHint: '請先選擇設備名稱'
+        }),
+        renderSurveyEquipSelect('型號', 'model', fieldOptions.model, normalizedEq, e => handleEquipmentChange(index, 'model', e.target.value), {
+          waitFor: 'specification',
+          emptyHint: '請先選擇設備規格'
+        }),
         h("div", {
           className: "md:col-span-2"
         }, h("label", {
           className: "block text-sm font-bold text-gray-700 mb-1"
         }, "設備區域"), h("input", {
           type: "text",
-          value: eq.area || '',
+          value: normalizedEq.area || '',
           onChange: e => handleEquipmentChange(index, 'area', e.target.value),
           placeholder: "填寫",
           className: "w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500"
-        }))))))),
+        }))));
+        }))),
         /* ===== 零配件（多選 + 填數量） ===== */
         h("div", {
           className: "bg-indigo-50/30 p-8 rounded-lg border border-indigo-100 shadow-sm"

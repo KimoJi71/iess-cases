@@ -1,14 +1,45 @@
 /*
  * features/customer/equipment-form.js — 客戶建檔（設備管理）：設備新增/編輯表單
- * props: { equipments, setEquipments, targetCase?, equipmentCustomer, equipmentStore, setView, showToast }
+ * props: { equipments, setEquipments, deviceCategories, targetCase?, equipmentCustomer, equipmentStore, setView, showToast }
  */
 (function () {
   'use strict';
   var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful;
 
+  function renderEquipSelect(label, name, options, formData, onChange, opts) {
+    opts = opts || {};
+    var disabled = !!opts.disabled;
+    if (name === 'category') {
+      disabled = disabled || options.length === 0;
+    } else if (opts.waitFor) {
+      disabled = disabled || !formData[opts.waitFor] || options.length === 0;
+    } else {
+      disabled = disabled || options.length === 0;
+    }
+    return h('div', { className: opts.wrap || null },
+      h('label', { className: 'block text-sm mb-1' },
+        label,
+        opts.required && h('span', { className: 'text-red-500' }, ' *')),
+      h('select', {
+        name: name,
+        value: formData[name] || '',
+        onChange: onChange,
+        disabled: disabled,
+        className: 'w-full p-2.5 border rounded-md outline-none focus:border-blue-500 bg-white' +
+          (disabled ? ' bg-gray-100 text-gray-400 cursor-not-allowed' : '')
+      },
+        h('option', { value: '', disabled: true }, disabled ? (opts.emptyHint || '請先選擇上層欄位') : '請選擇'),
+        options.map(function (opt) {
+          return h('option', { key: opt, value: opt }, opt);
+        })
+      )
+    );
+  }
+
   function EquipmentForm(props) {
     var equipments = props.equipments;
     var setEquipments = props.setEquipments;
+    var deviceCategories = props.deviceCategories || [];
     var targetCase = props.targetCase;
     var equipmentCustomer = props.equipmentCustomer;
     var equipmentStore = props.equipmentStore;
@@ -19,57 +50,55 @@
     var customerName = isEdit ? targetCase.customerName : equipmentCustomer;
     var storeName = isEdit ? targetCase.storeName : equipmentStore;
 
-    var formData = {
-      model: (targetCase && targetCase.model) || '',
-      category: (targetCase && targetCase.category) || '',
-      brand: (targetCase && targetCase.brand) || '',
-      name: (targetCase && targetCase.name) || '',
-      area: (targetCase && targetCase.area) || '',
-      manufactureDate: (targetCase && targetCase.manufactureDate) || '',
-      installDate: (targetCase && targetCase.installDate) || '',
-      assetNumber: (targetCase && targetCase.assetNumber) || '',
-      serialNumber: (targetCase && targetCase.serialNumber) || '',
-      horsepower: (targetCase && targetCase.horsepower) || '',
-      indoorOutdoor: (targetCase && targetCase.indoorOutdoor) || EQUIP_INDOOR_OUTDOOR_OPTIONS[0],
-      voltage: (targetCase && targetCase.voltage) || EQUIP_VOLTAGE_OPTIONS[1]
-    };
+    var formData = isEdit
+      ? DeviceCategoryUtils.resolveProjectEquip(targetCase, deviceCategories)
+      : DeviceCategoryUtils.defaultEquipRecord();
 
     var inputCls = 'w-full p-2.5 border rounded-md outline-none focus:border-blue-500';
     var disabledCls = 'w-full p-2.5 border rounded-md bg-gray-100 text-gray-600';
-
-    function applyModelCatalog(model) {
-      var catalog = EQUIP_MODEL_CATALOG[model];
-      if (!catalog) return;
-      formData.category = catalog.category;
-      formData.brand = catalog.brand;
-      formData.horsepower = catalog.horsepower;
-      formData.indoorOutdoor = catalog.indoorOutdoor;
-      formData.voltage = catalog.voltage;
-    }
 
     return stateful(function (rerender) {
       function handleChange(e) {
         var name = e.target.name;
         var value = e.target.value;
-        formData[name] = value;
-        if (name === 'model') applyModelCatalog(value);
+        if (['category', 'brand', 'deviceName', 'specification', 'model'].indexOf(name) >= 0) {
+          formData = DeviceCategoryUtils.applyEquipFieldChange(formData, name, value);
+        } else {
+          formData[name] = value;
+        }
         rerender();
       }
 
       function handleSubmit(e) {
         e.preventDefault();
-        if (!formData.name.trim()) {
-          showToast('設備名稱為必填', 'error');
+        if (!formData.category) {
+          showToast('設備分類為必填', 'error');
+          return;
+        }
+        if (!formData.model) {
+          showToast('型號為必填', 'error');
           return;
         }
         if (!customerName || !storeName) {
           showToast('缺少客戶或門市資訊', 'error');
           return;
         }
-        var payload = Object.assign({}, formData, {
+        var payload = {
+          category: formData.category,
+          brand: formData.brand,
+          deviceName: formData.deviceName,
+          name: formData.deviceName,
+          specification: formData.specification,
+          model: formData.model,
+          area: formData.area,
+          manufactureDate: formData.manufactureDate,
+          installDate: formData.installDate,
+          assetNumber: formData.assetNumber,
+          serialNumber: formData.serialNumber,
+          status: formData.status,
           customerName: customerName,
           storeName: storeName
-        });
+        };
         if (isEdit) {
           setEquipments(equipments.map(function (eq) {
             return eq.id === targetCase.id ? Object.assign({}, eq, payload) : eq;
@@ -93,33 +122,16 @@
           h('input', {
             type: opts.type || 'text',
             name: name,
-            value: formData[name],
+            value: formData[name] || '',
             onChange: handleChange,
             required: opts.required,
+            placeholder: opts.placeholder,
             className: inputCls
           })
         );
       }
 
-      function selectField(label, name, options, opts) {
-        opts = opts || {};
-        return h('div', null,
-          h('label', { className: 'block text-sm mb-1' }, label,
-            opts.required && h('span', { className: 'text-red-500' }, ' *'),
-            opts.hint && h('span', { className: 'text-xs text-gray-400' }, ' ' + opts.hint)),
-          h('select', {
-            name: name,
-            value: formData[name],
-            onChange: handleChange,
-            className: inputCls + ' bg-white'
-          },
-            opts.emptyOption && h('option', { value: '' }, opts.emptyOption),
-            options.map(function (opt) {
-              return h('option', { key: opt, value: opt }, opt);
-            })
-          )
-        );
-      }
+      var fieldOptions = DeviceCategoryUtils.getEquipFieldOptions(deviceCategories, formData);
 
       return h('div', { className: 'max-w-5xl mx-auto bg-white rounded-lg shadow-sm border border-gray-100' },
         PageHeader({
@@ -140,21 +152,46 @@
                 h('label', { className: 'block text-sm mb-1' }, '門市名稱'),
                 h('input', { type: 'text', value: storeName || '', disabled: true, className: disabledCls })
               ),
-              selectField('型號', 'model', EQUIP_MODEL_OPTIONS, {
-                emptyOption: '請選擇型號',
-                hint: '(選擇後自動帶入)'
+              renderEquipSelect('設備分類', 'category', fieldOptions.category, formData, handleChange, {
+                required: true,
+                emptyHint: '尚無設備分類資料'
               }),
-              selectField('設備分類', 'category', EQUIP_CATEGORY_OPTIONS, { emptyOption: '請選擇' }),
-              selectField('品牌', 'brand', EQUIP_BRAND_OPTIONS, { emptyOption: '請選擇' }),
-              field('設備名稱', 'name', { required: true }),
-              field('設備區域', 'area'),
+              renderEquipSelect('品牌', 'brand', fieldOptions.brand, formData, handleChange, {
+                waitFor: 'category',
+                emptyHint: '請先選擇設備分類'
+              }),
+              renderEquipSelect('設備名稱', 'deviceName', fieldOptions.deviceName, formData, handleChange, {
+                waitFor: 'brand',
+                emptyHint: '請先選擇品牌'
+              }),
+              renderEquipSelect('設備規格', 'specification', fieldOptions.specification, formData, handleChange, {
+                waitFor: 'deviceName',
+                emptyHint: '請先選擇設備名稱'
+              }),
+              renderEquipSelect('型號', 'model', fieldOptions.model, formData, handleChange, {
+                required: true,
+                waitFor: 'specification',
+                emptyHint: '請先選擇設備規格'
+              }),
+              field('設備區域', 'area', { placeholder: '例如：天花板上方' }),
               field('出廠日期', 'manufactureDate', { type: 'date' }),
               field('安裝日期', 'installDate', { type: 'date' }),
               field('資產編號', 'assetNumber'),
               field('流水序號', 'serialNumber'),
-              field('匹數', 'horsepower'),
-              selectField('室內外機', 'indoorOutdoor', EQUIP_INDOOR_OUTDOOR_OPTIONS),
-              selectField('電壓', 'voltage', EQUIP_VOLTAGE_OPTIONS)
+              h('div', null,
+                h('label', { className: 'block text-sm mb-1' }, '設備狀態 ',
+                  h('span', { className: 'text-red-500' }, '*')),
+                h('select', {
+                  name: 'status',
+                  value: formData.status || EQUIP_STATUS_OPTIONS[0],
+                  onChange: handleChange,
+                  className: inputCls + ' bg-white'
+                },
+                  EQUIP_STATUS_OPTIONS.map(function (opt) {
+                    return h('option', { key: opt, value: opt }, opt);
+                  })
+                )
+              )
             ),
             h('div', { className: 'flex justify-end gap-3 pt-4 border-t' },
               h('button', {

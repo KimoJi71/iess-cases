@@ -76,17 +76,13 @@
         ),
         h('section', { className: 'bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-100' },
           h('h3', { className: 'text-lg font-bold text-blue-800 border-b pb-2 mb-4' }, '2. 設備資料'),
-          (viewingCase && viewingCase.equipment) ? h('div', {
-            className: 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 text-sm bg-green-50/50 p-4 rounded-md border border-green-100'
-          },
-            h(ReadOnlyField, { label: '客戶名稱', value: viewingCase.equipment.customerName }),
-            h(ReadOnlyField, { label: '門市名稱', value: viewingCase.equipment.storeName }),
-            h(ReadOnlyField, { label: '設備區域', value: viewingCase.equipment.area }),
-            h(ReadOnlyField, { label: '內/外', value: viewingCase.equipment.type }),
-            h(ReadOnlyField, { label: '型號', value: viewingCase.equipment.model })
-          ) : h('div', {
-            className: 'text-center py-4 text-gray-400 bg-gray-50 rounded-md border border-dashed'
-          }, '無設備資料')
+          h(RepairCaseEquipment.Panel, {
+            h: h,
+            equipment: viewingCase && viewingCase.equipment,
+            caseContext: viewingCase,
+            FieldComponent: ReadOnlyField,
+            emptyText: '無設備資料'
+          })
         ),
         isOther ? h('section', { className: 'bg-white p-6 rounded-lg shadow-sm border border-gray-100' },
           h('h3', { className: 'text-lg font-bold text-blue-800 border-b pb-2 mb-4' }, '3. 備註'),

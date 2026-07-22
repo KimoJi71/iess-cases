@@ -1,7 +1,7 @@
 /*
  * features/project/project-form.js — 工程立案：新增立案單 / 編輯工程案件
  * AddProjectForm  props: { cases, setCases, stores, deviceCategories, setView, showToast }
- * EditProjectForm props: { editingCase, cases, setCases, stores, accounts, deviceCategories, setView, showToast, backView, mode }
+ * EditProjectForm props: { editingCase, cases, setCases, stores, accounts, deviceCategories, repairCases, setView, showToast, backView, mode }
  */
 (function () {
   'use strict';
@@ -52,69 +52,6 @@
     };
   }
 
-  function applyEquipFieldChange(currentEquip, name, value) {
-    var next = Object.assign({}, currentEquip);
-    next[name] = value;
-    if (name === 'category') {
-      next.brand = '';
-      next.deviceName = '';
-      next.specification = '';
-      next.model = '';
-    } else if (name === 'brand') {
-      next.deviceName = '';
-      next.specification = '';
-      next.model = '';
-    } else if (name === 'deviceName') {
-      next.specification = '';
-      next.model = '';
-    } else if (name === 'specification') {
-      next.model = '';
-    }
-    return next;
-  }
-
-  function getEquipFieldOptions(deviceCategories, currentEquip) {
-    var filters = { category: currentEquip.category };
-    var withCurrent = DeviceCategoryUtils.withCurrentValue;
-    return {
-      category: withCurrent(
-        DeviceCategoryUtils.uniqueFieldValues(deviceCategories, 'category'),
-        currentEquip.category
-      ),
-      brand: currentEquip.category
-        ? withCurrent(
-          DeviceCategoryUtils.uniqueFieldValues(deviceCategories, 'brand', filters),
-          currentEquip.brand
-        )
-        : [],
-      deviceName: currentEquip.category && currentEquip.brand
-        ? withCurrent(
-          DeviceCategoryUtils.uniqueFieldValues(deviceCategories, 'deviceName', Object.assign({}, filters, { brand: currentEquip.brand })),
-          currentEquip.deviceName
-        )
-        : [],
-      specification: currentEquip.category && currentEquip.brand && currentEquip.deviceName
-        ? withCurrent(
-          DeviceCategoryUtils.uniqueFieldValues(deviceCategories, 'specification', Object.assign({}, filters, {
-            brand: currentEquip.brand,
-            deviceName: currentEquip.deviceName
-          })),
-          currentEquip.specification
-        )
-        : [],
-      model: currentEquip.category && currentEquip.brand && currentEquip.deviceName && currentEquip.specification
-        ? withCurrent(
-          DeviceCategoryUtils.uniqueFieldValues(deviceCategories, 'model', Object.assign({}, filters, {
-            brand: currentEquip.brand,
-            deviceName: currentEquip.deviceName,
-            specification: currentEquip.specification
-          })),
-          currentEquip.model
-        )
-        : withCurrent([], currentEquip.model)
-    };
-  }
-
   function renderEquipSelect(label, name, options, currentEquip, onChange, opts) {
     opts = opts || {};
     var disabled = !!opts.disabled;
@@ -154,7 +91,7 @@
 
     return stateful(function (rerender) {
       function handleEquipChange(e) {
-        currentEquip = applyEquipFieldChange(currentEquip, e.target.name, e.target.value);
+        currentEquip = DeviceCategoryUtils.applyEquipFieldChange(currentEquip, e.target.name, e.target.value);
         rerender();
       }
 
@@ -167,10 +104,14 @@
           showToast('型號為必填', 'error');
           return;
         }
+        if (!DeviceCategoryUtils.isValidEquipSelection(currentEquip, deviceCategories)) {
+          showToast('請從設備分類管理選擇有效的設備型號', 'error');
+          return;
+        }
         onSave(currentEquip);
       }
 
-      var fieldOptions = getEquipFieldOptions(deviceCategories, currentEquip);
+      var fieldOptions = DeviceCategoryUtils.getEquipFieldOptions(deviceCategories, currentEquip);
 
       return h('div', { className: 'fixed inset-0 bg-black/40 flex items-center justify-center z-[70] p-4 overflow-y-auto' },
         h('div', { className: 'bg-white rounded-lg shadow-xl p-6 w-full sm:w-[600px] max-w-full m-auto flex flex-col max-h-[90vh] min-w-0' },
@@ -335,7 +276,7 @@
     var equipModal = { show: false, editingId: null, initialEquip: null };
 
     return stateful(function (rerender) {
-      var storeOptions = ScheduleUtils.getStoreNamesForCustomer(stores, formData.customerName);
+      var storeOptions = ScheduleUtils.getStoreNamesForCustomer(stores, formData.customerName, formData.storeName);
       var customerOptions = CustomerUtils.getCustomerNameOptions(customers, formData.customerName);
 
       function syncProjectStoreFields() {
@@ -629,6 +570,7 @@
     var customers = props.customers;
     var accounts = props.accounts || [];
     var deviceCategories = props.deviceCategories || [];
+    var repairCases = props.repairCases || [];
     var setView = props.setView;
     var showToast = props.showToast;
     var backView = props.backView === undefined ? 'project-list' : props.backView;
@@ -664,7 +606,7 @@
     var fieldCls = isEdit ? inputCls : viewFieldCls;
 
     return stateful(function (rerender) {
-      var storeOptions = ScheduleUtils.getStoreNamesForCustomer(stores, formData.customerName);
+      var storeOptions = ScheduleUtils.getStoreNamesForCustomer(stores, formData.customerName, formData.storeName);
       var customerOptions = CustomerUtils.getCustomerNameOptions(customers, formData.customerName);
       var contactPersonOptions = AccountUtils.getProjectPersonOptions(accounts, [detailsData.contactPerson]);
       var stagePersonOptions = AccountUtils.getProjectPersonOptions(accounts, PROJECT_STAGES.map(function (stage) {
@@ -730,6 +672,11 @@
       }
 
       function handleDeleteEquipment(id) {
+        var blockedReason = EquipmentUtils.getProjectEquipmentRemoveBlockedReason(id, repairCases);
+        if (blockedReason) {
+          showToast(blockedReason, 'error');
+          return;
+        }
         equipmentList = equipmentList.filter(function (eq) { return eq.id !== id; });
         rerender();
       }
@@ -1061,4 +1008,5 @@
 
   window.AddProjectForm = AddProjectForm;
   window.EditProjectForm = EditProjectForm;
+  window.ProjectEquipModal = ProjectEquipModal;
 })();

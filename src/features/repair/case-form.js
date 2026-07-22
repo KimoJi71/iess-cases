@@ -68,7 +68,7 @@
 
     return stateful(function (rerender) {
       var isOther = isOtherWorkCategory(formData.workCategory);
-      var storeOptions = ScheduleUtils.getStoreNamesForCustomer(stores, formData.customerName);
+      var storeOptions = ScheduleUtils.getStoreNamesForCustomer(stores, formData.customerName, formData.storeName);
       var customerOptions = CustomerUtils.getCustomerNameOptions(customers, formData.customerName);
 
       function handleChange(e) {
@@ -289,6 +289,7 @@
     var setCases = props.setCases;
     var stores = props.stores;
     var customers = props.customers;
+    var equipments = props.equipments || [];
     var setView = props.setView;
     var showToast = props.showToast;
 
@@ -309,7 +310,7 @@
     return stateful(function (rerender) {
       var cat2Options = Object.keys(PROCESS_METHOD_CATEGORIES[newRecord.category1] || {});
       var cat3Options = newRecord.category2 ? PROCESS_METHOD_CATEGORIES[newRecord.category1][newRecord.category2] || [] : [];
-      var storeOptions = ScheduleUtils.getStoreNamesForCustomer(stores, formData.customerName);
+      var storeOptions = ScheduleUtils.getStoreNamesForCustomer(stores, formData.customerName, formData.storeName);
       var customerOptions = CustomerUtils.getCustomerNameOptions(customers, formData.customerName);
 
       function handleCat1Change(e) {
@@ -357,14 +358,27 @@
       }
       function handleSimulateScan(e) {
         if (e) e.preventDefault();
-        formData.equipment = {
-          id: 'E' + Date.now(),
-          customerName: formData.customerName || '測試客戶',
-          storeName: formData.storeName || '測試門市',
-          area: '1F 營業廳',
-          type: '內',
-          model: 'FXMQ' + Math.floor(Math.random() * 100 + 100)
-        };
+        var scanned = RepairCaseEquipment.findEquipmentForScan(equipments, formData);
+        if (scanned) {
+          formData.equipment = scanned;
+        } else {
+          formData.equipment = {
+            id: 'E' + Date.now(),
+            customerName: formData.customerName || '測試客戶',
+            storeName: formData.storeName || '測試門市',
+            category: '分離式',
+            brand: '日立',
+            deviceName: '分離式冷氣',
+            name: '分離式冷氣',
+            specification: '3.5匹',
+            model: 'RAS-100',
+            area: '1F 營業廳',
+            manufactureDate: '',
+            installDate: '',
+            assetNumber: '',
+            status: EQUIP_STATUS_OPTIONS[0]
+          };
+        }
         showToast('成功掃描設備並帶入資料');
         rerender();
       }
@@ -549,31 +563,15 @@
         className: "flex items-center gap-2 bg-indigo-50 text-indigo-700 px-4 py-2 rounded-md"
       }, Icons.QrCode({
         className: "h-4 w-4"
-      }), " 掃描設備")), formData.equipment ? h("div", {
-        className: "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-y-4 gap-x-6 text-sm bg-green-50/50 p-4 rounded-md border border-green-100"
-      }, h("div", null, h("span", {
-        className: "text-gray-500 block mb-1"
-      }, "客戶名稱"), h("div", {
-        className: "font-medium"
-      }, formData.equipment.customerName)), h("div", null, h("span", {
-        className: "text-gray-500 block mb-1"
-      }, "門市名稱"), h("div", {
-        className: "font-medium"
-      }, formData.equipment.storeName)), h("div", null, h("span", {
-        className: "text-gray-500 block mb-1"
-      }, "設備區域"), h("div", {
-        className: "font-medium"
-      }, formData.equipment.area)), h("div", null, h("span", {
-        className: "text-gray-500 block mb-1"
-      }, "內/外"), h("div", {
-        className: "font-medium"
-      }, formData.equipment.type)), h("div", null, h("span", {
-        className: "text-gray-500 block mb-1"
-      }, "型號"), h("div", {
-        className: "font-medium"
-      }, formData.equipment.model))) : h("div", {
-        className: "text-center py-8 text-gray-400 bg-gray-50 rounded-md border border-dashed"
-      }, "請點擊上方按鈕掃描")), isOther ? h("section", {
+      }), " 掃描設備")),
+      h(RepairCaseEquipment.Panel, {
+        h: h,
+        equipment: formData.equipment,
+        caseContext: formData,
+        emptyText: '請點擊上方按鈕掃描',
+        emptyClass: 'text-center py-8 text-gray-400 bg-gray-50 rounded-md border border-dashed'
+      })
+    ), isOther ? h("section", {
         className: "bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-100 relative overflow-hidden"
       }, h("h3", {
         className: "text-lg font-bold text-blue-800 border-b pb-2 mb-4"

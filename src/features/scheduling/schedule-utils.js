@@ -138,11 +138,8 @@
     });
   }
 
-  function getStoreNamesForCustomer(stores, customerName) {
-    if (!stores || !customerName) return [];
-    return stores
-      .filter(function (s) { return s.customerName === customerName; })
-      .map(function (s) { return s.storeName; });
+  function getStoreNamesForCustomer(stores, customerName, selectedStoreName, includeClosed) {
+    return StoreUtils.getStoreNameOptions(stores, customerName, selectedStoreName, includeClosed);
   }
 
   function getCustomerNamesFromStores(stores, customers, selectedName) {

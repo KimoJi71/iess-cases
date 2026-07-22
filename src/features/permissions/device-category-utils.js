@@ -151,18 +151,7 @@
 
   function resolveProjectEquip(equip, deviceCategories) {
     if (!equip) {
-      return {
-        category: '',
-        brand: '',
-        deviceName: '',
-        specification: '',
-        model: '',
-        area: '',
-        manufactureDate: '',
-        installDate: '',
-        assetNumber: '',
-        serialNumber: ''
-      };
+      return defaultEquipRecord();
     }
 
     var matched = findBestMatchingRecord(deviceCategories, equip);
@@ -177,7 +166,8 @@
         manufactureDate: equip.manufactureDate || '',
         installDate: equip.installDate || '',
         assetNumber: equip.assetNumber || '',
-        serialNumber: equip.serialNumber || ''
+        serialNumber: equip.serialNumber || '',
+        status: equip.status || (typeof EQUIP_STATUS_OPTIONS !== 'undefined' ? EQUIP_STATUS_OPTIONS[0] : '運轉')
       };
     }
 
@@ -191,8 +181,78 @@
       manufactureDate: equip.manufactureDate || '',
       installDate: equip.installDate || '',
       assetNumber: equip.assetNumber || '',
-      serialNumber: equip.serialNumber || ''
+      serialNumber: equip.serialNumber || '',
+      status: equip.status || (typeof EQUIP_STATUS_OPTIONS !== 'undefined' ? EQUIP_STATUS_OPTIONS[0] : '運轉')
     };
+  }
+
+  function defaultEquipRecord() {
+    return {
+      category: '',
+      brand: '',
+      deviceName: '',
+      specification: '',
+      model: '',
+      area: '',
+      manufactureDate: '',
+      installDate: '',
+      assetNumber: '',
+      serialNumber: '',
+      status: typeof EQUIP_STATUS_OPTIONS !== 'undefined' ? EQUIP_STATUS_OPTIONS[0] : '運轉'
+    };
+  }
+
+  function applyEquipFieldChange(currentEquip, name, value) {
+    var next = Object.assign({}, currentEquip);
+    next[name] = value;
+    if (name === 'category') {
+      next.brand = '';
+      next.deviceName = '';
+      next.specification = '';
+      next.model = '';
+    } else if (name === 'brand') {
+      next.deviceName = '';
+      next.specification = '';
+      next.model = '';
+    } else if (name === 'deviceName') {
+      next.specification = '';
+      next.model = '';
+    } else if (name === 'specification') {
+      next.model = '';
+    }
+    return next;
+  }
+
+  function getEquipFieldOptions(deviceCategories, currentEquip) {
+    var filters = { category: currentEquip.category };
+    return {
+      category: uniqueFieldValues(deviceCategories, 'category'),
+      brand: currentEquip.category
+        ? uniqueFieldValues(deviceCategories, 'brand', filters)
+        : [],
+      deviceName: currentEquip.category && currentEquip.brand
+        ? uniqueFieldValues(deviceCategories, 'deviceName', Object.assign({}, filters, { brand: currentEquip.brand }))
+        : [],
+      specification: currentEquip.category && currentEquip.brand && currentEquip.deviceName
+        ? uniqueFieldValues(deviceCategories, 'specification', Object.assign({}, filters, {
+          brand: currentEquip.brand,
+          deviceName: currentEquip.deviceName
+        }))
+        : [],
+      model: currentEquip.category && currentEquip.brand && currentEquip.deviceName && currentEquip.specification
+        ? uniqueFieldValues(deviceCategories, 'model', Object.assign({}, filters, {
+          brand: currentEquip.brand,
+          deviceName: currentEquip.deviceName,
+          specification: currentEquip.specification
+        }))
+        : []
+    };
+  }
+
+  function isValidEquipSelection(equip, deviceCategories) {
+    var model = String((equip && equip.model) || '').trim();
+    if (!model) return false;
+    return !!findRecordByModel(deviceCategories, model);
   }
 
   window.DeviceCategoryUtils = {
@@ -206,6 +266,10 @@
     withCurrentValue: withCurrentValue,
     findRecordByModel: findRecordByModel,
     findBestMatchingRecord: findBestMatchingRecord,
-    resolveProjectEquip: resolveProjectEquip
+    resolveProjectEquip: resolveProjectEquip,
+    defaultEquipRecord: defaultEquipRecord,
+    applyEquipFieldChange: applyEquipFieldChange,
+    getEquipFieldOptions: getEquipFieldOptions,
+    isValidEquipSelection: isValidEquipSelection
   };
 })();

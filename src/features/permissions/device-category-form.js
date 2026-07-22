@@ -95,8 +95,7 @@
               );
             })
           ),
-          h('p', { className: 'text-xs text-gray-500 mt-4' },
-            '備註：各欄位可重複，但七項欄位組合在系統中必須唯一。'),
+          h('p', { className: 'text-xs text-gray-500 mt-4' }),
           h('div', { className: 'flex justify-end gap-3 mt-8 pt-6 border-t' },
             h('button', {
               type: 'button',

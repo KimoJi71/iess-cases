@@ -1,6 +1,6 @@
 /*
  * features/customer/store-history.js — 客戶建檔（門市管理）：門市歷史紀錄（整頁）
- * props: { store, cases, maintenanceCases, projectCases, equipments, openStoreHistoryDetail, setHistoryStore, setView }
+ * props: { store, cases, maintenanceCases, projectCases, equipments, openStoreHistoryDetail, setHistoryStore, setView, backView, clearCustomerBackView }
  */
 (function () {
   'use strict';
@@ -16,6 +16,8 @@
     var openStoreHistoryDetail = props.openStoreHistoryDetail;
     var setHistoryStore = props.setHistoryStore;
     var setView = props.setView;
+    var backView = props.backView === undefined ? 'store-list' : props.backView;
+    var clearCustomerBackView = props.clearCustomerBackView;
 
     var caseType = 'repair-maintenance';
     var startDate = todayDate;
@@ -52,7 +54,8 @@
 
     function goBack() {
       setHistoryStore(null);
-      setView('store-list');
+      if (clearCustomerBackView) clearCustomerBackView();
+      setView(backView);
     }
 
     function findSourceCase(rec) {

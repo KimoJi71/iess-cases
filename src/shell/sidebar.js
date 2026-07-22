@@ -40,9 +40,8 @@
     return h('aside', {
       className: 'app-sidebar w-56 bg-white border-r border-gray-200 shadow-sm flex flex-col shrink-0 z-0'
     },
-      h('div', { className: 'p-4 border-b border-gray-100 bg-gray-50/50 app-sidebar__header' },
-        h('h2', { className: 'text-base font-bold text-gray-700 tracking-wide' }, '戰情室 選單'),
-        onClose && h('button', {
+      onClose && h('div', { className: 'p-4 border-b border-gray-100 bg-gray-50/50 app-sidebar__header' },
+        h('button', {
           type: 'button',
           className: 'app-sidebar__close',
           onClick: onClose,

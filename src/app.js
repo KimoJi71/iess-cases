@@ -98,6 +98,7 @@
     editingCase: null,
     viewingCase: null,
     historyStore: null,
+    customerBackView: '',
     statusFilter: '未處理'
   });
 
@@ -116,15 +117,30 @@
   var setEditingCase = makeSetter('editingCase');
   var setViewingCase = makeSetter('viewingCase');
   var setHistoryStore = makeSetter('historyStore');
+  var setCustomerBackView = makeSetter('customerBackView');
   var setStatusFilter = makeSetter('statusFilter');
 
-  function openStoreHistory(storeRecord) {
+  function openStoreHistory(storeRecord, backView) {
     store.set({
       historyStore: storeRecord,
       view: 'store-history',
       viewingCase: null,
-      editingCase: null
+      editingCase: null,
+      customerBackView: backView || 'store-list'
     });
+  }
+
+  function openStoreEdit(storeRecord, backView) {
+    store.set({
+      editingCase: storeRecord,
+      view: 'store-edit',
+      viewingCase: null,
+      customerBackView: backView || 'store-list'
+    });
+  }
+
+  function clearCustomerBackView() {
+    setCustomerBackView('');
   }
 
   function openStoreHistoryDetail(view, record) {
@@ -286,7 +302,7 @@
       case 'edit':
         return h(EditCaseForm, {
           editingCase: s.editingCase, cases: s.cases, setCases: setCasesData,
-          stores: s.stores, customers: s.customers,
+          stores: s.stores, customers: s.customers, equipments: s.equipments,
           setView: setView, showToast: showToast
         });
       case 'record-list':
@@ -341,7 +357,8 @@
         return h(EditProjectForm, {
           editingCase: s.editingCase, cases: s.projectCases, setCases: setProjectCases,
           stores: s.stores, customers: s.customers, accounts: s.accounts,
-          deviceCategories: s.deviceCategories, setView: setView, showToast: showToast
+          deviceCategories: s.deviceCategories, repairCases: s.cases,
+          setView: setView, showToast: showToast
         });
       case 'survey-list':
         return h(SurveyList, {
@@ -351,12 +368,14 @@
       case 'survey-add':
         return h(SurveyForm, {
           cases: s.surveyCases, setCases: setSurveyCases, stores: s.stores,
-          customers: s.customers, setView: setView, showToast: showToast
+          customers: s.customers, deviceCategories: s.deviceCategories,
+          setView: setView, showToast: showToast
         });
       case 'survey-edit':
         return h(SurveyForm, {
           cases: s.surveyCases, setCases: setSurveyCases, stores: s.stores,
-          customers: s.customers, targetCase: s.editingCase, setView: setView, showToast: showToast
+          customers: s.customers, deviceCategories: s.deviceCategories,
+          targetCase: s.editingCase, setView: setView, showToast: showToast
         });
       case 'customer-list':
         return h(CustomerList, {
@@ -376,7 +395,8 @@
         return h(StoreList, {
           stores: s.stores, setStores: setStores, customers: s.customers,
           storeCustomer: s.storeCustomer, setStoreCustomer: setStoreCustomer,
-          setEditingCase: setEditingCase, openStoreHistory: openStoreHistory,
+          setEditingCase: setEditingCase,
+          openStoreEdit: openStoreEdit, openStoreHistory: openStoreHistory,
           setView: setView, showToast: showToast
         });
       case 'store-history':
@@ -388,7 +408,9 @@
           equipments: s.equipments,
           openStoreHistoryDetail: openStoreHistoryDetail,
           setHistoryStore: setHistoryStore,
-          setView: setView
+          setView: setView,
+          backView: s.customerBackView || 'store-list',
+          clearCustomerBackView: clearCustomerBackView
         });
       case 'store-history-repair-view':
         return h(ViewCaseForm, {
@@ -406,7 +428,8 @@
           editingCase: StoreUtils.withStoreHistoryContext(s.editingCase, s.historyStore),
           cases: s.projectCases, setCases: setProjectCases,
           stores: s.stores, customers: s.customers, accounts: s.accounts,
-          deviceCategories: s.deviceCategories, setView: setView, showToast: showToast,
+          deviceCategories: s.deviceCategories, repairCases: s.cases,
+          setView: setView, showToast: showToast,
           backView: 'store-history',
           mode: 'view'
         });
@@ -419,7 +442,9 @@
         return h(StoreForm, {
           stores: s.stores, setStores: setStores, customers: s.customers,
           targetCase: s.editingCase, storeCustomer: s.storeCustomer,
-          setView: setView, showToast: showToast
+          setView: setView, showToast: showToast,
+          backView: s.customerBackView || 'store-list',
+          clearCustomerBackView: clearCustomerBackView
         });
       case 'store-repair-add':
         return h(StoreRepairForm, {
@@ -430,26 +455,30 @@
       case 'store-project-add':
         return h(StoreProjectForm, {
           store: s.editingCase, cases: s.projectCases, setCases: setProjectCases,
+          deviceCategories: s.deviceCategories,
           setView: setView, showToast: showToast
         });
       case 'equipment-list':
         return h(EquipmentList, {
           equipments: s.equipments, setEquipments: setEquipments,
           customers: s.customers, stores: s.stores,
-          cases: s.cases, setCases: setCasesData,
+          repairCases: s.cases, projectCases: s.projectCases, setProjectCases: setProjectCases,
           equipmentCustomer: s.equipmentCustomer, setEquipmentCustomer: setEquipmentCustomer,
           equipmentStore: s.equipmentStore, setEquipmentStore: setEquipmentStore,
+          openStoreEdit: openStoreEdit, openStoreHistory: openStoreHistory,
           setEditingCase: setEditingCase, setView: setView, showToast: showToast
         });
       case 'equipment-add':
         return h(EquipmentForm, {
           equipments: s.equipments, setEquipments: setEquipments,
+          deviceCategories: s.deviceCategories,
           equipmentCustomer: s.equipmentCustomer, equipmentStore: s.equipmentStore,
           setView: setView, showToast: showToast
         });
       case 'equipment-edit':
         return h(EquipmentForm, {
           equipments: s.equipments, setEquipments: setEquipments,
+          deviceCategories: s.deviceCategories,
           targetCase: s.editingCase,
           equipmentCustomer: s.equipmentCustomer, equipmentStore: s.equipmentStore,
           setView: setView, showToast: showToast

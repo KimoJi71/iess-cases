@@ -1,6 +1,6 @@
 /*
  * features/customer/store-form.js — 客戶建檔（門市管理）：門市新增/編輯表單
- * props: { stores, setStores, customers, targetCase, storeCustomer, setView, showToast }
+ * props: { stores, setStores, customers, targetCase, storeCustomer, setView, showToast, backView, clearCustomerBackView }
  */
 (function () {
   'use strict';
@@ -15,6 +15,13 @@
     var storeCustomer = props.storeCustomer;
     var setView = props.setView;
     var showToast = props.showToast;
+    var backView = props.backView === undefined ? 'store-list' : props.backView;
+    var clearCustomerBackView = props.clearCustomerBackView;
+
+    function navigateBack() {
+      if (clearCustomerBackView) clearCustomerBackView();
+      setView(backView);
+    }
 
     var isEdit = !!targetCase;
     var photoInputEl = null; // useRef
@@ -161,7 +168,7 @@
           setStores([newStore].concat(stores));
           showToast('門市新增成功');
         }
-        setView('store-list');
+        navigateBack();
       }
 
       function field(label, name, opts) {
@@ -202,7 +209,7 @@
                 }, Icons.FileText({ className: 'h-4 w-4' }), ' 新增立案單'),
                 h('button', {
                   type: 'button',
-                  onClick: function () { setView('store-list'); },
+                  onClick: navigateBack,
                   title: '關閉並返回列表',
                   className: 'ml-1 p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors'
                 }, Icons.X({ className: 'h-6 w-6' }))
@@ -210,7 +217,7 @@
             )
           : PageHeader({
               title: '新增門市',
-              onClose: function () { setView('store-list'); },
+              onClose: navigateBack,
               wrapperClass: 'flex justify-between items-center p-6 border-b border-gray-200 sticky top-0 z-10 bg-white rounded-t-lg'
             }),
         h('form', { onSubmit: handleSubmit, className: 'p-6' },
@@ -404,7 +411,7 @@
           h('div', { className: 'mt-8 pt-6 border-t flex justify-end gap-3' },
             h('button', {
               type: 'button',
-              onClick: function () { setView('store-list'); },
+              onClick: navigateBack,
               className: 'px-6 py-2.5 border rounded-md text-gray-600 hover:bg-gray-50 transition-colors'
             }, '取消'),
             h('button', {

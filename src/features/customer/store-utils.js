@@ -57,6 +57,48 @@
     return record.customerName === store.customerName && record.storeName === store.storeName;
   }
 
+  function isActiveStore(store) {
+    return store && store.storeStatus !== '撤店';
+  }
+
+  function getActiveStores(stores) {
+    if (!stores) return [];
+    return stores.filter(isActiveStore);
+  }
+
+  function getStoreNameOptions(stores, customerName, selectedStoreName, includeClosed) {
+    if (!customerName) return [];
+    var activeByName = {};
+    (stores || []).forEach(function (s) {
+      if (s.customerName === customerName && s.storeName) {
+        activeByName[s.storeName] = isActiveStore(s);
+      }
+    });
+    var source = (stores || []).filter(function (s) { return s.customerName === customerName; });
+    if (!includeClosed) {
+      source = source.filter(isActiveStore);
+    }
+    var names = [];
+    var seen = {};
+    source.forEach(function (s) {
+      if (s.storeName && !seen[s.storeName]) {
+        seen[s.storeName] = true;
+        names.push(s.storeName);
+      }
+    });
+    if (selectedStoreName && !seen[selectedStoreName]) {
+      names.push(selectedStoreName);
+    }
+    return names.sort(function (a, b) {
+      if (includeClosed) {
+        var aActive = activeByName[a] !== false;
+        var bActive = activeByName[b] !== false;
+        if (aActive !== bActive) return aActive ? -1 : 1;
+      }
+      return a.localeCompare(b, 'zh-Hant');
+    });
+  }
+
   function resolveCaseEquipmentFields(caseItem, equipments) {
     var eq = caseItem && caseItem.equipment;
     if (!eq) return { category: '', name: '', area: '' };
@@ -65,15 +107,17 @@
       if (full) {
         return {
           category: full.category || '',
-          name: full.name || '',
-          area: full.area || eq.area || ''
+          name: full.deviceName || full.name || '',
+          area: full.area || eq.area || '',
+          specification: full.specification || ''
         };
       }
     }
     return {
       category: eq.category || '',
-      name: eq.name || eq.model || '',
-      area: eq.area || ''
+      name: eq.deviceName || eq.name || eq.model || '',
+      area: eq.area || '',
+      specification: eq.specification || ''
     };
   }
 
@@ -204,6 +248,9 @@
     matchesRecordArea: matchesRecordArea,
     assigneeCoversArea: assigneeCoversArea,
     matchesStoreRecord: matchesStoreRecord,
+    isActiveStore: isActiveStore,
+    getActiveStores: getActiveStores,
+    getStoreNameOptions: getStoreNameOptions,
     buildRepairMaintenanceHistoryRows: buildRepairMaintenanceHistoryRows,
     buildProjectHistoryRows: buildProjectHistoryRows,
     formatHistoryDateTime: formatHistoryDateTime,
