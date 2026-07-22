@@ -36,7 +36,8 @@
   };
 
   var REPORTS_SUBMENU_DEFAULT_VIEW = {
-    '案件績效統計': 'case-performance'
+    '案件績效統計': 'case-performance',
+    '資料調閱': 'data-retrieval'
   };
 
   var PERMISSIONS_SUBMENU_DEFAULT_VIEW = {
@@ -543,6 +544,15 @@
     switch (s.view) {
       case 'case-performance':
         return h(CasePerformanceStats, { cases: s.cases });
+      case 'data-retrieval':
+        return h(DataRetrieval, {
+          cases: s.cases,
+          maintenanceCases: s.maintenanceCases,
+          projectCases: s.projectCases,
+          customers: s.customers,
+          stores: s.stores,
+          showToast: showToast
+        });
       default:
         return null;
     }

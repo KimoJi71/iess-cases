@@ -6,7 +6,7 @@
   'use strict';
   var h = IESS.h, Icons = IESS.Icons;
 
-  var MENU_ITEMS = ['案件績效統計'];
+  var MENU_ITEMS = ['案件績效統計', '資料調閱'];
 
   function ReportsSidebar(props) {
     var currentSubMenu = props.currentSubMenu;
