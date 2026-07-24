@@ -319,16 +319,16 @@ MaintenanceAllocationUtils.buildSaveWarnings({
 - Consumes: `MaintenanceAllocation`（Task 4 會建立；此 task 先接路由，頁面可暫用 placeholder 或等 Task 4）
 - Produces: `maintenanceAllocations` / `setMaintenanceAllocations`；submenu `保養分配` → view `maintenance-allocation`
 
-- [ ] **Step 1: Sidebar**
+- [x] **Step 1: Sidebar**
 
 `MENU_ITEMS` 追加 `'保養分配'`（建議放在「處理方式與積分管理」之後）。
 
-- [ ] **Step 2: `options.js` 權限樹**
+- [x] **Step 2: `options.js` 權限樹**
 
 `PERMISSION_FUNCTIONS` 與 `PERMISSION_TREE`「系統權限」`children` 皆加入 `'保養分配'`。  
 （`_buildAllPermissions` 會自動涵蓋 admin。）
 
-- [ ] **Step 3: Seed 示範分配（可少量）**
+- [x] **Step 3: Seed 示範分配（可少量）**
 
 在 `seed.js` 新增（assignee／客戶需與現有 seed 對得上；若對不上可先 `[]`）：
 
@@ -341,7 +341,7 @@ const INITIAL_MAINTENANCE_ALLOCATIONS = [
 
 若暫時沒有把握對應關係，使用空陣列即可。
 
-- [ ] **Step 4: `app.js`**
+- [x] **Step 4: `app.js`**
 
 1. `PERMISSIONS_SUBMENU_DEFAULT_VIEW` 加：`'保養分配': 'maintenance-allocation'`
 2. store initial state 加：`maintenanceAllocations: INITIAL_MAINTENANCE_ALLOCATIONS`
@@ -360,7 +360,7 @@ case 'maintenance-allocation':
   });
 ```
 
-- [ ] **Step 5: 手動驗收（路由）**
+- [x] **Step 5: 手動驗收（路由）**
 
 進入系統權限 → 點「保養分配」。若 Task 4 尚未完成，可能 ReferenceError；完成 Task 4 後應正常進入頁面。帳號管理 → 權限設定樹應可見「保養分配」。
 

@@ -44,7 +44,8 @@
     '帳號管理': 'account-list',
     '指派人員管理': 'assignee-list',
     '設備分類管理': 'device-category-list',
-    '處理方式與積分管理': 'process-method-list'
+    '處理方式與積分管理': 'process-method-list',
+    '保養分配': 'maintenance-allocation'
   };
 
   var WARROOM_SUBMENUS = Object.keys(WARROOM_SUBMENU_DEFAULT_VIEW);
@@ -98,6 +99,7 @@
     deviceCategories: INITIAL_DEVICE_CATEGORIES,
     processMethods: INITIAL_PROCESS_METHODS,
     assignees: INITIAL_ASSIGNEES,
+    maintenanceAllocations: INITIAL_MAINTENANCE_ALLOCATIONS,
     editingCase: null,
     viewingCase: null,
     historyStore: null,
@@ -175,6 +177,7 @@
   var setEquipmentCustomer = makeSetter('equipmentCustomer');
   var setEquipmentStore = makeSetter('equipmentStore');
   var setPersonnelStatus = makeSetter('personnelStatus');
+  var setMaintenanceAllocations = makeSetter('maintenanceAllocations');
   function setAccounts(v) {
     store.set(function (s) {
       var next = typeof v === 'function' ? v(s.accounts) : v;
@@ -676,6 +679,15 @@
           setProcessMethods: setProcessMethods,
           targetCase: s.editingCase,
           setView: setView,
+          showToast: showToast
+        });
+      case 'maintenance-allocation':
+        return h(MaintenanceAllocation, {
+          assignees: s.assignees,
+          customers: s.customers,
+          stores: s.stores,
+          maintenanceAllocations: s.maintenanceAllocations,
+          setMaintenanceAllocations: setMaintenanceAllocations,
           showToast: showToast
         });
       default:

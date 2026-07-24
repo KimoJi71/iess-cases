@@ -1688,6 +1688,11 @@ const INITIAL_DEVICE_CATEGORIES = [{
 }];
 
 
+const INITIAL_MAINTENANCE_ALLOCATIONS = [
+  // 範例：僅在確認 ASG1 對該客戶有 A/B/C 門市時保留
+  // { id: 'MA1', assigneeId: 'ASG1', customerName: '屈臣氏', month: 3, visitIndex: 1, targetCount: 1 }
+];
+
 const INITIAL_ASSIGNEES = [
   { id: 'ASG1', name: 'A組', leaderId: 'ACC2', districts: ['台北市信義區', '台北市中山區'], memberIds: ['ACC2'], createdDate: todayDate },
   { id: 'ASG2', name: 'B組', leaderId: 'ACC3', districts: ['台中市中區', '台中市西屯區'], memberIds: ['ACC3'], createdDate: todayDate },
