@@ -51,7 +51,12 @@ const STORE_AREA_OPTIONS = (function () {
   });
   return list;
 })();
-const SERVICE_LEVEL_OPTIONS = ['保修(一年一次)', '保修(一年兩次)', '保養(一年一次)', '維修(無簽約客戶)'];
+const SERVICE_LEVEL_OPTIONS = [
+  'A 保修(一年一次)',
+  'B 保修(一年兩次)',
+  'C 保養(一年一次)',
+  'D 維修(無簽約客戶)'
+];
 const MAINTENANCE_INTERVAL_OPTIONS = ['每季', '每半年', '每年'];
 const CUSTOMER_ENABLED_FILTERS = ['全部', '啟用', '停用'];
 const STORE_STATUS_OPTIONS = ['正常營業', '整裝', '撤店'];
@@ -131,11 +136,11 @@ const DUCT_CUSTOM_BOX_OPTIONS = ['特製風箱(NAS附圖)', '請風管廠商前�
 
 // 客戶名稱對應服務等級的映射表
 const CUSTOMER_SERVICE_LEVEL_MAP = {
-  '屈臣氏': '保修(一年一次)',
-  '星巴克': '保修(一年兩次)',
-  '萊爾富': '保養(一年一次)',
-  '統一超商': '維修(無簽約客戶)',
-  '全家便利商店': '維修(無簽約客戶)'
+  '屈臣氏': 'A 保修(一年一次)',
+  '星巴克': 'B 保修(一年兩次)',
+  '萊爾富': 'C 保養(一年一次)',
+  '統一超商': 'D 維修(無簽約客戶)',
+  '全家便利商店': 'D 維修(無簽約客戶)'
 };
 
 // --- 日期計算 ---

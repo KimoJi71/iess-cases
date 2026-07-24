@@ -58,7 +58,7 @@
           expectedTimeStart: formData.expectedTime,
           expectedTimeEnd: '',
           reporter: formData.reporter,
-          serviceLevel: store.serviceLevel || '維修(無簽約客戶)',
+          serviceLevel: store.serviceLevel || 'D 維修(無簽約客戶)',
           companyCity: store.companyCity || '',
           companyDistrict: store.companyDistrict || '',
           storeAddress: StoreUtils.buildFullAddress(store),

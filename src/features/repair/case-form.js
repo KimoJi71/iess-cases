@@ -78,7 +78,7 @@
       expectedTimeStart: '',
       expectedTimeEnd: '',
       reporter: currentOperatorName,
-      serviceLevel: '維修(無簽約客戶)'
+      serviceLevel: 'D 維修(無簽約客戶)'
     };
 
     return stateful(function (rerender) {
@@ -91,7 +91,7 @@
         var value = e.target.value;
         formData[name] = value;
         if (name === 'customerName') {
-          formData.serviceLevel = CUSTOMER_SERVICE_LEVEL_MAP[value] || '維修(無簽約客戶)';
+          formData.serviceLevel = CUSTOMER_SERVICE_LEVEL_MAP[value] || 'D 維修(無簽約客戶)';
           formData.storeName = '';
           formData.companyCity = '';
           formData.companyDistrict = '';
@@ -365,7 +365,7 @@
           caseStatus.applyProcessStatusChange(formData, value || null, savedProcessStatus, caseDT.now());
         }
         if (name === 'customerName') {
-          formData.serviceLevel = CUSTOMER_SERVICE_LEVEL_MAP[value] || '維修(無簽約客戶)';
+          formData.serviceLevel = CUSTOMER_SERVICE_LEVEL_MAP[value] || 'D 維修(無簽約客戶)';
           formData.storeName = '';
           formData.companyCity = '';
           formData.companyDistrict = '';

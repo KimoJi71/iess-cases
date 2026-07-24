@@ -49,7 +49,7 @@
 **Interfaces:**
 - Produces: `SERVICE_LEVEL_OPTIONS` 四個新值；全站 `serviceLevel` 字串與對照表一致
 
-- [ ] **Step 1: 更新 `options.js` 常數**
+- [x] **Step 1: 更新 `options.js` 常數**
 
 ```js
 const SERVICE_LEVEL_OPTIONS = [
@@ -68,7 +68,7 @@ const CUSTOMER_SERVICE_LEVEL_MAP = {
 };
 ```
 
-- [ ] **Step 2: 批次替換 seed 與表單預設字串**
+- [x] **Step 2: 批次替換 seed 與表單預設字串**
 
 在下列檔案做一字不漏的字串替換（先長後短，避免部分匹配問題）：
 
@@ -97,7 +97,7 @@ for f in src/data/seed.js \
 done
 ```
 
-- [ ] **Step 3: 手動驗收**
+- [x] **Step 3: 手動驗收**
 
 開啟 `index.html` → 客戶管理／門市管理下拉應見 `A 保修(一年一次)` 等；既有列表欄位顯示新字串。  
 確認無殘留舊字串：

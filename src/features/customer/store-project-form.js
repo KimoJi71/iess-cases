@@ -103,7 +103,7 @@
             customerName: store.customerName || '',
             storeName: store.storeName || '',
             storeAddress: StoreUtils.buildFullAddress(store),
-            serviceLevel: store.serviceLevel || '維修(無簽約客戶)',
+            serviceLevel: store.serviceLevel || 'D 維修(無簽約客戶)',
             contactPerson: formData.contactPerson,
             suggestedContractor: formData.suggestedContractor,
             entryDate: formData.entryDate,
