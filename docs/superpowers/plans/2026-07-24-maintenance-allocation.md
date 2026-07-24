@@ -467,7 +467,7 @@ setMaintenanceAllocations(MaintenanceAllocationUtils.removeAllocation(
 showToast('保養分配已刪除');
 ```
 
-- [ ] **Step 5: 手動驗收（本頁）**
+- [x] **Step 5: 手動驗收（本頁）**
 
 1. 選「A組」等有行政區的指派人員 → 出現客戶列（僅 A／B／C 門市）
 2. 點空白月格 → 填次數與數量 → 儲存 → 格顯示「第N次 X」；若合計不符有提示但仍存成
@@ -480,7 +480,7 @@ showToast('保養分配已刪除');
 
 **Files:** 無新增（僅驗證）
 
-- [ ] **Step 1: 對照規格 §11**
+- [x] **Step 1: 對照規格 §11**
 
 | # | 檢查項 | 預期 |
 |---|--------|------|
@@ -492,7 +492,7 @@ showToast('保養分配已刪除');
 | 6 | 回歸 | 帳號管理、指派人員管理列表／新增／編輯仍可用 |
 | 7 | 保養計劃進度 | 不受分配操作影響（案件數不因存分配而變） |
 
-- [ ] **Step 2: 確認未誤改既有功能檔的行為邏輯**
+- [x] **Step 2: 確認未誤改既有功能檔的行為邏輯**
 
 `git diff` 檢視：除服務等級字串替換外，`account-*.js`／`assignee-*.js`／`device-category-*.js`／`process-method-*.js` 應無邏輯變更。
 
