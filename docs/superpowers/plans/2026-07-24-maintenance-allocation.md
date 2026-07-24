@@ -119,7 +119,7 @@ Expected: 無輸出（或僅註解）。
 - Consumes: `StoreUtils.getStoreArea`、`StoreUtils.assigneeCoversArea`、`StoreUtils.isActiveStore`；`SERVICE_LEVEL_OPTIONS` 新值
 - Produces: `window.MaintenanceAllocationUtils`（下列函式）
 
-- [ ] **Step 1: 建立 utils IIFE**
+- [x] **Step 1: 建立 utils IIFE**
 
 完整實作如下（可微調實作細節，但匯出名稱與行為必須一致）：
 
@@ -282,7 +282,7 @@ Expected: 無輸出（或僅註解）。
 })();
 ```
 
-- [ ] **Step 2: 在 `index.html` 先掛上 utils script**（頁面檔尚未建時也可先掛）
+- [x] **Step 2: 在 `index.html` 先掛上 utils script**（頁面檔尚未建時也可先掛）
 
 放在其他 permissions utils 之後、list／form 之前，例如：
 
@@ -292,7 +292,7 @@ Expected: 無輸出（或僅註解）。
 
 （緊接在 `assignee-utils.js` 之後。）
 
-- [ ] **Step 3: 瀏覽器 Console 煙霧測試**
+- [x] **Step 3: 瀏覽器 Console 煙霧測試**
 
 開啟頁面後於 Console：
 
