@@ -8,6 +8,7 @@
   var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful, useDragScroll = IESS.useDragScroll;
   var MONTHS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
   var persistedSelectedAssigneeId = '';
+  var persistedScrollLeft = 0;
 
   function MaintenanceAllocation(props) {
     var assignees = props.assignees || [];
@@ -20,7 +21,47 @@
     var selectedAssigneeId = persistedSelectedAssigneeId;
     var editModal = null;
     var deleteModal = null;
+    var scrollEl = null;
     var dragProps = useDragScroll();
+    var baseDragRef = dragProps.ref;
+    var baseDragMove = dragProps.onMouseMove;
+    var baseDragUp = dragProps.onMouseUp;
+    var baseDragLeave = dragProps.onMouseLeave;
+
+    function syncScrollFromEl() {
+      if (scrollEl) persistedScrollLeft = scrollEl.scrollLeft;
+    }
+
+    function restoreScrollLeft(n) {
+      if (!n) return;
+      var left = persistedScrollLeft;
+      n.scrollLeft = left;
+      requestAnimationFrame(function () {
+        if (n === scrollEl) n.scrollLeft = left;
+      });
+    }
+
+    dragProps = Object.assign({}, dragProps, {
+      ref: function (n) {
+        baseDragRef(n);
+        scrollEl = n;
+        if (!n) return;
+        restoreScrollLeft(n);
+        n.addEventListener('scroll', syncScrollFromEl);
+      },
+      onMouseMove: function (e) {
+        baseDragMove(e);
+        syncScrollFromEl();
+      },
+      onMouseUp: function (e) {
+        baseDragUp(e);
+        syncScrollFromEl();
+      },
+      onMouseLeave: function (e) {
+        baseDragLeave(e);
+        syncScrollFromEl();
+      }
+    });
 
     function getSortedAssignees() {
       return assignees.slice().sort(function (a, b) {
@@ -72,6 +113,7 @@
 
       function handleSave() {
         if (!editModal || !selectedAssigneeId) return;
+        syncScrollFromEl();
 
         var visitIndex = Number(editModal.visitIndex);
         var targetCount = Number(editModal.targetCount);
@@ -104,6 +146,7 @@
 
       function handleDelete() {
         if (!deleteModal || !selectedAssigneeId) return;
+        syncScrollFromEl();
 
         setMaintenanceAllocations(MaintenanceAllocationUtils.removeAllocation(
           maintenanceAllocations,
@@ -139,6 +182,7 @@
             'div',
             {
               onClick: function () {
+                syncScrollFromEl();
                 openEditModal(row, month);
                 rerender();
               },
@@ -164,6 +208,7 @@
                       title: '刪除',
                       onClick: function (e) {
                         e.stopPropagation();
+                        syncScrollFromEl();
                         deleteModal = {
                           customerName: row.customerName,
                           month: month,
@@ -189,16 +234,15 @@
           }),
           h(
             'table',
-            { className: 'w-full min-w-[1180px] table-fixed text-left text-sm text-gray-600 select-none' },
+            { className: 'w-full min-w-[1060px] table-fixed text-left text-sm text-gray-600 select-none' },
             h(
               'thead',
               { className: 'bg-gray-50 text-gray-700 border-b' },
               h(
                 'tr',
                 null,
-                h('th', { className: 'p-3 font-semibold w-44' }, '客戶名稱'),
+                h('th', { className: 'p-3 font-semibold w-52' }, '客戶名稱'),
                 h('th', { className: 'p-3 font-semibold text-center w-28' }, '負責門市數'),
-                h('th', { className: 'p-3 font-semibold text-center w-28' }, '保養區間'),
                 MONTHS.map(function (month) {
                   return h('th', { key: month, className: 'p-3 font-semibold text-center w-24' }, month + '月');
                 })
@@ -211,15 +255,25 @@
                 ? h(
                     'tr',
                     null,
-                    h('td', { colspan: 15, className: 'p-10 text-center text-gray-400 text-base' }, '尚無符合條件的客戶')
+                    h('td', { colspan: 14, className: 'p-10 text-center text-gray-400 text-base' }, '尚無符合條件的客戶')
                   )
                 : rows.map(function (row) {
                     return h(
                       'tr',
                       { key: row.customerName, className: 'hover:bg-blue-50/40 transition-colors' },
-                      h('td', { className: 'p-3 font-medium text-gray-800' }, row.customerName),
+                      h(
+                        'td',
+                        { className: 'p-3' },
+                        h('div', { className: 'font-medium text-gray-800' }, row.customerName),
+                        h(
+                          'span',
+                          {
+                            className: 'inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-xs font-medium border border-gray-200 bg-gray-50 text-gray-600'
+                          },
+                          row.maintenanceInterval || '每年'
+                        )
+                      ),
                       h('td', { className: 'p-3 text-center' }, String(row.storeCount)),
-                      h('td', { className: 'p-3 text-center' }, row.maintenanceInterval || '每年'),
                       MONTHS.map(function (month) {
                         return renderMonthCell(row, month);
                       })
@@ -373,8 +427,10 @@
               {
                 value: selectedAssigneeId,
                 onChange: function (e) {
-                  selectedAssigneeId = e.target.value;
-                  persistedSelectedAssigneeId = e.target.value;
+                  var nextId = e.target.value;
+                  if (nextId !== selectedAssigneeId) persistedScrollLeft = 0;
+                  selectedAssigneeId = nextId;
+                  persistedSelectedAssigneeId = nextId;
                   editModal = null;
                   deleteModal = null;
                   rerender();
