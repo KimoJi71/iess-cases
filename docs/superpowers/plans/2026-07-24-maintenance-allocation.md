@@ -380,7 +380,7 @@ case 'maintenance-allocation':
 - Consumes: `MaintenanceAllocationUtils.*`；props 見 Task 3
 - Produces: `window.MaintenanceAllocation`
 
-- [ ] **Step 1: 實作頁面骨架與篩選**
+- [x] **Step 1: 實作頁面骨架與篩選**
 
 模式對齊 `assignee-list.js`：`stateful(rerender)`、本地 state。
 
@@ -398,7 +398,7 @@ var dragProps = useDragScroll();
 - 未選：顯示「請先選擇指派人員」
 - 已選：`var assignee = assignees.find(...)`；`rows = MaintenanceAllocationUtils.getCustomerRows(assignee, customers, stores)`
 
-- [ ] **Step 2: 實作網格**
+- [x] **Step 2: 實作網格**
 
 表格：
 
@@ -419,7 +419,7 @@ var label = MaintenanceAllocationUtils.formatCellLabel(cell);
 
 空列：`rows.length === 0` 時顯示「尚無符合條件的客戶」。
 
-- [ ] **Step 3: 編輯 Modal**
+- [x] **Step 3: 編輯 Modal**
 
 使用 `app-modal-overlay`：
 
@@ -456,7 +456,7 @@ showToast('保養分配已儲存');
 
 注意：若多則 warning + success toast，依現有 `showToast` 行為（可能只留最後一則）可接受；至少保證**有警示時使用者能看到一則不符提示**，且資料已寫入。若 toast 會互蓋，改為將 warnings 合併成一則字串再 toast，success 可省略或併入。
 
-- [ ] **Step 4: 刪除 confirm Modal**
+- [x] **Step 4: 刪除 confirm Modal**
 
 對齊設備分類刪除 modal 結構；確認後：
 
