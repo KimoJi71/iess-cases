@@ -7,6 +7,7 @@
 
   var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful, useDragScroll = IESS.useDragScroll;
   var MONTHS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+  var persistedSelectedAssigneeId = '';
 
   function MaintenanceAllocation(props) {
     var assignees = props.assignees || [];
@@ -16,7 +17,7 @@
     var setMaintenanceAllocations = props.setMaintenanceAllocations;
     var showToast = props.showToast;
 
-    var selectedAssigneeId = '';
+    var selectedAssigneeId = persistedSelectedAssigneeId;
     var editModal = null;
     var deleteModal = null;
     var dragProps = useDragScroll();
@@ -56,6 +57,7 @@
 
       if (selectedAssigneeId && !assignee) {
         selectedAssigneeId = '';
+        persistedSelectedAssigneeId = '';
       }
 
       function closeEditModal() {
@@ -92,7 +94,6 @@
         }));
 
         editModal = null;
-        rerender();
 
         if (warnings.length) {
           showToast('保養分配已儲存；' + warnings.join('；'), 'error');
@@ -111,7 +112,6 @@
           deleteModal.month
         ));
         deleteModal = null;
-        rerender();
         showToast('保養分配已刪除');
       }
 
@@ -374,6 +374,7 @@
                 value: selectedAssigneeId,
                 onChange: function (e) {
                   selectedAssigneeId = e.target.value;
+                  persistedSelectedAssigneeId = e.target.value;
                   editModal = null;
                   deleteModal = null;
                   rerender();
