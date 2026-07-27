@@ -142,7 +142,6 @@
     if (isReRepairPendingStatus(newStatus)) {
       formData.reRepairDate = stamp;
       clearScheduleFields(formData);
-      formData.assignee = '';
       clearCompletionIfNotSaved(formData, savedProcessStatus);
       return;
     }
