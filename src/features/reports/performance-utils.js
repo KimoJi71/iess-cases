@@ -157,7 +157,6 @@
       var set = districtSet(areaDistricts);
       var names = {};
       (stores || []).forEach(function (store) {
-        if (!StoreUtils.isActiveStore(store)) return;
         var area = StoreUtils.getStoreArea(store);
         if (!set[area]) return;
         if (store.customerName) names[store.customerName] = true;
