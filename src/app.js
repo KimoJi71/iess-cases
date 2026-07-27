@@ -45,7 +45,8 @@
     '指派人員管理': 'assignee-list',
     '設備分類管理': 'device-category-list',
     '處理方式與積分管理': 'process-method-list',
-    '保養分配': 'maintenance-allocation'
+    '保養分配': 'maintenance-allocation',
+    '績效區域管理': 'performance-area-list'
   };
 
   var WARROOM_SUBMENUS = Object.keys(WARROOM_SUBMENU_DEFAULT_VIEW);
@@ -100,6 +101,7 @@
     processMethods: INITIAL_PROCESS_METHODS,
     assignees: INITIAL_ASSIGNEES,
     maintenanceAllocations: INITIAL_MAINTENANCE_ALLOCATIONS,
+    performanceAreas: INITIAL_PERFORMANCE_AREAS,
     editingCase: null,
     viewingCase: null,
     historyStore: null,
@@ -178,6 +180,7 @@
   var setEquipmentStore = makeSetter('equipmentStore');
   var setPersonnelStatus = makeSetter('personnelStatus');
   var setMaintenanceAllocations = makeSetter('maintenanceAllocations');
+  var setPerformanceAreas = makeSetter('performanceAreas');
   function setAccounts(v) {
     store.set(function (s) {
       var next = typeof v === 'function' ? v(s.accounts) : v;
@@ -690,6 +693,10 @@
           setMaintenanceAllocations: setMaintenanceAllocations,
           showToast: showToast
         });
+      case 'performance-area-list':
+      case 'performance-area-add':
+      case 'performance-area-edit':
+        return h('div', { className: 'p-6 text-gray-400' }, '績效區域管理（即將開放）');
       default:
         return null;
     }

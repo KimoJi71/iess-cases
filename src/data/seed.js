@@ -1693,6 +1693,27 @@ const INITIAL_MAINTENANCE_ALLOCATIONS = [
   // { id: 'MA1', assigneeId: 'ASG1', customerName: '屈臣氏', month: 3, visitIndex: 1, targetCount: 1 }
 ];
 
+const INITIAL_PERFORMANCE_AREAS = [
+  {
+    id: 'PA1',
+    name: '北區',
+    districts: ['台北市信義區', '台北市大安區'],
+    createdDate: todayDate
+  },
+  {
+    id: 'PA2',
+    name: '中區',
+    districts: ['台中市西屯區', '台中市北屯區'],
+    createdDate: todayDate
+  },
+  {
+    id: 'PA3',
+    name: '南區',
+    districts: ['高雄市左營區', '高雄市鳳山區'],
+    createdDate: todayDate
+  }
+];
+
 const INITIAL_ASSIGNEES = [
   { id: 'ASG1', name: 'A組', leaderId: 'ACC2', districts: ['台北市信義區', '台北市中山區'], memberIds: ['ACC2'], createdDate: todayDate },
   { id: 'ASG2', name: 'B組', leaderId: 'ACC3', districts: ['台中市中區', '台中市西屯區'], memberIds: ['ACC3'], createdDate: todayDate },
