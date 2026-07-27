@@ -287,12 +287,12 @@ const INITIAL_STORES = [{
   companyDistrict: '左營區',
   companyAddress: '博愛路X號',
   openDate: '2017-07-07',
-  closeDate: '2026-06-30',
-  storeStatus: '撤店',
+  closeDate: '',
+  storeStatus: '正常營業',
   workOrderApply: '否',
   lastRepairDate: '2026-02-14',
   lastMaintenanceDate: '2025-12-01',
-  remarks: '已於 2026/06/30 撤店，設備待回收。',
+  remarks: '',
   indoorHeight: '2.6m',
   outdoorHeight: '3.5m',
   createdDate: twoDaysAgoDate,
@@ -1072,18 +1072,21 @@ INITIAL_CASES.forEach(function (c, i) {
 // --- 初始模擬保養計畫列表 ---
 const INITIAL_MAINTENANCE_CASES = [{
   id: 'M2026070001',
-  caseNumber: '',
+  caseNumber: `${todayDate.replace(/-/g, '')}001`,
   customerName: '屈臣氏',
   storeName: '台北信義店',
   serviceLevel: 'A 保修(一年一次)',
-  status: '未保養',
-  planDate: '',
-  planTimeStart: '',
-  planTimeEnd: '',
+  status: '已完成',
+  planDate: todayDate,
+  planTimeStart: '09:00',
+  planTimeEnd: '11:00',
   dueMonth: currentMonthStr,
   workCategory: '保養',
-  assignee: '尚未指派',
-  isClosed: false,
+  assignee: 'A組',
+  isClosed: true,
+  isPerformanceIncluded: true,
+  performanceAssignee: 'A組',
+  completionDate: todayDate,
   storeAddress: '台北市信義區松智路X號'
 }, {
   id: 'M2026070002',
@@ -1689,8 +1692,10 @@ const INITIAL_DEVICE_CATEGORIES = [{
 
 
 const INITIAL_MAINTENANCE_ALLOCATIONS = [
-  // 範例：僅在確認 ASG1 對該客戶有 A/B/C 門市時保留
-  // { id: 'MA1', assigneeId: 'ASG1', customerName: '屈臣氏', month: 3, visitIndex: 1, targetCount: 1 }
+  { id: 'MA1', assigneeId: 'ASG1', customerName: '屈臣氏', month: 7, visitIndex: 1, targetCount: 3 },
+  { id: 'MA2', assigneeId: 'ASG1', customerName: '星巴克', month: 7, visitIndex: 1, targetCount: 2 },
+  { id: 'MA3', assigneeId: 'ASG6', customerName: '萊爾富', month: 7, visitIndex: 1, targetCount: 2 },
+  { id: 'MA4', assigneeId: 'ASG2', customerName: '星巴克', month: 8, visitIndex: 1, targetCount: 1 }
 ];
 
 const INITIAL_PERFORMANCE_AREAS = [
