@@ -549,7 +549,14 @@
   function renderReportsView(s) {
     switch (s.view) {
       case 'case-performance':
-        return h(CasePerformanceStats, { cases: s.cases });
+        return h(CasePerformanceStats, {
+          cases: s.cases,
+          maintenanceCases: s.maintenanceCases,
+          assignees: s.assignees,
+          maintenanceAllocations: s.maintenanceAllocations,
+          stores: s.stores,
+          performanceAreas: s.performanceAreas
+        });
       case 'data-retrieval':
         return h(DataRetrieval, {
           cases: s.cases,

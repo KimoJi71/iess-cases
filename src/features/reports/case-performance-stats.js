@@ -1,111 +1,58 @@
 /*
- * features/reports/case-performance-stats.js — 案件績效統計（儀表板卡片）
- * props: { cases }
- *
- * 進入頁面即顯示所有指派人員當季績效（本季目標達成率）。
+ * features/reports/case-performance-stats.js — 案件績效統計（環形儀表板）
+ * props: {
+ *   cases, maintenanceCases, assignees,
+ *   maintenanceAllocations, stores, performanceAreas
+ * }
  */
 (function () {
   'use strict';
   var h = IESS.h, Icons = IESS.Icons;
   var SVG_NS = 'http://www.w3.org/2000/svg';
+  var RING_R = 44;
+  var RING_C = 2 * Math.PI * RING_R;
 
-  function polar(cx, cy, r, angle) {
-    return {
-      x: cx + r * Math.cos(angle),
-      y: cy - r * Math.sin(angle)
-    };
-  }
+  var THEME = {
+    assignee: { stroke: '#0ea5e9', text: '#0369a1' },
+    region: { stroke: '#14b8a6', text: '#0f766e' },
+    customer: { stroke: '#93c5fd', text: '#1e40af' }
+  };
 
-  function createGaugeSvg(rate, idSuffix) {
-    var clamped = Math.min(Math.max(rate, 0), 100);
-    var cx = 120;
-    var cy = 108;
-    var r = 82;
-    var start = polar(cx, cy, r, Math.PI);
-    var end = polar(cx, cy, r, 0);
-    var needleAngle = Math.PI - (clamped / 100) * Math.PI;
-    var needleTip = polar(cx, cy, 62, needleAngle);
-    var needleBaseL = polar(cx, cy, 8, needleAngle + Math.PI / 2);
-    var needleBaseR = polar(cx, cy, 8, needleAngle - Math.PI / 2);
-    var gradId = 'gauge-gradient-' + idSuffix;
-
+  function createRingSvg(rate, theme, idSuffix) {
+    var clamped = Math.min(Math.max(Number(rate) || 0, 0), 100);
+    var filled = (clamped / 100) * RING_C;
     var svg = document.createElementNS(SVG_NS, 'svg');
-    svg.setAttribute('viewBox', '0 0 240 150');
-    svg.setAttribute('class', 'w-full max-w-[280px] mx-auto');
+    svg.setAttribute('viewBox', '0 0 120 120');
+    svg.setAttribute('class', 'w-24 h-24 mx-auto');
     svg.setAttribute('aria-hidden', 'true');
 
-    var defs = document.createElementNS(SVG_NS, 'defs');
-    var gradient = document.createElementNS(SVG_NS, 'linearGradient');
-    gradient.setAttribute('id', gradId);
-    gradient.setAttribute('x1', '0%');
-    gradient.setAttribute('y1', '0%');
-    gradient.setAttribute('x2', '100%');
-    gradient.setAttribute('y2', '0%');
-    gradient.innerHTML =
-      '<stop offset="0%" stop-color="#22c55e"/>' +
-      '<stop offset="50%" stop-color="#eab308"/>' +
-      '<stop offset="100%" stop-color="#ef4444"/>';
-    defs.appendChild(gradient);
-    svg.appendChild(defs);
-
-    var track = document.createElementNS(SVG_NS, 'path');
-    track.setAttribute('d',
-      'M ' + start.x + ' ' + start.y +
-      ' A ' + r + ' ' + r + ' 0 0 1 ' + end.x + ' ' + end.y
-    );
+    var track = document.createElementNS(SVG_NS, 'circle');
+    track.setAttribute('cx', '60');
+    track.setAttribute('cy', '60');
+    track.setAttribute('r', String(RING_R));
     track.setAttribute('fill', 'none');
-    track.setAttribute('stroke', '#e5e7eb');
-    track.setAttribute('stroke-width', '14');
-    track.setAttribute('stroke-linecap', 'round');
+    track.setAttribute('stroke', '#e2e8f0');
+    track.setAttribute('stroke-width', '10');
     svg.appendChild(track);
 
-    var arc = document.createElementNS(SVG_NS, 'path');
-    arc.setAttribute('d',
-      'M ' + start.x + ' ' + start.y +
-      ' A ' + r + ' ' + r + ' 0 0 1 ' + end.x + ' ' + end.y
-    );
+    var arc = document.createElementNS(SVG_NS, 'circle');
+    arc.setAttribute('cx', '60');
+    arc.setAttribute('cy', '60');
+    arc.setAttribute('r', String(RING_R));
     arc.setAttribute('fill', 'none');
-    arc.setAttribute('stroke', 'url(#' + gradId + ')');
-    arc.setAttribute('stroke-width', '14');
+    arc.setAttribute('stroke', theme.stroke);
+    arc.setAttribute('stroke-width', '10');
     arc.setAttribute('stroke-linecap', 'round');
+    arc.setAttribute('stroke-dasharray', filled + ' ' + RING_C);
+    arc.setAttribute('transform', 'rotate(-90 60 60)');
     svg.appendChild(arc);
 
-    for (var i = 0; i <= 10; i++) {
-      var tickAngle = Math.PI - (i / 10) * Math.PI;
-      var inner = polar(cx, cy, r - 10, tickAngle);
-      var outer = polar(cx, cy, r - 2, tickAngle);
-      var tick = document.createElementNS(SVG_NS, 'line');
-      tick.setAttribute('x1', String(inner.x));
-      tick.setAttribute('y1', String(inner.y));
-      tick.setAttribute('x2', String(outer.x));
-      tick.setAttribute('y2', String(outer.y));
-      tick.setAttribute('stroke', '#9ca3af');
-      tick.setAttribute('stroke-width', i % 2 === 0 ? '2' : '1');
-      svg.appendChild(tick);
-    }
-
-    var needle = document.createElementNS(SVG_NS, 'polygon');
-    needle.setAttribute('points',
-      needleTip.x + ',' + needleTip.y + ' ' +
-      needleBaseL.x + ',' + needleBaseL.y + ' ' +
-      needleBaseR.x + ',' + needleBaseR.y
-    );
-    needle.setAttribute('fill', '#2563eb');
-    svg.appendChild(needle);
-
-    var hub = document.createElementNS(SVG_NS, 'circle');
-    hub.setAttribute('cx', String(cx));
-    hub.setAttribute('cy', String(cy));
-    hub.setAttribute('r', '6');
-    hub.setAttribute('fill', '#2563eb');
-    svg.appendChild(hub);
-
     var label = document.createElementNS(SVG_NS, 'text');
-    label.setAttribute('x', String(cx));
-    label.setAttribute('y', String(cy + 34));
+    label.setAttribute('x', '60');
+    label.setAttribute('y', '66');
     label.setAttribute('text-anchor', 'middle');
-    label.setAttribute('fill', '#1d4ed8');
-    label.setAttribute('font-size', '28');
+    label.setAttribute('fill', theme.text);
+    label.setAttribute('font-size', '22');
     label.setAttribute('font-weight', '700');
     label.textContent = clamped + '%';
     svg.appendChild(label);
@@ -113,33 +60,81 @@
     return svg;
   }
 
-  function PerformanceGaugeCard(props) {
-    var row = props.row;
+  function RingStatCard(props) {
+    var title = props.title;
+    var rate = props.rate;
+    var target = props.target;
+    var completed = props.completed;
+    var bonusPoints = props.bonusPoints;
+    var showBonus = !!props.showBonus;
+    var theme = THEME[props.variant] || THEME.assignee;
+    var emphasize = !!props.emphasize;
+
     return h('div', {
-      className: 'rounded-lg overflow-hidden shadow-sm border border-gray-200 bg-white'
+      className: 'rounded-xl overflow-hidden shadow-sm border bg-white ' +
+        (emphasize ? 'border-teal-200' : 'border-slate-200')
     },
       h('div', {
-        className: 'px-4 py-3 border-b border-gray-100 bg-gray-50'
+        className: 'px-4 py-3 border-b border-slate-100 ' +
+          (emphasize ? 'bg-teal-50/80' : 'bg-slate-50')
       },
-        h('span', { className: 'text-gray-800 font-bold text-lg truncate' }, row.assignee)
+        h('span', {
+          className: 'text-slate-800 font-bold text-base truncate block',
+          title: title
+        }, title)
       ),
       h('div', { className: 'px-5 pt-5 pb-4' },
-        h('p', { className: 'text-gray-600 text-sm mb-2' }, '本季目標達成率'),
-        createGaugeSvg(row.rate, row.assignee),
-        h('p', { className: 'text-gray-500 text-sm mt-3 text-center' },
-          '增額案件達成數：',
-          h('span', { className: 'text-blue-700 font-bold ml-1' }, String(row.completed))
+        h('p', { className: 'text-slate-500 text-sm mb-2 text-center' },
+          props.subtitle || '本季保養目標達成率'),
+        createRingSvg(rate, theme, title),
+        h('div', {
+          className: 'mt-4 grid gap-2 text-center text-xs text-slate-500 ' +
+            (showBonus ? 'grid-cols-3' : 'grid-cols-2')
+        },
+          h('div', null,
+            h('div', null, '目標店數'),
+            h('div', { className: 'text-slate-900 font-bold text-base mt-0.5' },
+              String(target))
+          ),
+          h('div', null,
+            h('div', null, '完成店數'),
+            h('div', { className: 'text-slate-900 font-bold text-base mt-0.5' },
+              String(completed))
+          ),
+          showBonus && h('div', null,
+            h('div', null, '增額積分'),
+            h('div', { className: 'text-sky-700 font-bold text-base mt-0.5' },
+              String(bonusPoints))
+          )
         )
       )
     );
   }
 
   function CasePerformanceStats(props) {
-    var cases = props.cases;
+    var cases = props.cases || [];
+    var maintenanceCases = props.maintenanceCases || [];
+    var assignees = props.assignees || [];
+    var allocations = props.maintenanceAllocations || [];
+    var stores = props.stores || [];
+    var performanceAreas = props.performanceAreas || [];
     var quarter = PerformanceUtils.getQuarterRange(new Date());
-    var rows = PerformanceUtils.computePerformanceStats(
-      cases, PERFORMANCE_ASSIGNEES, PERFORMANCE_QUARTERLY_TARGETS, quarter
-    );
+
+    var assigneeRows = PerformanceUtils.computeAssigneePerformance({
+      cases: cases,
+      maintenanceCases: maintenanceCases,
+      assignees: assignees,
+      allocations: allocations,
+      quarter: quarter
+    });
+
+    var regionRows = PerformanceUtils.computeRegionPerformance({
+      maintenanceCases: maintenanceCases,
+      stores: stores,
+      performanceAreas: performanceAreas,
+      allocations: allocations,
+      quarter: quarter
+    });
 
     return h('div', null,
       h('div', {
@@ -155,14 +150,74 @@
           }, quarter.label)
         ),
         h('p', { className: 'text-sm text-gray-500 mt-3' },
-          '顯示所有指派人員當季績效。達成率依「列入績效」之銷案件數 ÷ 本季目標件數計算。')
+          '上半顯示各指派人員當季績效；下半依績效區域顯示總達成率與客戶達成率。',
+          '完成店數僅計已列入績效之保養案件；增額積分僅計服務等級 C／D 之叫修案件。')
       ),
-      h('div', {
-        className: 'grid grid-cols-1 md:grid-cols-2 gap-5'
-      },
-        rows.map(function (row) {
-          return h(PerformanceGaugeCard, { key: row.assignee, row: row });
-        })
+
+      h('section', { className: 'mb-8' },
+        h('h3', { className: 'text-lg font-bold text-gray-800 mb-4' }, '指派人員績效'),
+        assigneeRows.length === 0
+          ? h('div', {
+              className: 'rounded-lg border border-dashed border-gray-200 p-10 text-center text-gray-400'
+            }, '尚無指派人員')
+          : h('div', { className: 'grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5' },
+              assigneeRows.map(function (row) {
+                return h(RingStatCard, {
+                  key: row.id,
+                  title: row.name,
+                  rate: row.rate,
+                  target: row.target,
+                  completed: row.completed,
+                  bonusPoints: row.bonusPoints,
+                  showBonus: true,
+                  variant: 'assignee'
+                });
+              })
+            )
+      ),
+
+      h('section', null,
+        h('h3', { className: 'text-lg font-bold text-gray-800 mb-4' }, '績效區域達成率'),
+        regionRows.length === 0
+          ? h('div', {
+              className: 'rounded-lg border border-dashed border-gray-200 p-10 text-center text-gray-400'
+            }, '尚無績效區域，請至系統權限設定')
+          : regionRows.map(function (region) {
+              return h('div', {
+                key: region.id,
+                className: 'mb-8 last:mb-0'
+              },
+                h('div', { className: 'max-w-sm mb-4' },
+                  h(RingStatCard, {
+                    title: region.name + '總目標達成率',
+                    rate: region.rate,
+                    target: region.target,
+                    completed: region.completed,
+                    showBonus: false,
+                    variant: 'region',
+                    emphasize: true
+                  })
+                ),
+                region.customers.length === 0
+                  ? h('p', { className: 'text-sm text-gray-400 mb-2' },
+                      '此區域尚無對應門市客戶')
+                  : h('div', {
+                      className: 'grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5'
+                    },
+                      region.customers.map(function (cust) {
+                        return h(RingStatCard, {
+                          key: region.id + ':' + cust.customerName,
+                          title: cust.customerName,
+                          rate: cust.rate,
+                          target: cust.target,
+                          completed: cust.completed,
+                          showBonus: false,
+                          variant: 'customer'
+                        });
+                      })
+                    )
+              );
+            })
       )
     );
   }
