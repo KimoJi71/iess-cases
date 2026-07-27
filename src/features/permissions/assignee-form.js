@@ -45,124 +45,6 @@
         rerender();
       }
 
-      function toggleDistrict(district) {
-        var idx = districts.indexOf(district);
-        if (idx === -1) districts.push(district);
-        else districts.splice(idx, 1);
-        rerender();
-      }
-
-      function getCityAreas(city) {
-        return TAIWAN_CITY_DISTRICTS[city].map(function (district) {
-          return city + district;
-        });
-      }
-
-      function getCityCheckState(city) {
-        var areas = getCityAreas(city);
-        var checkedCount = areas.filter(function (area) {
-          return districts.indexOf(area) !== -1;
-        }).length;
-        if (checkedCount === 0) return 'none';
-        if (checkedCount === areas.length) return 'all';
-        return 'some';
-      }
-
-      function toggleCity(city) {
-        var areas = getCityAreas(city);
-        if (getCityCheckState(city) === 'all') {
-          areas.forEach(function (area) {
-            var idx = districts.indexOf(area);
-            if (idx !== -1) districts.splice(idx, 1);
-          });
-        } else {
-          areas.forEach(function (area) {
-            if (districts.indexOf(area) === -1) districts.push(area);
-          });
-        }
-        rerender();
-      }
-
-      function toggleCityExpanded(city) {
-        var idx = expandedCities.indexOf(city);
-        if (idx === -1) expandedCities.push(city);
-        else expandedCities.splice(idx, 1);
-        rerender();
-      }
-
-      function renderCityCheckbox(state, onChange) {
-        return h('input', {
-          type: 'checkbox',
-          checked: state === 'all',
-          ref: function (el) {
-            if (el) el.indeterminate = state === 'some';
-          },
-          onChange: onChange,
-          className: 'h-4 w-4'
-        });
-      }
-
-      function renderDistrictTree() {
-        return h('div', {
-          className: 'border rounded-md max-h-96 overflow-y-auto divide-y divide-gray-100'
-        },
-          TAIWAN_CITY_OPTIONS.map(function (city) {
-            var isExpanded = expandedCities.indexOf(city) !== -1;
-            var cityState = getCityCheckState(city);
-            return h('div', { key: city },
-              h('div', {
-                className: 'flex items-center gap-2 px-3 py-2.5 bg-gray-50 hover:bg-gray-100'
-              },
-                h('button', {
-                  type: 'button',
-                  onClick: function () { toggleCityExpanded(city); },
-                  className: 'p-0.5 text-gray-500 hover:text-gray-700 rounded',
-                  'aria-expanded': isExpanded ? 'true' : 'false',
-                  'aria-label': isExpanded ? '收合' : '展開',
-                  'data-no-tooltip': true
-                },
-                  Icons.ChevronDown({
-                    className: 'h-4 w-4 transition-transform ' + (isExpanded ? '' : '-rotate-90')
-                  })
-                ),
-                renderCityCheckbox(cityState, function () { toggleCity(city); }),
-                h('button', {
-                  type: 'button',
-                  onClick: function () { toggleCityExpanded(city); },
-                  className: 'font-semibold text-gray-800 text-sm hover:text-blue-700'
-                }, city),
-                cityState !== 'none' && h('span', {
-                  className: 'text-xs text-blue-600 ml-auto'
-                }, getCityAreas(city).filter(function (area) {
-                  return districts.indexOf(area) !== -1;
-                }).length + ' / ' + getCityAreas(city).length)
-              ),
-              isExpanded && h('div', {
-                className: 'py-2 pl-10 pr-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1'
-              },
-                TAIWAN_CITY_DISTRICTS[city].map(function (district) {
-                  var area = city + district;
-                  var checked = districts.indexOf(area) !== -1;
-                  return h('label', {
-                    key: area,
-                    className: 'inline-flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer text-sm ' +
-                      (checked ? 'text-blue-700 bg-blue-50/50' : 'text-gray-600 hover:bg-gray-50')
-                  },
-                    h('input', {
-                      type: 'checkbox',
-                      checked: checked,
-                      onChange: function () { toggleDistrict(area); },
-                      className: 'h-4 w-4'
-                    }),
-                    district
-                  );
-                })
-              )
-            );
-          })
-        );
-      }
-
       function toggleMember(accountId) {
         var idx = memberIds.indexOf(accountId);
         if (idx === -1) memberIds.push(accountId);
@@ -263,7 +145,12 @@
               h('label', { className: 'block text-sm mb-2' }, '負責公司區域'),
               h('p', { className: 'text-xs text-gray-400 mb-3' },
                 '依縣市展開選擇行政區；勾選縣市可一次全選或取消該縣市下所有行政區'),
-              renderDistrictTree()
+              h(DistrictTreePicker, {
+                selectedDistricts: districts,
+                onChange: function (next) { districts = next; rerender(); },
+                expandedCities: expandedCities,
+                onExpandedCitiesChange: function (next) { expandedCities = next; rerender(); }
+              })
             ),
             h('div', null,
               h('label', { className: 'block text-sm mb-2' }, '成員名單'),
