@@ -694,6 +694,13 @@
           showToast: showToast
         });
       case 'performance-area-list':
+        return h(PerformanceAreaList, {
+          performanceAreas: s.performanceAreas,
+          setPerformanceAreas: setPerformanceAreas,
+          setEditingCase: setEditingCase,
+          setView: setView,
+          showToast: showToast
+        });
       case 'performance-area-add':
       case 'performance-area-edit':
         return h('div', { className: 'p-6 text-gray-400' }, '績效區域管理（即將開放）');
