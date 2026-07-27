@@ -4,6 +4,13 @@
 (function () {
   'use strict';
 
+  function formatLocalDate(d) {
+    var y = d.getFullYear();
+    var m = ('0' + (d.getMonth() + 1)).slice(-2);
+    var day = ('0' + d.getDate()).slice(-2);
+    return y + '-' + m + '-' + day;
+  }
+
   function getQuarterRange(date) {
     var d = date || new Date();
     var month = d.getMonth();
@@ -13,8 +20,8 @@
     var start = new Date(year, startMonth, 1);
     var end = new Date(year, startMonth + 3, 0);
     return {
-      start: start.toISOString().split('T')[0],
-      end: end.toISOString().split('T')[0],
+      start: formatLocalDate(start),
+      end: formatLocalDate(end),
       label: year + ' 年第 ' + (quarter + 1) + ' 季'
     };
   }
