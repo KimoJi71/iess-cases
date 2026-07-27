@@ -296,7 +296,7 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0;
+  gap: 0.375rem;
   padding: 0.4375rem;
   border-radius: 0.375rem;
   font-size: 0.8125rem;
@@ -319,6 +319,10 @@ body {
 }
 
 @media (min-width: 640px) {
+  .header-quick-action {
+    padding: 0.4375rem 0.75rem;
+  }
+
   .header-quick-action__label {
     display: inline;
   }

@@ -115,11 +115,7 @@
     }
 
     function getPendingAssigneeOptions() {
-      return assignees
-        .filter(function (a) {
-          return a.name !== '案件待辦' && a.name !== '管理員';
-        })
-        .map(function (a) { return a.name; });
+      return assignees.map(function (a) { return a.name; });
     }
 
     function patchLocalCaseRecord(sourceType, sourceId, record) {

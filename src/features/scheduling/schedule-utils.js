@@ -271,7 +271,7 @@
     });
     cases.forEach(function (c) {
       var sched = getRepairSchedule(c);
-      if (c.isClosed || c.assignee !== '案件待辦' || sched.planDate) return;
+      if (c.isClosed || (c.assignee && c.assignee !== '案件待辦') || sched.planDate) return;
       items.push({
         sourceType: 'repair',
         sourceId: c.id,

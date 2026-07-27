@@ -12,12 +12,17 @@
   function renderQuickAction(action) {
     var Icon = Icons[action.icon];
     var variant = action.variant === 'primary' ? 'primary' : 'secondary';
-    return iconActionBtn({
-      label: action.title || action.label,
+    var label = action.label || action.title || '';
+    return h('button', {
+      type: 'button',
       onClick: action.onClick,
       className: 'header-quick-action header-quick-action--' + variant,
-      icon: Icon && Icon({ className: 'header-quick-action__icon' })
-    });
+      'aria-label': action.title || label,
+      'data-no-tooltip': true
+    },
+      Icon && Icon({ className: 'header-quick-action__icon' }),
+      label && h('span', { className: 'header-quick-action__label' }, label)
+    );
   }
 
   function Header(props) {

@@ -120,7 +120,7 @@
               className: 'p-2 border rounded-md outline-none focus:border-blue-500 bg-white min-w-[120px]'
             },
               h('option', { value: '全部' }, '全部'),
-              SCHEDULE_ASSIGNEE_OPTIONS.filter(function (a) { return a !== '案件待辦'; }).map(function (a) {
+              SCHEDULE_ASSIGNEE_OPTIONS.map(function (a) {
                 return h('option', { key: a, value: a }, a);
               })
             )

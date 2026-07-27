@@ -135,7 +135,7 @@
         ? []
         : StoreUtils.getDistrictsForCity(filterCity);
       var repairWorkCategories = WORK_CATEGORY_OPTIONS.filter(function (w) { return w !== '保養'; });
-      var assigneeOptions = ASSIGNEES.filter(function (a) { return a !== '案件待辦'; });
+      var assigneeOptions = ASSIGNEES.slice();
 
       function handleSearch() {
         if (startDate > endDate) {
@@ -310,20 +310,6 @@
 
       return h('div', null,
         h('div', { className: 'bg-white p-6 rounded-lg shadow-sm border border-gray-100 mb-6' },
-          h('div', { className: 'flex flex-wrap items-center justify-between gap-3 mb-4' },
-            h('div', { className: 'flex items-center gap-3' },
-              Icons.FileText({ className: 'h-6 w-6 text-blue-600' }),
-              h('h2', { className: 'text-2xl font-bold text-gray-800' }, '資料調閱')
-            ),
-            applied && h('span', {
-              className: 'text-sm font-medium text-gray-600 bg-gray-100 px-3 py-1.5 rounded-full'
-            }, '共 ' + resultItems.length + ' 筆')
-          ),
-          h('p', { className: 'text-sm text-gray-500 mb-4' },
-            '依案件類型設定篩選條件，查詢原始資料並匯出 CSV。所有篩選欄位皆可選「全部」表示不限制。')
-        ),
-
-        h('div', { className: 'bg-white p-6 rounded-lg shadow-sm border border-gray-100 mb-6' },
           h('div', { className: 'flex flex-wrap gap-2 mb-5' },
             DataRetrievalUtils.CASE_TYPES.map(function (type) {
               var active = caseType === type;
@@ -367,6 +353,11 @@
           !applied
             ? h('p', { className: 'text-center text-gray-400 py-12' }, '請設定篩選條件後按「查詢」')
             : h('div', null,
+              h('div', { className: 'flex items-center justify-end mb-3' },
+                h('span', {
+                  className: 'text-sm font-medium text-gray-600 bg-gray-100 px-3 py-1.5 rounded-full'
+                }, '共 ' + resultItems.length + ' 筆')
+              ),
               h('div', Object.assign({
                 className: 'overflow-x-auto border rounded-lg cursor-grab active:cursor-grabbing'
               }, dragProps),

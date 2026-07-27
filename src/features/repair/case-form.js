@@ -73,7 +73,7 @@
       repairItem: '室內機',
       repairReason: '不冷',
       faultDesc: '',
-      assignee: '案件待辦',
+      assignee: '',
       expectedDate: '',
       expectedTimeStart: '',
       expectedTimeEnd: '',
@@ -248,7 +248,7 @@
         value: formData.assignee,
         onChange: handleChange,
         className: "w-full p-2.5 border rounded-md outline-none"
-      }, ASSIGNEES.map(function (opt) { return h("option", {
+      }, h("option", { value: "" }, ""), ASSIGNEES.map(function (opt) { return h("option", {
         key: opt,
         value: opt
       }, opt); }))), h("div", null, h("label", {
@@ -533,7 +533,7 @@
         value: formData.assignee,
         onChange: handleChange,
         className: "w-full p-2 border rounded-md outline-none"
-      }, ASSIGNEES.map(function (opt) { return h("option", {
+      }, h("option", { value: "" }, ""), ASSIGNEES.map(function (opt) { return h("option", {
         key: opt,
         value: opt
       }, opt); }))), h("div", null, h("span", {

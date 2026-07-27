@@ -27,7 +27,7 @@
       repairReason: REPAIR_REASONS[0],
       faultDesc: '',
       expectedDate: '',
-      assignee: ASSIGNEES[ASSIGNEES.length - 1],
+      assignee: '',
       expectedTime: ''
     };
 
@@ -165,6 +165,7 @@
               h('div', null,
                 h('label', { className: 'block text-sm mb-1' }, '指派人員'),
                 h('select', { name: 'assignee', value: formData.assignee, onChange: handleChange, className: inputCls + ' bg-white' },
+                  h('option', { value: '' }, ''),
                   ASSIGNEES.map(function (opt) { return h('option', { key: opt, value: opt }, opt); }))
               ),
               h('div', null,

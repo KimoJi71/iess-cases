@@ -142,7 +142,7 @@
     if (isReRepairPendingStatus(newStatus)) {
       formData.reRepairDate = stamp;
       clearScheduleFields(formData);
-      formData.assignee = '案件待辦';
+      formData.assignee = '';
       clearCompletionIfNotSaved(formData, savedProcessStatus);
       return;
     }

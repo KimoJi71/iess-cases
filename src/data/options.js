@@ -9,7 +9,7 @@ const CASE_LIST_STATUS_FILTERS = ['未處理', '待料件', '待報價', '待汰
 const WORK_CATEGORY_OPTIONS = ['一般叫修', '緊急叫修', '保養清潔', '其他'];
 const REPAIR_ITEMS = ['室內機', '室外機', '風管', '出風口', '控制面板', '跳代碼', '空氣門'];
 const REPAIR_REASONS = ['不冷', '異音', '溫控故障', '跳機', '異味', '漏水', '代碼', '其他'];
-const ASSIGNEES = ['A組', 'B組', 'C組', 'D組', '晉詮人員', '協力廠商', '案件待辦'];
+const ASSIGNEES = ['A組', 'B組', 'C組', 'D組', '晉詮人員', '協力廠商'];
 const CUSTOMER_OPTIONS = ['屈臣氏', '星巴克', '萊爾富', '統一超商', '全家便利商店'];
 const STORE_OPTIONS = ['台北信義店', '台中旗艦店', '高雄左營店', '站前店', '中山店'];
 const REPORTER_OPTIONS = ['林店長', '陳副理', '王專員', '張小姐', '李先生'];
@@ -156,7 +156,7 @@ const oneMonthAgoDate = (function () {
 const currentMonthStr = today.toISOString().slice(0, 7);
 
 // 案件排程專用選項
-const SCHEDULE_ASSIGNEE_OPTIONS = ['A組', 'B組', 'C組', 'D組', '督導', '協力廠商', '案件待辦'];
+const SCHEDULE_ASSIGNEE_OPTIONS = ['A組', 'B組', 'C組', 'D組', '協力廠商'];
 const SCHEDULE_WORK_CATEGORY_OPTIONS = ['一般叫修', '緊急叫修', '保養清潔', '其他', '保養'];
 
 // 報表統計專用選項
@@ -171,7 +171,7 @@ const PERFORMANCE_QUARTERLY_TARGETS = {
 };
 
 // 系統權限專用選項
-const ACCOUNT_ASSIGNEE_OPTIONS = ['A組', 'B組', 'C組', 'D組', '晉詮人員', '協力廠商', '督導', '管理員'];
+const ACCOUNT_ASSIGNEE_OPTIONS = ['A組', 'B組', 'C組', 'D組', '晉詮人員', '協力廠商'];
 const PERMISSION_OPERATION_TYPES = ['view', 'edit', 'close'];
 const PERMISSION_OPERATION_LABELS = { view: '檢視', edit: '編輯', close: '結案' };
 const PERMISSION_FUNCTIONS = [

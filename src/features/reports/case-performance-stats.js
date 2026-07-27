@@ -7,7 +7,7 @@
  */
 (function () {
   'use strict';
-  var h = IESS.h, Icons = IESS.Icons;
+  var h = IESS.h;
   var SVG_NS = 'http://www.w3.org/2000/svg';
   var RING_R = 44;
   var RING_C = 2 * Math.PI * RING_R;
@@ -114,7 +114,9 @@
   function CasePerformanceStats(props) {
     var cases = props.cases || [];
     var maintenanceCases = props.maintenanceCases || [];
-    var assignees = props.assignees || [];
+    var assignees = (props.assignees || []).filter(function (a) {
+      return PERFORMANCE_ASSIGNEES.indexOf(a.name) !== -1;
+    });
     var allocations = props.maintenanceAllocations || [];
     var stores = props.stores || [];
     var performanceAreas = props.performanceAreas || [];
@@ -137,25 +139,23 @@
     });
 
     return h('div', null,
-      h('div', {
-        className: 'bg-white p-6 rounded-lg shadow-sm border border-gray-100 mb-6'
-      },
-        h('div', { className: 'flex flex-wrap items-center justify-between gap-3' },
-          h('div', { className: 'flex items-center gap-3' },
-            Icons.BarChart({ className: 'h-6 w-6 text-blue-600' }),
-            h('h2', { className: 'text-2xl font-bold text-gray-800' }, '案件績效統計')
-          ),
-          h('span', {
-            className: 'text-sm font-medium text-blue-700 bg-blue-50 px-3 py-1.5 rounded-full'
-          }, quarter.label)
-        ),
-        h('p', { className: 'text-sm text-gray-500 mt-3' },
-          '上半顯示各指派人員當季績效；下半依績效區域顯示總達成率與客戶達成率。',
-          '完成店數僅計已列入績效之保養案件；增額積分僅計服務等級 C／D 之叫修案件。')
+      h('div', { className: 'mb-6' },
+        h('span', {
+          className: 'inline-flex text-lg font-extrabold tracking-wide text-sky-700 bg-sky-50 px-4 py-2 rounded-lg border border-sky-100'
+        }, quarter.label)
       ),
 
-      h('section', { className: 'mb-8' },
-        h('h3', { className: 'text-lg font-bold text-gray-800 mb-4' }, '指派人員績效'),
+      h('section', { className: 'mb-10' },
+        h('div', {
+          className: 'flex items-center gap-3 mb-5 pb-3 border-b-2 border-sky-500'
+        },
+          h('span', {
+            className: 'shrink-0 w-1.5 h-7 rounded-full bg-sky-500'
+          }),
+          h('h3', {
+            className: 'text-xl font-extrabold tracking-wide text-slate-800'
+          }, '各組達成率與積分')
+        ),
         assigneeRows.length === 0
           ? h('div', {
               className: 'rounded-lg border border-dashed border-gray-200 p-10 text-center text-gray-400'
@@ -177,7 +177,6 @@
       ),
 
       h('section', null,
-        h('h3', { className: 'text-lg font-bold text-gray-800 mb-4' }, '績效區域達成率'),
         regionRows.length === 0
           ? h('div', {
               className: 'rounded-lg border border-dashed border-gray-200 p-10 text-center text-gray-400'
@@ -185,21 +184,20 @@
           : regionRows.map(function (region) {
               return h('div', {
                 key: region.id,
-                className: 'mb-8 last:mb-0'
+                className: 'mb-10 last:mb-0'
               },
-                h('div', { className: 'max-w-sm mb-4' },
-                  h(RingStatCard, {
-                    title: region.name + '總目標達成率',
-                    rate: region.rate,
-                    target: region.target,
-                    completed: region.completed,
-                    showBonus: false,
-                    variant: 'region',
-                    emphasize: true
-                  })
+                h('div', {
+                  className: 'flex items-center gap-3 mb-5 pb-3 border-b-2 border-teal-500'
+                },
+                  h('span', {
+                    className: 'shrink-0 w-1.5 h-7 rounded-full bg-teal-500'
+                  }),
+                  h('h3', {
+                    className: 'text-xl font-extrabold tracking-wide text-slate-800'
+                  }, region.name + '總目標達成率')
                 ),
                 region.customers.length === 0
-                  ? h('p', { className: 'text-sm text-gray-400 mb-2' },
+                  ? h('p', { className: 'text-sm text-gray-400 mb-2 pl-4' },
                       '此區域尚無對應門市客戶')
                   : h('div', {
                       className: 'grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5'
