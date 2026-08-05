@@ -134,6 +134,16 @@
         }
         rerender();
       }
+      function handleSurveyRadioClick(e) {
+        var t = e.target;
+        if (t.type !== 'radio') return;
+        var sd = formData.surveyData || (formData.surveyData = {});
+        // 再點一次已選取的 radio 可清除
+        if (sd[t.name] === t.value) {
+          sd[t.name] = '';
+          rerender();
+        }
+      }
       // 室內機洗孔需求動態清單處理 (可增加多筆)
       function handleHoleChange(index, value) {
         var sd = formData.surveyData || (formData.surveyData = {});
@@ -304,6 +314,7 @@
             value: opt,
             checked: cur === opt,
             onChange: handleSurveyChange,
+            onClick: handleSurveyRadioClick,
             className: "w-4 h-4 text-indigo-600 border-gray-300 focus:ring-indigo-500"
           }), h("span", {
             className: "text-sm text-gray-700 font-medium"
@@ -315,6 +326,7 @@
             value: "其他",
             checked: cur === '其他',
             onChange: handleSurveyChange,
+            onClick: handleSurveyRadioClick,
             className: "w-4 h-4 text-indigo-600 border-gray-300 focus:ring-indigo-500"
           }), h("span", {
             className: "text-sm text-gray-700 font-medium"
@@ -377,7 +389,7 @@
           className: "h-6 w-6"
         }), " " + title), h("div", {
           className: "space-y-6"
-        }, renderPipingSingleSelect('材質（單選）', `${prefix}Material`, DUCT_BOX_MATERIALS), h("div", {
+        }, renderPipingSingleSelect('材質', `${prefix}Material`, DUCT_BOX_MATERIALS), h("div", {
           className: "bg-white p-4 rounded-lg border border-gray-200"
         }, h("h4", {
           className: "text-base font-bold text-indigo-700 mb-3"
@@ -423,7 +435,7 @@
           className: "h-6 w-6"
         }), " " + title), h("div", {
           className: "space-y-6"
-        }, renderPipingSingleSelect('材質（單選）', `${prefix}Material`, DUCT_BOX_MATERIALS), h("div", {
+        }, renderPipingSingleSelect('材質', `${prefix}Material`, DUCT_BOX_MATERIALS), h("div", {
           className: "bg-white p-4 rounded-lg border border-gray-200"
         }, h("h4", {
           className: "text-base font-bold text-indigo-700 mb-1"
@@ -544,7 +556,7 @@
           className: "h-6 w-6"
         }), " 特製風箱"), h("div", {
           className: "space-y-6"
-        }, renderPipingSingleSelect('特製風箱（單選）', 'customBox', DUCT_CUSTOM_BOX_OPTIONS)));
+        }, renderPipingSingleSelect('特製風箱', 'customBox', DUCT_CUSTOM_BOX_OPTIONS)));
         const handleSubmit = e => {
           e.preventDefault();
           if (formData.customerName && formData.storeName) {
@@ -688,14 +700,14 @@
           className: "w-full p-2.5 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 bg-white shadow-sm"
         }, h("option", {
           value: ""
-        }, "\u8ACB\u9078\u64C7(\u55AE\u9078)"), ['新開', '加裝', '移機', '撤店', '拆機', '維修汰換', '整裝汰換', '整裝沿用', '其他'].map(opt => h("option", {
+        }, "\u8ACB\u9078\u64C7"), ['新開', '加裝', '移機', '撤店', '拆機', '維修汰換', '整裝汰換', '整裝沿用', '其他'].map(opt => h("option", {
           key: opt,
           value: opt
         }, opt)))), h("div", {
           className: "md:col-span-2 bg-white p-4 rounded border border-gray-200"
         }, h("label", {
           className: "block text-sm font-bold text-gray-700 mb-3"
-        }, "\u5DE5\u7A0B\u5DE5\u7A2E (\u4E0B\u62C9\u9078\u55AE - \u591A\u9078)"), h("div", {
+        }, "\u5DE5\u7A0B\u5DE5\u7A2E"), h("div", {
           className: "flex flex-wrap gap-x-6 gap-y-3"
         }, ['分離式工程', '冰水機工程', '風管工程', '保養工程', '其他'].map(opt => h("label", {
           key: opt,
@@ -718,7 +730,7 @@
           className: "w-full p-2.5 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 bg-white shadow-sm"
         }, h("option", {
           value: ""
-        }, "\u8ACB\u9078\u64C7(\u55AE\u9078)"), ['街邊店', '軍營', '醫院', '高鐵、捷運、機場', '電子廠、科技園區', '百貨', '其他'].map(opt => h("option", {
+        }, "\u8ACB\u9078\u64C7"), ['街邊店', '軍營', '醫院', '高鐵、捷運、機場', '電子廠、科技園區', '百貨', '其他'].map(opt => h("option", {
           key: opt,
           value: opt
         }, opt)))), h("div", null, h("label", {
@@ -734,6 +746,7 @@
           value: opt,
           checked: formData.surveyData?.workOrderApplied === opt,
           onChange: handleSurveyChange,
+          onClick: handleSurveyRadioClick,
           className: "w-4 h-4 text-indigo-600 focus:ring-indigo-500"
         }), h("span", {
           className: "text-sm text-gray-700 font-medium"
@@ -741,7 +754,7 @@
           className: "md:col-span-2 bg-white p-4 rounded border border-gray-200"
         }, h("label", {
           className: "block text-sm font-bold text-gray-700 mb-3"
-        }, "\u7279\u6B8A\u74B0\u5883\u8655\u7406 (\u591A\u9078)"), h("div", {
+        }, "\u7279\u6B8A\u74B0\u5883\u8655\u7406"), h("div", {
           className: "flex flex-wrap gap-x-6 gap-y-3"
         }, ['防鹽害處理', '防硫處理', '沼氣處理'].map(opt => h("label", {
           key: opt,
@@ -761,7 +774,7 @@
           className: "md:col-span-2"
         }, h("label", {
           className: "block text-sm font-bold text-gray-700 mb-2"
-        }, "\u5BA4\u5167\u65BD\u4F5C\u5340\u57DF (\u55AE\u9078)"), h("div", {
+        }, "\u5BA4\u5167\u65BD\u4F5C\u5340\u57DF"), h("div", {
           className: "flex items-center gap-6"
         }, h("label", {
           className: "flex items-center gap-2 cursor-pointer shrink-0"
@@ -771,6 +784,7 @@
           value: "\u5168\u5340",
           checked: formData.surveyData?.indoorWorkArea === '全區',
           onChange: handleSurveyChange,
+          onClick: handleSurveyRadioClick,
           className: "w-4 h-4 text-indigo-600 focus:ring-indigo-500"
         }), h("span", {
           className: "text-sm text-gray-700 font-medium"
@@ -782,6 +796,7 @@
           value: "\u5176\u4ED6",
           checked: formData.surveyData?.indoorWorkArea === '其他',
           onChange: handleSurveyChange,
+          onClick: handleSurveyRadioClick,
           className: "w-4 h-4 text-indigo-600 focus:ring-indigo-500"
         }), h("span", {
           className: "text-sm text-gray-700 font-medium shrink-0"
@@ -797,7 +812,7 @@
           className: "md:col-span-2"
         }, h("label", {
           className: "block text-sm font-bold text-gray-700 mb-2"
-        }, "\u73FE\u5834\u63D0\u4F9B\u96FB\u6E90 (\u55AE\u9078)"), h("div", {
+        }, "\u73FE\u5834\u63D0\u4F9B\u96FB\u6E90"), h("div", {
           className: "flex flex-wrap gap-6 bg-white p-4 rounded border border-gray-200"
         }, ['單相110V', '單相220V', '三相220V', '三相380V'].map(opt => h("label", {
           key: opt,
@@ -808,6 +823,7 @@
           value: opt,
           checked: formData.surveyData?.onSitePower === opt,
           onChange: handleSurveyChange,
+          onClick: handleSurveyRadioClick,
           className: "w-4 h-4 text-indigo-600 focus:ring-indigo-500"
         }), h("span", {
           className: "text-sm text-gray-700 font-medium"
@@ -824,7 +840,7 @@
           className: "md:col-span-2 bg-white p-4 rounded border border-gray-200"
         }, h("label", {
           className: "block text-sm font-bold text-gray-700 mb-3"
-        }, "\u73FE\u5834\u5DF2\u9810\u7559\u8AAA\u660E (\u591A\u9078)"), h("div", {
+        }, "\u73FE\u5834\u5DF2\u9810\u7559\u8AAA\u660E"), h("div", {
           className: "flex flex-wrap gap-x-6 gap-y-4 items-center"
         }, ['主機電源線', '無熔絲開關', '溫控位置', '空氣門電源', '排水位置', '冰水幹管'].map(opt => h("label", {
           key: opt,
@@ -915,29 +931,42 @@
           className: "md:col-span-2"
         }, h("label", {
           className: "block text-sm font-bold text-gray-700 mb-2"
-        }, "\u7279\u6B8A\u65BD\u5DE5"), h("div", {
-          className: "flex gap-4 items-center"
-        }, h("select", {
+        }, "特殊施工"), h("div", {
+          className: "flex flex-wrap gap-x-6 gap-y-3 items-center"
+        }, ['三樓以上外牆配管', '室內樓板高度6米以上'].map(opt => h("label", {
+          key: opt,
+          className: "flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-1 rounded transition-colors"
+        }, h("input", {
+          type: "radio",
           name: "specialConstruction",
-          value: formData.surveyData?.specialConstruction || '',
+          value: opt,
+          checked: formData.surveyData?.specialConstruction === opt,
           onChange: handleSurveyChange,
-          className: "w-64 p-2.5 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 bg-white shadow-sm"
-        }, h("option", {
-          value: ""
-        }, "\u8ACB\u9078\u64C7(\u55AE\u9078)"), h("option", {
-          value: "\u4E09\u6A13\u4EE5\u4E0A\u5916\u7246\u914D\u7BA1"
-        }, "\u4E09\u6A13\u4EE5\u4E0A\u5916\u7246\u914D\u7BA1"), h("option", {
-          value: "\u5BA4\u5167\u6A13\u677F\u9AD8\u5EA66\u7C73\u4EE5\u4E0A"
-        }, "\u5BA4\u5167\u6A13\u677F\u9AD8\u5EA66\u7C73\u4EE5\u4E0A"), h("option", {
-          value: "\u5176\u4ED6"
-        }, "\u5176\u4ED6")), formData.surveyData?.specialConstruction === '其他' && h("input", {
+          onClick: handleSurveyRadioClick,
+          className: "w-4 h-4 text-indigo-600 focus:ring-indigo-500"
+        }), h("span", {
+          className: "text-sm text-gray-700 font-medium"
+        }, opt))), h("label", {
+          className: "flex items-center gap-2 cursor-pointer p-1"
+        }, h("input", {
+          type: "radio",
+          name: "specialConstruction",
+          value: "其他",
+          checked: formData.surveyData?.specialConstruction === '其他',
+          onChange: handleSurveyChange,
+          onClick: handleSurveyRadioClick,
+          className: "w-4 h-4 text-indigo-600 focus:ring-indigo-500"
+        }), h("span", {
+          className: "text-sm text-gray-700 font-medium"
+        }, "其他："), h("input", {
           type: "text",
           name: "specialConstruction_other",
           value: formData.surveyData?.specialConstruction_other || '',
           onChange: handleSurveyChange,
-          placeholder: "\u8ACB\u8A3B\u660E\u7279\u6B8A\u65BD\u5DE5\u5167\u5BB9",
-          className: "flex-1 p-2.5 border-b-2 border-gray-300 outline-none focus:border-indigo-500 bg-transparent font-medium"
-        }))), h("div", {
+          disabled: formData.surveyData?.specialConstruction !== '其他',
+          placeholder: "請註明特殊施工內容",
+          className: "w-48 p-1 border-b-2 border-gray-300 outline-none focus:border-indigo-500 bg-transparent disabled:opacity-50 text-sm font-medium"
+        })))), h("div", {
           className: "col-span-full border-t border-indigo-100/50 my-2"
         }), h("div", null, h("label", {
           className: "block text-sm font-bold text-gray-700 mb-1"
@@ -994,6 +1023,7 @@
           value: opt,
           checked: formData.surveyData?.photosUploadedNSA === opt,
           onChange: handleSurveyChange,
+          onClick: handleSurveyRadioClick,
           className: "w-4 h-4 text-indigo-600 focus:ring-indigo-500"
         }), h("span", {
           className: "text-sm text-gray-700 font-medium"
@@ -1011,7 +1041,7 @@
           className: "md:col-span-2 bg-white p-4 rounded border border-gray-200"
         }, h("label", {
           className: "block text-sm font-bold text-gray-700 mb-3"
-        }, "室內機安裝位置 (點選 - 多選)"), h("div", {
+        }, "室內機安裝位置"), h("div", {
           className: "flex flex-wrap gap-x-6 gap-y-3"
         }, ['露明(開放區域)', '輕鋼架', '暗架天花'].map(opt => h("label", {
           key: opt,
@@ -1061,7 +1091,7 @@
           className: "md:col-span-2 bg-white p-4 rounded border border-gray-200"
         }, h("label", {
           className: "block text-sm font-bold text-gray-700 mb-3"
-        }, "室內機定位方式 (下拉選單 - 多選)"), h("div", {
+        }, "室內機定位方式"), h("div", {
           className: "flex flex-wrap gap-x-6 gap-y-4 items-center"
         }, ['升降機', '鷹架', '自走車', '起重工人'].map(opt => h("label", {
           key: opt,
@@ -1100,7 +1130,7 @@
           className: "md:col-span-2 bg-white p-4 rounded border border-gray-200"
         }, h("label", {
           className: "block text-sm font-bold text-gray-700 mb-3"
-        }, "室內機吊掛方式 (下拉選單 - 多選)"), h("div", {
+        }, "室內機吊掛方式"), h("div", {
           className: "flex flex-wrap gap-x-6 gap-y-3"
         }, ['膨脹螺絲', '萬向接頭', 'C型鋼扣3/4'].map(opt => h("label", {
           key: opt,
@@ -1122,7 +1152,7 @@
           className: "flex items-center justify-between mb-3"
         }, h("label", {
           className: "block text-sm font-bold text-gray-700"
-        }, "室內機洗孔需求 (數字填寫)"), h("button", {
+        }, "室內機洗孔需求"), h("button", {
           type: "button",
           onClick: addHole,
           className: "flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-800"
@@ -1172,7 +1202,7 @@
           className: "md:col-span-2 bg-white p-4 rounded border border-gray-200"
         }, h("label", {
           className: "block text-sm font-bold text-gray-700 mb-3"
-        }, "室外機搬運 (下拉選單 - 多選)"), h("div", {
+        }, "室外機搬運"), h("div", {
           className: "flex flex-wrap gap-x-6 gap-y-4 items-center"
         }, ['卡吊', '附鐵籠', '全吊', '鷹架', '堆高機', '升降機', '小金剛', '起重工人', '樓梯種類'].map(opt => h("label", {
           key: opt,
@@ -1211,7 +1241,7 @@
           className: "md:col-span-2 bg-white p-4 rounded border border-gray-200"
         }, h("label", {
           className: "block text-sm font-bold text-gray-700 mb-3"
-        }, "室外機定位 (下拉選單 - 多選)"), h("div", {
+        }, "室外機定位"), h("div", {
           className: "flex flex-wrap gap-x-6 gap-y-3"
         }, ['彈簧基座', '水泥基座', '橡膠墊片'].map(opt => h("label", {
           key: opt,
@@ -1231,7 +1261,7 @@
           className: "md:col-span-2 bg-white p-4 rounded border border-gray-200"
         }, h("label", {
           className: "block text-sm font-bold text-gray-700 mb-3"
-        }, "吊車需求 (單選)"), h("div", {
+        }, "吊車需求"), h("div", {
           className: "flex flex-wrap gap-x-6 gap-y-3 items-center"
         }, ['裝新機', '拆舊機', '拆+裝同時處理', '拆+裝分開處理'].map(opt => h("label", {
           key: opt,
@@ -1242,6 +1272,7 @@
           value: opt,
           checked: formData.surveyData?.craneRequirement === opt,
           onChange: handleSurveyChange,
+          onClick: handleSurveyRadioClick,
           className: "w-4 h-4 text-indigo-600 focus:ring-indigo-500"
         }), h("span", {
           className: "text-sm text-gray-700 font-medium"
@@ -1253,6 +1284,7 @@
           value: "其他",
           checked: formData.surveyData?.craneRequirement === '其他',
           onChange: handleSurveyChange,
+          onClick: handleSurveyRadioClick,
           className: "w-4 h-4 text-indigo-600 focus:ring-indigo-500"
         }), h("span", {
           className: "text-sm text-gray-700 font-medium"
@@ -1270,7 +1302,7 @@
           className: "md:col-span-2 bg-white p-4 rounded border border-gray-200"
         }, h("label", {
           className: "block text-sm font-bold text-gray-700 mb-3"
-        }, "室外機架類型 (單選)"), h("div", {
+        }, "室外機架類型"), h("div", {
           className: "flex flex-wrap gap-x-6 gap-y-3"
         }, ['鍍鋅', '白鐵', 'ABS', '沿用(需噴漆)'].map(opt => h("label", {
           key: opt,
@@ -1281,11 +1313,12 @@
           value: opt,
           checked: formData.surveyData?.outdoorRackType === opt,
           onChange: handleSurveyChange,
+          onClick: handleSurveyRadioClick,
           className: "w-4 h-4 text-indigo-600 focus:ring-indigo-500"
         }), h("span", {
           className: "text-sm text-gray-700 font-medium"
-        }, opt))), h("div", {
-          className: "flex flex-wrap gap-6 mt-4 pt-4 border-t border-gray-100"
+        }, opt)))), h("div", {
+          className: "flex flex-wrap gap-6 mt-4"
         }, h("div", {
           className: "flex items-center gap-2"
         }, h("span", {
@@ -1316,7 +1349,7 @@
           className: "w-full p-2 pr-10 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm"
         }), h("span", {
           className: "absolute right-3 top-2 text-gray-400 text-sm"
-        }, "組")))))),
+        }, "組"))))),
         /* 選配題目（需可隱藏）顯示切換 */
         h("div", {
           className: "md:col-span-2 flex items-center justify-between bg-amber-50 border border-amber-200 p-3 rounded"
@@ -1344,6 +1377,7 @@
           value: opt,
           checked: formData.surveyData?.outdoorUnitEnlarged === opt,
           onChange: handleSurveyChange,
+          onClick: handleSurveyRadioClick,
           className: "w-4 h-4 text-indigo-600 focus:ring-indigo-500"
         }), h("span", {
           className: "text-sm text-gray-700 font-medium"
@@ -1583,11 +1617,11 @@
           className: "h-6 w-6"
         }), " 管路保護"), h("div", {
           className: "space-y-6"
-        }, renderPipingSingleSelect('管路保護材質（單選）', 'protectMaterial', PIPING_PROTECT_MATERIALS, formData.surveyData?.protectMaterial === 'ABS管槽' ? h("div", {
+        }, renderPipingSingleSelect('管路保護材質', 'protectMaterial', PIPING_PROTECT_MATERIALS, formData.surveyData?.protectMaterial === 'ABS管槽' ? h("div", {
           className: "mt-4 ml-6 p-3 bg-indigo-50 rounded border border-indigo-100"
         }, h("p", {
           className: "text-xs font-bold text-indigo-700 mb-2"
-        }, "ABS管槽 第二層尺寸（單選）"), h("div", {
+        }, "ABS管槽 第二層尺寸"), h("div", {
           className: "flex flex-wrap gap-x-6 gap-y-2"
         }, PIPING_ABS_SIZES.map(sz => h("label", {
           key: sz,
@@ -1598,10 +1632,11 @@
           value: sz,
           checked: (formData.surveyData?.absSize || '') === sz,
           onChange: handleSurveyChange,
+          onClick: handleSurveyRadioClick,
           className: "w-4 h-4 text-indigo-600 border-gray-300 focus:ring-indigo-500"
         }), h("span", {
           className: "text-sm text-gray-700 font-medium"
-        }, sz))))) : null), renderPipingCheckQtyGroup('管槽配件', '請勾選配件並填寫數量／長度', 'channelFittings', 'channelFittingsQty', PIPING_CHANNEL_FITTINGS, '個', '數量'), renderPipingSingleSelect('管路保護顏色（單選）', 'protectColor', PIPING_PROTECT_COLORS)))), activeSurveyTab === '配電工程' && h("div", {
+        }, sz))))) : null), renderPipingCheckQtyGroup('管槽配件', '請勾選配件並填寫數量／長度', 'channelFittings', 'channelFittingsQty', PIPING_CHANNEL_FITTINGS, '個', '數量'), renderPipingSingleSelect('管路保護顏色', 'protectColor', PIPING_PROTECT_COLORS)))), activeSurveyTab === '配電工程' && h("div", {
           className: "space-y-8"
         },
         /* ===== 控制及訊號線材 ===== */
@@ -1744,7 +1779,7 @@
         /* 處理方式（單選） */
         h("div", null, h("label", {
           className: "block text-sm font-bold text-gray-700 mb-2"
-        }, "處理方式（單選）"), h("div", {
+        }, "處理方式"), h("div", {
           className: "flex flex-wrap gap-6 bg-white p-4 rounded border border-gray-200"
         }, ['協力商直接報廢', '載回晉詮', '回收補助'].map(opt => h("label", {
           key: opt,
@@ -1755,6 +1790,7 @@
           value: opt,
           checked: formData.surveyData?.oldMachineMethod === opt,
           onChange: handleSurveyChange,
+          onClick: handleSurveyRadioClick,
           className: "w-4 h-4 text-indigo-600 focus:ring-indigo-500"
         }), h("span", {
           className: "text-sm text-gray-700 font-medium"
@@ -1777,6 +1813,7 @@
           value: opt,
           checked: formData.surveyData?.wasteDisposal === opt,
           onChange: handleSurveyChange,
+          onClick: handleSurveyRadioClick,
           className: "w-4 h-4 text-indigo-600 focus:ring-indigo-500"
         }), h("span", {
           className: "text-sm text-gray-700 font-medium"
@@ -1788,6 +1825,7 @@
           value: "其他",
           checked: formData.surveyData?.wasteDisposal === '其他',
           onChange: handleSurveyChange,
+          onClick: handleSurveyRadioClick,
           className: "w-4 h-4 text-indigo-600 focus:ring-indigo-500"
         }), h("span", {
           className: "text-sm text-gray-700 font-medium shrink-0"
@@ -1824,7 +1862,7 @@
           className: "text-xl font-bold text-indigo-800 border-b-2 border-indigo-200 pb-3 mb-6 flex items-center gap-2"
         }, Icons.Wrench({
           className: "h-6 w-6"
-        }), " 是否更新汰換（單選）"), h("div", {
+        }), " 是否更新汰換"), h("div", {
           className: "divide-y divide-indigo-100/70 bg-white rounded border border-gray-200"
         }, ['控制/訊號線', '室外機電源線', '室內機電源線', '銅管', '冰水管', '排水管', '保溫管', '軟管', '集風箱', '出/線型風箱', '回風箱', '強制回風箱', '三通風箱', '出風口', '回風口'].map(item => h("div", {
           key: item,
@@ -1842,6 +1880,7 @@
           value: opt,
           checked: formData.surveyData?.['replace_' + item] === opt,
           onChange: handleSurveyChange,
+          onClick: handleSurveyRadioClick,
           className: "w-4 h-4 text-indigo-600 focus:ring-indigo-500"
         }), h("span", {
           className: "text-sm text-gray-700 font-medium"
