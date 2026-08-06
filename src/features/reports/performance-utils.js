@@ -119,8 +119,7 @@
         if (!c.isPerformanceIncluded) return;
         if (!isServiceLevelCD(c.serviceLevel)) return;
         if (!isDateInRange(getRepairCaseDate(c), quarter.start, quarter.end)) return;
-        if (AssigneeUtils.getPerformanceAssignee(c) !== assignee.name) return;
-        bonusPoints += sumProcessPoints(c);
+        bonusPoints += CaseAssigneeUtils.computeBonusPointsForAssignee(c, assignee.name);
       });
 
       var target = sumAllocationTargets(allocations, {
