@@ -83,6 +83,7 @@
       formData.surveyData = {};
     }
     SurveyCheckQtyOthersUtils.migrateSurveyData(formData.surveyData);
+    SurveyVentLinearSizesUtils.migrateSurveyData(formData.surveyData);
     // 室外機施工內容 - 可隱藏題目的顯示切換
     var showOutdoorHideable = true;
     // 沿用設備 - 可隱藏題目的顯示切換
@@ -133,6 +134,12 @@
         if (type === 'checkbox') {
           var currentArr = sd[name] || [];
           sd[name] = checked ? currentArr.concat([value]) : currentArr.filter(function (item) { return item !== value; });
+          if (checked && value === '其他') {
+            SurveyCheckQtyOthersUtils.ensureBlankIfChecked(sd, name);
+          }
+          if (checked && name === 'ventOutlets' && value === '線型出風口') {
+            SurveyVentLinearSizesUtils.ensureBlankIfChecked(sd);
+          }
         } else {
           sd[name] = value;
         }
@@ -264,12 +271,27 @@
           }, opt.unit)));
         };
         const renderCheckQtyOthersBlock = (checkName, unit, qtyLabel) => {
+          const selected = formData.surveyData?.[checkName] || [];
+          const checked = selected.includes('其他');
           const others = SurveyCheckQtyOthersUtils.getOthers(formData.surveyData, checkName);
           return h("div", {
             className: "space-y-2 mt-2"
-          }, others.map(row => h("div", {
+          }, h("div", {
+            className: "bg-white p-3 rounded border border-gray-200"
+          }, h("label", {
+            className: "flex items-center gap-2 cursor-pointer"
+          }, h("input", {
+            type: "checkbox",
+            name: checkName,
+            value: "其他",
+            checked: checked,
+            onChange: handleSurveyChange,
+            className: "w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
+          }), h("span", {
+            className: "text-sm text-gray-700 font-medium"
+          }, "其他")), checked ? others.map(row => h("div", {
             key: row.id,
-            className: "flex items-center justify-between bg-white p-3 rounded border border-gray-200"
+            className: "flex items-center justify-between mt-3 ml-6 gap-2"
           }, h("div", {
             className: "flex items-center gap-2 flex-1 min-w-0"
           }, h("span", {
@@ -295,11 +317,11 @@
             title: "刪除此其他項目",
             onClick: () => removeCheckQtyOther(checkName, row.id),
             className: "text-red-500 hover:text-red-700 p-1"
-          }, Icons.Trash2({ className: "h-4 w-4" }))))), h("button", {
+          }, Icons.Trash2({ className: "h-4 w-4" })))) : null, checked ? h("button", {
             type: "button",
             onClick: () => addCheckQtyOther(checkName),
-            className: "flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-800"
-          }, Icons.Plus({ className: "h-4 w-4" }), "新增其他"));
+            className: "flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-800 mt-3 ml-6"
+          }, Icons.Plus({ className: "h-4 w-4" }), "新增其他") : null));
         };
         // 配管工程「多選 + 填數字」子題卡片（同一單位）
         const renderPipingCheckQtyGroup = (subtitle, note, checkName, mapName, options, unit, qtyLabel) => h("div", {
