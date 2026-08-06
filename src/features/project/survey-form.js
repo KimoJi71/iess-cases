@@ -427,7 +427,7 @@
         };
         const renderDuctBoxComboRow = (prefix, pipes, hasFlangeHoles, row) => {
           const mat = row.material || '';
-          const matRadios = ['PU貼鋁皮', '鐵製', '其他'].map(opt => h("label", {
+          const matRadios = DUCT_BOX_MATERIALS.concat(['其他']).map(opt => h("label", {
             key: opt,
             className: "flex items-center gap-2 cursor-pointer"
           }, h("input", {

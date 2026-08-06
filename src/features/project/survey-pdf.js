@@ -388,8 +388,8 @@
   }
 
   function buildSurveyPdfHtml(surveyCase) {
-    var sd = surveyCase.surveyData || {};
-    if (sd && typeof sd === 'object' && window.SurveyDuctBoxCombosUtils) {
+    var sd = surveyCase.surveyData ? JSON.parse(JSON.stringify(surveyCase.surveyData)) : {};
+    if (window.SurveyDuctBoxCombosUtils) {
       SurveyDuctBoxCombosUtils.migrateSurveyData(sd);
     }
     return [
