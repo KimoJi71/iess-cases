@@ -42,6 +42,7 @@
   function MultiSelect(props) {
     autoIdSeq += 1;
     var id = props.id || ('multi-select-' + autoIdSeq);
+    if (!props.id) console.warn('IESS.MultiSelect: props.id is required to keep the menu open across rerenders');
     var rootEl = null;
     var controlEl = null;
 
@@ -76,6 +77,17 @@
 
       function positionMenu() {
         if (!menuEl || !controlEl) return;
+        // 若選單仍存在，但擁有它的 controlEl（本次 render 閉包所捕獲的節點）已不在文件內，
+        // 代表使用者是在沒有經過 mousedown/outside 清理流程的情況下離開了這個表單
+        // （例如在文字欄位按 Enter 送出表單），選單淪為孤兒。此處補做清理，
+        // 避免浮動選單與全域監聽器繼續留在畫面上。
+        // 正常情況下「同一 id 的新實例接手」會在 syncMenu 裡先 destroyMenu() 再 buildMenu()，
+        // 屆時這個舊實例的 positionMenu 已不再被任何監聽器引用，不會誤觸此處的守衛。
+        if (!document.body.contains(controlEl)) {
+          openId = null;
+          destroyMenu();
+          return;
+        }
         var rect = controlEl.getBoundingClientRect();
         menuEl.style.top = (rect.bottom + 2) + 'px';
         menuEl.style.left = rect.left + 'px';
@@ -136,7 +148,10 @@
           btn.appendChild(box);
           btn.appendChild(document.createTextNode(opt));
 
-          btn.addEventListener('mousedown', function (e) {
+          // 用 click 而非 mousedown：click 才會被鍵盤 Enter/Space 觸發（button 原生行為），
+          // 讓鍵盤使用者也能選取選項。改用 click 不會被 outside 監聽器誤判成「點外面」而先關閉選單，
+          // 因為 outside 監聽器（mousedown 階段）已用 menuEl.contains(e.target) 排除選單內部。
+          btn.addEventListener('click', function (e) {
             e.preventDefault();
             e.stopPropagation();
             toggleOption(opt);
@@ -182,6 +197,7 @@
           ref: function (el) { controlEl = el; },
           onClick: handleControlClick,
           onKeyDown: function (e) {
+            if (e.target !== controlEl) return;
             if (e.key === 'Enter' || e.key === ' ') handleControlClick(e);
           }
         },
