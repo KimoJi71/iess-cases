@@ -84,6 +84,7 @@
     }
     SurveyCheckQtyOthersUtils.migrateSurveyData(formData.surveyData);
     SurveyVentLinearSizesUtils.migrateSurveyData(formData.surveyData);
+    SurveyDuctBoxCombosUtils.migrateSurveyData(formData.surveyData);
     // 室外機施工內容 - 可隱藏題目的顯示切換
     var showOutdoorHideable = true;
     // 沿用設備 - 可隱藏題目的顯示切換
@@ -256,6 +257,18 @@
         SurveyVentLinearSizesUtils.removeSize(ensureSd(), id);
         rerender();
       }
+      function addDuctBoxCombo(prefix) {
+        SurveyDuctBoxCombosUtils.addCombo(ensureSd(), prefix);
+        rerender();
+      }
+      function updateDuctBoxCombo(prefix, id, patch) {
+        SurveyDuctBoxCombosUtils.updateCombo(ensureSd(), prefix, id, patch);
+        rerender();
+      }
+      function removeDuctBoxCombo(prefix, id) {
+        SurveyDuctBoxCombosUtils.removeCombo(ensureSd(), prefix, id);
+        rerender();
+      }
 
         const renderPipingQtyRow = (checkName, mapName, opt) => {
           const selected = formData.surveyData?.[checkName] || [];
@@ -412,114 +425,129 @@
             className: "w-32 p-1 border-b-2 border-gray-300 outline-none focus:border-indigo-500 bg-transparent text-sm disabled:opacity-50"
           }))), extra);
         };
-        // 風管工程 集風箱／出線型箱「風管管徑 + 孔數 + 數量」多選列
-        const renderDuctPipeRow = (checkName, holeMap, qtyMap, opt) => {
-          const selected = formData.surveyData?.[checkName] || [];
-          const checked = selected.includes(opt);
-          return h("div", {
+        const renderDuctBoxComboRow = (prefix, pipes, hasFlangeHoles, row) => {
+          const mat = row.material || '';
+          const matRadios = ['PU貼鋁皮', '鐵製', '其他'].map(opt => h("label", {
             key: opt,
-            className: "flex items-center justify-between bg-white p-3 rounded border border-gray-200"
-          }, h("label", {
             className: "flex items-center gap-2 cursor-pointer"
           }, h("input", {
-            type: "checkbox",
-            name: checkName,
+            type: "radio",
+            name: prefix + '_mat_' + row.id,
             value: opt,
-            checked: checked,
-            onChange: handleSurveyChange,
-            className: "w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
+            checked: mat === opt,
+            onChange: () => updateDuctBoxCombo(prefix, row.id, { material: opt }),
+            onClick: e => {
+              if (mat === opt) {
+                e.preventDefault();
+                updateDuctBoxCombo(prefix, row.id, { material: '' });
+              }
+            },
+            className: "w-4 h-4 text-indigo-600 border-gray-300 focus:ring-indigo-500"
           }), h("span", {
             className: "text-sm text-gray-700 font-medium"
-          }, opt)), h("div", {
-            className: "flex items-center gap-2"
-          }, h("input", {
+          }, opt)));
+          const matOther = h("input", {
+            type: "text",
+            value: row.materialOther || '',
+            onChange: e => updateDuctBoxCombo(prefix, row.id, { materialOther: e.target.value }),
+            disabled: mat !== '其他',
+            placeholder: "請註明",
+            className: "w-32 p-1 border-b-2 border-gray-300 outline-none focus:border-indigo-500 bg-transparent text-sm disabled:opacity-50"
+          });
+          const flange = hasFlangeHoles ? h("div", {
+            className: "flex flex-wrap items-center gap-3 mt-3"
+          }, h("span", {
+            className: "text-sm font-medium text-indigo-700"
+          }, "法蘭內徑"), h("span", {
+            className: "text-sm text-gray-700 font-medium"
+          }, "寬"), h("input", {
             type: "number",
-            value: formData.surveyData?.[holeMap]?.[opt] || '',
-            onChange: e => handleQtyMapChange(holeMap, opt, e.target.value),
-            disabled: !checked,
+            value: row.flangeWidth || '',
+            onChange: e => updateDuctBoxCombo(prefix, row.id, { flangeWidth: e.target.value }),
+            placeholder: "寬",
+            className: "w-24 p-1.5 border rounded-md text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+          }), h("span", {
+            className: "text-sm text-gray-500"
+          }, "cm"), h("span", {
+            className: "text-sm text-gray-700 font-medium ml-2"
+          }, "高"), h("input", {
+            type: "number",
+            value: row.flangeHeight || '',
+            onChange: e => updateDuctBoxCombo(prefix, row.id, { flangeHeight: e.target.value }),
+            placeholder: "高",
+            className: "w-24 p-1.5 border rounded-md text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+          }), h("span", {
+            className: "text-sm text-gray-500"
+          }, "cm")) : null;
+          const pipeSelect = h("select", {
+            value: row.pipe || '',
+            onChange: e => updateDuctBoxCombo(prefix, row.id, { pipe: e.target.value }),
+            className: "p-1.5 border rounded-md text-sm outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+          }, h("option", {
+            value: ""
+          }, "選擇管徑"), pipes.map(p => h("option", {
+            key: p,
+            value: p
+          }, p)));
+          const pipeRow = h("div", {
+            className: "flex flex-wrap items-center gap-3 mt-3"
+          }, h("span", {
+            className: "text-sm font-medium text-indigo-700"
+          }, "管徑"), pipeSelect, hasFlangeHoles ? h("input", {
+            type: "number",
+            value: row.holes || '',
+            onChange: e => updateDuctBoxCombo(prefix, row.id, { holes: e.target.value }),
             placeholder: "孔數",
-            className: "w-20 p-1.5 border rounded-md text-sm outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-100 disabled:opacity-50"
-          }), h("span", {
+            className: "w-20 p-1.5 border rounded-md text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+          }) : null, hasFlangeHoles ? h("span", {
             className: "text-sm text-gray-500 whitespace-nowrap"
-          }, "孔"), h("input", {
+          }, "孔") : null, h("input", {
             type: "number",
-            value: formData.surveyData?.[qtyMap]?.[opt] || '',
-            onChange: e => handleQtyMapChange(qtyMap, opt, e.target.value),
-            disabled: !checked,
+            value: row.qty || '',
+            onChange: e => updateDuctBoxCombo(prefix, row.id, { qty: e.target.value }),
             placeholder: "數量",
-            className: "w-20 p-1.5 border rounded-md text-sm outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-100 disabled:opacity-50"
+            className: "w-20 p-1.5 border rounded-md text-sm outline-none focus:ring-2 focus:ring-indigo-500"
           }), h("span", {
             className: "text-sm text-gray-500 whitespace-nowrap"
-          }, "個")));
+          }, "個"));
+          return h("div", {
+            key: row.id,
+            className: "bg-white p-4 rounded-lg border border-gray-200"
+          }, h("div", {
+            className: "flex flex-wrap items-center gap-x-6 gap-y-2"
+          }, h("span", {
+            className: "text-sm font-medium text-indigo-700"
+          }, "材質"), matRadios, matOther, h("button", {
+            type: "button",
+            title: "刪除此組合",
+            onClick: () => removeDuctBoxCombo(prefix, row.id),
+            className: "text-red-500 hover:text-red-700 p-1 ml-auto"
+          }, Icons.Trash2({
+            className: "h-4 w-4"
+          }))), flange, pipeRow);
         };
-        // 風管工程 集風箱／出線型箱 卡片（材質單選 + 法蘭內徑 + 風管管徑孔數/數量多選）
-        const renderDuctBox = (title, prefix) => h("div", {
-          className: "bg-indigo-50/30 p-8 rounded-lg border border-indigo-100 shadow-sm"
-        }, h("h3", {
-          className: "text-xl font-bold text-indigo-800 border-b-2 border-indigo-200 pb-3 mb-6 flex items-center gap-2"
-        }, Icons.Wrench({
-          className: "h-6 w-6"
-        }), " " + title), h("div", {
-          className: "space-y-6"
-        }, renderPipingSingleSelect('材質', `${prefix}Material`, DUCT_BOX_MATERIALS), h("div", {
-          className: "bg-white p-4 rounded-lg border border-gray-200"
-        }, h("h4", {
-          className: "text-base font-bold text-indigo-700 mb-3"
-        }, "法蘭內徑"), h("div", {
-          className: "flex flex-wrap items-center gap-3"
-        }, h("span", {
-          className: "text-sm text-gray-700 font-medium"
-        }, "寬"), h("input", {
-          type: "number",
-          name: `${prefix}FlangeWidth`,
-          value: formData.surveyData?.[`${prefix}FlangeWidth`] || '',
-          onChange: handleSurveyChange,
-          placeholder: "寬",
-          className: "w-24 p-1.5 border rounded-md text-sm outline-none focus:ring-2 focus:ring-indigo-500"
-        }), h("span", {
-          className: "text-sm text-gray-500"
-        }, "cm"), h("span", {
-          className: "text-sm text-gray-700 font-medium ml-4"
-        }, "高"), h("input", {
-          type: "number",
-          name: `${prefix}FlangeHeight`,
-          value: formData.surveyData?.[`${prefix}FlangeHeight`] || '',
-          onChange: handleSurveyChange,
-          placeholder: "高",
-          className: "w-24 p-1.5 border rounded-md text-sm outline-none focus:ring-2 focus:ring-indigo-500"
-        }), h("span", {
-          className: "text-sm text-gray-500"
-        }, "cm"))), h("div", {
-          className: "bg-white p-4 rounded-lg border border-gray-200"
-        }, h("h4", {
-          className: "text-base font-bold text-indigo-700 mb-1"
-        }, "風管管徑、孔數與數量"), h("p", {
-          className: "text-xs text-gray-400 mb-3"
-        }, "請勾選風管管徑並填寫孔數與數量（個）"), h("div", {
-          className: "space-y-2 mt-2"
-        }, DUCT_BOX_PIPES.map(o => renderDuctPipeRow(`${prefix}Pipes`, `${prefix}PipesHoles`, `${prefix}PipesQty`, o))))));
-        // 風管工程 三通風箱 卡片（材質單選 + 風管管徑數量多選，無孔數／無其他列）
-        const renderDuctTeeBox = (title, prefix) => h("div", {
-          className: "bg-indigo-50/30 p-8 rounded-lg border border-indigo-100 shadow-sm"
-        }, h("h3", {
-          className: "text-xl font-bold text-indigo-800 border-b-2 border-indigo-200 pb-3 mb-6 flex items-center gap-2"
-        }, Icons.Wrench({
-          className: "h-6 w-6"
-        }), " " + title), h("div", {
-          className: "space-y-6"
-        }, renderPipingSingleSelect('材質', `${prefix}Material`, DUCT_BOX_MATERIALS), h("div", {
-          className: "bg-white p-4 rounded-lg border border-gray-200"
-        }, h("h4", {
-          className: "text-base font-bold text-indigo-700 mb-1"
-        }, "風管管徑、數量"), h("p", {
-          className: "text-xs text-gray-400 mb-3"
-        }, "請勾選風管管徑並填寫數量（個）"), h("div", {
-          className: "space-y-2 mt-2"
-        }, DUCT_TEE_PIPES.map(o => renderPipingQtyRow(`${prefix}Pipes`, `${prefix}PipesQty`, {
-          label: o,
-          unit: '個',
-          qtyLabel: '數量'
-        }))))));
+
+        const renderDuctBoxCard = (title, prefix, pipes, hasFlangeHoles) => {
+          const combos = SurveyDuctBoxCombosUtils.getCombos(formData.surveyData, prefix);
+          return h("div", {
+            className: "bg-indigo-50/30 p-8 rounded-lg border border-indigo-100 shadow-sm"
+          }, h("h3", {
+            className: "text-xl font-bold text-indigo-800 border-b-2 border-indigo-200 pb-3 mb-6 flex items-center gap-2"
+          }, Icons.Wrench({
+            className: "h-6 w-6"
+          }), " " + title), h("div", {
+            className: "space-y-3"
+          }, combos.map(row => renderDuctBoxComboRow(prefix, pipes, hasFlangeHoles, row)), h("button", {
+            type: "button",
+            onClick: () => addDuctBoxCombo(prefix),
+            className: "flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-800 mt-2"
+          }, Icons.Plus({
+            className: "h-4 w-4"
+          }), "新增組合")));
+        };
+
+        const renderDuctBox = (title, prefix) => renderDuctBoxCard(title, prefix, DUCT_BOX_PIPES, true);
+        const renderDuctTeeBox = (title, prefix) => renderDuctBoxCard(title, prefix, DUCT_TEE_PIPES, false);
         // 風管工程 出風口 單一型式列（勾選 + 數量個；線型改為多筆尺寸列）
         const renderVentLinearSizeRow = row => h("div", {
           key: row.id,
