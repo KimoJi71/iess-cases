@@ -79,6 +79,10 @@
       formData.fileName = buildDefaultSurveyFileName(formData.customerName, formData.storeName);
     }
     var fileNameManuallyEdited = isEdit;
+    if (!formData.surveyData || typeof formData.surveyData !== 'object') {
+      formData.surveyData = {};
+    }
+    SurveyCheckQtyOthersUtils.migrateSurveyData(formData.surveyData);
     // 室外機施工內容 - 可隱藏題目的顯示切換
     var showOutdoorHideable = true;
     // 沿用設備 - 可隱藏題目的顯示切換
@@ -213,6 +217,21 @@
         sd[mapName] = m;
         rerender();
       }
+      function ensureSd() {
+        return formData.surveyData || (formData.surveyData = {});
+      }
+      function addCheckQtyOther(checkName) {
+        SurveyCheckQtyOthersUtils.addOther(ensureSd(), checkName);
+        rerender();
+      }
+      function updateCheckQtyOther(checkName, id, patch) {
+        SurveyCheckQtyOthersUtils.updateOther(ensureSd(), checkName, id, patch);
+        rerender();
+      }
+      function removeCheckQtyOther(checkName, id) {
+        SurveyCheckQtyOthersUtils.removeOther(ensureSd(), checkName, id);
+        rerender();
+      }
 
         const renderPipingQtyRow = (checkName, mapName, opt) => {
           const selected = formData.surveyData?.[checkName] || [];
@@ -244,43 +263,43 @@
             className: "text-sm text-gray-500 whitespace-nowrap"
           }, opt.unit)));
         };
-        // 配管工程「多選 + 填數字」的「其他」自填列
-        const renderPipingOtherRow = (checkName, mapName, unit, qtyLabel) => {
-          const selected = formData.surveyData?.[checkName] || [];
-          const checked = selected.includes('其他');
+        const renderCheckQtyOthersBlock = (checkName, unit, qtyLabel) => {
+          const others = SurveyCheckQtyOthersUtils.getOthers(formData.surveyData, checkName);
           return h("div", {
+            className: "space-y-2 mt-2"
+          }, others.map(row => h("div", {
+            key: row.id,
             className: "flex items-center justify-between bg-white p-3 rounded border border-gray-200"
-          }, h("label", {
-            className: "flex items-center gap-2 cursor-pointer flex-1"
-          }, h("input", {
-            type: "checkbox",
-            name: checkName,
-            value: "其他",
-            checked: checked,
-            onChange: handleSurveyChange,
-            className: "w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500 shrink-0"
-          }), h("span", {
+          }, h("div", {
+            className: "flex items-center gap-2 flex-1 min-w-0"
+          }, h("span", {
             className: "text-sm text-gray-700 font-medium shrink-0"
           }, "其他："), h("input", {
             type: "text",
-            name: `${checkName}_other`,
-            value: formData.surveyData?.[`${checkName}_other`] || '',
-            onChange: handleSurveyChange,
-            disabled: !checked,
+            value: row.label || '',
+            onChange: e => updateCheckQtyOther(checkName, row.id, { label: e.target.value }),
             placeholder: "請註明",
-            className: "flex-1 max-w-xs p-1 border-b-2 border-gray-300 outline-none focus:border-indigo-500 bg-transparent text-sm disabled:opacity-50"
+            className: "flex-1 max-w-xs p-1 border-b-2 border-gray-300 outline-none focus:border-indigo-500 bg-transparent text-sm"
           })), h("div", {
-            className: "flex items-center gap-2"
+            className: "flex items-center gap-2 shrink-0"
           }, h("input", {
             type: "number",
-            value: formData.surveyData?.[mapName]?.['其他'] || '',
-            onChange: e => handleQtyMapChange(mapName, '其他', e.target.value),
-            disabled: !checked,
+            value: row.qty || '',
+            onChange: e => updateCheckQtyOther(checkName, row.id, { qty: e.target.value }),
             placeholder: qtyLabel,
-            className: "w-24 p-1.5 border rounded-md text-sm outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-100 disabled:opacity-50"
+            className: "w-24 p-1.5 border rounded-md text-sm outline-none focus:ring-2 focus:ring-indigo-500"
           }), h("span", {
             className: "text-sm text-gray-500 whitespace-nowrap"
-          }, unit)));
+          }, unit), h("button", {
+            type: "button",
+            title: "刪除此其他項目",
+            onClick: () => removeCheckQtyOther(checkName, row.id),
+            className: "text-red-500 hover:text-red-700 p-1"
+          }, Icons.Trash2({ className: "h-4 w-4" }))))), h("button", {
+            type: "button",
+            onClick: () => addCheckQtyOther(checkName),
+            className: "flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-800"
+          }, Icons.Plus({ className: "h-4 w-4" }), "新增其他"));
         };
         // 配管工程「多選 + 填數字」子題卡片（同一單位）
         const renderPipingCheckQtyGroup = (subtitle, note, checkName, mapName, options, unit, qtyLabel) => h("div", {
@@ -295,7 +314,7 @@
           label: o,
           unit,
           qtyLabel
-        } : o)), renderPipingOtherRow(checkName, mapName, unit, qtyLabel)));
+        } : o)), renderCheckQtyOthersBlock(checkName, unit, qtyLabel)));
         // 配管工程 單選子題卡片
         const renderPipingSingleSelect = (subtitle, name, options, extra) => {
           const cur = formData.surveyData?.[name] || '';
@@ -524,7 +543,7 @@
           className: "text-xs text-gray-400 mb-3"
         }, "請勾選出風口型式並填寫數量（個），線型出風口另填寬、高（cm）"), h("div", {
           className: "space-y-2 mt-2"
-        }, DUCT_VENT_OUTLETS.map(renderVentOutletRow), renderPipingOtherRow('ventOutlets', 'ventOutletsQty', '個', '數量')))));
+        }, DUCT_VENT_OUTLETS.map(renderVentOutletRow), renderCheckQtyOthersBlock('ventOutlets', '個', '數量')))));
         // 風管工程 回風口 卡片（多選型式 + 數量，無其他列）
         const renderReturnOutletBox = () => h("div", {
           className: "bg-indigo-50/30 p-8 rounded-lg border border-indigo-100 shadow-sm"
@@ -1505,41 +1524,7 @@
           className: "w-24 p-1.5 border rounded-md text-sm outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-100 disabled:opacity-50"
         }), h("span", {
           className: "text-sm text-gray-500"
-        }, "組")))),
-        /* 其他 — 自填名稱 + 數量 */
-        h("div", {
-          className: "flex items-center justify-between bg-white p-3 rounded border border-gray-200"
-        }, h("label", {
-          className: "flex items-center gap-2 cursor-pointer flex-1"
-        }, h("input", {
-          type: "checkbox",
-          name: "parts",
-          value: "其他",
-          checked: (formData.surveyData?.parts || []).includes('其他'),
-          onChange: handleSurveyChange,
-          className: "w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500 shrink-0"
-        }), h("span", {
-          className: "text-sm text-gray-700 font-medium shrink-0"
-        }, "其他："), h("input", {
-          type: "text",
-          name: "parts_other",
-          value: formData.surveyData?.parts_other || '',
-          onChange: handleSurveyChange,
-          disabled: !(formData.surveyData?.parts || []).includes('其他'),
-          placeholder: "請註明",
-          className: "flex-1 max-w-xs p-1 border-b-2 border-gray-300 outline-none focus:border-indigo-500 bg-transparent text-sm disabled:opacity-50"
-        })), h("div", {
-          className: "flex items-center gap-2"
-        }, h("input", {
-          type: "number",
-          value: formData.surveyData?.partsQty?.['其他'] || '',
-          onChange: e => handlePartQtyChange('其他', e.target.value),
-          disabled: !(formData.surveyData?.parts || []).includes('其他'),
-          placeholder: "數量",
-          className: "w-24 p-1.5 border rounded-md text-sm outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-100 disabled:opacity-50"
-        }), h("span", {
-          className: "text-sm text-gray-500"
-        }, "組"))))),
+        }, "組")))), renderCheckQtyOthersBlock('parts', '組', '數量'))),
         /* ===== 沿用設備（需可隱藏） ===== */
         h("div", {
           className: "bg-indigo-50/30 p-8 rounded-lg border border-indigo-100 shadow-sm"
