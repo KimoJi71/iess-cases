@@ -111,17 +111,36 @@
     var selected = sd.ventOutlets;
     var qtyMap = sd.ventOutletsQty || {};
     var parts = [];
+    var linearLabel = SurveyVentLinearSizesUtils.LABEL;
+    var sizes = SurveyVentLinearSizesUtils.getSizes(sd);
+    var sizesText = SurveyVentLinearSizesUtils.formatSizesList(sizes);
+
     if (Array.isArray(selected) && selected.length) {
       selected.forEach(function (label) {
         if (label === '其他') return;
-        var qty = qtyMap[label];
-        var text = label + (qty ? ' ' + qty + '個' : '');
-        if (label.indexOf('線型') >= 0 && (sd.ventLinearWidth || sd.ventLinearHeight)) {
-          text += '（' + val(sd.ventLinearWidth) + '×' + val(sd.ventLinearHeight) + ' cm）';
+        if (label === linearLabel || (typeof label === 'string' && label.indexOf('線型') >= 0)) {
+          return; // 線型改由 sizes／legacy 輸出
         }
-        parts.push(text);
+        var qty = qtyMap[label];
+        parts.push(label + (qty ? ' ' + qty + '個' : ''));
       });
     }
+
+    if (sizesText) {
+      parts.push(sizesText);
+    } else if (
+      (Array.isArray(selected) && selected.indexOf(linearLabel) !== -1) ||
+      sd.ventLinearWidth || sd.ventLinearHeight || (qtyMap && qtyMap[linearLabel])
+    ) {
+      // 尚未 migrate 的直接匯出 fallback
+      var qty = qtyMap[linearLabel];
+      var text = linearLabel + (qty ? ' ' + qty + '個' : '');
+      if (sd.ventLinearWidth || sd.ventLinearHeight) {
+        text += '（' + val(sd.ventLinearWidth) + '×' + val(sd.ventLinearHeight) + ' cm）';
+      }
+      parts.push(text);
+    }
+
     var others = SurveyCheckQtyOthersUtils.getOthers(sd, 'ventOutlets');
     if (others.length) {
       var t = SurveyCheckQtyOthersUtils.formatOthersList(others, '個');
