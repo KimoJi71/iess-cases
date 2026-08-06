@@ -1,0 +1,238 @@
+/*
+ * core/multi-select.js — 下拉式複選選單（收合時於欄位內以 chips 顯示已選項目）
+ *
+ * MultiSelect({ id, options, value, onChange, placeholder, disabled, className })
+ *   id       全域唯一字串；父層 rerender 重建元件後仍能維持展開狀態
+ *   options  string[] 可選項目
+ *   value    string[] 已選項目（受控，元件不保存資料）
+ *   onChange function (nextValues)
+ *
+ * 選單以 portal 掛在 document.body 並 fixed 定位，避免被外層 overflow 裁切
+ * （與 core/searchable-select.js 相同策略）。同一時間只會有一個選單展開。
+ */
+(function (global) {
+  'use strict';
+
+  var h = global.IESS.h;
+  var stateful = global.IESS.stateful;
+
+  var openId = null;
+  var menuEl = null;
+  var listeners = null;
+  var autoIdSeq = 0;
+
+  function renderChevron(className) {
+    var Icons = global.IESS.Icons;
+    if (Icons && Icons.ChevronDown) return Icons.ChevronDown({ className: className });
+    return null;
+  }
+
+  function destroyMenu() {
+    if (listeners) {
+      window.removeEventListener('scroll', listeners.reposition, true);
+      window.removeEventListener('resize', listeners.reposition);
+      document.removeEventListener('mousedown', listeners.outside, true);
+      document.removeEventListener('keydown', listeners.key, true);
+      listeners = null;
+    }
+    if (menuEl && menuEl.parentNode) menuEl.parentNode.removeChild(menuEl);
+    menuEl = null;
+  }
+
+  function MultiSelect(props) {
+    autoIdSeq += 1;
+    var id = props.id || ('multi-select-' + autoIdSeq);
+    if (!props.id) console.warn('IESS.MultiSelect: props.id is required to keep the menu open across rerenders');
+    var rootEl = null;
+    var controlEl = null;
+
+    return stateful(function (rerender) {
+      var options = props.options || [];
+      var value = (props.value || []).map(String);
+      var disabled = !!props.disabled;
+      var placeholder = props.placeholder || '請選擇';
+      var className = props.className || '';
+      var onChange = props.onChange;
+
+      function isOpen() {
+        return openId === id;
+      }
+
+      function emit(next) {
+        if (disabled || !onChange) return;
+        onChange(next);
+      }
+
+      function toggleOption(opt) {
+        var next = value.slice();
+        var idx = next.indexOf(opt);
+        if (idx === -1) next.push(opt);
+        else next.splice(idx, 1);
+        emit(next);
+      }
+
+      function removeOption(opt) {
+        emit(value.filter(function (v) { return v !== opt; }));
+      }
+
+      function positionMenu() {
+        if (!menuEl || !controlEl) return;
+        // 若選單仍存在，但擁有它的 controlEl（本次 render 閉包所捕獲的節點）已不在文件內，
+        // 代表使用者是在沒有經過 mousedown/outside 清理流程的情況下離開了這個表單
+        // （例如在文字欄位按 Enter 送出表單），選單淪為孤兒。此處補做清理，
+        // 避免浮動選單與全域監聽器繼續留在畫面上。
+        // 正常情況下「同一 id 的新實例接手」會在 syncMenu 裡先 destroyMenu() 再 buildMenu()，
+        // 屆時這個舊實例的 positionMenu 已不再被任何監聽器引用，不會誤觸此處的守衛。
+        if (!document.body.contains(controlEl)) {
+          openId = null;
+          destroyMenu();
+          return;
+        }
+        var rect = controlEl.getBoundingClientRect();
+        menuEl.style.top = (rect.bottom + 2) + 'px';
+        menuEl.style.left = rect.left + 'px';
+        menuEl.style.width = rect.width + 'px';
+      }
+
+      function closeMenu() {
+        openId = null;
+        destroyMenu();
+        rerender();
+      }
+
+      function buildMenu() {
+        menuEl = document.createElement('ul');
+        menuEl.className = 'multi-select__menu';
+        menuEl.setAttribute('role', 'listbox');
+        menuEl.setAttribute('aria-multiselectable', 'true');
+        document.body.appendChild(menuEl);
+
+        listeners = {
+          reposition: function () { if (isOpen()) positionMenu(); },
+          outside: function (e) {
+            if (menuEl && menuEl.contains(e.target)) return;
+            if (rootEl && rootEl.contains(e.target)) return;
+            closeMenu();
+          },
+          key: function (e) {
+            if (e.key === 'Escape') closeMenu();
+          }
+        };
+        window.addEventListener('scroll', listeners.reposition, true);
+        window.addEventListener('resize', listeners.reposition);
+        document.addEventListener('mousedown', listeners.outside, true);
+        document.addEventListener('keydown', listeners.key, true);
+
+        positionMenu();
+
+        if (!options.length) {
+          var empty = document.createElement('li');
+          empty.className = 'multi-select__empty';
+          empty.textContent = '無可選項目';
+          menuEl.appendChild(empty);
+          return;
+        }
+
+        options.forEach(function (opt) {
+          var checked = value.indexOf(opt) !== -1;
+          var item = document.createElement('li');
+          var btn = document.createElement('button');
+          btn.type = 'button';
+          btn.setAttribute('role', 'option');
+          btn.setAttribute('aria-selected', checked ? 'true' : 'false');
+          btn.className = 'multi-select__option' + (checked ? ' multi-select__option--selected' : '');
+
+          var box = document.createElement('span');
+          box.className = 'multi-select__checkbox' + (checked ? ' multi-select__checkbox--checked' : '');
+          box.textContent = checked ? '✓' : '';
+          btn.appendChild(box);
+          btn.appendChild(document.createTextNode(opt));
+
+          // 用 click 而非 mousedown：click 才會被鍵盤 Enter/Space 觸發（button 原生行為），
+          // 讓鍵盤使用者也能選取選項。改用 click 不會被 outside 監聽器誤判成「點外面」而先關閉選單，
+          // 因為 outside 監聽器（mousedown 階段）已用 menuEl.contains(e.target) 排除選單內部。
+          btn.addEventListener('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleOption(opt);
+          });
+
+          item.appendChild(btn);
+          menuEl.appendChild(item);
+        });
+      }
+
+      // 只有「目前展開且已掛載到文件」的實例才重建選單，
+      // 避免被丟棄的舊實例把新實例的選單關掉或定位到已卸載的節點。
+      function syncMenu() {
+        if (!isOpen()) return;
+        if (!controlEl || !document.body.contains(controlEl)) return;
+        if (disabled) { closeMenu(); return; }
+        destroyMenu();
+        buildMenu();
+      }
+
+      function handleControlClick(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (disabled) return;
+        if (isOpen()) {
+          closeMenu();
+          return;
+        }
+        destroyMenu();
+        openId = id;
+        rerender();
+      }
+
+      var node = h('div', {
+        className: 'multi-select ' + className,
+        ref: function (el) { rootEl = el; }
+      },
+        h('div', {
+          className: 'multi-select__control' + (disabled ? ' multi-select__control--disabled' : ''),
+          role: 'combobox',
+          'aria-expanded': isOpen() ? 'true' : 'false',
+          tabIndex: disabled ? -1 : 0,
+          ref: function (el) { controlEl = el; },
+          onClick: handleControlClick,
+          onKeyDown: function (e) {
+            if (e.target !== controlEl) return;
+            if (e.key === 'Enter' || e.key === ' ') handleControlClick(e);
+          }
+        },
+          h('div', { className: 'multi-select__chips' },
+            value.length
+              ? value.map(function (opt) {
+                  return h('span', { className: 'multi-select__chip' },
+                    opt,
+                    disabled ? null : h('button', {
+                      type: 'button',
+                      className: 'multi-select__chip-remove',
+                      'aria-label': '移除 ' + opt,
+                      'data-no-tooltip': true,
+                      onMouseDown: function (e) { e.preventDefault(); e.stopPropagation(); },
+                      onClick: function (e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        removeOption(opt);
+                      }
+                    }, '×')
+                  );
+                })
+              : h('span', { className: 'multi-select__placeholder' }, placeholder)
+          ),
+          renderChevron('multi-select__chevron' + (isOpen() ? ' multi-select__chevron--open' : ''))
+        )
+      );
+
+      // 節點要等父層插入 DOM 後才量得到位置，故延到下一個 tick 再同步選單
+      setTimeout(syncMenu, 0);
+
+      return node;
+    });
+  }
+
+  global.IESS = global.IESS || {};
+  global.IESS.MultiSelect = MultiSelect;
+})(window);

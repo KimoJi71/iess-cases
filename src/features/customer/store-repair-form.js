@@ -9,76 +9,8 @@
   'use strict';
   var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful, TimeInput24 = IESS.TimeInput24;
 
-  function renderAssigneeMultiSelect(formData, onToggle, className) {
-    var selected = CaseAssigneeUtils.getAssignees(formData);
-    return h('div', { className: 'space-y-1 ' + (className || '') },
-      ASSIGNEES.map(function (opt) {
-        var checked = selected.indexOf(opt) !== -1;
-        return h('label', {
-          key: opt,
-          className: 'flex items-center gap-2 text-sm text-gray-700 cursor-pointer'
-        },
-          h('input', {
-            type: 'checkbox',
-            checked: checked,
-            onChange: function () {
-              onToggle(selected, opt);
-            }
-          }),
-          opt
-        );
-      })
-    );
-  }
-
-  function renderCollaboratorSettings(formData, handlers) {
-    var selected = CaseAssigneeUtils.getCollaborators(formData);
-    var selectedNames = selected.map(function (row) { return row.name; });
-    return h('div', { className: 'col-span-full border rounded-md p-3 bg-gray-50 space-y-3' },
-      h('div', { className: 'font-semibold text-sm text-blue-800' }, '協作人員設定'),
-      h('div', null,
-        h('div', { className: 'text-xs text-gray-500 mb-1' }, '協作人員'),
-        h('div', { className: 'space-y-1' },
-          ASSIGNEES.map(function (opt) {
-            var checked = selectedNames.indexOf(opt) !== -1;
-            return h('label', {
-              key: opt,
-              className: 'flex items-center gap-2 text-sm cursor-pointer'
-            },
-              h('input', {
-                type: 'checkbox',
-                checked: checked,
-                onChange: function () {
-                  handlers.onToggle(selected, opt);
-                }
-              }),
-              opt
-            );
-          })
-        )
-      ),
-      h('div', null,
-        h('div', { className: 'text-xs text-gray-500 mb-1' }, '協作人數'),
-        h('div', { className: 'text-sm font-medium' }, String(selected.length))
-      ),
-      selected.length ? h('div', { className: 'space-y-2' },
-        h('div', { className: 'text-xs text-gray-500' }, '協作積分'),
-        selected.map(function (row) {
-          return h('div', { key: row.name, className: 'flex items-center gap-2' },
-            h('span', { className: 'text-sm w-28' }, row.name),
-            h('input', {
-              type: 'number',
-              value: row.points,
-              onChange: function (e) {
-                handlers.onPointsChange(selected, row.name, e.target.value);
-              },
-              className: 'w-28 p-2 border rounded-md outline-none'
-            })
-          );
-        })
-      ) : null
-    );
-  }
+  var renderAssigneeMultiSelect = CaseAssigneeFields.renderAssigneeMultiSelect;
+  var renderCollaboratorSettings = CaseAssigneeFields.renderCollaboratorSettings;
 
   function StoreRepairForm(props) {
     var store = props.store || {};
@@ -243,10 +175,10 @@
               h('div', { className: 'col-span-full font-semibold text-lg text-blue-800 border-b pb-2 mt-4 mb-2' }, '排程'),
               h('div', null,
                 h('label', { className: 'block text-sm mb-1' }, '指派人員'),
-                renderAssigneeMultiSelect(formData, function (selected, opt) {
-                  formData.assignees = CaseAssigneeUtils.toggleAssignee(selected, opt);
+                renderAssigneeMultiSelect(formData, function (next) {
+                  formData.assignees = next;
                   rerender();
-                })
+                }, { id: 'store-repair-assignees' })
               ),
               h('div', null,
                 h('label', { className: 'block text-sm mb-1' }, '預計日期'),
@@ -257,12 +189,16 @@
                 h(TimeInput24, { name: 'expectedTime', value: formData.expectedTime, onChange: handleChange, className: 'w-full' })
               ),
               renderCollaboratorSettings(formData, {
-                onToggle: function (selected, opt) {
-                  formData.collaborators = CaseAssigneeUtils.toggleCollaborator(selected, opt);
+                onAddRow: function () {
+                  formData.collaborators = CaseAssigneeUtils.addCollaboratorRow(formData.collaborators);
                   rerender();
                 },
-                onPointsChange: function (selected, name, points) {
-                  formData.collaborators = CaseAssigneeUtils.setCollaboratorPoints(selected, name, points);
+                onUpdateRow: function (index, patch) {
+                  formData.collaborators = CaseAssigneeUtils.updateCollaboratorRow(formData.collaborators, index, patch);
+                  rerender();
+                },
+                onRemoveRow: function (index) {
+                  formData.collaborators = CaseAssigneeUtils.removeCollaboratorRow(formData.collaborators, index);
                   rerender();
                 }
               })

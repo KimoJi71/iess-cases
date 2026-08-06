@@ -155,8 +155,8 @@ function testRenameReferences(AU) {
       id: 'r1',
       assignees: ['A組', 'B組'],
       collaborators: [
-        { name: 'A組', points: 4 },
-        { name: 'C組', points: 10 },
+        { name: 'A組', count: 3, points: 4 },
+        { name: 'C組', count: 2, points: 10 },
       ],
       performanceAssignees: ['A組', 'B組'],
       performanceAssignee: 'A組',
@@ -167,6 +167,9 @@ function testRenameReferences(AU) {
   assertEq(JSON.stringify(u.assignees), JSON.stringify(['A組新', 'B組']), 'assignees[] renamed');
   assertEq(u.collaborators[0].name, 'A組新', 'collaborators[].name renamed');
   assertEq(u.collaborators[1].name, 'C組', 'other collaborator unchanged');
+  assertEq(u.collaborators[0].count, 3, 'renamed collaborator keeps count');
+  assertEq(u.collaborators[0].points, 4, 'renamed collaborator keeps points');
+  assertEq(u.collaborators[1].count, 2, 'untouched collaborator keeps count');
   assertEq(JSON.stringify(u.performanceAssignees), JSON.stringify(['A組新', 'B組']), 'performanceAssignees[] renamed');
   assertEq(u.performanceAssignee, 'A組新', 'performanceAssignee string renamed');
 }
@@ -220,6 +223,149 @@ function testPerformanceReport(PU) {
   assertApprox(byName['C組'], 10, 'report C組 bonusPoints');
 }
 
+function testCollaboratorRows(CAU) {
+  console.log('\n7. Collaborator rows (name / count / points)');
+
+  const c = makeRepairCase({
+    collaborators: [
+      { name: 'C組', count: 2, points: 10 },
+      { name: 'A組', count: 3, points: 4 },
+    ],
+  });
+  assertApprox(CAU.computeBonusPointsForAssignee(c, 'A組'), 12, 'count does not change A組 bonus');
+  assertApprox(CAU.computeBonusPointsForAssignee(c, 'B組'), 8, 'count does not change B組 bonus');
+  assertApprox(CAU.computeBonusPointsForAssignee(c, 'C組'), 10, 'count does not change C組 bonus');
+
+  assertEq(CAU.getCollaborators({ collaborators: [{ name: 'C組', points: 10 }] })[0].count, 1, 'legacy row without count → 1');
+  assertEq(CAU.getCollaborators({ collaborators: [{ name: 'C組', count: 0, points: 1 }] })[0].count, 1, 'count 0 → 1');
+  assertEq(CAU.getCollaborators({ collaborators: [{ name: 'C組', count: 2.7, points: 1 }] })[0].count, 2, 'count 2.7 → 2');
+  assertEq(CAU.getCollaborators({ collaborators: [{ name: '', count: 2, points: 5 }] }).length, 0, 'blank name row filtered out');
+
+  assertEq(
+    CAU.formatCollaborators({
+      collaborators: [
+        { name: 'B組', count: 2, points: 10 },
+        { name: 'C組', points: 5 },
+      ],
+    }),
+    'B組（2人／10分）、C組（1人／5分）',
+    'formatCollaborators output'
+  );
+  assertEq(CAU.formatCollaborators({ collaborators: [] }), '—', 'formatCollaborators empty → —');
+
+  const base = [{ name: 'B組', count: 2, points: 10 }];
+  const added = CAU.addCollaboratorRow(base);
+  assertEq(added.length, 2, 'addCollaboratorRow appends a row');
+  assertEq(added[1].name, '', 'new row has blank name');
+  assertEq(added[1].count, 1, 'new row count defaults to 1');
+  assertEq(added[1].points, 0, 'new row points defaults to 0');
+  assertEq(base.length, 1, 'addCollaboratorRow does not mutate input');
+
+  const updated = CAU.updateCollaboratorRow(added, 1, { name: 'C組', points: 5 });
+  assertEq(updated[1].name, 'C組', 'updateCollaboratorRow sets name');
+  assertEq(updated[1].points, 5, 'updateCollaboratorRow sets points');
+  assertEq(updated[1].count, 1, 'updateCollaboratorRow keeps untouched count');
+  assertEq(updated[0].name, 'B組', 'updateCollaboratorRow leaves other rows');
+  assertEq(added[1].name, '', 'updateCollaboratorRow does not mutate input');
+
+  const removed = CAU.removeCollaboratorRow(updated, 0);
+  assertEq(removed.length, 1, 'removeCollaboratorRow drops the row');
+  assertEq(removed[0].name, 'C組', 'removeCollaboratorRow keeps the rest');
+  assertEq(updated.length, 2, 'removeCollaboratorRow does not mutate input');
+
+  const all = ['A組', 'B組', 'C組'];
+  assertEq(
+    JSON.stringify(CAU.getAvailableCollaboratorNames(updated, 0, all)),
+    JSON.stringify(['A組', 'B組']),
+    'row 0 options exclude other rows picks, keep own'
+  );
+  assertEq(
+    JSON.stringify(CAU.getAvailableCollaboratorNames(updated, 1, all)),
+    JSON.stringify(['A組', 'C組']),
+    'row 1 options exclude B組'
+  );
+}
+
+function testStringTypedCountPoints(CAU) {
+  console.log('\n8. String-typed count/points from <input type="number"> normalize end-to-end');
+
+  const dirty = {
+    assignees: ['A組', 'B組'],
+    processRecords: [{ points: 10, qty: '3' }],
+    collaborators: [
+      { name: 'B組', count: '3', points: '10' },
+      { name: '', count: '', points: '5' },
+      { name: 'C組', count: 'abc', points: '' },
+    ],
+  };
+
+  const normalized = CAU.normalizeRepairCase(dirty);
+  assertEq(normalized.collaborators.length, 2, 'blank-name row dropped, 2 rows remain');
+  assertEq(normalized.collaborators[0].name, 'B組', 'row0 name');
+  assertEq(normalized.collaborators[0].count, 3, "row0 count '3' -> 3");
+  assertEq(normalized.collaborators[0].points, 10, "row0 points '10' -> 10");
+  assertEq(normalized.collaborators[1].name, 'C組', 'row1 name');
+  assertEq(normalized.collaborators[1].count, 1, "row1 count 'abc' -> 1 (invalid falls back)");
+  assertEq(normalized.collaborators[1].points, 0, "row1 points '' -> 0");
+  assertTrue(!Number.isNaN(normalized.collaborators[0].count), 'row0 count is not NaN');
+  assertTrue(!Number.isNaN(normalized.collaborators[0].points), 'row0 points is not NaN');
+  assertTrue(!Number.isNaN(normalized.collaborators[1].count), 'row1 count is not NaN');
+  assertTrue(!Number.isNaN(normalized.collaborators[1].points), 'row1 points is not NaN');
+
+  const total = CAU.sumProcessPoints(normalized);
+  assertApprox(total, 30, 'total = points(10) * qty(3 from string) = 30');
+  const collabSum = normalized.collaborators.reduce((s, r) => s + r.points, 0);
+  assertApprox(collabSum, 10, 'collabSum = 10 (B組) + 0 (C組) = 10');
+  const remainder = total - collabSum;
+  assertApprox(remainder, 20, 'remainder = 30 - 10 = 20');
+  const share = remainder / normalized.assignees.length;
+  assertApprox(share, 10, 'share = 20 / 2 = 10');
+
+  const aBonus = CAU.computeBonusPointsForAssignee(normalized, 'A組');
+  const bBonus = CAU.computeBonusPointsForAssignee(normalized, 'B組');
+  const cBonus = CAU.computeBonusPointsForAssignee(normalized, 'C組');
+  assertApprox(aBonus, 10, 'A組 bonus = share only = 10');
+  assertApprox(bBonus, 20, 'B組 bonus = share(10) + collab(10) = 20');
+  assertApprox(cBonus, 0, 'C組 bonus = 0 (not assignee, collab points 0)');
+  assertTrue(!Number.isNaN(aBonus), 'A組 bonus is not NaN');
+  assertTrue(!Number.isNaN(bBonus), 'B組 bonus is not NaN');
+  assertTrue(!Number.isNaN(cBonus), 'C組 bonus is not NaN');
+}
+
+function testHelperChainToBonus(CAU) {
+  console.log('\n9. addCollaboratorRow / updateCollaboratorRow helper chain -> bonus points');
+
+  // 模擬 UI 資料流：先加一列、填值（number input 傳出字串），再加一列、填值
+  var rows = [];
+  rows = CAU.addCollaboratorRow(rows);
+  rows = CAU.updateCollaboratorRow(rows, 0, { name: 'B組', count: '2', points: '10' });
+  rows = CAU.addCollaboratorRow(rows);
+  rows = CAU.updateCollaboratorRow(rows, 1, { name: 'C組', count: '1', points: '5' });
+
+  const raw = {
+    assignees: ['A組'],
+    processRecords: [{ points: 50, qty: 1 }],
+    collaborators: rows,
+  };
+
+  const normalized = CAU.normalizeRepairCase(raw);
+  assertEq(normalized.collaborators.length, 2, 'both helper-built rows survive normalize');
+  assertEq(normalized.collaborators[0].name, 'B組', 'row0 name via helpers');
+  assertEq(normalized.collaborators[0].count, 2, 'row0 count via helpers');
+  assertEq(normalized.collaborators[0].points, 10, 'row0 points via helpers');
+  assertEq(normalized.collaborators[1].name, 'C組', 'row1 name via helpers');
+  assertEq(normalized.collaborators[1].count, 1, 'row1 count via helpers');
+  assertEq(normalized.collaborators[1].points, 5, 'row1 points via helpers');
+
+  // total 50, collabSum 15, remainder 35, n=1 (only A組) -> share 35
+  const aBonus = CAU.computeBonusPointsForAssignee(normalized, 'A組');
+  const bBonus = CAU.computeBonusPointsForAssignee(normalized, 'B組');
+  const cBonus = CAU.computeBonusPointsForAssignee(normalized, 'C組');
+  assertApprox(aBonus, 35, 'A組 bonus = share only = 35');
+  assertApprox(bBonus, 10, 'B組 bonus = collab only = 10');
+  assertApprox(cBonus, 5, 'C組 bonus = collab only = 5');
+}
+
 function main() {
   console.log('Repair multi-assignee verification');
   console.log(`Root: ${ROOT}`);
@@ -240,6 +386,9 @@ function main() {
   testRenameReferences(AU);
   testIncludesAssignee(CAU, DRU);
   testPerformanceReport(PU);
+  testCollaboratorRows(CAU);
+  testStringTypedCountPoints(CAU);
+  testHelperChainToBonus(CAU);
 
   console.log(`\n${'='.repeat(50)}`);
   console.log(`Results: ${passed} passed, ${failed} failed`);

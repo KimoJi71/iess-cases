@@ -141,7 +141,7 @@
         var collaborators = CaseAssigneeUtils.getCollaborators(c).map(function (row) {
           if (row.name !== oldName) return row;
           changed = true;
-          return { name: newName, points: row.points };
+          return { name: newName, count: row.count, points: row.points };
         });
         var performanceAssignees = (Array.isArray(c.performanceAssignees)
           ? c.performanceAssignees
