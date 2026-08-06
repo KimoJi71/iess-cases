@@ -84,6 +84,10 @@ const EQUIP_MODEL_OPTIONS = ['RAS-100', 'RAS-50', 'FXYP100', 'PA-063', '其他']
 const EQUIP_INDOOR_OUTDOOR_OPTIONS = ['室內機', '室外機', '無'];
 const EQUIP_VOLTAGE_OPTIONS = ['110V', '220V', '380V'];
 const EQUIP_STATUS_OPTIONS = ['運轉', '轉汰換', '已汰換'];
+// 設備等級：影響 A/B 服務等級叫修單是否計入績效積分
+const EQUIPMENT_LEVEL_OPTIONS = ['基礎設備', '增額設備'];
+// 空白／查無對應分類時的預設等級（避免依賴陣列順序）
+const DEFAULT_EQUIPMENT_LEVEL = '基礎設備';
 // 選型號時自動帶入：設備分類、品牌、匹數、室內外機、電壓（「其他」不帶入）
 const EQUIP_MODEL_CATALOG = {
   'RAS-100': { category: '分離式', brand: '日立', horsepower: '3.5', indoorOutdoor: '室內機', voltage: '220V' },

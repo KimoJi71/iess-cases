@@ -13,6 +13,7 @@
     { key: 'deviceName', label: '設備名稱' },
     { key: 'specification', label: '設備規格' },
     { key: 'model', label: '型號' },
+    { key: 'equipmentLevel', label: '設備等級' },
     { key: 'refrigerant', label: '冷媒' },
     { key: 'powerSource', label: '電源' }
   ];
@@ -135,7 +136,10 @@
                         )
                       ),
                       COLUMNS.map(function (col) {
-                        return h('td', { key: col.key, className: 'p-3 font-medium text-gray-800' }, dc[col.key] || '—');
+                        var text = col.key === 'equipmentLevel'
+                          ? DeviceCategoryUtils.getEquipmentLevel(dc)
+                          : (dc[col.key] || '—');
+                        return h('td', { key: col.key, className: 'p-3 font-medium text-gray-800' }, text);
                       })
                     );
                   })

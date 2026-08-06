@@ -12,6 +12,7 @@
     { name: 'deviceName', label: '設備名稱', required: true },
     { name: 'specification', label: '設備規格', required: true },
     { name: 'model', label: '型號', required: true },
+    { name: 'equipmentLevel', label: '設備等級', required: true, type: 'select', options: EQUIPMENT_LEVEL_OPTIONS },
     { name: 'refrigerant', label: '冷媒', required: false },
     { name: 'powerSource', label: '電源', required: false }
   ];
@@ -28,6 +29,7 @@
     FIELDS.forEach(function (field) {
       formData[field.name] = (targetCase && targetCase[field.name]) || '';
     });
+    formData.equipmentLevel = DeviceCategoryUtils.getEquipmentLevel(targetCase);
 
     return stateful(function (rerender) {
       function handleChange(e) {
@@ -80,11 +82,27 @@
         h('form', { onSubmit: handleSubmit, className: 'p-6' },
           h('div', { className: 'grid grid-cols-1 md:grid-cols-2 gap-6' },
             FIELDS.map(function (field) {
+              var labelNode = h('label', { className: 'block text-sm mb-1' },
+                field.label,
+                field.required && ' ',
+                field.required && h('span', { className: 'text-red-500' }, '*'));
+              if (field.type === 'select') {
+                return h('div', { key: field.name },
+                  labelNode,
+                  h('select', {
+                    name: field.name,
+                    value: formData[field.name],
+                    onChange: handleChange,
+                    className: 'w-full p-2.5 border rounded-md outline-none focus:border-blue-500 bg-white'
+                  },
+                    field.options.map(function (opt) {
+                      return h('option', { key: opt, value: opt }, opt);
+                    })
+                  )
+                );
+              }
               return h('div', { key: field.name },
-                h('label', { className: 'block text-sm mb-1' },
-                  field.label,
-                  field.required && ' ',
-                  field.required && h('span', { className: 'text-red-500' }, '*')),
+                labelNode,
                 h('input', {
                   type: 'text',
                   name: field.name,

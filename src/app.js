@@ -496,6 +496,7 @@
         return h(EquipmentList, {
           equipments: s.equipments, setEquipments: setEquipments,
           customers: s.customers, stores: s.stores,
+          deviceCategories: s.deviceCategories,
           repairCases: s.cases, projectCases: s.projectCases, setProjectCases: setProjectCases,
           equipmentCustomer: s.equipmentCustomer, setEquipmentCustomer: setEquipmentCustomer,
           equipmentStore: s.equipmentStore, setEquipmentStore: setEquipmentStore,
@@ -563,7 +564,8 @@
           assignees: s.assignees,
           maintenanceAllocations: s.maintenanceAllocations,
           stores: s.stores,
-          performanceAreas: s.performanceAreas
+          performanceAreas: s.performanceAreas,
+          deviceCategories: s.deviceCategories
         });
       case 'data-retrieval':
         return h(DataRetrieval, {

@@ -52,6 +52,20 @@
     return s.indexOf('C ') === 0 || s.indexOf('D ') === 0;
   }
 
+  function getCaseEquipmentLevel(c, deviceCategories) {
+    var equip = (c && c.equipment) || null;
+    return DeviceCategoryUtils.getEquipmentLevelByEquip(deviceCategories || [], equip);
+  }
+
+  function isAddOnEquipmentCase(c, deviceCategories) {
+    return getCaseEquipmentLevel(c, deviceCategories) === '增額設備';
+  }
+
+  // C/D 服務等級一律計分；A/B 僅在設備為增額設備時計分
+  function isBonusEligible(c, deviceCategories) {
+    return isServiceLevelCD(c && c.serviceLevel) || isAddOnEquipmentCase(c, deviceCategories);
+  }
+
   function getRepairCaseDate(c) {
     return toDateKey((c && (c.completionDate || c.repairDate)) || '');
   }
@@ -102,6 +116,7 @@
     var maintenanceCases = input.maintenanceCases || [];
     var assignees = input.assignees || [];
     var allocations = input.allocations || [];
+    var deviceCategories = input.deviceCategories || [];
     var quarter = input.quarter;
     var months = getQuarterMonths(quarter);
 
@@ -117,8 +132,8 @@
       var bonusPoints = 0;
       cases.forEach(function (c) {
         if (!c.isPerformanceIncluded) return;
-        if (!isServiceLevelCD(c.serviceLevel)) return;
         if (!isDateInRange(getRepairCaseDate(c), quarter.start, quarter.end)) return;
+        if (!isBonusEligible(c, deviceCategories)) return;
         bonusPoints += CaseAssigneeUtils.computeBonusPointsForAssignee(c, assignee.name);
       });
 
@@ -220,6 +235,9 @@
     getQuarterMonths: getQuarterMonths,
     achievementRate: achievementRate,
     isServiceLevelCD: isServiceLevelCD,
+    getCaseEquipmentLevel: getCaseEquipmentLevel,
+    isAddOnEquipmentCase: isAddOnEquipmentCase,
+    isBonusEligible: isBonusEligible,
     toDateKey: toDateKey,
     getRepairCaseDate: getRepairCaseDate,
     getMaintenanceCaseDate: getMaintenanceCaseDate,

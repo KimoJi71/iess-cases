@@ -1,7 +1,7 @@
 /*
  * features/customer/equipment-list.js — 客戶建檔（設備管理）：設備列表
  * props: {
- *   equipments, setEquipments, customers, stores,
+ *   equipments, setEquipments, customers, stores, deviceCategories,
  *   repairCases, projectCases, setProjectCases,
  *   equipmentCustomer, setEquipmentCustomer, equipmentStore, setEquipmentStore,
  *   openStoreEdit, openStoreHistory, setEditingCase, setView, showToast
@@ -17,6 +17,7 @@
     var setEquipments = props.setEquipments;
     var customers = props.customers;
     var stores = props.stores;
+    var deviceCategories = props.deviceCategories || [];
     var repairCases = props.repairCases || [];
     var projectCases = props.projectCases || [];
     var setProjectCases = props.setProjectCases;
@@ -77,6 +78,17 @@
       return h('span', {
         className: 'px-2 py-0.5 rounded-full text-xs font-medium ' + (map[label] || 'bg-gray-100 text-gray-600')
       }, label);
+    }
+
+    function equipmentLevelBadge(eq) {
+      if (!eq || !eq.model) return '—';
+      var level = DeviceCategoryUtils.getEquipmentLevelByEquip(deviceCategories, eq);
+      var cls = level === '增額設備'
+        ? 'bg-amber-100 text-amber-700'
+        : 'bg-gray-100 text-gray-600';
+      return h('span', {
+        className: 'px-2 py-0.5 rounded-full text-xs font-medium ' + cls
+      }, level);
     }
 
     return stateful(function (rerender) {
@@ -230,6 +242,7 @@
                   h('th', { className: 'p-3 font-semibold' }, '設備名稱'),
                   h('th', { className: 'p-3 font-semibold' }, '設備規格'),
                   h('th', { className: 'p-3 font-semibold' }, '型號'),
+                  h('th', { className: 'p-3 font-semibold' }, '設備等級'),
                   h('th', { className: 'p-3 font-semibold' }, '設備區域'),
                   h('th', { className: 'p-3 font-semibold' }, '出廠日期'),
                   h('th', { className: 'p-3 font-semibold' }, '安裝日期'),
@@ -241,7 +254,7 @@
               h('tbody', { className: 'divide-y divide-gray-100' },
                 filtered.length === 0
                   ? h('tr', null, h('td', {
-                      colspan: 12,
+                      colspan: 13,
                       className: 'p-10 text-center text-gray-400 text-base'
                     }, '無資料'))
                   : pageResult.items.map(function (eq) {
@@ -262,6 +275,7 @@
                         h('td', { className: 'p-3 font-medium text-gray-800' }, eq.deviceName || eq.name || '—'),
                         h('td', { className: 'p-3' }, eq.specification || '—'),
                         h('td', { className: 'p-3' }, eq.model || '—'),
+                        h('td', { className: 'p-3' }, equipmentLevelBadge(eq)),
                         h('td', { className: 'p-3' }, eq.area || '—'),
                         h('td', { className: 'p-3' }, eq.manufactureDate || '—'),
                         h('td', { className: 'p-3' }, eq.installDate || '—'),

@@ -1899,6 +1899,7 @@ const INITIAL_DEVICE_CATEGORIES = [{
   model: 'RAS-100',
   refrigerant: 'R410A',
   powerSource: '220V',
+  equipmentLevel: '基礎設備',
   createdDate: todayDate
 }, {
   id: 'DCAT2',
@@ -1909,6 +1910,7 @@ const INITIAL_DEVICE_CATEGORIES = [{
   model: 'RAS-50',
   refrigerant: 'R410A',
   powerSource: '110V',
+  equipmentLevel: '基礎設備',
   createdDate: todayDate
 }, {
   id: 'DCAT3',
@@ -1919,6 +1921,7 @@ const INITIAL_DEVICE_CATEGORIES = [{
   model: 'FXYP100',
   refrigerant: 'R32',
   powerSource: '220V',
+  equipmentLevel: '基礎設備',
   createdDate: todayDate
 }, {
   id: 'DCAT4',
@@ -1929,6 +1932,7 @@ const INITIAL_DEVICE_CATEGORIES = [{
   model: 'PA-063',
   refrigerant: 'R134a',
   powerSource: '380V',
+  equipmentLevel: '基礎設備',
   createdDate: todayDate
 }, {
   id: 'DCAT5',
@@ -1939,6 +1943,7 @@ const INITIAL_DEVICE_CATEGORIES = [{
   model: 'FXMQ125',
   refrigerant: 'R32',
   powerSource: '220V',
+  equipmentLevel: '基礎設備',
   createdDate: todayDate
 }, {
   id: 'DCAT6',
@@ -1949,6 +1954,7 @@ const INITIAL_DEVICE_CATEGORIES = [{
   model: 'FXYP140',
   refrigerant: 'R32',
   powerSource: '220V',
+  equipmentLevel: '基礎設備',
   createdDate: todayDate
 }];
 

@@ -5,11 +5,13 @@
   'use strict';
 
   var FIELD_KEYS = ['category', 'brand', 'deviceName', 'specification', 'model', 'refrigerant', 'powerSource'];
+  // 屬性欄位：參與正規化與儲存，但不參與重複性判定
+  var ATTR_KEYS = ['equipmentLevel'];
 
   function normalizeRecord(record) {
     var out = {};
-    FIELD_KEYS.forEach(function (key) {
-      out[key] = String(record[key] || '').trim();
+    FIELD_KEYS.concat(ATTR_KEYS).forEach(function (key) {
+      out[key] = String((record && record[key]) || '').trim();
     });
     return out;
   }
@@ -115,6 +117,46 @@
       }
     }
     return null;
+  }
+
+  function getEquipmentLevel(record) {
+    var level = String((record && record.equipmentLevel) || '').trim();
+    return level || DEFAULT_EQUIPMENT_LEVEL;
+  }
+
+  function getEquipmentLevelByModel(deviceCategories, model) {
+    return getEquipmentLevel(findRecordByModel(deviceCategories, model));
+  }
+
+  // 設備等級歸屬於「設備分類＋品牌＋設備名稱＋設備規格＋型號」五欄組合，
+  // 而非單一型號 — 同一型號可能因分類/品牌不同而對應不同分類紀錄。
+  function findRecordByFullMatch(deviceCategories, equip) {
+    if (!equip) return null;
+    var category = String(equip.category || '').trim();
+    var brand = String(equip.brand || '').trim();
+    var deviceName = String(equip.deviceName || equip.name || '').trim();
+    var specification = String(equip.specification || '').trim();
+    var model = String(equip.model || '').trim();
+    if (!category || !brand || !deviceName || !specification || !model) return null;
+
+    var list = deviceCategories || [];
+    for (var i = 0; i < list.length; i++) {
+      var dc = list[i];
+      if (String(dc.category || '').trim() === category &&
+          String(dc.brand || '').trim() === brand &&
+          String(dc.deviceName || dc.name || '').trim() === deviceName &&
+          String(dc.specification || '').trim() === specification &&
+          String(dc.model || '').trim() === model) {
+        return dc;
+      }
+    }
+    return null;
+  }
+
+  function getEquipmentLevelByEquip(deviceCategories, equip) {
+    var matched = findRecordByFullMatch(deviceCategories, equip);
+    if (matched) return getEquipmentLevel(matched);
+    return getEquipmentLevelByModel(deviceCategories, equip && equip.model);
   }
 
   function findBestMatchingRecord(deviceCategories, equip) {
@@ -257,6 +299,7 @@
 
   window.DeviceCategoryUtils = {
     FIELD_KEYS: FIELD_KEYS,
+    ATTR_KEYS: ATTR_KEYS,
     normalizeRecord: normalizeRecord,
     syncDeviceCategoryOptions: syncDeviceCategoryOptions,
     findDuplicate: findDuplicate,
@@ -265,6 +308,9 @@
     uniqueFieldValues: uniqueFieldValues,
     withCurrentValue: withCurrentValue,
     findRecordByModel: findRecordByModel,
+    getEquipmentLevel: getEquipmentLevel,
+    getEquipmentLevelByModel: getEquipmentLevelByModel,
+    getEquipmentLevelByEquip: getEquipmentLevelByEquip,
     findBestMatchingRecord: findBestMatchingRecord,
     resolveProjectEquip: resolveProjectEquip,
     defaultEquipRecord: defaultEquipRecord,
