@@ -57,7 +57,9 @@
 
   function hasOpenCasesForAssignee(name, cases, maintenanceCases, projectCases) {
     if ((cases || []).some(function (c) {
-      return isRepairCaseOpen(c) && c.assignee === name;
+      if (!isRepairCaseOpen(c)) return false;
+      if (window.CaseAssigneeUtils) return CaseAssigneeUtils.includesAssignee(c, name);
+      return c.assignee === name;
     })) return true;
     if ((maintenanceCases || []).some(function (c) {
       return !c.isClosed && c.assignee === name;
@@ -69,12 +71,21 @@
   }
 
   function buildPerformanceSnapshot(record, assignees) {
-    var assigneeName = (record && record.assignee) || '';
-    var assignee = (assignees || []).find(function (a) { return a.name === assigneeName; });
+    var names = (window.CaseAssigneeUtils
+      ? CaseAssigneeUtils.getFormalAssignees(record)
+      : [(record && record.assignee) || ''].filter(Boolean));
+    var memberIds = [];
+    (assignees || []).forEach(function (a) {
+      if (names.indexOf(a.name) === -1) return;
+      getMemberIds(a).forEach(function (id) {
+        if (memberIds.indexOf(id) === -1) memberIds.push(id);
+      });
+    });
     return {
       isPerformanceIncluded: true,
-      performanceAssignee: assigneeName,
-      performanceMemberIds: assignee ? getMemberIds(assignee) : []
+      performanceAssignees: names.slice(),
+      performanceAssignee: names[0] || '',
+      performanceMemberIds: memberIds
     };
   }
 
@@ -119,8 +130,38 @@
 
   function updateAssigneeReferences(oldName, newName, cases, maintenanceCases, projectCases) {
     var nextCases = cases.map(function (c) {
-      if (c.assignee !== oldName) return c;
-      return Object.assign({}, c, { assignee: newName });
+      var changed = false;
+      var next = Object.assign({}, c);
+      if (window.CaseAssigneeUtils) {
+        var assignees = CaseAssigneeUtils.getAssignees(c).map(function (n) {
+          if (n !== oldName) return n;
+          changed = true;
+          return newName;
+        });
+        var collaborators = CaseAssigneeUtils.getCollaborators(c).map(function (row) {
+          if (row.name !== oldName) return row;
+          changed = true;
+          return { name: newName, points: row.points };
+        });
+        var performanceAssignees = (Array.isArray(c.performanceAssignees)
+          ? c.performanceAssignees
+          : (c.performanceAssignee ? [c.performanceAssignee] : [])).map(function (n) {
+          if (n !== oldName) return n;
+          changed = true;
+          return newName;
+        });
+        if (c.assignee === oldName) { next.assignee = newName; changed = true; }
+        if (changed) {
+          next.assignees = assignees;
+          next.collaborators = collaborators;
+          next.performanceAssignees = performanceAssignees;
+          if (next.performanceAssignee === oldName) next.performanceAssignee = newName;
+        }
+      } else if (c.assignee === oldName) {
+        next.assignee = newName;
+        changed = true;
+      }
+      return changed ? next : c;
     });
     var nextMaintenance = maintenanceCases.map(function (c) {
       if (c.assignee !== oldName) return c;
