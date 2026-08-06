@@ -50,15 +50,30 @@
   function fmtCheckQtyFromMaps(checkName, qtyMapName, sd, unit) {
     var selected = sd[checkName];
     var qtyMap = sd[qtyMapName];
-    if (!Array.isArray(selected) || !selected.length) return '';
-    return selected.map(function (label) {
-      var display = label;
-      if (label === '其他') {
-        display = sd[checkName + '_other'] || '其他';
+    var parts = [];
+    if (Array.isArray(selected) && selected.length) {
+      selected.forEach(function (label) {
+        if (label === '其他') return;
+        var qty = qtyMap && qtyMap[label];
+        parts.push(qty ? label + ' ' + qty + (unit || '') : label);
+      });
+    }
+    var others = SurveyCheckQtyOthersUtils.getOthers(sd, checkName);
+    if (others.length) {
+      var othersText = SurveyCheckQtyOthersUtils.formatOthersList(others, unit || '');
+      if (othersText) parts.push(othersText);
+    } else if (Array.isArray(selected) && selected.indexOf('其他') !== -1) {
+      var display = sd[checkName + '_other'] || '其他';
+      var lq = qtyMap && qtyMap['其他'];
+      if (display !== '其他') {
+        parts.push(lq ? '其他：' + display + ' ' + lq + (unit || '') : '其他：' + display);
+      } else if (lq) {
+        parts.push('其他 ' + lq + (unit || ''));
+      } else {
+        parts.push('其他');
       }
-      var qty = qtyMap && qtyMap[label];
-      return qty ? display + ' ' + qty + (unit || '') : display;
-    }).join('、');
+    }
+    return parts.join('、');
   }
 
   function fmtDuctBox(prefix, sd) {
@@ -94,17 +109,35 @@
 
   function fmtVentOutlets(sd) {
     var selected = sd.ventOutlets;
-    if (!Array.isArray(selected) || !selected.length) return '';
     var qtyMap = sd.ventOutletsQty || {};
-    return selected.map(function (label) {
-      var display = label === '其他' ? (sd.ventOutlets_other || '其他') : label;
-      var qty = qtyMap[label];
-      var text = display + (qty ? ' ' + qty + '個' : '');
-      if (label.indexOf('線型') >= 0 && (sd.ventLinearWidth || sd.ventLinearHeight)) {
-        text += '（' + val(sd.ventLinearWidth) + '×' + val(sd.ventLinearHeight) + ' cm）';
+    var parts = [];
+    if (Array.isArray(selected) && selected.length) {
+      selected.forEach(function (label) {
+        if (label === '其他') return;
+        var qty = qtyMap[label];
+        var text = label + (qty ? ' ' + qty + '個' : '');
+        if (label.indexOf('線型') >= 0 && (sd.ventLinearWidth || sd.ventLinearHeight)) {
+          text += '（' + val(sd.ventLinearWidth) + '×' + val(sd.ventLinearHeight) + ' cm）';
+        }
+        parts.push(text);
+      });
+    }
+    var others = SurveyCheckQtyOthersUtils.getOthers(sd, 'ventOutlets');
+    if (others.length) {
+      var t = SurveyCheckQtyOthersUtils.formatOthersList(others, '個');
+      if (t) parts.push(t);
+    } else if (Array.isArray(selected) && selected.indexOf('其他') !== -1) {
+      var display = sd.ventOutlets_other || '其他';
+      var lq = qtyMap['其他'];
+      if (display !== '其他') {
+        parts.push(lq ? '其他：' + display + ' ' + lq + '個' : '其他：' + display);
+      } else if (lq) {
+        parts.push('其他 ' + lq + '個');
+      } else {
+        parts.push('其他');
       }
-      return text;
-    }).join('、');
+    }
+    return parts.join('、');
   }
 
   function fmtEquipmentList(list) {
@@ -122,13 +155,31 @@
 
   function fmtParts(sd) {
     var selected = sd.parts;
-    if (!Array.isArray(selected) || !selected.length) return '';
     var qtyMap = sd.partsQty || {};
-    return selected.map(function (p) {
-      var label = p === '其他' ? (sd.parts_other || '其他') : p;
-      var qty = qtyMap[p];
-      return qty ? label + ' ' + qty + '組' : label;
-    }).join('、');
+    var parts = [];
+    if (Array.isArray(selected) && selected.length) {
+      selected.forEach(function (p) {
+        if (p === '其他') return;
+        var qty = qtyMap[p];
+        parts.push(qty ? p + ' ' + qty + '組' : p);
+      });
+    }
+    var others = SurveyCheckQtyOthersUtils.getOthers(sd, 'parts');
+    if (others.length) {
+      var t = SurveyCheckQtyOthersUtils.formatOthersList(others, '組');
+      if (t) parts.push(t);
+    } else if (Array.isArray(selected) && selected.indexOf('其他') !== -1) {
+      var display = sd.parts_other || '其他';
+      var lq = qtyMap['其他'];
+      if (display !== '其他') {
+        parts.push(lq ? '其他：' + display + ' ' + lq + '組' : '其他：' + display);
+      } else if (lq) {
+        parts.push('其他 ' + lq + '組');
+      } else {
+        parts.push('其他');
+      }
+    }
+    return parts.join('、');
   }
 
   function fmtHoles(holes) {
