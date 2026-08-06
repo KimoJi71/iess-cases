@@ -99,7 +99,7 @@
     var key = othersKey(checkName);
     var list = (Array.isArray(sd[key]) ? sd[key] : []).map(function (row) {
       if (row.id !== id) return row;
-      return Object.assign({}, row, patch);
+      return Object.assign({}, row, patch, { id: row.id });
     });
     sd[key] = list;
   }
