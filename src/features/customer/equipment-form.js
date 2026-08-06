@@ -173,6 +173,18 @@
                 waitFor: 'specification',
                 emptyHint: '請先選擇設備規格'
               }),
+              h('div', null,
+                h('label', { className: 'block text-sm mb-1' }, '設備等級'),
+                h('input', {
+                  type: 'text',
+                  value: formData.model
+                    ? DeviceCategoryUtils.getEquipmentLevelByModel(deviceCategories, formData.model)
+                    : '',
+                  placeholder: '請先選擇型號',
+                  disabled: true,
+                  className: disabledCls
+                })
+              ),
               field('設備區域', 'area', { placeholder: '例如：天花板上方' }),
               field('出廠日期', 'manufactureDate', { type: 'date' }),
               field('安裝日期', 'installDate', { type: 'date' }),
