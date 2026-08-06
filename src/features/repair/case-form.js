@@ -840,7 +840,7 @@
       }, formData.equipment ? "請選擇" : "請先掃描設備"), PROCESS_STATUS_OPTIONS.map(function (opt) { return h("option", {
         key: opt,
         value: opt
-      }, opt); })))), h("div", {
+      }, opt); }))), h("div", {
         className: "pt-4 border-t border-gray-100"
       }, h("h4", {
         className: "text-sm font-semibold text-gray-800 mb-4"
