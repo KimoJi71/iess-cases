@@ -59,7 +59,19 @@
             h(ReadOnlyField, { label: '工項分類', value: viewingCase && viewingCase.workCategory }),
             !isOther && h(ReadOnlyField, { label: '叫修項目', value: viewingCase && viewingCase.repairItem }),
             !isOther && h(ReadOnlyField, { label: '叫修原因', value: viewingCase && viewingCase.repairReason }),
-            h(ReadOnlyField, { label: '指派人員', value: viewingCase && viewingCase.assignee }),
+            h(ReadOnlyField, {
+              label: '指派人員',
+              value: viewingCase && CaseAssigneeUtils.formatAssignees(viewingCase)
+            }),
+            h(ReadOnlyField, {
+              label: '協作人數',
+              value: viewingCase ? String(CaseAssigneeUtils.getCollaborators(viewingCase).length) : '0'
+            }),
+            h(ReadOnlyField, {
+              label: '協作人員',
+              value: viewingCase && CaseAssigneeUtils.formatCollaborators(viewingCase),
+              fullWidth: true
+            }),
             h(ReadOnlyField, { label: '預計日期', value: viewingCase && (viewingCase.expectedDate || viewingCase.planDate) }),
             h(ReadOnlyField, {
               label: '預計時間',

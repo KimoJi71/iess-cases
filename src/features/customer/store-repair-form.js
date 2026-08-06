@@ -9,6 +9,77 @@
   'use strict';
   var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful, TimeInput24 = IESS.TimeInput24;
 
+  function renderAssigneeMultiSelect(formData, onToggle, className) {
+    var selected = CaseAssigneeUtils.getAssignees(formData);
+    return h('div', { className: 'space-y-1 ' + (className || '') },
+      ASSIGNEES.map(function (opt) {
+        var checked = selected.indexOf(opt) !== -1;
+        return h('label', {
+          key: opt,
+          className: 'flex items-center gap-2 text-sm text-gray-700 cursor-pointer'
+        },
+          h('input', {
+            type: 'checkbox',
+            checked: checked,
+            onChange: function () {
+              onToggle(selected, opt);
+            }
+          }),
+          opt
+        );
+      })
+    );
+  }
+
+  function renderCollaboratorSettings(formData, handlers) {
+    var selected = CaseAssigneeUtils.getCollaborators(formData);
+    var selectedNames = selected.map(function (row) { return row.name; });
+    return h('div', { className: 'col-span-full border rounded-md p-3 bg-gray-50 space-y-3' },
+      h('div', { className: 'font-semibold text-sm text-blue-800' }, '協作人員設定'),
+      h('div', null,
+        h('div', { className: 'text-xs text-gray-500 mb-1' }, '協作人員'),
+        h('div', { className: 'space-y-1' },
+          ASSIGNEES.map(function (opt) {
+            var checked = selectedNames.indexOf(opt) !== -1;
+            return h('label', {
+              key: opt,
+              className: 'flex items-center gap-2 text-sm cursor-pointer'
+            },
+              h('input', {
+                type: 'checkbox',
+                checked: checked,
+                onChange: function () {
+                  handlers.onToggle(selected, opt);
+                }
+              }),
+              opt
+            );
+          })
+        )
+      ),
+      h('div', null,
+        h('div', { className: 'text-xs text-gray-500 mb-1' }, '協作人數'),
+        h('div', { className: 'text-sm font-medium' }, String(selected.length))
+      ),
+      selected.length ? h('div', { className: 'space-y-2' },
+        h('div', { className: 'text-xs text-gray-500' }, '協作積分'),
+        selected.map(function (row) {
+          return h('div', { key: row.name, className: 'flex items-center gap-2' },
+            h('span', { className: 'text-sm w-28' }, row.name),
+            h('input', {
+              type: 'number',
+              value: row.points,
+              onChange: function (e) {
+                handlers.onPointsChange(selected, row.name, e.target.value);
+              },
+              className: 'w-28 p-2 border rounded-md outline-none'
+            })
+          );
+        })
+      ) : null
+    );
+  }
+
   function StoreRepairForm(props) {
     var store = props.store || {};
     var cases = props.cases;
@@ -27,7 +98,8 @@
       repairReason: REPAIR_REASONS[0],
       faultDesc: '',
       expectedDate: '',
-      assignee: '',
+      assignees: [],
+      collaborators: [],
       expectedTime: ''
     };
 
@@ -41,23 +113,26 @@
       }
       function handleSubmit(e) {
         e.preventDefault();
+        var payload = CaseAssigneeUtils.normalizeRepairCase(Object.assign({}, formData, {
+          expectedTimeStart: formData.expectedTime,
+          expectedTimeEnd: ''
+        }));
         var newCase = Object.assign({
           id: 'C' + Date.now(),
           caseNumber: todayDate.replace(/-/g, '') + String(Math.floor(Math.random() * 1000)).padStart(3, '0'),
           repairDate: IESS.caseDateTime.now(),
           createdAt: new Date().toISOString()
-        }, {
-          workCategory: formData.workCategory,
+        }, payload, {
+          workCategory: payload.workCategory,
           customerName: store.customerName || '',
           storeName: store.storeName || '',
-          repairItem: formData.repairItem,
-          repairReason: formData.repairReason,
-          faultDesc: formData.faultDesc,
-          assignee: formData.assignee,
-          expectedDate: formData.expectedDate,
-          expectedTimeStart: formData.expectedTime,
+          repairItem: payload.repairItem,
+          repairReason: payload.repairReason,
+          faultDesc: payload.faultDesc,
+          expectedDate: payload.expectedDate,
+          expectedTimeStart: payload.expectedTimeStart,
           expectedTimeEnd: '',
-          reporter: formData.reporter,
+          reporter: payload.reporter,
           serviceLevel: store.serviceLevel || 'D 維修(無簽約客戶)',
           companyCity: store.companyCity || '',
           companyDistrict: store.companyDistrict || '',
@@ -71,7 +146,11 @@
           reRepairDate: '',
           secondRepairDate: '',
           completionDate: '',
+          planDate: payload.expectedDate || '',
+          planTimeStart: payload.expectedTimeStart || '',
+          planTimeEnd: '',
           isPerformanceIncluded: false,
+          performanceAssignees: [],
           performanceAssignee: '',
           performanceMemberIds: [],
           isListClosed: false
@@ -82,13 +161,13 @@
         if (setStores && stores) {
           var historyRec = {
             id: Date.now(),
-            workCategory: formData.workCategory,
+            workCategory: payload.workCategory,
             equipmentCategory: '',
             equipmentName: '',
             equipmentArea: '',
-            repairItem: formData.repairItem,
-            repairReason: formData.repairReason,
-            assignee: formData.assignee,
+            repairItem: payload.repairItem,
+            repairReason: payload.repairReason,
+            assignee: CaseAssigneeUtils.formatAssignees(payload),
             repairDate: todayDate,
             closeDate: ''
           };
@@ -164,9 +243,10 @@
               h('div', { className: 'col-span-full font-semibold text-lg text-blue-800 border-b pb-2 mt-4 mb-2' }, '排程'),
               h('div', null,
                 h('label', { className: 'block text-sm mb-1' }, '指派人員'),
-                h('select', { name: 'assignee', value: formData.assignee, onChange: handleChange, className: inputCls + ' bg-white' },
-                  h('option', { value: '' }, ''),
-                  ASSIGNEES.map(function (opt) { return h('option', { key: opt, value: opt }, opt); }))
+                renderAssigneeMultiSelect(formData, function (selected, opt) {
+                  formData.assignees = CaseAssigneeUtils.toggleAssignee(selected, opt);
+                  rerender();
+                })
               ),
               h('div', null,
                 h('label', { className: 'block text-sm mb-1' }, '預計日期'),
@@ -175,7 +255,17 @@
               h('div', null,
                 h('label', { className: 'block text-sm mb-1' }, '預計時間'),
                 h(TimeInput24, { name: 'expectedTime', value: formData.expectedTime, onChange: handleChange, className: 'w-full' })
-              )
+              ),
+              renderCollaboratorSettings(formData, {
+                onToggle: function (selected, opt) {
+                  formData.collaborators = CaseAssigneeUtils.toggleCollaborator(selected, opt);
+                  rerender();
+                },
+                onPointsChange: function (selected, name, points) {
+                  formData.collaborators = CaseAssigneeUtils.setCollaboratorPoints(selected, name, points);
+                  rerender();
+                }
+              })
             )
           ),
           h('div', { className: 'mt-8 pt-6 border-t flex justify-end gap-3' },

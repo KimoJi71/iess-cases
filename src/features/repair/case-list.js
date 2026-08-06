@@ -239,7 +239,7 @@
                     h('div', { className: 'text-xs text-gray-500' }, c.repairReason)
                   ),
                   h('td', { className: 'p-3 max-w-[200px] truncate', title: c.faultDesc }, c.faultDesc),
-                  h('td', { className: 'p-3' }, c.assignee),
+                  h('td', { className: 'p-3' }, CaseAssigneeUtils.formatAssignees(c)),
                   h('td', { className: 'p-3' },
                     (function () {
                       var dispatchStatus = caseStatus.getCaseListDispatchStatus(c);

@@ -160,7 +160,7 @@
                   h('td', { className: 'p-3' }, isMaintenance ? '' : c.repairItem),
                   h('td', { className: 'p-3' }, isMaintenance ? '' : c.repairReason),
                   h('td', { className: 'p-3 max-w-[150px] truncate', title: c.actualReason }, c.actualReason || '-'),
-                  h('td', { className: 'p-3' }, c.assignee)
+                  h('td', { className: 'p-3' }, CaseAssigneeUtils.formatAssignees(c))
                 );
               })
             )
