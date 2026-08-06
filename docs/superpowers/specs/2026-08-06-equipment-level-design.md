@@ -171,6 +171,28 @@ function isBonusEligible(c, deviceCategories) {
 
 腳本以 `node scripts/verify-equipment-level-points.mjs` 執行，全數通過才算完成。
 
+## 已知問題（本輪未修）
+
+**編輯共用型號的設備時，品牌會被默默改掉。**
+
+`DeviceCategoryUtils.findBestMatchingRecord` 在有型號時會先呼叫 `findRecordByModel`
+「取第一筆符合型號的紀錄」就短路回傳，根本走不到它自己下面的加權評分。
+`resolveProjectEquip` 靠它帶入「編輯設備」表單的資料。
+
+因此當同一個型號存在於多筆設備分類（品牌或規格不同，七欄組合不重複所以合法），
+點開編輯會把設備的品牌改成第一筆的品牌，設備等級跟著錯，存檔就寫入錯的品牌。
+新增的分類是插在陣列最前面，所以「最新那筆」會贏。
+
+此行為早於本次異動，但設備等級功能讓它變得看得見也有後果。
+列表顯示與積分計算不受影響——它們走的是本次新增的
+`getEquipmentLevelByEquip`（五欄完整比對），不是 `findBestMatchingRecord`。
+
+修法：拿掉 `findBestMatchingRecord` 開頭的型號短路，讓它走既有的加權評分
+（型號 8 分、分類 4 分、品牌 2 分、設備名稱 2 分、規格 1 分），完整符合的那筆
+自然勝出；只有型號的資料行為不變，仍以 8 分跨過 `>= 4` 的門檻。
+
+`scripts/verify-equipment-level-ui.mjs` 有一行 `KNOWN ISSUE` 標記這個情境。
+
 ## 不在範圍內
 
 - 叫修單表單／檢視頁不顯示設備等級（使用者未要求；`RepairCaseEquipment.FIELD_DEFS` 不動）。
