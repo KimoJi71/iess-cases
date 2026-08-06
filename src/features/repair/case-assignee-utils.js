@@ -134,14 +134,6 @@
     return fromAssign + ownCollab;
   }
 
-  function toggleAssignee(assignees, name) {
-    var list = asStringArray(assignees);
-    var idx = list.indexOf(name);
-    if (idx === -1) list.push(name);
-    else list.splice(idx, 1);
-    return list;
-  }
-
   function addCollaboratorRow(collaborators) {
     return (collaborators || []).slice().concat([{ name: '', count: 1, points: 0 }]);
   }
@@ -180,7 +172,6 @@
     normalizeRepairCase: normalizeRepairCase,
     sumProcessPoints: sumProcessPoints,
     computeBonusPointsForAssignee: computeBonusPointsForAssignee,
-    toggleAssignee: toggleAssignee,
     addCollaboratorRow: addCollaboratorRow,
     updateCollaboratorRow: updateCollaboratorRow,
     removeCollaboratorRow: removeCollaboratorRow,

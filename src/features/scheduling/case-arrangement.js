@@ -409,21 +409,12 @@
         rerender();
       }
 
-      function toggleScheduleModalAssignee(name) {
+      function setScheduleModalAssignees(next) {
         if (!scheduleModal) return;
-        var selected = scheduleModal.assignees || [];
-        var next = window.CaseAssigneeUtils
-          ? CaseAssigneeUtils.toggleAssignee(selected, name)
-          : (function () {
-              var list = selected.slice();
-              var idx = list.indexOf(name);
-              if (idx === -1) list.push(name);
-              else list.splice(idx, 1);
-              return list;
-            })();
+        var list = (next || []).slice();
         scheduleModal = Object.assign({}, scheduleModal, {
-          assignee: next[0] || '',
-          assignees: next
+          assignee: list[0] || '',
+          assignees: list
         });
         rerender();
       }
@@ -514,21 +505,13 @@
               h('div', { className: 'text-xs text-gray-500' },
                 formatRepairModalAssignees(selected) || '請至少選擇 1 位指派人員'
               ),
-              h('div', { className: 'grid grid-cols-1 sm:grid-cols-2 gap-2' },
-                ASSIGNEES.map(function (opt) {
-                  return h('label', {
-                    key: opt,
-                    className: 'flex items-center gap-2 text-sm text-gray-700 cursor-pointer'
-                  },
-                    h('input', {
-                      type: 'checkbox',
-                      checked: selected.indexOf(opt) !== -1,
-                      onChange: function () { toggleScheduleModalAssignee(opt); }
-                    }),
-                    opt
-                  );
-                })
-              )
+              IESS.MultiSelect({
+                id: 'schedule-modal-assignees',
+                options: ASSIGNEES,
+                value: selected,
+                onChange: setScheduleModalAssignees,
+                placeholder: '請選擇指派人員'
+              })
             )
           );
         }
