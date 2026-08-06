@@ -482,7 +482,7 @@
           const pipeSelect = h("select", {
             value: row.pipe || '',
             onChange: e => updateDuctBoxCombo(prefix, row.id, { pipe: e.target.value }),
-            className: "p-1.5 border rounded-md text-sm outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+            className: "w-36 p-1.5 border rounded-md text-sm outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
           }, h("option", {
             value: ""
           }, "選擇管徑"), pipes.map(p => h("option", {
@@ -510,21 +510,26 @@
           }), h("span", {
             className: "text-sm text-gray-500 whitespace-nowrap"
           }, "個"));
+          const deleteBtn = h("button", {
+            type: "button",
+            title: "刪除此組合",
+            onClick: () => removeDuctBoxCombo(prefix, row.id),
+            className: "shrink-0 text-red-500 hover:text-red-700 p-1"
+          }, Icons.Trash2({
+            className: "h-4 w-4"
+          }));
           return h("div", {
             key: row.id,
             className: "bg-white p-4 rounded-lg border border-gray-200"
           }, h("div", {
+            className: "flex items-start gap-3"
+          }, h("div", {
+            className: "flex-1 min-w-0 space-y-0"
+          }, h("div", {
             className: "flex flex-wrap items-center gap-x-6 gap-y-2"
           }, h("span", {
             className: "text-sm font-medium text-indigo-700"
-          }, "材質"), matRadios, matOther, h("button", {
-            type: "button",
-            title: "刪除此組合",
-            onClick: () => removeDuctBoxCombo(prefix, row.id),
-            className: "text-red-500 hover:text-red-700 p-1 ml-auto"
-          }, Icons.Trash2({
-            className: "h-4 w-4"
-          }))), flange, pipeRow);
+          }, "材質"), matRadios, matOther), flange, pipeRow), deleteBtn));
         };
 
         const renderDuctBoxCard = (title, prefix, pipes, hasFlangeHoles) => {
