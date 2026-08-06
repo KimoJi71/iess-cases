@@ -142,26 +142,6 @@
     return list;
   }
 
-  function toggleCollaborator(collaborators, name) {
-    var list = (collaborators || []).map(function (row) {
-      return { name: row.name, points: Number(row.points) || 0 };
-    });
-    var idx = -1;
-    list.forEach(function (row, i) { if (row.name === name) idx = i; });
-    if (idx === -1) list.push({ name: name, points: 0 });
-    else list.splice(idx, 1);
-    return list;
-  }
-
-  function setCollaboratorPoints(collaborators, name, points) {
-    var n = Number(points);
-    if (isNaN(n)) n = 0;
-    return (collaborators || []).map(function (row) {
-      if (row.name !== name) return row;
-      return { name: row.name, points: n };
-    });
-  }
-
   function addCollaboratorRow(collaborators) {
     return (collaborators || []).slice().concat([{ name: '', count: 1, points: 0 }]);
   }
@@ -201,8 +181,6 @@
     sumProcessPoints: sumProcessPoints,
     computeBonusPointsForAssignee: computeBonusPointsForAssignee,
     toggleAssignee: toggleAssignee,
-    toggleCollaborator: toggleCollaborator,
-    setCollaboratorPoints: setCollaboratorPoints,
     addCollaboratorRow: addCollaboratorRow,
     updateCollaboratorRow: updateCollaboratorRow,
     removeCollaboratorRow: removeCollaboratorRow,
