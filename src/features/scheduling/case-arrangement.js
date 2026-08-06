@@ -118,6 +118,23 @@
       return assignees.map(function (a) { return a.name; });
     }
 
+    function getRepairModalAssignees(record, fallbackAssignee) {
+      if (window.CaseAssigneeUtils) {
+        var formal = CaseAssigneeUtils.getFormalAssignees(record);
+        if (formal.length) return formal.slice();
+      } else if (record && record.assignee && record.assignee !== '案件待辦') {
+        return [record.assignee];
+      }
+      return fallbackAssignee ? [fallbackAssignee] : [];
+    }
+
+    function formatRepairModalAssignees(list) {
+      if (window.CaseAssigneeUtils) {
+        return CaseAssigneeUtils.formatAssignees({ assignees: list || [] }) || '';
+      }
+      return (list || []).join('、');
+    }
+
     function patchLocalCaseRecord(sourceType, sourceId, record) {
       if (sourceType === 'maintenance') {
         maintenanceCases = maintenanceCases.map(function (c) {
@@ -138,14 +155,22 @@
       var merged = Object.assign({}, formData, {
         planDate: payload.planDate,
         planTimeStart: payload.planTimeStart,
-        planTimeEnd: payload.planTimeEnd,
-        assignee: payload.assignee
+        planTimeEnd: payload.planTimeEnd
       });
       if (sourceType === 'repair') {
+        merged.assignees = (payload.assignees && payload.assignees.length)
+          ? payload.assignees.slice()
+          : (window.CaseAssigneeUtils
+              ? CaseAssigneeUtils.getAssignees({ assignee: payload.assignee })
+              : (payload.assignee ? [payload.assignee] : []));
+        delete merged.assignee;
         merged.expectedDate = payload.planDate;
         merged.expectedTimeStart = payload.planTimeStart;
         merged.expectedTimeEnd = payload.planTimeEnd;
-      } else if (sourceType === 'maintenance') {
+      } else {
+        merged.assignee = payload.assignee;
+      }
+      if (sourceType === 'maintenance') {
         merged.status = ScheduleUtils.resolveMaintenanceStatus(merged.status, payload.planDate);
         if (!merged.caseNumber && merged.planDate) {
           merged.caseNumber = merged.planDate.replace(/-/g, '') +
@@ -285,6 +310,9 @@
       function buildScheduleModalState(sourceType, sourceId, assignee) {
         var record = resolveCaseRecord(sourceType, sourceId);
         if (!record) return null;
+        var repairAssignees = sourceType === 'repair'
+          ? getRepairModalAssignees(record, assignee)
+          : [];
         return {
           mode: 'create',
           item: {
@@ -294,7 +322,10 @@
             storeName: record.storeName,
             workCategory: record.workCategory || '保養'
           },
-          assignee: assignee,
+          assignee: sourceType === 'repair'
+            ? (repairAssignees[0] || assignee || '')
+            : assignee,
+          assignees: repairAssignees,
           planDate: record.expectedDate || record.planDate || calDate,
           planTimeStart: record.expectedTimeStart || record.planTimeStart || '',
           planTimeEnd: record.expectedTimeEnd || record.planTimeEnd || '',
@@ -334,6 +365,11 @@
             planTimeEnd: record.planTimeEnd,
             assignee: record.assignee
           };
+        var repairAssignees = sourceType === 'repair'
+          ? ((sched.assignees && sched.assignees.length)
+              ? sched.assignees.slice()
+              : getRepairModalAssignees(record, ''))
+          : [];
         scheduleModal = {
           mode: 'edit',
           item: {
@@ -343,7 +379,10 @@
             storeName: record.storeName,
             workCategory: record.workCategory || '保養'
           },
-          assignee: sched.assignee || record.assignee || '',
+          assignee: sourceType === 'repair'
+            ? (repairAssignees[0] || '')
+            : (sched.assignee || record.assignee || ''),
+          assignees: repairAssignees,
           planDate: sched.planDate || calDate,
           planTimeStart: sched.planTimeStart || '',
           planTimeEnd: sched.planTimeEnd || '',
@@ -361,6 +400,31 @@
           patch[field] = value;
           return patch;
         })());
+        rerender();
+      }
+
+      function updateScheduleModalAssignee(value) {
+        if (!scheduleModal) return;
+        scheduleModal = Object.assign({}, scheduleModal, { assignee: value });
+        rerender();
+      }
+
+      function toggleScheduleModalAssignee(name) {
+        if (!scheduleModal) return;
+        var selected = scheduleModal.assignees || [];
+        var next = window.CaseAssigneeUtils
+          ? CaseAssigneeUtils.toggleAssignee(selected, name)
+          : (function () {
+              var list = selected.slice();
+              var idx = list.indexOf(name);
+              if (idx === -1) list.push(name);
+              else list.splice(idx, 1);
+              return list;
+            })();
+        scheduleModal = Object.assign({}, scheduleModal, {
+          assignee: next[0] || '',
+          assignees: next
+        });
         rerender();
       }
 
@@ -394,8 +458,16 @@
 
       function confirmScheduleModal() {
         if (!scheduleModal) return;
+        var item = scheduleModal.item;
+        var isRepair = item.sourceType === 'repair';
         var assignee = scheduleModal.assignee;
-        if (!assignee) {
+        var repairAssignees = isRepair ? (scheduleModal.assignees || []).slice() : [];
+        if (isRepair) {
+          if (!repairAssignees.length) {
+            showToast('請至少選擇 1 位指派人員');
+            return;
+          }
+        } else if (!assignee) {
           showToast('請選擇指派人員');
           return;
         }
@@ -407,12 +479,14 @@
           showToast('結束時間需晚於開始時間');
           return;
         }
-        var item = scheduleModal.item;
         var payload = {
           planDate: scheduleModal.planDate,
           planTimeStart: scheduleModal.planTimeStart,
           planTimeEnd: scheduleModal.planTimeEnd,
-          assignee: assignee
+          assignees: isRepair ? repairAssignees : undefined,
+          assignee: isRepair
+            ? formatRepairModalAssignees(repairAssignees)
+            : assignee
         };
         applySchedule(item.sourceType, item.sourceId, payload, scheduleModal.formData);
       }
@@ -427,6 +501,49 @@
           h('div', {
             className: 'font-medium bg-gray-50 p-2.5 rounded-md border border-gray-100 min-h-[42px] flex items-center text-sm'
           }, value || '—')
+        );
+      }
+
+      function renderScheduleAssigneeEditor() {
+        if (!scheduleModal) return null;
+        if (scheduleModal.item.sourceType === 'repair') {
+          var selected = scheduleModal.assignees || [];
+          return h('div', { className: 'sm:col-span-3' },
+            h('label', { className: 'block text-xs text-gray-500 mb-1' }, '指派人員'),
+            h('div', { className: 'border border-gray-200 rounded-md bg-white p-3 space-y-2' },
+              h('div', { className: 'text-xs text-gray-500' },
+                formatRepairModalAssignees(selected) || '請至少選擇 1 位指派人員'
+              ),
+              h('div', { className: 'grid grid-cols-1 sm:grid-cols-2 gap-2' },
+                ASSIGNEES.map(function (opt) {
+                  return h('label', {
+                    key: opt,
+                    className: 'flex items-center gap-2 text-sm text-gray-700 cursor-pointer'
+                  },
+                    h('input', {
+                      type: 'checkbox',
+                      checked: selected.indexOf(opt) !== -1,
+                      onChange: function () { toggleScheduleModalAssignee(opt); }
+                    }),
+                    opt
+                  );
+                })
+              )
+            )
+          );
+        }
+        return h('div', { className: 'sm:col-span-3' },
+          h('label', { className: 'block text-xs text-gray-500 mb-1' }, '指派人員'),
+          h('select', {
+            value: scheduleModal.assignee || '',
+            onChange: function (e) { updateScheduleModalAssignee(e.target.value); },
+            className: 'w-full p-2 border rounded-md outline-none focus:border-blue-500 bg-white'
+          },
+            h('option', { value: '' }, '請選擇'),
+            ASSIGNEES.map(function (opt) {
+              return h('option', { key: opt, value: opt }, opt);
+            })
+          )
         );
       }
 
@@ -512,7 +629,7 @@
                   })
                 )
               ),
-              renderScheduleReadOnly('指派人員', scheduleModal.assignee),
+              renderScheduleReadOnly('指派人員', formatRepairModalAssignees(scheduleModal.assignees)),
               h('div', { className: 'col-span-full' },
                 renderScheduleFieldLabel(isOther ? '工作描述' : '故障描述'),
                 h('textarea', {
@@ -725,7 +842,8 @@
                     onChange: function (e) { updateScheduleModalTime('planTimeEnd', e.target.value); },
                     className: 'w-full'
                   })
-                )
+                ),
+                renderScheduleAssigneeEditor()
               ),
               h('div', null,
                 h('h4', { className: 'text-sm font-bold text-gray-700 mb-3' }, '案件詳細內容'),

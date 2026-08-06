@@ -90,11 +90,17 @@
   }
 
   function getRepairSchedule(c) {
+    var assignees = window.CaseAssigneeUtils
+      ? CaseAssigneeUtils.getAssignees(c)
+      : (c.assignee ? [c.assignee] : []);
     return {
       planDate: c.planDate || c.expectedDate || '',
       planTimeStart: c.planTimeStart || c.expectedTimeStart || '',
       planTimeEnd: c.planTimeEnd || c.expectedTimeEnd || '',
-      assignee: c.assignee,
+      assignee: window.CaseAssigneeUtils
+        ? CaseAssigneeUtils.formatAssignees(c)
+        : (c.assignee || ''),
+      assignees: assignees,
       workCategory: c.workCategory
     };
   }
@@ -271,7 +277,10 @@
     });
     cases.forEach(function (c) {
       var sched = getRepairSchedule(c);
-      if (c.isClosed || (c.assignee && c.assignee !== '案件待辦') || sched.planDate) return;
+      var hasFormal = window.CaseAssigneeUtils
+        ? CaseAssigneeUtils.hasFormalAssignee(c)
+        : (c.assignee && c.assignee !== '案件待辦');
+      if (c.isClosed || hasFormal || sched.planDate) return;
       items.push({
         sourceType: 'repair',
         sourceId: c.id,
@@ -279,7 +288,9 @@
         storeName: c.storeName,
         storeArea: StoreUtils.getRecordArea(c),
         workCategory: c.workCategory,
-        assignee: c.assignee
+        assignee: window.CaseAssigneeUtils
+          ? (CaseAssigneeUtils.formatAssignees(c) || '案件待辦')
+          : c.assignee
       });
     });
     projectCases.forEach(function (c) {
@@ -319,7 +330,13 @@
     function tryPush(sourceType, sourceId, sched, customerName, storeName, storeAddress, equipmentName, eventId) {
       if (!sched.planDate || !sched.planTimeStart) return;
       if (!inRange(sched.planDate)) return;
-      if (assigneeFilter !== '全部' && sched.assignee !== assigneeFilter) return;
+      if (assigneeFilter !== '全部') {
+        if (sched.assignees && sched.assignees.length) {
+          if (sched.assignees.indexOf(assigneeFilter) === -1) return;
+        } else if (sched.assignee !== assigneeFilter) {
+          return;
+        }
+      }
       items.push({
         id: eventId || (sourceType + '-' + sourceId),
         sourceType: sourceType,

@@ -35,6 +35,13 @@
       || (record.dueMonth ? record.dueMonth + '-01' : '');
   }
 
+  function formatAssignees(record) {
+    if (window.CaseAssigneeUtils) {
+      return CaseAssigneeUtils.formatAssignees(record) || '—';
+    }
+    return (record && record.assignee) || '—';
+  }
+
   function filterProjectCases(cases, filters) {
     return (cases || []).filter(function (c) {
       if (!inDateRange(c.creationDate, filters.startDate, filters.endDate)) return false;
@@ -59,7 +66,12 @@
       if (!isAll(filters.repairReason) && c.repairReason !== filters.repairReason) return false;
       if (!isAll(filters.customer) && c.customerName !== filters.customer) return false;
       if (!isAll(filters.store) && c.storeName !== filters.store) return false;
-      if (!isAll(filters.assignee) && c.assignee !== filters.assignee) return false;
+      if (!isAll(filters.assignee)) {
+        var hit = window.CaseAssigneeUtils
+          ? CaseAssigneeUtils.includesAssignee(c, filters.assignee)
+          : c.assignee === filters.assignee;
+        if (!hit) return false;
+      }
       if (!isAll(filters.serviceLevel) && c.serviceLevel !== filters.serviceLevel) return false;
       return true;
     }).sort(function (a, b) {
@@ -119,7 +131,7 @@
       '叫修原因': c.repairReason || '—',
       '故障描述': c.faultDesc || '—',
       '實際原因': c.actualReason || '—',
-      '維修人員': c.assignee || '—',
+      '維修人員': formatAssignees(c),
       '處理狀態': c.processStatus || '未處理',
       '結案狀態': c.isClosed ? '已結案' : '進行中',
       '結案日期': c.closeDate ? IESS.caseDateTime.format(c.closeDate) : '—'
@@ -197,6 +209,7 @@
     filterProjectCases: filterProjectCases,
     filterRepairCases: filterRepairCases,
     filterMaintenanceCases: filterMaintenanceCases,
+    formatAssignees: formatAssignees,
     getColumns: getColumns,
     buildRows: buildRows,
     rowsToCsv: rowsToCsv,
