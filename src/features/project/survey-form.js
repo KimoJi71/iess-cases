@@ -287,29 +287,8 @@
             className: "text-sm text-gray-500 whitespace-nowrap"
           }, opt.unit)));
         };
-        const renderCheckQtyOthersBlock = (checkName, unit, qtyLabel) => {
-          const selected = formData.surveyData?.[checkName] || [];
-          const checked = selected.includes('其他');
-          const others = SurveyCheckQtyOthersUtils.getOthers(formData.surveyData, checkName);
-          return h("div", {
-            className: "space-y-2 mt-2"
-          }, h("div", {
-            className: "bg-white p-3 rounded border border-gray-200"
-          }, h("label", {
-            className: "flex items-center gap-2 cursor-pointer"
-          }, h("input", {
-            type: "checkbox",
-            name: checkName,
-            value: "其他",
-            checked: checked,
-            onChange: handleSurveyChange,
-            className: "w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
-          }), h("span", {
-            className: "text-sm text-gray-700 font-medium"
-          }, "其他")), checked ? others.map(row => h("div", {
-            key: row.id,
-            className: "flex items-center justify-between mt-3 ml-6 gap-2"
-          }, h("div", {
+        const renderCheckQtyOtherRow = (checkName, unit, qtyLabel, row) => {
+          const labelBox = h("div", {
             className: "flex items-center gap-2 flex-1 min-w-0"
           }, h("span", {
             className: "text-sm text-gray-700 font-medium shrink-0"
@@ -319,7 +298,8 @@
             onChange: e => updateCheckQtyOther(checkName, row.id, { label: e.target.value }),
             placeholder: "請註明",
             className: "flex-1 max-w-xs p-1 border-b-2 border-gray-300 outline-none focus:border-indigo-500 bg-transparent text-sm"
-          })), h("div", {
+          }));
+          const qtyBox = h("div", {
             className: "flex items-center gap-2 shrink-0"
           }, h("input", {
             type: "number",
@@ -334,11 +314,45 @@
             title: "刪除此其他項目",
             onClick: () => removeCheckQtyOther(checkName, row.id),
             className: "text-red-500 hover:text-red-700 p-1"
-          }, Icons.Trash2({ className: "h-4 w-4" })))) : null, checked ? h("button", {
-            type: "button",
-            onClick: () => addCheckQtyOther(checkName),
-            className: "flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-800 mt-3 ml-6"
-          }, Icons.Plus({ className: "h-4 w-4" }), "新增其他") : null));
+          }, Icons.Trash2({
+            className: "h-4 w-4"
+          })));
+          return h("div", {
+            key: row.id,
+            className: "flex items-center justify-between mt-3 ml-6 gap-2"
+          }, labelBox, qtyBox);
+        };
+        const renderCheckQtyOthersBlock = (checkName, unit, qtyLabel) => {
+          const selected = formData.surveyData?.[checkName] || [];
+          const checked = selected.includes('其他');
+          const others = SurveyCheckQtyOthersUtils.getOthers(formData.surveyData, checkName);
+          const checkbox = h("label", {
+            className: "flex items-center gap-2 cursor-pointer"
+          }, h("input", {
+            type: "checkbox",
+            name: checkName,
+            value: "其他",
+            checked: checked,
+            onChange: handleSurveyChange,
+            className: "w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
+          }), h("span", {
+            className: "text-sm text-gray-700 font-medium"
+          }, "其他"));
+          const detail = checked ? [
+            others.map(row => renderCheckQtyOtherRow(checkName, unit, qtyLabel, row)),
+            h("button", {
+              type: "button",
+              onClick: () => addCheckQtyOther(checkName),
+              className: "flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-800 mt-3 ml-6"
+            }, Icons.Plus({
+              className: "h-4 w-4"
+            }), "新增其他")
+          ] : null;
+          return h("div", {
+            className: "space-y-2 mt-2"
+          }, h("div", {
+            className: "bg-white p-3 rounded border border-gray-200"
+          }, checkbox, detail));
         };
         // 配管工程「多選 + 填數字」子題卡片（同一單位）
         const renderPipingCheckQtyGroup = (subtitle, note, checkName, mapName, options, unit, qtyLabel) => h("div", {
@@ -507,16 +521,50 @@
           qtyLabel: '數量'
         }))))));
         // 風管工程 出風口 單一型式列（勾選 + 數量個；線型改為多筆尺寸列）
+        const renderVentLinearSizeRow = row => h("div", {
+          key: row.id,
+          className: "flex flex-wrap items-center gap-3 mt-3 ml-6"
+        }, h("span", {
+          className: "text-sm text-gray-700 font-medium"
+        }, "寬"), h("input", {
+          type: "number",
+          value: row.width || '',
+          onChange: e => updateVentLinearSize(row.id, { width: e.target.value }),
+          placeholder: "寬",
+          className: "w-24 p-1.5 border rounded-md text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+        }), h("span", {
+          className: "text-sm text-gray-500"
+        }, "cm"), h("span", {
+          className: "text-sm text-gray-700 font-medium ml-2"
+        }, "高"), h("input", {
+          type: "number",
+          value: row.height || '',
+          onChange: e => updateVentLinearSize(row.id, { height: e.target.value }),
+          placeholder: "高",
+          className: "w-24 p-1.5 border rounded-md text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+        }), h("span", {
+          className: "text-sm text-gray-500"
+        }, "cm"), h("input", {
+          type: "number",
+          value: row.qty || '',
+          onChange: e => updateVentLinearSize(row.id, { qty: e.target.value }),
+          placeholder: "數量",
+          className: "w-24 p-1.5 border rounded-md text-sm outline-none focus:ring-2 focus:ring-indigo-500 ml-2"
+        }), h("span", {
+          className: "text-sm text-gray-500 whitespace-nowrap"
+        }, "個"), h("button", {
+          type: "button",
+          title: "刪除此尺寸",
+          onClick: () => removeVentLinearSize(row.id),
+          className: "text-red-500 hover:text-red-700 p-1"
+        }, Icons.Trash2({
+          className: "h-4 w-4"
+        })));
         const renderVentOutletRow = opt => {
           const selected = formData.surveyData?.ventOutlets || [];
           const checked = selected.includes(opt.label);
           const sizes = opt.dim ? SurveyVentLinearSizesUtils.getSizes(formData.surveyData) : [];
-          return h("div", {
-            key: opt.label,
-            className: "bg-white p-3 rounded border border-gray-200"
-          }, h("div", {
-            className: "flex items-center justify-between"
-          }, h("label", {
+          const label = h("label", {
             className: "flex items-center gap-2 cursor-pointer"
           }, h("input", {
             type: "checkbox",
@@ -527,7 +575,8 @@
             className: "w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
           }), h("span", {
             className: "text-sm text-gray-700 font-medium"
-          }, opt.label)), !opt.dim && h("div", {
+          }, opt.label));
+          const qty = !opt.dim ? h("div", {
             className: "flex items-center gap-2"
           }, h("input", {
             type: "number",
@@ -538,47 +587,24 @@
             className: "w-24 p-1.5 border rounded-md text-sm outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-100 disabled:opacity-50"
           }), h("span", {
             className: "text-sm text-gray-500 whitespace-nowrap"
-          }, "個"))), opt.dim && checked ? sizes.map(row => h("div", {
-            key: row.id,
-            className: "flex flex-wrap items-center gap-3 mt-3 ml-6"
-          }, h("span", {
-            className: "text-sm text-gray-700 font-medium"
-          }, "寬"), h("input", {
-            type: "number",
-            value: row.width || '',
-            onChange: e => updateVentLinearSize(row.id, { width: e.target.value }),
-            placeholder: "寬",
-            className: "w-24 p-1.5 border rounded-md text-sm outline-none focus:ring-2 focus:ring-indigo-500"
-          }), h("span", {
-            className: "text-sm text-gray-500"
-          }, "cm"), h("span", {
-            className: "text-sm text-gray-700 font-medium ml-2"
-          }, "高"), h("input", {
-            type: "number",
-            value: row.height || '',
-            onChange: e => updateVentLinearSize(row.id, { height: e.target.value }),
-            placeholder: "高",
-            className: "w-24 p-1.5 border rounded-md text-sm outline-none focus:ring-2 focus:ring-indigo-500"
-          }), h("span", {
-            className: "text-sm text-gray-500"
-          }, "cm"), h("input", {
-            type: "number",
-            value: row.qty || '',
-            onChange: e => updateVentLinearSize(row.id, { qty: e.target.value }),
-            placeholder: "數量",
-            className: "w-24 p-1.5 border rounded-md text-sm outline-none focus:ring-2 focus:ring-indigo-500 ml-2"
-          }), h("span", {
-            className: "text-sm text-gray-500 whitespace-nowrap"
-          }, "個"), h("button", {
-            type: "button",
-            title: "刪除此尺寸",
-            onClick: () => removeVentLinearSize(row.id),
-            className: "text-red-500 hover:text-red-700 p-1"
-          }, Icons.Trash2({ className: "h-4 w-4" }))) : null, opt.dim && checked ? h("button", {
-            type: "button",
-            onClick: () => addVentLinearSize(),
-            className: "flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-800 mt-3 ml-6"
-          }, Icons.Plus({ className: "h-4 w-4" }), "新增尺寸") : null);
+          }, "個")) : null;
+          const header = h("div", {
+            className: "flex items-center justify-between"
+          }, label, qty);
+          const sizeDetail = opt.dim && checked ? [
+            sizes.map(renderVentLinearSizeRow),
+            h("button", {
+              type: "button",
+              onClick: () => addVentLinearSize(),
+              className: "flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-800 mt-3 ml-6"
+            }, Icons.Plus({
+              className: "h-4 w-4"
+            }), "新增尺寸")
+          ] : null;
+          return h("div", {
+            key: opt.label,
+            className: "bg-white p-3 rounded border border-gray-200"
+          }, header, sizeDetail);
         };
         // 風管工程 出風口 卡片（多選型式 + 數量；線型可填多筆尺寸，含其他）
         const renderVentOutletBox = () => h("div", {
