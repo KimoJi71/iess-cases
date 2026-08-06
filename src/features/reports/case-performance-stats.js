@@ -2,7 +2,7 @@
  * features/reports/case-performance-stats.js — 案件績效統計（環形儀表板）
  * props: {
  *   cases, maintenanceCases, assignees,
- *   maintenanceAllocations, stores, performanceAreas
+ *   maintenanceAllocations, stores, performanceAreas, deviceCategories
  * }
  */
 (function () {
@@ -120,6 +120,7 @@
     var allocations = props.maintenanceAllocations || [];
     var stores = props.stores || [];
     var performanceAreas = props.performanceAreas || [];
+    var deviceCategories = props.deviceCategories || [];
     var quarter = PerformanceUtils.getQuarterRange(new Date());
 
     var assigneeRows = PerformanceUtils.computeAssigneePerformance({
@@ -127,6 +128,7 @@
       maintenanceCases: maintenanceCases,
       assignees: assignees,
       allocations: allocations,
+      deviceCategories: deviceCategories,
       quarter: quarter
     });
 

@@ -564,7 +564,8 @@
           assignees: s.assignees,
           maintenanceAllocations: s.maintenanceAllocations,
           stores: s.stores,
-          performanceAreas: s.performanceAreas
+          performanceAreas: s.performanceAreas,
+          deviceCategories: s.deviceCategories
         });
       case 'data-retrieval':
         return h(DataRetrieval, {
