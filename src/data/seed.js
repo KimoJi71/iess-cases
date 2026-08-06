@@ -2052,8 +2052,23 @@ INITIAL_CASES.forEach(function (c) {
 });
 
 INITIAL_CASES.forEach(function (c) {
-  if (!c.isPerformanceIncluded || c.performanceAssignee) return;
-  c.performanceAssignee = c.assignee || '';
-  var performanceAssignee = INITIAL_ASSIGNEES.find(function (a) { return a.name === c.assignee; });
-  c.performanceMemberIds = performanceAssignee ? performanceAssignee.memberIds.slice() : [];
+  var normalized = CaseAssigneeUtils.normalizeRepairCase(c);
+  Object.keys(c).forEach(function (k) { delete c[k]; });
+  Object.assign(c, normalized);
+  if (!Array.isArray(c.collaborators)) c.collaborators = [];
+  if (c.isPerformanceIncluded) {
+    if (!c.performanceAssignees || !c.performanceAssignees.length) {
+      c.performanceAssignees = CaseAssigneeUtils.getFormalAssignees(c);
+      c.performanceAssignee = c.performanceAssignees[0] || '';
+    }
+    var memberIds = [];
+    (c.performanceAssignees || []).forEach(function (name) {
+      var ag = INITIAL_ASSIGNEES.find(function (a) { return a.name === name; });
+      if (!ag) return;
+      ag.memberIds.forEach(function (id) {
+        if (memberIds.indexOf(id) === -1) memberIds.push(id);
+      });
+    });
+    c.performanceMemberIds = memberIds;
+  }
 });

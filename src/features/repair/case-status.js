@@ -16,6 +16,7 @@
   var UNASSIGNED_ASSIGNEES = ['', '案件待辦', '尚未指派'];
 
   function hasValidAssignee(c) {
+    if (window.CaseAssigneeUtils) return CaseAssigneeUtils.hasFormalAssignee(c);
     var assignee = c && c.assignee;
     return !!assignee && UNASSIGNED_ASSIGNEES.indexOf(assignee) === -1;
   }

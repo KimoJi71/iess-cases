@@ -22,7 +22,10 @@
 
   function getAssignees(record) {
     if (!record) return [];
-    if (Array.isArray(record.assignees)) return asStringArray(record.assignees);
+    if (Array.isArray(record.assignees)) {
+      var fromArray = asStringArray(record.assignees);
+      if (fromArray.length) return fromArray;
+    }
     return asStringArray(record.assignee);
   }
 
@@ -68,9 +71,10 @@
     var formal = getFormalAssignees(record);
     if (formal.length) return formal;
     if (Array.isArray(record.performanceAssignees)) {
-      return asStringArray(record.performanceAssignees).filter(function (n) {
+      var fromPerf = asStringArray(record.performanceAssignees).filter(function (n) {
         return !isUnassignedValue(n);
       });
+      if (fromPerf.length) return fromPerf;
     }
     if (record.performanceAssignee && !isUnassignedValue(record.performanceAssignee)) {
       return [String(record.performanceAssignee)];
@@ -84,7 +88,10 @@
     var collaborators = getCollaborators(record);
     var performanceAssignees = Array.isArray(record.performanceAssignees)
       ? asStringArray(record.performanceAssignees)
-      : (record.performanceAssignee ? asStringArray(record.performanceAssignee) : []);
+      : [];
+    if (!performanceAssignees.length) {
+      performanceAssignees = asStringArray(record.performanceAssignee);
+    }
     var next = Object.assign({}, record, {
       assignees: assignees,
       collaborators: collaborators,
