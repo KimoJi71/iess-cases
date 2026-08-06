@@ -336,7 +336,10 @@
           cases: s.cases, setViewingCase: setViewingCase, setView: setView
         });
       case 'record-view':
-        return h(ViewCaseForm, { viewingCase: s.viewingCase, setView: setView, backView: 'record-list' });
+        return h(ViewCaseForm, {
+          viewingCase: s.viewingCase, setView: setView, backView: 'record-list',
+          processMethods: s.processMethods
+        });
       case 'review-list':
         return h(CaseReviewList, {
           cases: s.cases, setCases: setCasesData,
@@ -345,7 +348,10 @@
           setViewingCase: setViewingCase, setView: setView, showToast: showToast
         });
       case 'review-view':
-        return h(ViewCaseForm, { viewingCase: s.viewingCase, setView: setView, backView: 'review-list' });
+        return h(ViewCaseForm, {
+          viewingCase: s.viewingCase, setView: setView, backView: 'review-list',
+          processMethods: s.processMethods
+        });
       case 'maintenance-list':
         return h(MaintenanceList, {
           cases: s.maintenanceCases, setCases: setMaintenanceCases,
@@ -442,7 +448,8 @@
       case 'store-history-repair-view':
         return h(ViewCaseForm, {
           viewingCase: StoreUtils.withStoreHistoryContext(s.viewingCase, s.historyStore),
-          setView: setView, backView: 'store-history'
+          setView: setView, backView: 'store-history',
+          processMethods: s.processMethods
         });
       case 'store-history-maintenance-view':
         return h(MaintenanceViewEditForm, {
@@ -530,6 +537,7 @@
           customers: s.customers,
           stores: s.stores,
           assignees: s.assignees,
+          processMethods: s.processMethods,
           showToast: showToast
         });
       case 'personnel-movement':

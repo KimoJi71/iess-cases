@@ -12,6 +12,7 @@
     var viewingCase = props.viewingCase;
     var setView = props.setView;
     var backView = props.backView === undefined ? 'record-list' : props.backView;
+    var processMethods = props.processMethods || [];
 
     var dragProps = useDragScroll();
     var pmColumns = ProcessMethodUtils.CASE_DISPLAY_COLUMNS;
@@ -19,6 +20,12 @@
     function formatTimeRange(start, end) {
       if (!start) return '';
       return end && end !== start ? start + ' ~ ' + end : start;
+    }
+
+    function formatRecordPoints(r) {
+      var isClosed = !!(viewingCase && viewingCase.isClosed);
+      var pts = ProcessMethodUtils.resolveCaseRecordPoints(r, processMethods, isClosed);
+      return pts === null ? '—' : String(pts);
     }
 
     function ReadOnlyField(p) {
@@ -109,17 +116,19 @@
                       pmColumns.map(function (col) {
                         return h('th', { key: col.key, className: 'p-2 pl-4' }, col.label);
                       }),
+                      h('th', { className: 'p-2' }, '積分數'),
                       h('th', { className: 'p-2' }, '數量')
                     )
                   ),
                   h('tbody', { className: 'divide-y' },
                     (!viewingCase || !viewingCase.processRecords || viewingCase.processRecords.length === 0) ? h('tr', null,
-                      h('td', { colspan: String(pmColumns.length + 1), className: 'p-4 text-center text-gray-400' }, '無處理方式紀錄')
+                      h('td', { colspan: String(pmColumns.length + 2), className: 'p-4 text-center text-gray-400' }, '無處理方式紀錄')
                     ) : viewingCase.processRecords.map(function (r, idx) {
                       return h('tr', { key: r.id || idx },
                         pmColumns.map(function (col) {
                           return h('td', { key: col.key, className: 'p-2 pl-4' }, r[col.key] || '—');
                         }),
+                        h('td', { className: 'p-2' }, formatRecordPoints(r)),
                         h('td', { className: 'p-2' },
                           r.qty,
                           r.unit ? h('span', { className: 'text-gray-500 ml-1' }, r.unit) : null

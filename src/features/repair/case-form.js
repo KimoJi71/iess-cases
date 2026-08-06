@@ -418,6 +418,10 @@
         showToast('成功掃描設備並帶入資料');
         rerender();
       }
+      function formatRecordPoints(r) {
+        var pts = ProcessMethodUtils.resolveCaseRecordPoints(r, processMethods, formData.isClosed);
+        return pts === null ? "—" : String(pts);
+      }
       function handleAddRecord() {
         var pm = ProcessMethodUtils.findProcessMethodForSelection(processMethods, newRecord);
         if (!pm) {
@@ -696,6 +700,12 @@
         key: c,
         value: c
       }, c); }))), h("div", {
+        className: "w-20"
+      }, h("span", {
+        className: "text-xs text-gray-500 block mb-1"
+      }, "積分數"), h("div", {
+        className: "p-2 text-sm text-gray-700 text-center"
+      }, selectedPm && selectedPm.points != null ? String(selectedPm.points) : "—")), h("div", {
         className: "flex items-end gap-2"
       }, h("div", {
         className: "w-20"
@@ -729,12 +739,14 @@
         className: "p-2 pl-4 first:pl-4"
       }, col.label); }), h("th", {
         className: "p-2"
+      }, "積分數"), h("th", {
+        className: "p-2"
       }, "數量"), h("th", {
         className: "p-2 text-right pr-4"
       }, "操作"))), h("tbody", {
         className: "divide-y"
       }, !formData.processRecords || formData.processRecords.length === 0 ? h("tr", null, h("td", {
-        colspan: String(pmColumns.length + 2),
+        colspan: String(pmColumns.length + 3),
         className: "p-4 text-center text-gray-400"
       }, processMethods.length ? "尚未加入處理項目" : "請至系統權限建立處理方式")) : formData.processRecords.map(function (r, idx) { return h("tr", {
         key: r.id || idx
@@ -742,6 +754,8 @@
         key: col.key,
         className: "p-2 pl-4 first:pl-4"
       }, r[col.key] || "—"); }), h("td", {
+        className: "p-2"
+      }, formatRecordPoints(r)), h("td", {
         className: "p-2"
       }, r.qty, r.unit ? h("span", {
         className: "text-gray-500 ml-1"

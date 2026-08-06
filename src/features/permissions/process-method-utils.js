@@ -153,6 +153,24 @@
     return parts.join(' / ');
   }
 
+  function toPointsNumber(value) {
+    if (value === null || value === undefined || value === '') return null;
+    var n = Number(value);
+    return isNaN(n) ? null : n;
+  }
+
+  function resolveCaseRecordPoints(record, processMethods, isClosed) {
+    if (!record) return null;
+    var snapshot = toPointsNumber(record.points);
+    if (isClosed) return snapshot;
+    var pm = findProcessMethodById(processMethods, record.processMethodId);
+    if (pm) {
+      var live = toPointsNumber(pm.points);
+      if (live !== null) return live;
+    }
+    return snapshot;
+  }
+
   function getDefaultProcessMethodSelection(processMethods) {
     var pm = (processMethods || [])[0];
     if (!pm) {
@@ -293,6 +311,7 @@
     CASE_DISPLAY_COLUMNS: CASE_DISPLAY_COLUMNS,
     toCaseProcessRecord: toCaseProcessRecord,
     formatCaseProcessRecordLabel: formatCaseProcessRecordLabel,
+    resolveCaseRecordPoints: resolveCaseRecordPoints,
     getDefaultProcessMethodSelection: getDefaultProcessMethodSelection,
     normalizeProcessMethodSelection: normalizeProcessMethodSelection
   };
