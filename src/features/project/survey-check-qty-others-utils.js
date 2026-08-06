@@ -47,10 +47,7 @@
       (qtyMap['其他'] != null && String(qtyMap['其他']) !== '');
   }
 
-  function clearLegacyOther(sd, checkName, qtyMapName) {
-    if (Array.isArray(sd[checkName])) {
-      sd[checkName] = sd[checkName].filter(function (v) { return v !== '其他'; });
-    }
+  function clearLegacyOtherFields(sd, checkName, qtyMapName) {
     delete sd[checkName + '_other'];
     if (sd[qtyMapName] && Object.prototype.hasOwnProperty.call(sd[qtyMapName], '其他')) {
       var m = Object.assign({}, sd[qtyMapName]);
@@ -59,10 +56,20 @@
     }
   }
 
+  function ensureOtherChecked(sd, checkName) {
+    var selected = Array.isArray(sd[checkName]) ? sd[checkName].slice() : [];
+    if (selected.indexOf('其他') === -1) {
+      selected.push('其他');
+      sd[checkName] = selected;
+    }
+  }
+
   function migrateOne(sd, checkName, qtyMapName) {
     var key = othersKey(checkName);
     var existing = sd[key];
     var hasOthersArray = Array.isArray(existing);
+    var createdFromLegacy = false;
+
     if (!hasOthersArray && hasLegacyOther(sd, checkName, qtyMapName)) {
       var qtyMap = sd[qtyMapName] || {};
       sd[key] = [{
@@ -70,11 +77,26 @@
         label: sd[checkName + '_other'] != null ? String(sd[checkName + '_other']) : '',
         qty: qtyMap['其他'] != null ? String(qtyMap['其他']) : ''
       }];
-    } else if (!hasOthersArray) {
-      // leave undefined until user adds
+      createdFromLegacy = true;
+      hasOthersArray = true;
     }
+
     if (hasLegacyOther(sd, checkName, qtyMapName) || hasOthersArray) {
-      clearLegacyOther(sd, checkName, qtyMapName);
+      clearLegacyOtherFields(sd, checkName, qtyMapName);
+    }
+
+    var others = getOthers(sd, checkName);
+    if (createdFromLegacy || others.length > 0) {
+      ensureOtherChecked(sd, checkName);
+    }
+  }
+
+  function ensureBlankIfChecked(sd, checkName) {
+    if (!sd || typeof sd !== 'object') return;
+    var selected = sd[checkName];
+    if (!Array.isArray(selected) || selected.indexOf('其他') === -1) return;
+    if (getOthers(sd, checkName).length === 0) {
+      addOther(sd, checkName);
     }
   }
 
@@ -82,6 +104,7 @@
     if (!sd || typeof sd !== 'object') return sd || {};
     GROUPS.forEach(function (g) {
       migrateOne(sd, g.checkName, g.qtyMapName);
+      ensureBlankIfChecked(sd, g.checkName);
     });
     return sd;
   }
@@ -138,6 +161,7 @@
     addOther: addOther,
     updateOther: updateOther,
     removeOther: removeOther,
+    ensureBlankIfChecked: ensureBlankIfChecked,
     formatOtherItem: formatOtherItem,
     formatOthersList: formatOthersList
   };
