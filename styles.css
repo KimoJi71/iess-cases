@@ -671,3 +671,141 @@ body {
     text-align: center;
   }
 }
+
+/* ===== Multi Select ===== */
+.multi-select {
+  position: relative;
+  width: 100%;
+}
+
+.multi-select__control {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  min-height: 2.625rem;
+  padding: 0.375rem 0.625rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  background: #fff;
+  cursor: pointer;
+}
+
+.multi-select__control:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+
+.multi-select__control--disabled {
+  background: #f9fafb;
+  cursor: not-allowed;
+}
+
+.multi-select__chips {
+  display: flex;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.multi-select__placeholder {
+  color: #9ca3af;
+  font-size: 0.875rem;
+}
+
+.multi-select__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 0.8125rem;
+}
+
+.multi-select__chip-remove {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 0.9375rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.multi-select__chevron {
+  flex: 0 0 auto;
+  width: 1rem;
+  height: 1rem;
+  color: #6b7280;
+  transition: transform 0.15s ease;
+}
+
+.multi-select__chevron--open {
+  transform: rotate(180deg);
+}
+
+.multi-select__menu {
+  position: fixed;
+  z-index: 100;
+  max-height: 16rem;
+  overflow-y: auto;
+  margin: 0;
+  padding: 0.25rem 0;
+  list-style: none;
+  background: #fff;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+.multi-select__option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 0;
+  background: transparent;
+  color: #374151;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+
+.multi-select__option:hover {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.multi-select__option--selected {
+  font-weight: 600;
+}
+
+.multi-select__checkbox {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  height: 1rem;
+  border: 1px solid #9ca3af;
+  border-radius: 0.1875rem;
+  font-size: 0.75rem;
+  line-height: 1;
+}
+
+.multi-select__checkbox--checked {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #fff;
+}
+
+.multi-select__empty {
+  padding: 0.75rem;
+  color: #9ca3af;
+  text-align: center;
+  font-size: 0.875rem;
+}
