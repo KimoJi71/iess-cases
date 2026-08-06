@@ -155,8 +155,8 @@ function testRenameReferences(AU) {
       id: 'r1',
       assignees: ['A組', 'B組'],
       collaborators: [
-        { name: 'A組', points: 4 },
-        { name: 'C組', points: 10 },
+        { name: 'A組', count: 3, points: 4 },
+        { name: 'C組', count: 2, points: 10 },
       ],
       performanceAssignees: ['A組', 'B組'],
       performanceAssignee: 'A組',
@@ -167,6 +167,9 @@ function testRenameReferences(AU) {
   assertEq(JSON.stringify(u.assignees), JSON.stringify(['A組新', 'B組']), 'assignees[] renamed');
   assertEq(u.collaborators[0].name, 'A組新', 'collaborators[].name renamed');
   assertEq(u.collaborators[1].name, 'C組', 'other collaborator unchanged');
+  assertEq(u.collaborators[0].count, 3, 'renamed collaborator keeps count');
+  assertEq(u.collaborators[0].points, 4, 'renamed collaborator keeps points');
+  assertEq(u.collaborators[1].count, 2, 'untouched collaborator keeps count');
   assertEq(JSON.stringify(u.performanceAssignees), JSON.stringify(['A組新', 'B組']), 'performanceAssignees[] renamed');
   assertEq(u.performanceAssignee, 'A組新', 'performanceAssignee string renamed');
 }
