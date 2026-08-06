@@ -53,7 +53,18 @@ function load(relPath) {
   });
 }
 
+sandbox.StoreUtils = {
+  matchesStoreRecord: function () { return false; },
+  getStoreArea: function () { return ''; },
+  getRecordArea: function () { return ''; }
+};
+sandbox.AssigneeUtils = {
+  getPerformanceAssignee: function () { return ''; }
+};
+
 load('src/features/permissions/device-category-utils.js');
+load('src/features/repair/case-assignee-utils.js');
+load('src/features/reports/performance-utils.js');
 
 const DCU = sandbox.window.DeviceCategoryUtils;
 
@@ -102,6 +113,117 @@ const diffModel = Object.assign({}, cats[0], { model: 'OTHER-1' });
 assertEq(
   DCU.findDuplicate([baseRec], diffModel, null), false,
   '型號不同不算重複'
+);
+
+console.log('\nisBonusEligible');
+
+function caseWith(serviceLevel, model) {
+  return {
+    id: 'C-' + serviceLevel + '-' + model,
+    serviceLevel: serviceLevel,
+    isPerformanceIncluded: true,
+    completionDate: '2026-08-05',
+    performanceAssignees: ['王小明'],
+    collaborators: [],
+    equipment: model === null ? null : { model: model },
+    processRecords: [{ processMethodId: 'PS1', points: 10, qty: 1 }]
+  };
+}
+
+const PU = sandbox.window.PerformanceUtils;
+
+assertEq(PU.isBonusEligible(caseWith('A 保修(一年一次)', 'RAS-100'), cats), false,
+  'A + 基礎設備 不計分');
+assertEq(PU.isBonusEligible(caseWith('A 保修(一年一次)', 'FXYP100'), cats), true,
+  'A + 增額設備 計分');
+assertEq(PU.isBonusEligible(caseWith('B 保修(一年兩次)', 'FXYP100'), cats), true,
+  'B + 增額設備 計分');
+assertEq(PU.isBonusEligible(caseWith('B 保修(一年兩次)', 'RAS-100'), cats), false,
+  'B + 基礎設備 不計分');
+assertEq(PU.isBonusEligible(caseWith('C 保養(一年一次)', 'RAS-100'), cats), true,
+  'C + 基礎設備 仍計分（回歸）');
+assertEq(PU.isBonusEligible(caseWith('D 維修(無簽約客戶)', 'RAS-100'), cats), true,
+  'D + 基礎設備 仍計分（回歸）');
+assertEq(PU.isBonusEligible(caseWith('A 保修(一年一次)', '查無此型號'), cats), false,
+  'A + 型號查無分類 不計分');
+assertEq(PU.isBonusEligible(caseWith('A 保修(一年一次)', null), cats), false,
+  'A + 案件無設備 不計分');
+assertEq(PU.isBonusEligible(caseWith('A 保修(一年一次)', 'PA-063'), cats), false,
+  'A + 分類無 equipmentLevel 欄位 不計分');
+assertEq(PU.isBonusEligible(caseWith('', 'FXYP100'), cats), true,
+  '服務等級為空 + 增額設備 計分');
+
+console.log('\ncomputeAssigneePerformance');
+
+const quarter = { start: '2026-07-01', end: '2026-09-30', label: '2026 年第 3 季' };
+const assignees = [{ id: 'ASG1', name: '王小明' }];
+
+function bonusOf(cases) {
+  return PU.computeAssigneePerformance({
+    cases: cases,
+    maintenanceCases: [],
+    assignees: assignees,
+    allocations: [],
+    deviceCategories: cats,
+    quarter: quarter
+  })[0].bonusPoints;
+}
+
+assertEq(bonusOf([caseWith('A 保修(一年一次)', 'RAS-100')]), 0,
+  'A + 基礎設備 積分為 0');
+assertEq(bonusOf([caseWith('A 保修(一年一次)', 'FXYP100')]), 10,
+  'A + 增額設備 取得全額 10 分');
+assertEq(bonusOf([caseWith('C 保養(一年一次)', 'RAS-100')]), 10,
+  'C + 基礎設備 取得全額 10 分（回歸）');
+
+const excluded = caseWith('A 保修(一年一次)', 'FXYP100');
+excluded.isPerformanceIncluded = false;
+assertEq(bonusOf([excluded]), 0,
+  'isPerformanceIncluded 為 false 時不計分');
+
+const outOfRange = caseWith('A 保修(一年一次)', 'FXYP100');
+outOfRange.completionDate = '2026-06-30';
+assertEq(bonusOf([outOfRange]), 0,
+  '季度範圍外不計分');
+
+// A/增額 的分攤公式必須與同條件 C/D 完全相同
+function multiAssigneeCase(serviceLevel, model) {
+  const c = caseWith(serviceLevel, model);
+  c.performanceAssignees = ['王小明', '李大華'];
+  c.collaborators = [{ name: '陳美玲', count: 1, points: 4 }];
+  // 總分 10、協作 4 → (10 - 4) / 2 = 3 分給王小明
+  return c;
+}
+
+function bonusForMulti(serviceLevel, model) {
+  return PU.computeAssigneePerformance({
+    cases: [multiAssigneeCase(serviceLevel, model)],
+    maintenanceCases: [],
+    assignees: assignees,
+    allocations: [],
+    deviceCategories: cats,
+    quarter: quarter
+  })[0].bonusPoints;
+}
+
+assertEq(bonusForMulti('A 保修(一年一次)', 'FXYP100'), 3,
+  'A + 增額 多人指派含協作，分攤得 3 分');
+assertEq(
+  bonusForMulti('A 保修(一年一次)', 'FXYP100'),
+  bonusForMulti('C 保養(一年一次)', 'RAS-100'),
+  'A/增額 與 C/基礎 的分攤結果一致'
+);
+
+assertEq(
+  PU.computeAssigneePerformance({
+    cases: [caseWith('A 保修(一年一次)', 'FXYP100')],
+    maintenanceCases: [],
+    assignees: assignees,
+    allocations: [],
+    quarter: quarter
+  })[0].bonusPoints,
+  0,
+  '未傳 deviceCategories 時退回原本的 C/D 行為（|| [] 預設值）'
 );
 
 console.log(`\n${passed} passed, ${failed} failed`);
