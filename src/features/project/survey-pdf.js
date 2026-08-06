@@ -77,34 +77,10 @@
   }
 
   function fmtDuctBox(prefix, sd) {
-    var parts = [];
-    var mat = sd[prefix + 'Material'];
-    if (mat) {
-      parts.push('材質：' + (mat === '其他' ? sd[prefix + 'Material_other'] || mat : mat));
+    if (window.SurveyDuctBoxCombosUtils) {
+      return SurveyDuctBoxCombosUtils.formatCombosList(sd, prefix) || '';
     }
-    var fw = sd[prefix + 'FlangeWidth'];
-    var fh = sd[prefix + 'FlangeHeight'];
-    if (fw || fh) parts.push('法蘭內徑 ' + val(fw) + '×' + val(fh) + ' cm');
-    var pipes = sd[prefix + 'Pipes'];
-    var holes = sd[prefix + 'PipesHoles'];
-    var qty = sd[prefix + 'PipesQty'];
-    if (Array.isArray(pipes) && pipes.length) {
-      pipes.forEach(function (p) {
-        var line = p;
-        if (holes && holes[p]) line += ' ' + holes[p] + '孔';
-        if (qty && qty[p]) line += ' ' + qty[p] + '個';
-        parts.push(line);
-      });
-    } else if (Array.isArray(pipes) === false && prefix === 'teeBox') {
-      var teePipes = sd.teeBoxPipes;
-      var teeQty = sd.teeBoxPipesQty;
-      if (Array.isArray(teePipes)) {
-        teePipes.forEach(function (p) {
-          parts.push(p + (teeQty && teeQty[p] ? ' ' + teeQty[p] + '個' : ''));
-        });
-      }
-    }
-    return parts.join('；');
+    return '';
   }
 
   function fmtVentOutlets(sd) {
@@ -413,6 +389,9 @@
 
   function buildSurveyPdfHtml(surveyCase) {
     var sd = surveyCase.surveyData || {};
+    if (sd && typeof sd === 'object' && window.SurveyDuctBoxCombosUtils) {
+      SurveyDuctBoxCombosUtils.migrateSurveyData(sd);
+    }
     return [
       '<div class="survey-pdf-root">',
       '<style>', PDF_STYLES, '</style>',
