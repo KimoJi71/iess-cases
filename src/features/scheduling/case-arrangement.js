@@ -53,6 +53,7 @@
     var customers = props.customers;
     var stores = props.stores;
     var assignees = props.assignees || [];
+    var processMethods = props.processMethods || [];
     var showToast = props.showToast;
 
     var calState = loadArrangementCalState();
@@ -541,6 +542,11 @@
           return renderScheduleReadOnly(p.label, p.value, p.fullWidth);
         }
 
+        function formatRecordPoints(r) {
+          var pts = ProcessMethodUtils.resolveCaseRecordPoints(r, processMethods, formData.isClosed);
+          return pts === null ? '—' : String(pts);
+        }
+
         return h('div', { className: 'space-y-4' },
           h('section', { className: 'bg-gray-50 border border-gray-200 rounded-md p-4' },
             h('h4', { className: 'text-sm font-bold text-blue-800 border-b pb-2 mb-3' }, '1. 案件資料'),
@@ -675,19 +681,21 @@
                             pmColumns.map(function (col) {
                               return h('th', { key: col.key, className: 'p-2 pl-4' }, col.label);
                             }),
+                            h('th', { className: 'p-2' }, '積分數'),
                             h('th', { className: 'p-2' }, '數量')
                           )
                         ),
                         h('tbody', { className: 'divide-y' },
                           (!formData.processRecords || !formData.processRecords.length)
                             ? h('tr', null,
-                                h('td', { colspan: String(pmColumns.length + 1), className: 'p-4 text-center text-gray-400' }, '無處理方式紀錄')
+                                h('td', { colspan: String(pmColumns.length + 2), className: 'p-4 text-center text-gray-400' }, '無處理方式紀錄')
                               )
                             : formData.processRecords.map(function (r, idx) {
                               return h('tr', { key: r.id || idx },
                                 pmColumns.map(function (col) {
                                   return h('td', { key: col.key, className: 'p-2 pl-4' }, r[col.key] || '—');
                                 }),
+                                h('td', { className: 'p-2' }, formatRecordPoints(r)),
                                 h('td', { className: 'p-2' },
                                   r.qty,
                                   r.unit ? h('span', { className: 'text-gray-500 ml-1' }, r.unit) : null
