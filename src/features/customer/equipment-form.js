@@ -178,7 +178,7 @@
                 h('input', {
                   type: 'text',
                   value: formData.model
-                    ? DeviceCategoryUtils.getEquipmentLevelByModel(deviceCategories, formData.model)
+                    ? DeviceCategoryUtils.getEquipmentLevelByEquip(deviceCategories, formData)
                     : '',
                   placeholder: '請先選擇型號',
                   disabled: true,

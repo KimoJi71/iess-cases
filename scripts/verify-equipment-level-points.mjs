@@ -37,6 +37,8 @@ const sandbox = {
   console,
   // 必須與 src/data/options.js 的 EQUIPMENT_LEVEL_OPTIONS 一致
   EQUIPMENT_LEVEL_OPTIONS: ['基礎設備', '增額設備'],
+  // 必須與 src/data/options.js 的 DEFAULT_EQUIPMENT_LEVEL 一致
+  DEFAULT_EQUIPMENT_LEVEL: '基礎設備',
   EQUIP_MODEL_CATALOG: {},
   EQUIP_MODEL_OPTIONS: [],
   EQUIP_CATEGORY_OPTIONS: [],
@@ -78,7 +80,18 @@ const cats = [
   // 舊資料：完全沒有 equipmentLevel 鍵
   { id: 'DCAT3', category: '冰水', brand: '三菱重工', deviceName: '冰水主機',
     specification: '5.0匹', model: 'PA-063', refrigerant: 'R134a',
-    powerSource: '380V' }
+    powerSource: '380V' },
+  // 同型號、不同品牌／等級的兩筆紀錄 — 型號查找必須依五欄組合而非型號單獨判定
+  { id: 'DCAT4', category: '分離式', brand: '日立', deviceName: '分離式冷氣',
+    specification: '2.0匹', model: 'RAS-SHARED', refrigerant: 'R410A',
+    powerSource: '110V', equipmentLevel: '基礎設備' },
+  { id: 'DCAT5', category: '分離式', brand: '大金', deviceName: '分離式冷氣',
+    specification: '2.0匹', model: 'RAS-SHARED', refrigerant: 'R32',
+    powerSource: '110V', equipmentLevel: '增額設備' },
+  // 舊資料：使用 name 而非 deviceName
+  { id: 'DCAT6', category: '分離式', brand: '國際牌', name: '分離式冷氣',
+    specification: '2.5匹', model: 'LEGACY-NAME', refrigerant: 'R410A',
+    powerSource: '220V', equipmentLevel: '增額設備' }
 ];
 
 console.log('getEquipmentLevel');
@@ -96,6 +109,40 @@ assertEq(DCU.getEquipmentLevelByModel(cats, 'PA-063'), '基礎設備', '舊資�
 assertEq(DCU.getEquipmentLevelByModel(cats, '不存在的型號'), '基礎設備', '查無型號視為基礎設備');
 assertEq(DCU.getEquipmentLevelByModel(cats, ''), '基礎設備', '型號為空視為基礎設備');
 assertEq(DCU.getEquipmentLevelByModel([], 'FXYP100'), '基礎設備', '分類清單為空視為基礎設備');
+
+console.log('\ngetEquipmentLevelByEquip');
+assertEq(
+  DCU.getEquipmentLevelByEquip(cats, {
+    category: '分離式', brand: '日立', deviceName: '分離式冷氣',
+    specification: '2.0匹', model: 'RAS-SHARED'
+  }),
+  '基礎設備',
+  '五欄完全相符（日立）命中基礎設備，而非同型號的大金增額設備紀錄'
+);
+assertEq(
+  DCU.getEquipmentLevelByEquip(cats, {
+    category: '分離式', brand: '大金', deviceName: '分離式冷氣',
+    specification: '2.0匹', model: 'RAS-SHARED'
+  }),
+  '增額設備',
+  '五欄完全相符（大金）命中增額設備，而非同型號的日立基礎設備紀錄'
+);
+assertEq(
+  DCU.getEquipmentLevelByEquip(cats, { model: 'FXYP100' }),
+  '增額設備',
+  '僅有型號、缺上層欄位時退回型號查找'
+);
+assertEq(
+  DCU.getEquipmentLevelByEquip(cats, {
+    category: '分離式', brand: '國際牌', deviceName: '分離式冷氣',
+    specification: '2.5匹', model: 'LEGACY-NAME'
+  }),
+  '增額設備',
+  '舊資料以 name 而非 deviceName 儲存，仍能以五欄組合命中'
+);
+assertEq(DCU.getEquipmentLevelByEquip(cats, null), '基礎設備', '設備為 null 視為基礎設備');
+assertEq(DCU.getEquipmentLevelByEquip(cats, {}), '基礎設備', '設備為空物件視為基礎設備');
+assertEq(DCU.getEquipmentLevelByEquip([], { model: 'RAS-SHARED' }), '基礎設備', '分類清單為空視為基礎設備');
 
 console.log('\nnormalizeRecord / recordKey');
 const normalized = DCU.normalizeRecord(cats[1]);
@@ -152,6 +199,14 @@ assertEq(PU.isBonusEligible(caseWith('A 保修(一年一次)', 'PA-063'), cats),
   'A + 分類無 equipmentLevel 欄位 不計分');
 assertEq(PU.isBonusEligible(caseWith('', 'FXYP100'), cats), true,
   '服務等級為空 + 增額設備 計分');
+
+console.log('\ngetCaseEquipmentLevel null-safety');
+assertEq(PU.getCaseEquipmentLevel({ equipment: null }, cats), '基礎設備',
+  'equipment 為 null 不拋錯，視為基礎設備');
+assertEq(PU.getCaseEquipmentLevel({}, cats), '基礎設備',
+  '案件完全沒有 equipment 鍵不拋錯，視為基礎設備');
+assertEq(PU.getCaseEquipmentLevel(null, cats), '基礎設備',
+  'c 本身為 null 不拋錯，視為基礎設備');
 
 console.log('\ncomputeAssigneePerformance');
 

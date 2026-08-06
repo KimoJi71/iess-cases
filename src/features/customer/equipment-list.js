@@ -80,8 +80,9 @@
       }, label);
     }
 
-    function equipmentLevelBadge(model) {
-      var level = DeviceCategoryUtils.getEquipmentLevelByModel(deviceCategories, model);
+    function equipmentLevelBadge(eq) {
+      if (!eq || !eq.model) return '—';
+      var level = DeviceCategoryUtils.getEquipmentLevelByEquip(deviceCategories, eq);
       var cls = level === '增額設備'
         ? 'bg-amber-100 text-amber-700'
         : 'bg-gray-100 text-gray-600';
@@ -274,7 +275,7 @@
                         h('td', { className: 'p-3 font-medium text-gray-800' }, eq.deviceName || eq.name || '—'),
                         h('td', { className: 'p-3' }, eq.specification || '—'),
                         h('td', { className: 'p-3' }, eq.model || '—'),
-                        h('td', { className: 'p-3' }, equipmentLevelBadge(eq.model)),
+                        h('td', { className: 'p-3' }, equipmentLevelBadge(eq)),
                         h('td', { className: 'p-3' }, eq.area || '—'),
                         h('td', { className: 'p-3' }, eq.manufactureDate || '—'),
                         h('td', { className: 'p-3' }, eq.installDate || '—'),

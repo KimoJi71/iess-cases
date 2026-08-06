@@ -53,8 +53,8 @@
   }
 
   function getCaseEquipmentLevel(c, deviceCategories) {
-    var model = (c && c.equipment && c.equipment.model) || '';
-    return DeviceCategoryUtils.getEquipmentLevelByModel(deviceCategories || [], model);
+    var equip = (c && c.equipment) || null;
+    return DeviceCategoryUtils.getEquipmentLevelByEquip(deviceCategories || [], equip);
   }
 
   function isAddOnEquipmentCase(c, deviceCategories) {
@@ -132,8 +132,8 @@
       var bonusPoints = 0;
       cases.forEach(function (c) {
         if (!c.isPerformanceIncluded) return;
-        if (!isBonusEligible(c, deviceCategories)) return;
         if (!isDateInRange(getRepairCaseDate(c), quarter.start, quarter.end)) return;
+        if (!isBonusEligible(c, deviceCategories)) return;
         bonusPoints += CaseAssigneeUtils.computeBonusPointsForAssignee(c, assignee.name);
       });
 
