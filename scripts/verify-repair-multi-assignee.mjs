@@ -220,6 +220,69 @@ function testPerformanceReport(PU) {
   assertApprox(byName['C組'], 10, 'report C組 bonusPoints');
 }
 
+function testCollaboratorRows(CAU) {
+  console.log('\n7. Collaborator rows (name / count / points)');
+
+  const c = makeRepairCase({
+    collaborators: [
+      { name: 'C組', count: 2, points: 10 },
+      { name: 'A組', count: 3, points: 4 },
+    ],
+  });
+  assertApprox(CAU.computeBonusPointsForAssignee(c, 'A組'), 12, 'count does not change A組 bonus');
+  assertApprox(CAU.computeBonusPointsForAssignee(c, 'B組'), 8, 'count does not change B組 bonus');
+  assertApprox(CAU.computeBonusPointsForAssignee(c, 'C組'), 10, 'count does not change C組 bonus');
+
+  assertEq(CAU.getCollaborators({ collaborators: [{ name: 'C組', points: 10 }] })[0].count, 1, 'legacy row without count → 1');
+  assertEq(CAU.getCollaborators({ collaborators: [{ name: 'C組', count: 0, points: 1 }] })[0].count, 1, 'count 0 → 1');
+  assertEq(CAU.getCollaborators({ collaborators: [{ name: 'C組', count: 2.7, points: 1 }] })[0].count, 2, 'count 2.7 → 2');
+  assertEq(CAU.getCollaborators({ collaborators: [{ name: '', count: 2, points: 5 }] }).length, 0, 'blank name row filtered out');
+
+  assertEq(
+    CAU.formatCollaborators({
+      collaborators: [
+        { name: 'B組', count: 2, points: 10 },
+        { name: 'C組', points: 5 },
+      ],
+    }),
+    'B組（2人／10分）、C組（1人／5分）',
+    'formatCollaborators output'
+  );
+  assertEq(CAU.formatCollaborators({ collaborators: [] }), '—', 'formatCollaborators empty → —');
+
+  const base = [{ name: 'B組', count: 2, points: 10 }];
+  const added = CAU.addCollaboratorRow(base);
+  assertEq(added.length, 2, 'addCollaboratorRow appends a row');
+  assertEq(added[1].name, '', 'new row has blank name');
+  assertEq(added[1].count, 1, 'new row count defaults to 1');
+  assertEq(added[1].points, 0, 'new row points defaults to 0');
+  assertEq(base.length, 1, 'addCollaboratorRow does not mutate input');
+
+  const updated = CAU.updateCollaboratorRow(added, 1, { name: 'C組', points: 5 });
+  assertEq(updated[1].name, 'C組', 'updateCollaboratorRow sets name');
+  assertEq(updated[1].points, 5, 'updateCollaboratorRow sets points');
+  assertEq(updated[1].count, 1, 'updateCollaboratorRow keeps untouched count');
+  assertEq(updated[0].name, 'B組', 'updateCollaboratorRow leaves other rows');
+  assertEq(added[1].name, '', 'updateCollaboratorRow does not mutate input');
+
+  const removed = CAU.removeCollaboratorRow(updated, 0);
+  assertEq(removed.length, 1, 'removeCollaboratorRow drops the row');
+  assertEq(removed[0].name, 'C組', 'removeCollaboratorRow keeps the rest');
+  assertEq(updated.length, 2, 'removeCollaboratorRow does not mutate input');
+
+  const all = ['A組', 'B組', 'C組'];
+  assertEq(
+    JSON.stringify(CAU.getAvailableCollaboratorNames(updated, 0, all)),
+    JSON.stringify(['A組', 'B組']),
+    'row 0 options exclude other rows picks, keep own'
+  );
+  assertEq(
+    JSON.stringify(CAU.getAvailableCollaboratorNames(updated, 1, all)),
+    JSON.stringify(['A組', 'C組']),
+    'row 1 options exclude B組'
+  );
+}
+
 function main() {
   console.log('Repair multi-assignee verification');
   console.log(`Root: ${ROOT}`);
@@ -240,6 +303,7 @@ function main() {
   testRenameReferences(AU);
   testIncludesAssignee(CAU, DRU);
   testPerformanceReport(PU);
+  testCollaboratorRows(CAU);
 
   console.log(`\n${'='.repeat(50)}`);
   console.log(`Results: ${passed} passed, ${failed} failed`);

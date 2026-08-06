@@ -43,11 +43,17 @@
     return list.join('、');
   }
 
+  function normalizeCollaboratorCount(value) {
+    var n = Math.floor(Number(value));
+    return n > 0 ? n : 1;
+  }
+
   function getCollaborators(record) {
     if (!record || !Array.isArray(record.collaborators)) return [];
     return record.collaborators.map(function (row) {
       return {
         name: String((row && row.name) || ''),
+        count: normalizeCollaboratorCount(row && row.count),
         points: Number(row && row.points) || 0
       };
     }).filter(function (row) { return !!row.name; });
@@ -57,7 +63,7 @@
     var list = getCollaborators(record);
     if (!list.length) return '—';
     return list.map(function (row) {
-      return row.name + '（' + row.points + '）';
+      return row.name + '（' + row.count + '人／' + row.points + '分）';
     }).join('、');
   }
 
@@ -156,6 +162,30 @@
     });
   }
 
+  function addCollaboratorRow(collaborators) {
+    return (collaborators || []).slice().concat([{ name: '', count: 1, points: 0 }]);
+  }
+
+  function updateCollaboratorRow(collaborators, index, patch) {
+    return (collaborators || []).map(function (row, i) {
+      if (i !== index) return row;
+      return Object.assign({ name: '', count: 1, points: 0 }, row, patch || {});
+    });
+  }
+
+  function removeCollaboratorRow(collaborators, index) {
+    return (collaborators || []).filter(function (row, i) { return i !== index; });
+  }
+
+  function getAvailableCollaboratorNames(collaborators, index, allNames) {
+    var taken = (collaborators || []).map(function (row, i) {
+      return i === index ? '' : String((row && row.name) || '');
+    });
+    return (allNames || []).filter(function (name) {
+      return taken.indexOf(name) === -1;
+    });
+  }
+
   window.CaseAssigneeUtils = {
     UNASSIGNED_VALUES: UNASSIGNED_VALUES,
     isUnassignedValue: isUnassignedValue,
@@ -172,6 +202,10 @@
     computeBonusPointsForAssignee: computeBonusPointsForAssignee,
     toggleAssignee: toggleAssignee,
     toggleCollaborator: toggleCollaborator,
-    setCollaboratorPoints: setCollaboratorPoints
+    setCollaboratorPoints: setCollaboratorPoints,
+    addCollaboratorRow: addCollaboratorRow,
+    updateCollaboratorRow: updateCollaboratorRow,
+    removeCollaboratorRow: removeCollaboratorRow,
+    getAvailableCollaboratorNames: getAvailableCollaboratorNames
   };
 })();
