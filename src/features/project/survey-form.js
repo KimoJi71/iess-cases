@@ -135,7 +135,12 @@
           var currentArr = sd[name] || [];
           sd[name] = checked ? currentArr.concat([value]) : currentArr.filter(function (item) { return item !== value; });
           if (checked && value === '其他') {
-            SurveyCheckQtyOthersUtils.ensureBlankIfChecked(sd, name);
+            var isQtyOtherGroup = SurveyCheckQtyOthersUtils.GROUPS.some(function (g) {
+              return g.checkName === name;
+            });
+            if (isQtyOtherGroup) {
+              SurveyCheckQtyOthersUtils.ensureBlankIfChecked(sd, name);
+            }
           }
           if (checked && name === 'ventOutlets' && value === '線型出風口') {
             SurveyVentLinearSizesUtils.ensureBlankIfChecked(sd);
@@ -237,6 +242,18 @@
       }
       function removeCheckQtyOther(checkName, id) {
         SurveyCheckQtyOthersUtils.removeOther(ensureSd(), checkName, id);
+        rerender();
+      }
+      function addVentLinearSize() {
+        SurveyVentLinearSizesUtils.addSize(ensureSd());
+        rerender();
+      }
+      function updateVentLinearSize(id, patch) {
+        SurveyVentLinearSizesUtils.updateSize(ensureSd(), id, patch);
+        rerender();
+      }
+      function removeVentLinearSize(id) {
+        SurveyVentLinearSizesUtils.removeSize(ensureSd(), id);
         rerender();
       }
 
@@ -489,10 +506,11 @@
           unit: '個',
           qtyLabel: '數量'
         }))))));
-        // 風管工程 出風口 單一型式列（勾選 + 數量個，線型另填寬高 cm）
+        // 風管工程 出風口 單一型式列（勾選 + 數量個；線型改為多筆尺寸列）
         const renderVentOutletRow = opt => {
           const selected = formData.surveyData?.ventOutlets || [];
           const checked = selected.includes(opt.label);
+          const sizes = opt.dim ? SurveyVentLinearSizesUtils.getSizes(formData.surveyData) : [];
           return h("div", {
             key: opt.label,
             className: "bg-white p-3 rounded border border-gray-200"
@@ -509,7 +527,7 @@
             className: "w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
           }), h("span", {
             className: "text-sm text-gray-700 font-medium"
-          }, opt.label)), h("div", {
+          }, opt.label)), !opt.dim && h("div", {
             className: "flex items-center gap-2"
           }, h("input", {
             type: "number",
@@ -520,35 +538,49 @@
             className: "w-24 p-1.5 border rounded-md text-sm outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-100 disabled:opacity-50"
           }), h("span", {
             className: "text-sm text-gray-500 whitespace-nowrap"
-          }, "個"))), opt.dim && h("div", {
+          }, "個"))), opt.dim && checked ? sizes.map(row => h("div", {
+            key: row.id,
             className: "flex flex-wrap items-center gap-3 mt-3 ml-6"
           }, h("span", {
             className: "text-sm text-gray-700 font-medium"
           }, "寬"), h("input", {
             type: "number",
-            name: "ventLinearWidth",
-            value: formData.surveyData?.ventLinearWidth || '',
-            onChange: handleSurveyChange,
-            disabled: !checked,
+            value: row.width || '',
+            onChange: e => updateVentLinearSize(row.id, { width: e.target.value }),
             placeholder: "寬",
-            className: "w-24 p-1.5 border rounded-md text-sm outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-100 disabled:opacity-50"
+            className: "w-24 p-1.5 border rounded-md text-sm outline-none focus:ring-2 focus:ring-indigo-500"
           }), h("span", {
             className: "text-sm text-gray-500"
           }, "cm"), h("span", {
-            className: "text-sm text-gray-700 font-medium ml-4"
+            className: "text-sm text-gray-700 font-medium ml-2"
           }, "高"), h("input", {
             type: "number",
-            name: "ventLinearHeight",
-            value: formData.surveyData?.ventLinearHeight || '',
-            onChange: handleSurveyChange,
-            disabled: !checked,
+            value: row.height || '',
+            onChange: e => updateVentLinearSize(row.id, { height: e.target.value }),
             placeholder: "高",
-            className: "w-24 p-1.5 border rounded-md text-sm outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-100 disabled:opacity-50"
+            className: "w-24 p-1.5 border rounded-md text-sm outline-none focus:ring-2 focus:ring-indigo-500"
           }), h("span", {
             className: "text-sm text-gray-500"
-          }, "cm")));
+          }, "cm"), h("input", {
+            type: "number",
+            value: row.qty || '',
+            onChange: e => updateVentLinearSize(row.id, { qty: e.target.value }),
+            placeholder: "數量",
+            className: "w-24 p-1.5 border rounded-md text-sm outline-none focus:ring-2 focus:ring-indigo-500 ml-2"
+          }), h("span", {
+            className: "text-sm text-gray-500 whitespace-nowrap"
+          }, "個"), h("button", {
+            type: "button",
+            title: "刪除此尺寸",
+            onClick: () => removeVentLinearSize(row.id),
+            className: "text-red-500 hover:text-red-700 p-1"
+          }, Icons.Trash2({ className: "h-4 w-4" }))) : null, opt.dim && checked ? h("button", {
+            type: "button",
+            onClick: () => addVentLinearSize(),
+            className: "flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-800 mt-3 ml-6"
+          }, Icons.Plus({ className: "h-4 w-4" }), "新增尺寸") : null);
         };
-        // 風管工程 出風口 卡片（多選型式 + 數量，線型另填寬高，含其他）
+        // 風管工程 出風口 卡片（多選型式 + 數量；線型可填多筆尺寸，含其他）
         const renderVentOutletBox = () => h("div", {
           className: "bg-indigo-50/30 p-8 rounded-lg border border-indigo-100 shadow-sm"
         }, h("h3", {
@@ -563,7 +595,7 @@
           className: "text-base font-bold text-indigo-700 mb-1"
         }, "出風口型式、數量"), h("p", {
           className: "text-xs text-gray-400 mb-3"
-        }, "請勾選出風口型式並填寫數量（個），線型出風口另填寬、高（cm）"), h("div", {
+        }, "請勾選出風口型式並填寫數量（個）；線型出風口可新增多組寬、高（cm）與數量"), h("div", {
           className: "space-y-2 mt-2"
         }, DUCT_VENT_OUTLETS.map(renderVentOutletRow), renderCheckQtyOthersBlock('ventOutlets', '個', '數量')))));
         // 風管工程 回風口 卡片（多選型式 + 數量，無其他列）
