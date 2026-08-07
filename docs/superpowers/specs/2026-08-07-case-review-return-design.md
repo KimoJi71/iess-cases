@@ -64,7 +64,7 @@ returnedAt: IESS.caseDateTime.now()
 ```
 清除 `isListClosed` 是因為轉單類案件（`caseStatus.isTransferStatus`）結案時會一併設為 `true`；不清除的話案件回到列表後會殘留錯誤的階段狀態。`processStatus` 不變動。
 
-退回後案件因 `isClosed === false` 自動不符合審核列表的篩選條件而離開列表。顯示 toast：「案件已退回」。
+退回後案件因 `isClosed === false` 自動不符合審核列表的篩選條件而離開列表。toast 指出去向：叫修為「案件已退回至「案件處理」列表」，保養為「案件已退回至「保養計劃進度」列表」。
 
 ## 目的地列表新增「退回原因」欄
 
@@ -107,3 +107,8 @@ Undo: '<path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/>
 - 預設退回原因下拉選單
 - 案件明細頁（`case-view.js`）顯示退回原因
 - 退回通知／權限控管
+
+## 已知限制
+
+- 退回**不會**回滾門市的 `lastRepairDate` / `lastMaintenanceDate`（結案時寫入）。因此退回一張保養單後，該門市的「最後保養日」仍停在被退回的完成日，`ScheduleUtils.buildMaintenanceSchedule` 推算的下次保養月份也不會回復。回滾需要重算「上一筆已結案紀錄」，屬另一個題目。
+- 保養單若 `planDate` 不在當月，退回後不會出現在「保養計劃進度」的預設月份篩選中，需自行放寬查詢區間。toast 已指出去向以降低困惑。
