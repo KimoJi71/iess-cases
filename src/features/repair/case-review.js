@@ -89,6 +89,7 @@
         if (!reason) return;
         var caseId = returnModal.caseId;
         var stamp = IESS.caseDateTime.now();
+        var destination;
 
         if (returnModal.sourceType === 'maintenance') {
           setMaintenanceCases(maintenanceCases.map(function (c) {
@@ -100,6 +101,7 @@
               returnedAt: stamp
             });
           }));
+          destination = '案件已退回至「保養計劃進度」列表';
         } else {
           setCases(cases.map(function (c) {
             if (c.id !== caseId) return c;
@@ -111,10 +113,11 @@
               returnedAt: stamp
             });
           }));
+          destination = '案件已退回至「案件處理」列表';
         }
 
         resetReturnModal();
-        showToast('案件已退回');
+        showToast(destination);
       }
 
       return h('div', {

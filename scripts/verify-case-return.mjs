@@ -89,6 +89,12 @@ try {
   console.log('page load');
   assertEq(consoleErrors.length, 0, '載入時無 JS 錯誤');
 
+  console.log('\n日期基準值');
+  const todayDate = await evaluate('todayDate');
+  const currentMonthStr = await evaluate('currentMonthStr');
+  assertTrue(!!todayDate && !!currentMonthStr,
+    '成功取得頁面 todayDate / currentMonthStr', `${todayDate} / ${currentMonthStr}`);
+
   console.log('\nIcons.Undo');
   assertEq(await evaluate('typeof IESS.Icons.Undo'), 'function', 'Icons.Undo 已定義');
   assertEq(
@@ -106,10 +112,10 @@ try {
       var repairCase = { id: 'R1', caseNumber: '20260807001', customerName: '測試客戶',
         storeName: '測試門市', serviceLevel: 'A', workCategory: '一般叫修', repairItem: '冷氣',
         repairReason: '不冷', actualReason: '缺冷媒', isClosed: true, isListClosed: true,
-        processStatus: '轉原廠', closeDate: '2026-08-07 10:00', repairDate: '2026-08-07' };
+        processStatus: '轉原廠', closeDate: '${todayDate} 10:00', repairDate: '${todayDate}' };
       var maintCase = { id: 'M1', caseNumber: '20260807002', customerName: '保養客戶',
         storeName: '保養門市', serviceLevel: 'B', status: '已完成', isClosed: true,
-        closeDate: '2026-08-07 11:00', repairDate: '2026-08-07', planDate: '2026-08-07' };
+        closeDate: '${todayDate} 11:00', repairDate: '${todayDate}', planDate: '${todayDate}' };
       window.__written = { cases: null, maintenanceCases: null, toast: null };
       var node = CaseReviewList(Object.assign({
         cases: [repairCase],
@@ -153,8 +159,7 @@ try {
       .filter(function (b) { return b.textContent.trim() === '確認退回'; })[0];
     var result = {
       hasTextarea: !!ta,
-      disabledWhenEmpty: !!(confirmBtn && confirmBtn.disabled),
-      wrote: !!window.__written.cases
+      disabledWhenEmpty: !!(confirmBtn && confirmBtn.disabled)
     };
     if (confirmBtn) confirmBtn.click();
     result.wroteAfterEmptyClick = !!window.__written.cases;
@@ -199,7 +204,10 @@ try {
   assertTrue(repairReturn.hasReturnedAt, 'returnedAt 已寫入', repairReturn.hasReturnedAt);
   assertEq(repairReturn.processStatus, '轉原廠', 'processStatus 不變');
   assertTrue(repairReturn.maintenanceUntouched, '未誤動保養案件集');
-  assertEq(repairReturn.toast, '案件已退回', 'toast 文字正確');
+  assertEq(repairReturn.toast, '案件已退回至「案件處理」列表', 'toast 文字正確（叫修案件）');
+  // window.__mkReview() resets window.__written on every call, so snapshot the
+  // actually-written repair cases now before the maintenance scenario overwrites it.
+  await evaluate('window.__returnedCases = window.__written.cases; "ok"');
 
   console.log('\n銷案審核 — 退回保養案件');
   const maintReturn = await evaluate(`(function(){
@@ -216,7 +224,8 @@ try {
       closeDate: written && written.closeDate,
       reason: written && written.returnReason,
       status: written && written.status,
-      repairUntouched: window.__written.cases === null
+      repairUntouched: window.__written.cases === null,
+      toast: window.__written.toast
     };
     document.body.innerHTML = '';
     return result;
@@ -226,22 +235,40 @@ try {
   assertEq(maintReturn.reason, '保養照片未附', '保養退回原因已寫入');
   assertEq(maintReturn.status, '已完成', '保養狀態維持「已完成」，可再次結案');
   assertTrue(maintReturn.repairUntouched, '未誤動叫修案件集');
+  assertEq(maintReturn.toast, '案件已退回至「保養計劃進度」列表', 'toast 文字正確（保養案件）');
+  await evaluate('window.__returnedMaintenanceCases = window.__written.maintenanceCases; "ok"');
 
-  console.log('\n案件處理列表 — 退回原因欄');
+  console.log('\n退回後離開審核列表（用真實寫入物件重新渲染）');
+  const reviewGoneCheck = await evaluate(`(function(){
+    var node = CaseReviewList({
+      cases: window.__returnedCases,
+      setCases: function () {},
+      maintenanceCases: window.__returnedMaintenanceCases,
+      setMaintenanceCases: function () {},
+      assignees: [],
+      setViewingCase: function () {}, setView: function () {}, showToast: function () {}
+    });
+    var result = {
+      repairGone: !window.__findReturnBtn(node, '20260807001'),
+      maintGone: !window.__findReturnBtn(node, '20260807002')
+    };
+    node.remove();
+    return result;
+  })()`);
+  assertTrue(reviewGoneCheck.repairGone, '退回的叫修案件已離開審核列表');
+  assertTrue(reviewGoneCheck.maintGone, '退回的保養案件已離開審核列表');
+
+  console.log('\n案件處理列表 — 退回原因欄（真實寫入物件）');
   const caseListCheck = await evaluate(`(function(){
     var node = CaseList({
-      cases: [
-        { id: 'R1', caseNumber: '20260807001', customerName: '測試客戶', storeName: '測試門市',
-          workCategory: '一般叫修', repairItem: '冷氣', repairReason: '不冷', faultDesc: '不冷',
-          isClosed: false, createdAt: '2026-08-07 09:00',
-          returnReason: '金額有誤，請重填', returnedAt: '2026-08-07 12:00' },
+      cases: window.__returnedCases.concat([
         { id: 'R2', caseNumber: '20260807003', customerName: '測試客戶', storeName: '測試門市',
           workCategory: '一般叫修', repairItem: '冷氣', repairReason: '不冷', faultDesc: '漏水',
-          isClosed: false, createdAt: '2026-08-07 08:00' }
-      ],
+          isClosed: false, processStatus: '轉原廠', createdAt: '${todayDate} 08:00' }
+      ]),
       setCases: function () {}, stores: [], setStores: function () {},
       setEditingCase: function () {}, setView: function () {}, showToast: function () {},
-      statusFilter: '未處理', setStatusFilter: function () {}
+      statusFilter: '轉原廠', setStatusFilter: function () {}
     });
     var ths = Array.prototype.map.call(node.querySelectorAll('thead th'), function (t) { return t.textContent.trim(); });
     var rows = Array.prototype.map.call(node.querySelectorAll('tbody tr'), function (tr) {
@@ -254,22 +281,19 @@ try {
   assertEq(caseListCheck.ths[caseListCheck.ths.length - 1], '退回原因', '案件處理列表最後一欄為「退回原因」');
   const returnedRow = caseListCheck.rows.filter(r => r.text.indexOf('20260807001') !== -1)[0];
   const cleanRow = caseListCheck.rows.filter(r => r.text.indexOf('20260807003') !== -1)[0];
+  assertTrue(!!returnedRow, '退回的叫修案件真實物件出現在案件處理列表（statusFilter=轉原廠）');
   assertEq(returnedRow.last, '金額有誤，請重填', '已退回案件顯示退回原因');
-  assertEq(returnedRow.title, '2026-08-07 12:00 金額有誤，請重填', 'title 含退回時間與原因');
+  assertTrue(returnedRow.title.indexOf('金額有誤，請重填') !== -1, 'title 含退回原因');
   assertEq(cleanRow.last, '—', '未退回案件顯示破折號');
 
-  console.log('\n保養計劃進度 — 退回原因欄');
+  console.log('\n保養計劃進度 — 退回原因欄（真實寫入物件）');
   const maintListCheck = await evaluate(`(function(){
     var node = MaintenanceList({
-      cases: [
-        { id: 'M1', caseNumber: '20260807002', customerName: '保養客戶', storeName: '保養門市',
-          serviceLevel: 'B', status: '已完成', workCategory: '保養', assignee: '王小明',
-          isClosed: false, planDate: '2026-08-07', dueMonth: '2026-08',
-          returnReason: '保養照片未附', returnedAt: '2026-08-07 13:00' },
+      cases: window.__returnedMaintenanceCases.concat([
         { id: 'M2', caseNumber: '20260807004', customerName: '保養客戶', storeName: '保養門市',
           serviceLevel: 'B', status: '未保養', workCategory: '保養', assignee: '王小明',
-          isClosed: false, planDate: '2026-08-07', dueMonth: '2026-08' }
-      ],
+          isClosed: false, planDate: '${todayDate}', dueMonth: '${currentMonthStr}' }
+      ]),
       setCases: function () {}, stores: [], setStores: function () {}, customers: [],
       setViewingCase: function () {}, setEditingCase: function () {},
       setView: function () {}, showToast: function () {}
@@ -285,8 +309,9 @@ try {
   assertEq(maintListCheck.ths[maintListCheck.ths.length - 1], '退回原因', '保養列表最後一欄為「退回原因」');
   const maintReturnedRow = maintListCheck.rows.filter(r => r.text.indexOf('20260807002') !== -1)[0];
   const maintCleanRow = maintListCheck.rows.filter(r => r.text.indexOf('20260807004') !== -1)[0];
+  assertTrue(!!maintReturnedRow, '退回的保養案件真實物件出現在保養計劃進度列表');
   assertEq(maintReturnedRow.last, '保養照片未附', '已退回保養單顯示退回原因');
-  assertEq(maintReturnedRow.title, '2026-08-07 13:00 保養照片未附', 'title 含退回時間與原因');
+  assertTrue(maintReturnedRow.title.indexOf('保養照片未附') !== -1, 'title 含退回原因');
   assertEq(maintCleanRow.last, '—', '未退回保養單顯示破折號');
 
   console.log('\n再次結案後退回原因保留');
@@ -296,8 +321,8 @@ try {
       cases: [{ id: 'R1', caseNumber: '20260807001', customerName: '測試客戶',
         storeName: '測試門市', workCategory: '一般叫修', repairItem: '冷氣',
         repairReason: '不冷', faultDesc: '不冷', isClosed: false, processStatus: '案件完成',
-        createdAt: '2026-08-07 09:00',
-        returnReason: '金額有誤，請重填', returnedAt: '2026-08-07 12:00' }],
+        createdAt: '${todayDate} 09:00',
+        returnReason: '金額有誤，請重填', returnedAt: '${todayDate} 12:00' }],
       setCases: function (next) { written = next; },
       stores: [], setStores: function () {},
       setEditingCase: function () {}, setView: function () {}, showToast: function () {},
