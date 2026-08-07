@@ -100,6 +100,133 @@ try {
     'Icons.Undo 含 path'
   );
 
+  console.log('\n銷案審核 — 退回按鈕與 Modal');
+  await evaluate(`
+    window.__mkReview = function (extra) {
+      var repairCase = { id: 'R1', caseNumber: '20260807001', customerName: '測試客戶',
+        storeName: '測試門市', serviceLevel: 'A', workCategory: '一般叫修', repairItem: '冷氣',
+        repairReason: '不冷', actualReason: '缺冷媒', isClosed: true, isListClosed: true,
+        processStatus: '轉原廠', closeDate: '2026-08-07 10:00', repairDate: '2026-08-07' };
+      var maintCase = { id: 'M1', caseNumber: '20260807002', customerName: '保養客戶',
+        storeName: '保養門市', serviceLevel: 'B', status: '已完成', isClosed: true,
+        closeDate: '2026-08-07 11:00', repairDate: '2026-08-07', planDate: '2026-08-07' };
+      window.__written = { cases: null, maintenanceCases: null, toast: null };
+      var node = CaseReviewList(Object.assign({
+        cases: [repairCase],
+        setCases: function (next) { window.__written.cases = next; },
+        maintenanceCases: [maintCase],
+        setMaintenanceCases: function (next) { window.__written.maintenanceCases = next; },
+        assignees: [],
+        setViewingCase: function () {},
+        setView: function () {},
+        showToast: function (msg) { window.__written.toast = msg; }
+      }, extra || {}));
+      document.body.appendChild(node);
+      return node;
+    };
+    window.__findReturnBtn = function (node, caseNumber) {
+      var rows = Array.prototype.slice.call(node.querySelectorAll('tbody tr'));
+      var row = rows.filter(function (tr) { return tr.textContent.indexOf(caseNumber) !== -1; })[0];
+      if (!row) return null;
+      return row.querySelector('button[aria-label="退回案件"]');
+    };
+    'ok'`);
+
+  const btnCheck = await evaluate(`(function(){
+    var node = window.__mkReview();
+    var btn = window.__findReturnBtn(node, '20260807001');
+    var maintBtn = window.__findReturnBtn(node, '20260807002');
+    var result = { hasRepairBtn: !!btn, hasMaintBtn: !!maintBtn,
+      modalBefore: !!node.querySelector('textarea[name="returnReason"]') };
+    node.remove();
+    return result;
+  })()`);
+  assertTrue(btnCheck.hasRepairBtn, '叫修案件列有「退回案件」按鈕');
+  assertTrue(btnCheck.hasMaintBtn, '保養案件列有「退回案件」按鈕');
+  assertEq(btnCheck.modalBefore, false, '未點擊時不顯示退回 Modal');
+
+  const modalCheck = await evaluate(`(function(){
+    var node = window.__mkReview();
+    window.__findReturnBtn(node, '20260807001').click();
+    var ta = document.body.querySelector('textarea[name="returnReason"]');
+    var confirmBtn = Array.prototype.slice.call(document.body.querySelectorAll('button'))
+      .filter(function (b) { return b.textContent.trim() === '確認退回'; })[0];
+    var result = {
+      hasTextarea: !!ta,
+      disabledWhenEmpty: !!(confirmBtn && confirmBtn.disabled),
+      wrote: !!window.__written.cases
+    };
+    if (confirmBtn) confirmBtn.click();
+    result.wroteAfterEmptyClick = !!window.__written.cases;
+    document.body.innerHTML = '';
+    return result;
+  })()`);
+  assertTrue(modalCheck.hasTextarea, '點擊後出現退回原因 textarea');
+  assertTrue(modalCheck.disabledWhenEmpty, '原因空白時「確認退回」為 disabled');
+  assertEq(modalCheck.wroteAfterEmptyClick, false, '空白原因不會寫入資料');
+
+  console.log('\n銷案審核 — 退回叫修案件');
+  const repairReturn = await evaluate(`(function(){
+    var node = window.__mkReview();
+    window.__findReturnBtn(node, '20260807001').click();
+    var ta = document.body.querySelector('textarea[name="returnReason"]');
+    ta.value = '  金額有誤，請重填  ';
+    ta.dispatchEvent(new Event('input', { bubbles: true }));
+    var confirmBtn = Array.prototype.slice.call(document.body.querySelectorAll('button'))
+      .filter(function (b) { return b.textContent.trim() === '確認退回'; })[0];
+    var wasDisabled = confirmBtn.disabled;
+    confirmBtn.click();
+    var written = window.__written.cases && window.__written.cases[0];
+    var result = {
+      enabledWhenFilled: !wasDisabled,
+      isClosed: written && written.isClosed,
+      isListClosed: written && written.isListClosed,
+      closeDate: written && written.closeDate,
+      reason: written && written.returnReason,
+      hasReturnedAt: !!(written && written.returnedAt),
+      processStatus: written && written.processStatus,
+      maintenanceUntouched: window.__written.maintenanceCases === null,
+      toast: window.__written.toast
+    };
+    document.body.innerHTML = '';
+    return result;
+  })()`);
+  assertTrue(repairReturn.enabledWhenFilled, '填入原因後「確認退回」可點擊');
+  assertEq(repairReturn.isClosed, false, '叫修案件 isClosed 設回 false');
+  assertEq(repairReturn.isListClosed, false, '叫修案件 isListClosed 設回 false');
+  assertEq(repairReturn.closeDate, '', '叫修案件 closeDate 清空');
+  assertEq(repairReturn.reason, '金額有誤，請重填', '退回原因已 trim 並寫入');
+  assertTrue(repairReturn.hasReturnedAt, 'returnedAt 已寫入', repairReturn.hasReturnedAt);
+  assertEq(repairReturn.processStatus, '轉原廠', 'processStatus 不變');
+  assertTrue(repairReturn.maintenanceUntouched, '未誤動保養案件集');
+  assertEq(repairReturn.toast, '案件已退回', 'toast 文字正確');
+
+  console.log('\n銷案審核 — 退回保養案件');
+  const maintReturn = await evaluate(`(function(){
+    var node = window.__mkReview();
+    window.__findReturnBtn(node, '20260807002').click();
+    var ta = document.body.querySelector('textarea[name="returnReason"]');
+    ta.value = '保養照片未附';
+    ta.dispatchEvent(new Event('input', { bubbles: true }));
+    Array.prototype.slice.call(document.body.querySelectorAll('button'))
+      .filter(function (b) { return b.textContent.trim() === '確認退回'; })[0].click();
+    var written = window.__written.maintenanceCases && window.__written.maintenanceCases[0];
+    var result = {
+      isClosed: written && written.isClosed,
+      closeDate: written && written.closeDate,
+      reason: written && written.returnReason,
+      status: written && written.status,
+      repairUntouched: window.__written.cases === null
+    };
+    document.body.innerHTML = '';
+    return result;
+  })()`);
+  assertEq(maintReturn.isClosed, false, '保養案件 isClosed 設回 false');
+  assertEq(maintReturn.closeDate, '', '保養案件 closeDate 清空');
+  assertEq(maintReturn.reason, '保養照片未附', '保養退回原因已寫入');
+  assertEq(maintReturn.status, '已完成', '保養狀態維持「已完成」，可再次結案');
+  assertTrue(maintReturn.repairUntouched, '未誤動叫修案件集');
+
   assertEq(consoleErrors.length, 0, '全程無 JS 錯誤');
 } catch (e) {
   fail('driver', e.message);

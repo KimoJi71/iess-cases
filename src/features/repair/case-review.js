@@ -39,6 +39,7 @@
     var endDate = todayDate;
     var appliedDateRange = { start: todayDate, end: todayDate };
     var includeConfirmModal = { show: false, caseId: null, sourceType: 'repair' };
+    var returnModal = { show: false, caseId: null, sourceType: 'repair', reason: '' };
     var dragProps = useDragScroll();
     var listPagination = IESS.createListPagination();
 
@@ -77,6 +78,43 @@
         }
         includeConfirmModal = { show: false, caseId: null, sourceType: 'repair' };
         showToast('已成功列入案件績效');
+      }
+
+      function resetReturnModal() {
+        returnModal = { show: false, caseId: null, sourceType: 'repair', reason: '' };
+      }
+
+      function handleReturnCase() {
+        var reason = String(returnModal.reason || '').trim();
+        if (!reason) return;
+        var caseId = returnModal.caseId;
+        var stamp = IESS.caseDateTime.now();
+
+        if (returnModal.sourceType === 'maintenance') {
+          setMaintenanceCases(maintenanceCases.map(function (c) {
+            if (c.id !== caseId) return c;
+            return Object.assign({}, c, {
+              isClosed: false,
+              closeDate: '',
+              returnReason: reason,
+              returnedAt: stamp
+            });
+          }));
+        } else {
+          setCases(cases.map(function (c) {
+            if (c.id !== caseId) return c;
+            return Object.assign({}, c, {
+              isClosed: false,
+              isListClosed: false,
+              closeDate: '',
+              returnReason: reason,
+              returnedAt: stamp
+            });
+          }));
+        }
+
+        resetReturnModal();
+        showToast('案件已退回');
       }
 
       return h('div', {
@@ -147,7 +185,17 @@
                           };
                           rerender();
                         },
-                        className: 'p-1.5 text-amber-500 hover:bg-amber-100 rounded', icon: Icons.Star({ className: 'h-4 w-4' }) })
+                        className: 'p-1.5 text-amber-500 hover:bg-amber-100 rounded', icon: Icons.Star({ className: 'h-4 w-4' }) }),
+                      iconActionBtn({ label: '退回案件', onClick: function () {
+                          returnModal = {
+                            show: true,
+                            caseId: c.id,
+                            sourceType: isMaintenance ? 'maintenance' : 'repair',
+                            reason: ''
+                          };
+                          rerender();
+                        },
+                        className: 'p-1.5 text-red-600 hover:bg-red-100 rounded', icon: Icons.Undo({ className: 'h-4 w-4' }) })
                     )
                   ),
                   h('td', { className: 'p-3' }, IESS.caseDateTime.format(getReviewCaseDate(c))),
@@ -191,6 +239,44 @@
                 },
                 className: 'px-4 py-2 bg-amber-500 text-white rounded-md hover:bg-amber-600 transition-colors'
               }, '確認列入')
+            )
+          )
+        ),
+        returnModal.show && h('div', {
+          className: 'app-modal-overlay'
+        },
+          h('div', { className: 'bg-white rounded-lg shadow-xl p-6 w-96 max-w-full m-4' },
+            h('div', { className: 'flex items-center space-x-3 text-red-600 mb-4' },
+              Icons.Undo({ className: 'h-6 w-6' }),
+              h('h3', { className: 'text-lg font-bold text-gray-800' }, '退回案件')
+            ),
+            h('p', { className: 'text-gray-600 mb-4' },
+              '退回後案件將回到原處理列表，請填寫退回原因。'),
+            h('label', { className: 'block text-sm font-medium text-gray-700 mb-1' }, '退回原因'),
+            h('textarea', {
+              name: 'returnReason',
+              value: returnModal.reason,
+              onChange: function (e) { returnModal.reason = e.target.value; rerender(); },
+              rows: 4,
+              placeholder: '請說明退回原因…',
+              className: 'w-full p-2 border rounded-md outline-none mb-6'
+            }),
+            h('div', { className: 'flex justify-end space-x-3' },
+              h('button', {
+                type: 'button',
+                onClick: function () {
+                  resetReturnModal();
+                  rerender();
+                },
+                className: 'px-4 py-2 border rounded-md text-gray-600 hover:bg-gray-50 transition-colors'
+              }, '取消'),
+              h('button', {
+                type: 'button',
+                disabled: !String(returnModal.reason || '').trim(),
+                onClick: handleReturnCase,
+                className: 'px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors ' +
+                  'disabled:bg-gray-300 disabled:cursor-not-allowed'
+              }, '確認退回')
             )
           )
         )
