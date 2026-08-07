@@ -345,7 +345,7 @@
         return h(CaseReviewList, {
           cases: s.cases, setCases: setCasesData,
           maintenanceCases: s.maintenanceCases, setMaintenanceCases: setMaintenanceCases,
-          assignees: s.assignees,
+          assignees: s.assignees, deviceCategories: s.deviceCategories,
           setViewingCase: setViewingCase, setView: setView, showToast: showToast
         });
       case 'review-view':

@@ -11,6 +11,18 @@
     return c && c.sourceType === 'maintenance';
   }
 
+  // 增額任務：C/D 服務等級的叫修案件，或 A/B 但設備為增額設備的叫修案件。
+  // 保養計劃案件不列入增額積分（與 performance-utils 的統計口徑一致），一律回 null。
+  function resolveReviewCaseBonusPoints(c, deviceCategories) {
+    if (!c || isMaintenancePlanCase(c)) return null;
+    if (!PerformanceUtils.isBonusEligible(c, deviceCategories || [])) return null;
+    return PerformanceUtils.sumProcessPoints(c);
+  }
+
+  function formatBonusPoints(points) {
+    return points === null ? '' : String(points);
+  }
+
   function getReviewCaseDate(c) {
     if (!c) return '';
     if (c.closeDate) return String(c.closeDate).slice(0, 10);
@@ -31,6 +43,7 @@
     var maintenanceCases = props.maintenanceCases || [];
     var setMaintenanceCases = props.setMaintenanceCases;
     var assignees = props.assignees || [];
+    var deviceCategories = props.deviceCategories || [];
     var setViewingCase = props.setViewingCase;
     var setView = props.setView;
     var showToast = props.showToast;
@@ -157,6 +170,7 @@
                 h('th', { className: 'p-3 font-semibold' }, '門市名稱'),
                 h('th', { className: 'p-3 font-semibold' }, '公司區域'),
                 h('th', { className: 'p-3 font-semibold' }, '服務等級'),
+                h('th', { className: 'p-3 font-semibold' }, '總積分'),
                 h('th', { className: 'p-3 font-semibold' }, '工項分類'),
                 h('th', { className: 'p-3 font-semibold' }, '叫修項目'),
                 h('th', { className: 'p-3 font-semibold' }, '叫修原因'),
@@ -166,7 +180,7 @@
             ),
             h('tbody', { className: 'divide-y divide-gray-100' },
               filteredCases.length === 0 ? h('tr', null,
-                h('td', { colspan: '12', className: 'text-center p-8 text-gray-400' }, '無資料符合目前搜尋區間')
+                h('td', { colspan: '13', className: 'text-center p-8 text-gray-400' }, '無資料符合目前搜尋區間')
               ) : pageResult.items.map(function (c) {
                 var isMaintenance = isMaintenancePlanCase(c);
                 return h('tr', { key: c.sourceType + '-' + c.id, className: 'hover:bg-gray-50 transition-colors' },
@@ -207,6 +221,7 @@
                   h('td', { className: 'p-3' }, c.storeName),
                   h('td', { className: 'p-3' }, StoreUtils.getRecordArea(c) || '—'),
                   h('td', { className: 'p-3' }, c.serviceLevel),
+                  h('td', { className: 'p-3' }, formatBonusPoints(resolveReviewCaseBonusPoints(c, deviceCategories))),
                   h('td', { className: 'p-3' }, isMaintenance ? '例行保養' : c.workCategory),
                   h('td', { className: 'p-3' }, isMaintenance ? '' : c.repairItem),
                   h('td', { className: 'p-3' }, isMaintenance ? '' : c.repairReason),
