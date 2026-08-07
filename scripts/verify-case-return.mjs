@@ -227,6 +227,98 @@ try {
   assertEq(maintReturn.status, '已完成', '保養狀態維持「已完成」，可再次結案');
   assertTrue(maintReturn.repairUntouched, '未誤動叫修案件集');
 
+  console.log('\n案件處理列表 — 退回原因欄');
+  const caseListCheck = await evaluate(`(function(){
+    var node = CaseList({
+      cases: [
+        { id: 'R1', caseNumber: '20260807001', customerName: '測試客戶', storeName: '測試門市',
+          workCategory: '一般叫修', repairItem: '冷氣', repairReason: '不冷', faultDesc: '不冷',
+          isClosed: false, createdAt: '2026-08-07 09:00',
+          returnReason: '金額有誤，請重填', returnedAt: '2026-08-07 12:00' },
+        { id: 'R2', caseNumber: '20260807003', customerName: '測試客戶', storeName: '測試門市',
+          workCategory: '一般叫修', repairItem: '冷氣', repairReason: '不冷', faultDesc: '漏水',
+          isClosed: false, createdAt: '2026-08-07 08:00' }
+      ],
+      setCases: function () {}, stores: [], setStores: function () {},
+      setEditingCase: function () {}, setView: function () {}, showToast: function () {},
+      statusFilter: '未處理', setStatusFilter: function () {}
+    });
+    var ths = Array.prototype.map.call(node.querySelectorAll('thead th'), function (t) { return t.textContent.trim(); });
+    var rows = Array.prototype.map.call(node.querySelectorAll('tbody tr'), function (tr) {
+      var tds = tr.querySelectorAll('td');
+      var last = tds[tds.length - 1];
+      return { text: tr.textContent, last: last.textContent.trim(), title: last.getAttribute('title') || '' };
+    });
+    return { ths: ths, rows: rows };
+  })()`);
+  assertEq(caseListCheck.ths[caseListCheck.ths.length - 1], '退回原因', '案件處理列表最後一欄為「退回原因」');
+  const returnedRow = caseListCheck.rows.filter(r => r.text.indexOf('20260807001') !== -1)[0];
+  const cleanRow = caseListCheck.rows.filter(r => r.text.indexOf('20260807003') !== -1)[0];
+  assertEq(returnedRow.last, '金額有誤，請重填', '已退回案件顯示退回原因');
+  assertEq(returnedRow.title, '2026-08-07 12:00 金額有誤，請重填', 'title 含退回時間與原因');
+  assertEq(cleanRow.last, '—', '未退回案件顯示破折號');
+
+  console.log('\n保養計劃進度 — 退回原因欄');
+  const maintListCheck = await evaluate(`(function(){
+    var node = MaintenanceList({
+      cases: [
+        { id: 'M1', caseNumber: '20260807002', customerName: '保養客戶', storeName: '保養門市',
+          serviceLevel: 'B', status: '已完成', workCategory: '保養', assignee: '王小明',
+          isClosed: false, planDate: '2026-08-07', dueMonth: '2026-08',
+          returnReason: '保養照片未附', returnedAt: '2026-08-07 13:00' },
+        { id: 'M2', caseNumber: '20260807004', customerName: '保養客戶', storeName: '保養門市',
+          serviceLevel: 'B', status: '未保養', workCategory: '保養', assignee: '王小明',
+          isClosed: false, planDate: '2026-08-07', dueMonth: '2026-08' }
+      ],
+      setCases: function () {}, stores: [], setStores: function () {}, customers: [],
+      setViewingCase: function () {}, setEditingCase: function () {},
+      setView: function () {}, showToast: function () {}
+    });
+    var ths = Array.prototype.map.call(node.querySelectorAll('thead th'), function (t) { return t.textContent.trim(); });
+    var rows = Array.prototype.map.call(node.querySelectorAll('tbody tr'), function (tr) {
+      var tds = tr.querySelectorAll('td');
+      var last = tds[tds.length - 1];
+      return { text: tr.textContent, last: last.textContent.trim(), title: last.getAttribute('title') || '' };
+    });
+    return { ths: ths, rows: rows };
+  })()`);
+  assertEq(maintListCheck.ths[maintListCheck.ths.length - 1], '退回原因', '保養列表最後一欄為「退回原因」');
+  const maintReturnedRow = maintListCheck.rows.filter(r => r.text.indexOf('20260807002') !== -1)[0];
+  const maintCleanRow = maintListCheck.rows.filter(r => r.text.indexOf('20260807004') !== -1)[0];
+  assertEq(maintReturnedRow.last, '保養照片未附', '已退回保養單顯示退回原因');
+  assertEq(maintReturnedRow.title, '2026-08-07 13:00 保養照片未附', 'title 含退回時間與原因');
+  assertEq(maintCleanRow.last, '—', '未退回保養單顯示破折號');
+
+  console.log('\n再次結案後退回原因保留');
+  const recloseCheck = await evaluate(`(function(){
+    var written = null;
+    var node = CaseList({
+      cases: [{ id: 'R1', caseNumber: '20260807001', customerName: '測試客戶',
+        storeName: '測試門市', workCategory: '一般叫修', repairItem: '冷氣',
+        repairReason: '不冷', faultDesc: '不冷', isClosed: false, processStatus: '案件完成',
+        createdAt: '2026-08-07 09:00',
+        returnReason: '金額有誤，請重填', returnedAt: '2026-08-07 12:00' }],
+      setCases: function (next) { written = next; },
+      stores: [], setStores: function () {},
+      setEditingCase: function () {}, setView: function () {}, showToast: function () {},
+      statusFilter: '案件完成', setStatusFilter: function () {}
+    });
+    document.body.appendChild(node);
+    var closeBtn = node.querySelector('button[aria-label="案件結案"]');
+    if (!closeBtn) { node.remove(); return { found: false }; }
+    closeBtn.click();
+    var confirmBtn = Array.prototype.slice.call(document.body.querySelectorAll('button'))
+      .filter(function (b) { return b.textContent.trim() === '確認'; })[0];
+    confirmBtn.click();
+    var result = { found: true, isClosed: written && written[0].isClosed,
+      reason: written && written[0].returnReason };
+    document.body.innerHTML = '';
+    return result;
+  })()`);
+  assertTrue(recloseCheck.found, '「案件完成」狀態的案件有「案件結案」按鈕');
+  assertEq(recloseCheck.isClosed, true, '再次結案成功');
+  assertEq(recloseCheck.reason, '金額有誤，請重填', '再次結案後 returnReason 仍保留');
+
   assertEq(consoleErrors.length, 0, '全程無 JS 錯誤');
 } catch (e) {
   fail('driver', e.message);

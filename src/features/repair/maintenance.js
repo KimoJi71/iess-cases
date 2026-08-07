@@ -208,10 +208,12 @@
         className: "p-3 font-semibold"
       }, "完成時間"), h("th", {
         className: "p-3 font-semibold"
-      }, "保養人員"))), h("tbody", {
+      }, "保養人員"), h("th", {
+        className: "p-3 font-semibold"
+      }, "退回原因"))), h("tbody", {
         className: "divide-y divide-gray-100"
       }, filteredCases.length === 0 ? h("tr", null, h("td", {
-        colspan: "12",
+        colspan: "13",
         className: "text-center p-8 text-gray-400"
       }, "無符合條件之保養資料")) : pageResult.items.map(function (c) {
         var canClose = canCloseMaintenanceCase(c);
@@ -272,7 +274,10 @@
           className: "p-3"
         }, IESS.caseDateTime.format(c.completionDate)), h("td", {
           className: "p-3"
-        }, c.assignee));
+        }, c.assignee), h("td", {
+          className: "p-3 max-w-[150px] truncate",
+          title: c.returnReason ? ((c.returnedAt ? c.returnedAt + ' ' : '') + c.returnReason) : ''
+        }, c.returnReason || '—'));
       })))),
       listPagination.renderBar(pageResult, rerender),
       closeConfirmModal.show && h("div", {

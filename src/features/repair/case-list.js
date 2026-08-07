@@ -205,12 +205,13 @@
                 h('th', { className: 'p-3 font-semibold' }, '叫修項目/原因'),
                 h('th', { className: 'p-3 font-semibold min-w-[200px]' }, '故障描述'),
                 h('th', { className: 'p-3 font-semibold' }, '指派人員'),
-                h('th', { className: 'p-3 font-semibold' }, '案件狀態')
+                h('th', { className: 'p-3 font-semibold' }, '案件狀態'),
+                h('th', { className: 'p-3 font-semibold' }, '退回原因')
               )
             ),
             h('tbody', { className: 'divide-y divide-gray-100' },
               pageResult.items.length === 0
-                ? h('tr', null, h('td', { colspan: 10, className: 'p-10 text-center text-gray-400 text-base' }, '無資料'))
+                ? h('tr', null, h('td', { colspan: 12, className: 'p-10 text-center text-gray-400 text-base' }, '無資料'))
                 : pageResult.items.map(function (c) {
                 return h('tr', { key: c.id, className: 'hover:bg-blue-50/50 transition-colors' },
                   h('td', { className: 'p-3' },
@@ -248,7 +249,11 @@
                           caseStatus.getCaseListDispatchBadgeClass(dispatchStatus)
                       }, dispatchStatus);
                     })()
-                  )
+                  ),
+                  h('td', {
+                    className: 'p-3 max-w-[150px] truncate',
+                    title: c.returnReason ? ((c.returnedAt ? c.returnedAt + ' ' : '') + c.returnReason) : ''
+                  }, c.returnReason || '—')
                 );
               })
             )
