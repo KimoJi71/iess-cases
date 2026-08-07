@@ -123,7 +123,12 @@ try {
         serviceLevel: 'D 維修(無簽約客戶)', workCategory: '一般叫修', repairItem: '冷氣',
         repairReason: '不運轉', actualReason: '電容', isClosed: true,
         closeDate: '${todayDate} 10:00',
-        processRecords: [] }
+        processRecords: [] },
+      { id: 'R5', caseNumber: 'BP006', customerName: 'A級客戶2', storeName: '門市六',
+        serviceLevel: 'A 保修(一年一次)', workCategory: '一般叫修', repairItem: '冷氣',
+        repairReason: '不冷', actualReason: '缺冷媒', isClosed: true,
+        closeDate: '${todayDate} 10:00',
+        processRecords: [{ points: 6, qty: 1 }] }
     ];
     window.__fixtureMaintenance = [
       { id: 'M1', caseNumber: 'BP005', customerName: 'C級客戶', storeName: '門市五',
@@ -179,6 +184,7 @@ try {
   assertEq(cells.BP003, '', 'B 級 + 基礎設備留空');
   assertEq(cells.BP004, '0', 'D 級但無處理方式顯示 0（非空白）');
   assertEq(cells.BP005, '', 'C 級保養計劃案件留空');
+  assertEq(cells.BP006, '', 'A 級且無 equipment 欄位留空');
 
   console.log('\n空資料列');
   const emptyColspan = await evaluate(`(function(){

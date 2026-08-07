@@ -1,6 +1,6 @@
 /*
  * features/repair/case-review.js — 案件銷案審核列表（列入績效）
- * props: { cases, setCases, maintenanceCases, setMaintenanceCases, setViewingCase, setView, showToast }
+ * props: { cases, setCases, maintenanceCases, setMaintenanceCases, assignees, deviceCategories, setViewingCase, setView, showToast }
  */
 (function () {
   'use strict';
@@ -15,7 +15,7 @@
   // 保養計劃案件不列入增額積分（與 performance-utils 的統計口徑一致），一律回 null。
   function resolveReviewCaseBonusPoints(c, deviceCategories) {
     if (!c || isMaintenancePlanCase(c)) return null;
-    if (!PerformanceUtils.isBonusEligible(c, deviceCategories || [])) return null;
+    if (!PerformanceUtils.isBonusEligible(c, deviceCategories)) return null;
     return PerformanceUtils.sumProcessPoints(c);
   }
 
