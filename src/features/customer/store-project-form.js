@@ -199,11 +199,12 @@
                       h('th', { className: 'p-3 font-semibold' }, '品牌'),
                       h('th', { className: 'p-3 font-semibold' }, '設備規格'),
                       h('th', { className: 'p-3 font-semibold' }, '型號'),
+                      h('th', { className: 'p-3 font-semibold' }, '設備等級'),
                       h('th', { className: 'p-3 font-semibold' }, '設備區域'),
                       h('th', { className: 'p-3 font-semibold text-center w-24' }, '操作'))),
                   h('tbody', { className: 'divide-y divide-gray-100' },
                     equipmentList.length === 0
-                      ? h('tr', null, h('td', { colspan: '6', className: 'text-center p-8 text-gray-400 bg-gray-50/50' }, '尚未加入任何設備資料'))
+                      ? h('tr', null, h('td', { colspan: '7', className: 'text-center p-8 text-gray-400 bg-gray-50/50' }, '尚未加入任何設備資料'))
                       : equipmentList.map(function (eq) {
                           return h('tr', { key: eq.id, className: 'hover:bg-gray-50' },
                             h('td', { className: 'p-3' },
@@ -212,6 +213,7 @@
                             h('td', { className: 'p-3' }, eq.brand || '-'),
                             h('td', { className: 'p-3' }, eq.specification || '-'),
                             h('td', { className: 'p-3 font-medium text-indigo-600' }, eq.model || '-'),
+                            h('td', { className: 'p-3' }, DeviceCategoryUtils.formatEquipmentLevel(deviceCategories, eq) || '-'),
                             h('td', { className: 'p-3' }, eq.area || '-'),
                             h('td', { className: 'p-3 text-center' },
                               h('div', { className: 'flex items-center justify-center gap-1' },

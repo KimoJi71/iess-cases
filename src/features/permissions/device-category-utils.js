@@ -159,6 +159,12 @@
     return getEquipmentLevelByModel(deviceCategories, equip && equip.model);
   }
 
+  // 顯示用：未選型號時回空字串，避免尚未填寫的設備被標成「基礎設備」
+  function formatEquipmentLevel(deviceCategories, equip) {
+    if (!equip || !String(equip.model || '').trim()) return '';
+    return getEquipmentLevelByEquip(deviceCategories, equip);
+  }
+
   function findBestMatchingRecord(deviceCategories, equip) {
     var list = deviceCategories || [];
     if (!list.length || !equip) return null;
@@ -311,6 +317,7 @@
     getEquipmentLevel: getEquipmentLevel,
     getEquipmentLevelByModel: getEquipmentLevelByModel,
     getEquipmentLevelByEquip: getEquipmentLevelByEquip,
+    formatEquipmentLevel: formatEquipmentLevel,
     findBestMatchingRecord: findBestMatchingRecord,
     resolveProjectEquip: resolveProjectEquip,
     defaultEquipRecord: defaultEquipRecord,

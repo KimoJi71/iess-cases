@@ -309,6 +309,7 @@
     var stores = props.stores;
     var customers = props.customers;
     var equipments = props.equipments || [];
+    var deviceCategories = props.deviceCategories || [];
     var processMethods = props.processMethods || [];
     var setView = props.setView;
     var showToast = props.showToast;
@@ -616,6 +617,7 @@
         h: h,
         equipment: formData.equipment,
         caseContext: formData,
+        deviceCategories: deviceCategories,
         emptyText: '請點擊上方按鈕掃描',
         emptyClass: 'text-center py-8 text-gray-400 bg-gray-50 rounded-md border border-dashed'
       })

@@ -128,7 +128,7 @@
               })
             ),
             h('div', null,
-              h('label', { className: 'block text-sm mb-1' }, '組長'),
+              h('label', { className: 'block text-sm mb-1' }, '課長'),
               h('select', {
                 name: 'leaderId',
                 value: formData.leaderId,

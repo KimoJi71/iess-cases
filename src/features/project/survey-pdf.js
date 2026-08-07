@@ -135,14 +135,16 @@
     return parts.join('、');
   }
 
-  function fmtEquipmentList(list) {
+  function fmtEquipmentList(list, deviceCategories) {
     if (!Array.isArray(list) || !list.length) return '';
     return list.map(function (eq, i) {
+      var level = DeviceCategoryUtils.formatEquipmentLevel(deviceCategories || [], eq);
       return [
         eq.category,
         eq.brand,
         eq.name,
         eq.model,
+        level ? '等級:' + level : '',
         eq.area ? '區域:' + eq.area : ''
       ].filter(Boolean).join(' ');
     }).join('；');
@@ -218,7 +220,7 @@
       '</td><td class="lbl" colspan="2">' + l2 + '</td><td colspan="2">' + cell(v2) + '</td></tr>';
   }
 
-  function buildPage1(c, sd) {
+  function buildPage1(c, sd, deviceCategories) {
     var customerLine = [c.customerName, c.storeName].filter(Boolean).join(' ');
     var trades = arrVal(sd.projectTrades);
     var specialConstruction = sd.specialConstruction === '其他'
@@ -255,7 +257,7 @@
       '<tr><td class="lbl">防硫</td><td colspan="5">' + cell(specialEnvCell(sd, 'sulfur', '防硫處理')) + '</td></tr>',
       '<tr><td class="lbl">防沼</td><td colspan="5">' + cell(specialEnvCell(sd, 'marsh', '沼氣處理')) + '</td></tr>',
       row2('現場提供電源', sd.onSitePower),
-      row2('新機設備規格', fmtEquipmentList(sd.equipmentList) || sd.newEquipmentSpec),
+      row2('新機設備規格', fmtEquipmentList(sd.equipmentList, deviceCategories) || sd.newEquipmentSpec),
       row2('空調配件', fmtParts(sd)),
       row2('現場舊機沿用處理說明', sd.reuseEquipmentNote || sd.reuseEquipment || '無'),
       '</table>',
@@ -387,7 +389,7 @@
     ].join('');
   }
 
-  function buildSurveyPdfHtml(surveyCase) {
+  function buildSurveyPdfHtml(surveyCase, deviceCategories) {
     var sd = surveyCase.surveyData ? JSON.parse(JSON.stringify(surveyCase.surveyData)) : {};
     if (window.SurveyDuctBoxCombosUtils) {
       SurveyDuctBoxCombosUtils.migrateSurveyData(sd);
@@ -396,7 +398,7 @@
       '<div class="survey-pdf-root">',
       '<style>', PDF_STYLES, '</style>',
       '<div class="survey-pdf">',
-      buildPage1(surveyCase, sd),
+      buildPage1(surveyCase, sd, deviceCategories),
       buildPage2(surveyCase, sd),
       buildPage3(surveyCase, sd),
       '</div>',
@@ -404,7 +406,7 @@
     ].join('');
   }
 
-  function exportSurveyPdf(surveyCase, onError) {
+  function exportSurveyPdf(surveyCase, onError, deviceCategories) {
     if (typeof html2pdf === 'undefined') {
       if (onError) onError('PDF 函式庫尚未載入');
       return Promise.reject(new Error('html2pdf not loaded'));
@@ -412,7 +414,7 @@
     var fileName = (surveyCase.fileName || '現勘表') + '.pdf';
     var wrapper = document.createElement('div');
     wrapper.style.cssText = 'position:fixed;left:-9999px;top:0;width:794px;background:#fff;';
-    wrapper.innerHTML = buildSurveyPdfHtml(surveyCase);
+    wrapper.innerHTML = buildSurveyPdfHtml(surveyCase, deviceCategories);
     document.body.appendChild(wrapper);
     var content = wrapper.querySelector('.survey-pdf-root');
 

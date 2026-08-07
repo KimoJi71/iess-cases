@@ -1589,6 +1589,15 @@
           waitFor: 'specification',
           emptyHint: '請先選擇設備規格'
         }),
+        h("div", null, h("label", {
+          className: "block text-sm font-bold text-gray-700 mb-1"
+        }, "設備等級"), h("input", {
+          type: "text",
+          value: DeviceCategoryUtils.formatEquipmentLevel(deviceCategories, normalizedEq),
+          placeholder: "請先選擇型號",
+          disabled: true,
+          className: "w-full p-2 border rounded-md bg-gray-100 text-gray-500 cursor-not-allowed"
+        })),
         h("div", {
           className: "md:col-span-2"
         }, h("label", {

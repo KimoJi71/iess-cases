@@ -1,6 +1,6 @@
 /*
  * features/project/survey-list.js — 現勘表收集：現勘表列表
- * props: { cases, setCases, setEditingCase, setView, showToast }
+ * props: { cases, setCases, setEditingCase, setView, showToast, deviceCategories }
  */
 (function () {
   'use strict';
@@ -14,6 +14,7 @@
     var setEditingCase = props.setEditingCase;
     var setView = props.setView;
     var showToast = props.showToast;
+    var deviceCategories = props.deviceCategories || [];
 
     // 區域狀態
     var startDate = todayDate;
@@ -49,7 +50,7 @@
         showToast('正在產生 PDF…');
         exportSurveyPdf(surveyCase, function (msg) {
           showToast(msg || 'PDF 匯出失敗', 'error');
-        }).then(function () {
+        }, deviceCategories).then(function () {
           showToast('PDF 已下載：' + surveyCase.fileName);
         }).catch(function () { /* onError 已提示 */ });
       }

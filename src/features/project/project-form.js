@@ -148,6 +148,15 @@
                   emptyHint: '請先選擇設備規格'
                 })),
               h('div', { className: 'col-span-2' },
+                h('label', { className: 'block text-sm text-gray-600 mb-1' }, '設備等級'),
+                h('input', {
+                  type: 'text',
+                  value: DeviceCategoryUtils.formatEquipmentLevel(deviceCategories, currentEquip),
+                  placeholder: '請先選擇型號',
+                  disabled: true,
+                  className: 'w-full p-2 bg-gray-50 border rounded text-gray-500 cursor-not-allowed'
+                })),
+              h('div', { className: 'col-span-2' },
                 h('label', { className: 'block text-sm text-gray-600 mb-1' }, '設備區域'),
                 h('input', {
                   type: 'text',
@@ -217,6 +226,7 @@
       h('td', { className: 'p-3' }, eq.brand || '-'),
       h('td', { className: 'p-3' }, eq.specification || '-'),
       h('td', { className: 'p-3 font-medium text-indigo-600' }, eq.model || '-'),
+      h('td', { className: 'p-3' }, DeviceCategoryUtils.formatEquipmentLevel(p.deviceCategories, eq) || '-'),
       h('td', { className: 'p-3' }, eq.area || '-'),
       h('td', { className: 'p-3' },
         h('div', { className: 'text-xs' }, '出：', eq.manufactureDate || '-'),
@@ -242,6 +252,7 @@
       h('th', { className: 'p-3 font-semibold' }, '品牌'),
       h('th', { className: 'p-3 font-semibold' }, '設備規格'),
       h('th', { className: 'p-3 font-semibold' }, '型號'),
+      h('th', { className: 'p-3 font-semibold' }, '設備等級'),
       h('th', { className: 'p-3 font-semibold' }, '設備區域'),
       h('th', { className: 'p-3 font-semibold' }, '出廠 / 安裝日期'),
       h('th', { className: 'p-3 font-semibold' }, '資產編號'),
@@ -503,10 +514,11 @@
       }, equipmentTableHeaders(true)), h('tbody', {
         className: 'divide-y divide-gray-100'
       }, equipmentList.length === 0 ? h('tr', null, h('td', {
-        colspan: '9',
+        colspan: '10',
         className: 'text-center p-8 text-gray-400 bg-gray-50/50'
       }, '尚未加入任何設備資料')) : equipmentList.map(function (eq) {
         return renderEquipmentTableRow(eq, {
+          deviceCategories: deviceCategories,
           onEdit: openEquipModal,
           onDelete: handleDeleteEquipment
         });
@@ -893,13 +905,14 @@
       }, equipmentTableHeaders(isEdit)), h('tbody', {
         className: 'divide-y divide-gray-100'
       }, equipmentList.length === 0 ? h('tr', null, h('td', {
-        colspan: isEdit ? '9' : '8',
+        colspan: isEdit ? '10' : '9',
         className: 'text-center p-8 text-gray-400 bg-gray-50/50'
       }, '尚未加入任何設備資料')) : equipmentList.map(function (eq) {
         return renderEquipmentTableRow(eq, isEdit ? {
+          deviceCategories: deviceCategories,
           onEdit: openEquipModal,
           onDelete: handleDeleteEquipment
-        } : {});
+        } : { deviceCategories: deviceCategories });
       }))))), h('section', {
         className: 'bg-white p-6 rounded-lg shadow-sm border border-indigo-100 ring-1 ring-indigo-50'
       }, h('h3', {

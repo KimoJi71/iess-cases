@@ -327,6 +327,7 @@
         return h(EditCaseForm, {
           editingCase: s.editingCase, cases: s.cases, setCases: setCasesData,
           stores: s.stores, customers: s.customers, equipments: s.equipments,
+          deviceCategories: s.deviceCategories,
           processMethods: s.processMethods,
           setView: setView, showToast: showToast,
           currentOperatorName: getCurrentOperatorName(s.accounts, s.currentAccountId)
@@ -338,7 +339,7 @@
       case 'record-view':
         return h(ViewCaseForm, {
           viewingCase: s.viewingCase, setView: setView, backView: 'record-list',
-          processMethods: s.processMethods
+          processMethods: s.processMethods, deviceCategories: s.deviceCategories
         });
       case 'review-list':
         return h(CaseReviewList, {
@@ -350,7 +351,7 @@
       case 'review-view':
         return h(ViewCaseForm, {
           viewingCase: s.viewingCase, setView: setView, backView: 'review-list',
-          processMethods: s.processMethods
+          processMethods: s.processMethods, deviceCategories: s.deviceCategories
         });
       case 'maintenance-list':
         return h(MaintenanceList, {
@@ -396,7 +397,7 @@
       case 'survey-list':
         return h(SurveyList, {
           cases: s.surveyCases, setCases: setSurveyCases, setEditingCase: setEditingCase,
-          setView: setView, showToast: showToast
+          setView: setView, showToast: showToast, deviceCategories: s.deviceCategories
         });
       case 'survey-add':
         return h(SurveyForm, {
@@ -449,7 +450,7 @@
         return h(ViewCaseForm, {
           viewingCase: StoreUtils.withStoreHistoryContext(s.viewingCase, s.historyStore),
           setView: setView, backView: 'store-history',
-          processMethods: s.processMethods
+          processMethods: s.processMethods, deviceCategories: s.deviceCategories
         });
       case 'store-history-maintenance-view':
         return h(MaintenanceViewEditForm, {
@@ -539,6 +540,7 @@
           stores: s.stores,
           assignees: s.assignees,
           processMethods: s.processMethods,
+          deviceCategories: s.deviceCategories,
           showToast: showToast
         });
       case 'personnel-movement':

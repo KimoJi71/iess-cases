@@ -54,6 +54,7 @@
     var stores = props.stores;
     var assignees = props.assignees || [];
     var processMethods = props.processMethods || [];
+    var deviceCategories = props.deviceCategories || [];
     var showToast = props.showToast;
 
     var calState = loadArrangementCalState();
@@ -636,6 +637,7 @@
               h: h,
               equipment: formData.equipment,
               caseContext: formData,
+              deviceCategories: deviceCategories,
               FieldComponent: ReadOnlyField,
               emptyText: '無設備資料'
             })

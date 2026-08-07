@@ -1,6 +1,6 @@
 /*
  * features/repair/case-view.js — 共用元件：查看案件明細
- * props: { viewingCase, setView, backView }
+ * props: { viewingCase, setView, backView, deviceCategories }
  */
 (function () {
   'use strict';
@@ -13,6 +13,7 @@
     var setView = props.setView;
     var backView = props.backView === undefined ? 'record-list' : props.backView;
     var processMethods = props.processMethods || [];
+    var deviceCategories = props.deviceCategories || [];
 
     var dragProps = useDragScroll();
     var pmColumns = ProcessMethodUtils.CASE_DISPLAY_COLUMNS;
@@ -96,6 +97,7 @@
             h: h,
             equipment: viewingCase && viewingCase.equipment,
             caseContext: viewingCase,
+            deviceCategories: deviceCategories,
             FieldComponent: ReadOnlyField,
             emptyText: '無設備資料'
           })

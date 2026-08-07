@@ -12,6 +12,8 @@
     { key: 'deviceName', label: '設備名稱', altKey: 'name' },
     { key: 'specification', label: '設備規格' },
     { key: 'model', label: '型號' },
+    // 設備等級不存在案件資料裡，顯示時依設備欄位反查設備分類（同客戶設備管理）
+    { key: 'equipmentLevel', label: '設備等級', derived: true },
     { key: 'area', label: '設備區域' },
     { key: 'manufactureDate', label: '出廠日期' },
     { key: 'installDate', label: '安裝日期' },
@@ -19,20 +21,23 @@
     { key: 'status', label: '設備狀態' }
   ];
 
-  function getFieldValue(equipment, caseContext, def) {
+  function getFieldValue(equipment, caseContext, def, deviceCategories) {
     equipment = equipment || {};
     caseContext = caseContext || {};
+    if (def.derived && def.key === 'equipmentLevel') {
+      return DeviceCategoryUtils.formatEquipmentLevel(deviceCategories || [], equipment);
+    }
     var val = equipment[def.key];
     if (!val && def.altKey) val = equipment[def.altKey];
     if (!val && def.caseFallback) val = caseContext[def.caseFallback];
     return val ? String(val).trim() : '';
   }
 
-  function getDisplayFields(equipment, caseContext) {
+  function getDisplayFields(equipment, caseContext, deviceCategories) {
     return FIELD_DEFS.map(function (def) {
       return {
         label: def.label,
-        value: getFieldValue(equipment, caseContext, def)
+        value: getFieldValue(equipment, caseContext, def, deviceCategories)
       };
     });
   }
@@ -61,7 +66,7 @@
       return h('div', { className: emptyClass }, emptyText);
     }
 
-    var fields = getDisplayFields(equipment, caseContext);
+    var fields = getDisplayFields(equipment, caseContext, props.deviceCategories);
     return h('div', { className: gridClass },
       fields.map(function (field) {
         if (FieldComponent) {
