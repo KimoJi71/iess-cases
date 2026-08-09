@@ -955,6 +955,150 @@ try {
   assertTrue(appSrc7.slice(allocIdx, allocIdx + 500).includes('serviceLevels'),
     'app.js 的 MaintenanceAllocation 呼叫含 serviceLevels');
 
+  console.log('\nSection 8｜端到端接線');
+
+  console.log('\nSection 8｜客戶表單的服務等級下拉來自服務等級管理');
+  // 讀取選單內容時，選完（甚至選回原值）都會關閉 portal 選單，
+  // 避免遺留在 document.body 上影響後續斷言；container.remove() 移除的只是
+  // 表單本身，選單 portal 是另外 appendChild 到 document.body 的節點。
+  const custDefaults = await evaluate(`(function(){
+    var container = document.createElement('div');
+    document.body.appendChild(container);
+    container.appendChild(CustomerForm({
+      cases: [], setCases: function(){}, setView: function(){}, showToast: function(){}
+    }));
+    var input = container.querySelector('[name="serviceLevel"]');
+    var defaultValue = input.value;
+    input.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
+    var labels = Array.prototype.map.call(
+      document.querySelectorAll('.searchable-select__menu--portal .searchable-select__option'),
+      function (b) { return b.textContent.trim(); }
+    );
+    window.__chooseOption(container, 'serviceLevel', defaultValue);
+    container.remove();
+    return { defaultValue: defaultValue, labels: labels };
+  })()`);
+  const seedLevelNames = ['A 保修(一年四次)', 'B 保修(一年兩次)', 'C 保養(一年一次)', 'D 維修(無簽約客戶)'];
+  assertEq(custDefaults.defaultValue, seedLevelNames[0],
+    'CustomerForm 服務等級預設值為 SERVICE_LEVEL_OPTIONS[0]');
+  assertDeep(custDefaults.labels, seedLevelNames,
+    'CustomerForm 服務等級下拉選項與 SERVICE_LEVEL_OPTIONS 四筆同序');
+
+  console.log('\nSection 8｜服務等級下拉為即時連動（非巧合寫死）');
+  const liveLinkLabels = await evaluate(`(function(){
+    var extended = INITIAL_SERVICE_LEVELS.concat([
+      { id: 'SLZ', name: 'Z 測試等級(端到端)', maintenanceCount: 1, countsBonusPoints: false, periods: [] }
+    ]);
+    ServiceLevelUtils.syncServiceLevelOptions(extended);
+    var container = document.createElement('div');
+    document.body.appendChild(container);
+    container.appendChild(CustomerForm({
+      cases: [], setCases: function(){}, setView: function(){}, showToast: function(){}
+    }));
+    var input = container.querySelector('[name="serviceLevel"]');
+    input.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
+    var labels = Array.prototype.map.call(
+      document.querySelectorAll('.searchable-select__menu--portal .searchable-select__option'),
+      function (b) { return b.textContent.trim(); }
+    );
+    window.__chooseOption(container, 'serviceLevel', input.value);
+    container.remove();
+    // 還原為種子四筆，避免污染本檔案後續（若有）或其他驗證腳本共用的頁面狀態。
+    ServiceLevelUtils.syncServiceLevelOptions(INITIAL_SERVICE_LEVELS);
+    return labels;
+  })()`);
+  assertTrue(liveLinkLabels.indexOf('Z 測試等級(端到端)') !== -1,
+    '新增一筆服務等級後，CustomerForm 下拉即時多出該選項（證明非寫死清單）');
+  assertDeep(await evaluate('SERVICE_LEVEL_OPTIONS'), seedLevelNames,
+    'SERVICE_LEVEL_OPTIONS 已還原為種子四筆，不影響後續斷言');
+
+  console.log('\nSection 8｜叫修單選客戶時自動帶入服務等級（含 D-fallback 已移除的驗證）');
+  const autoFillCase = await evaluate(`(function(){
+    function readServiceLevelDisplay(container) {
+      var labels = container.querySelectorAll('label');
+      for (var i = 0; i < labels.length; i++) {
+        if (labels[i].textContent.trim() === '服務等級') {
+          return labels[i].parentElement.querySelector('input').value;
+        }
+      }
+      return null;
+    }
+    var customers = [
+      { id: 'CX1', name: '甲測試客戶', serviceLevel: 'B 保修(一年兩次)' },
+      { id: 'CX2', name: '乙測試客戶', serviceLevel: '' }
+    ];
+    var container = document.createElement('div');
+    document.body.appendChild(container);
+    container.appendChild(AddCaseForm({
+      cases: [], setCases: function(){}, stores: [], customers: customers,
+      setView: function(){}, showToast: function(){}, currentOperatorName: '測試員'
+    }));
+    var out = { beforeSelect: readServiceLevelDisplay(container) };
+    window.__chooseOption(container, 'customerName', '甲測試客戶');
+    out.withLevel = readServiceLevelDisplay(container);
+    window.__chooseOption(container, 'customerName', '乙測試客戶');
+    out.withBlankLevel = readServiceLevelDisplay(container);
+    container.remove();
+    return out;
+  })()`);
+  assertEq(autoFillCase.withLevel, 'B 保修(一年兩次)',
+    '選擇服務等級為 B 的客戶後，服務等級欄位自動帶入 B 保修(一年兩次)');
+  assertEq(autoFillCase.withBlankLevel, '—',
+    '選擇服務等級為空字串的客戶後，服務等級欄位顯示「—」（空白），而非任何等級名稱');
+  assertTrue(autoFillCase.withBlankLevel !== 'D 維修(無簽約客戶)',
+    '選擇服務等級為空字串的客戶後，不再退回硬編碼的 D 維修(無簽約客戶)（Task 5 移除的 OR-fallback）');
+
+  console.log('\nSection 8｜報表的增額積分欄有值');
+  const perfStats = await evaluate(`(function(){
+    var quarter = PerformanceUtils.getQuarterRange(new Date());
+    var deviceCategories = [
+      { id: 'DC1', category: '室內機', brand: '大金', deviceName: '分離式',
+        specification: '2噸', model: 'ADD-1', equipmentLevel: '增額設備' },
+      { id: 'DC2', category: '室內機', brand: '大金', deviceName: '分離式',
+        specification: '3噸', model: 'BASE-1', equipmentLevel: '基礎設備' }
+    ];
+    var assignees = [{ id: 'A1', name: 'A組' }, { id: 'B1', name: 'B組' }];
+    var cases = [
+      // A組：countsBonusPoints=true 的 D 級，無增額設備仍應計分
+      { id: 'PD1', customerName: '甲', storeName: '甲一', serviceLevel: 'D 維修(無簽約客戶)',
+        workCategory: '一般叫修', isPerformanceIncluded: true, completionDate: quarter.start,
+        performanceAssignee: 'A組', equipment: null, processRecords: [{ points: 8, qty: 1 }] },
+      // B組：countsBonusPoints=false 的 A 級 + 基礎設備，不應計分
+      { id: 'PA1', customerName: '乙', storeName: '乙一', serviceLevel: 'A 保修(一年四次)',
+        workCategory: '一般叫修', isPerformanceIncluded: true, completionDate: quarter.start,
+        performanceAssignee: 'B組', equipment: { model: 'BASE-1' }, processRecords: [{ points: 5, qty: 1 }] },
+      // B組：countsBonusPoints=false 的 A 級 + 增額設備，應計分
+      { id: 'PA2', customerName: '乙', storeName: '乙一', serviceLevel: 'A 保修(一年四次)',
+        workCategory: '一般叫修', isPerformanceIncluded: true, completionDate: quarter.start,
+        performanceAssignee: 'B組', equipment: { model: 'ADD-1' }, processRecords: [{ points: 6, qty: 1 }] }
+    ];
+    var container = document.createElement('div');
+    document.body.appendChild(container);
+    container.appendChild(CasePerformanceStats({
+      cases: cases, maintenanceCases: [], assignees: assignees,
+      maintenanceAllocations: [], stores: [], performanceAreas: [],
+      deviceCategories: deviceCategories, serviceLevels: INITIAL_SERVICE_LEVELS
+    }));
+    function bonusPointsForCard(name) {
+      var cards = container.querySelectorAll('.rounded-xl');
+      for (var i = 0; i < cards.length; i++) {
+        var titleEl = cards[i].querySelector('span[title]');
+        if (titleEl && titleEl.textContent.trim() === name) {
+          var m = cards[i].textContent.match(/增額積分(\\d+(\\.\\d+)?)/);
+          return m ? m[1] : null;
+        }
+      }
+      return null;
+    }
+    var out = { a: bonusPointsForCard('A組'), b: bonusPointsForCard('B組') };
+    container.remove();
+    return out;
+  })()`);
+  assertEq(perfStats.a, '8',
+    'countsBonusPoints=true 的服務等級（D），無增額設備仍計入增額積分（A組 = 8）');
+  assertEq(perfStats.b, '6',
+    'countsBonusPoints=false 的服務等級（A），只有增額設備的案件計分，基礎設備的 5 分被排除（B組 = 6，非 11）');
+
   // === UI sections 由後續 Task 追加 ===
 
   assertEq(consoleErrors.length, 0, '全程無 JS 錯誤');
