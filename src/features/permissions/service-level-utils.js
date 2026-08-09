@@ -120,11 +120,31 @@
     return errors;
   }
 
-  function isServiceLevelInUse(name, customers, stores) {
+  // 服務等級名稱字串會被以下集合快照，改名／刪除保護皆需以此表為準，
+  // 避免未來新增集合時，只更新了 renameServiceLevel 或 isServiceLevelInUse 其中一個。
+  // nested 表示該集合的項目底下還有一層巢狀物件也存了服務等級名稱字串。
+  var SERVICE_LEVEL_COLLECTIONS = [
+    { key: 'customers' },
+    { key: 'stores' },
+    { key: 'cases' },
+    { key: 'maintenanceCases' },
+    { key: 'projectCases', nested: 'details' },
+    { key: 'surveyCases' },
+    { key: 'personnelStatus' }
+  ];
+
+  function isServiceLevelInUse(name, collections) {
     var target = toName(name);
     if (!target) return false;
-    var hit = function (item) { return toName(item && item.serviceLevel) === target; };
-    return (customers || []).some(hit) || (stores || []).some(hit);
+    var src = collections || {};
+    return SERVICE_LEVEL_COLLECTIONS.some(function (desc) {
+      return (src[desc.key] || []).some(function (item) {
+        if (!item) return false;
+        if (toName(item.serviceLevel) === target) return true;
+        if (desc.nested && item[desc.nested] && toName(item[desc.nested].serviceLevel) === target) return true;
+        return false;
+      });
+    });
   }
 
   // 就地改寫 SERVICE_LEVEL_OPTIONS 的內容（其他模組持有同一參考，不可整個重新指派）
@@ -142,31 +162,47 @@
   }
 
   /**
-   * 服務等級改名時，同步既有資料存的名稱字串。
-   * @returns {{ customers, stores, cases, maintenanceCases, changedCount }}
+   * 服務等級改名時，同步既有資料存的名稱字串。依 SERVICE_LEVEL_COLLECTIONS 驅動，
+   * 每個「集合」在回傳物件中皆有同名欄位（見該表的 key）。
+   * changedCount 以「欄位」為單位計數：projectCases 若頂層 serviceLevel 與巢狀
+   * details.serviceLevel 同時命中舊名，算 2（各自代表一個獨立快照，皆需同步）。
+   * @returns {{ customers, stores, cases, maintenanceCases, projectCases, surveyCases,
+   *             personnelStatus, changedCount }}
    */
   function renameServiceLevel(oldName, newName, collections) {
     var from = toName(oldName);
     var to = toName(newName);
+    var noop = from === to;
     var changedCount = 0;
     var src = collections || {};
 
-    function mapList(list) {
+    function mapList(list, nestedKey) {
       return (list || []).map(function (item) {
-        if (!item || toName(item.serviceLevel) !== from) return item;
-        if (from === to) return item;
-        changedCount++;
-        return Object.assign({}, item, { serviceLevel: to });
+        if (!item || noop) return item;
+        var next = item;
+        var changed = false;
+        if (toName(item.serviceLevel) === from) {
+          next = Object.assign({}, next, { serviceLevel: to });
+          changed = true;
+          changedCount++;
+        }
+        if (nestedKey && item[nestedKey] && toName(item[nestedKey].serviceLevel) === from) {
+          var nestedPatch = {};
+          nestedPatch[nestedKey] = Object.assign({}, next[nestedKey], { serviceLevel: to });
+          next = Object.assign({}, next, nestedPatch);
+          changed = true;
+          changedCount++;
+        }
+        return changed ? next : item;
       });
     }
 
-    return {
-      customers: mapList(src.customers),
-      stores: mapList(src.stores),
-      cases: mapList(src.cases),
-      maintenanceCases: mapList(src.maintenanceCases),
-      changedCount: changedCount
-    };
+    var result = {};
+    SERVICE_LEVEL_COLLECTIONS.forEach(function (desc) {
+      result[desc.key] = mapList(src[desc.key], desc.nested);
+    });
+    result.changedCount = changedCount;
+    return result;
   }
 
   function formatPeriodsLabel(record) {

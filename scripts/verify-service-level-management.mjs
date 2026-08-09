@@ -192,9 +192,28 @@ assertDeep(
 console.log('\nSection 1｜isServiceLevelInUse');
 const custs = [{ id: 'C1', name: '甲', serviceLevel: 'A 保修(一年四次)' }];
 const strs = [{ id: 'S1', storeName: '甲一店', serviceLevel: 'B 保修(一年兩次)' }];
-assertEq(SLU.isServiceLevelInUse('A 保修(一年四次)', custs, strs), true, '客戶使用中');
-assertEq(SLU.isServiceLevelInUse('B 保修(一年兩次)', custs, strs), true, '門市使用中');
-assertEq(SLU.isServiceLevelInUse('C 保養(一年一次)', custs, strs), false, '未被使用');
+const inUseCollections = { customers: custs, stores: strs };
+assertEq(SLU.isServiceLevelInUse('A 保修(一年四次)', inUseCollections), true, '客戶使用中');
+assertEq(SLU.isServiceLevelInUse('B 保修(一年兩次)', inUseCollections), true, '門市使用中');
+assertEq(SLU.isServiceLevelInUse('C 保養(一年一次)', inUseCollections), false, '未被使用');
+assertEq(SLU.isServiceLevelInUse('X 案件級', {
+  cases: [{ id: 'R1', serviceLevel: 'X 案件級' }]
+}), true, '僅被叫修案件使用（無客戶／門市）也視為使用中');
+assertEq(SLU.isServiceLevelInUse('Y 保養案件級', {
+  maintenanceCases: [{ id: 'M1', serviceLevel: 'Y 保養案件級' }]
+}), true, '僅被保養案件使用也視為使用中');
+assertEq(SLU.isServiceLevelInUse('Z 工程頂層', {
+  projectCases: [{ id: 'P1', serviceLevel: 'Z 工程頂層' }]
+}), true, '被工程案件頂層 serviceLevel 使用視為使用中');
+assertEq(SLU.isServiceLevelInUse('Z 工程巢狀', {
+  projectCases: [{ id: 'P1', serviceLevel: '', details: { serviceLevel: 'Z 工程巢狀' } }]
+}), true, '被工程案件巢狀 details.serviceLevel 使用視為使用中');
+assertEq(SLU.isServiceLevelInUse('W 勘查級', {
+  surveyCases: [{ id: 'S1', serviceLevel: 'W 勘查級' }]
+}), true, '僅被現勘案件使用也視為使用中');
+assertEq(SLU.isServiceLevelInUse('V 人員狀態級', {
+  personnelStatus: [{ id: 'PS1', serviceLevel: 'V 人員狀態級' }]
+}), true, '僅被人員狀態使用也視為使用中');
 
 console.log('\nSection 1｜syncServiceLevelOptions');
 sandbox.SERVICE_LEVEL_OPTIONS.push('殘留舊值');
@@ -213,14 +232,29 @@ const renamed = SLU.renameServiceLevel('A 保修(一年四次)', 'A 全新名稱
   customers: [{ id: 'C1', serviceLevel: 'A 保修(一年四次)' }, { id: 'C2', serviceLevel: 'B 保修(一年兩次)' }],
   stores: [{ id: 'S1', serviceLevel: 'A 保修(一年四次)' }],
   cases: [{ id: 'R1', serviceLevel: 'A 保修(一年四次)' }],
-  maintenanceCases: [{ id: 'M1', serviceLevel: 'A 保修(一年四次)' }, { id: 'M2', serviceLevel: '' }]
+  maintenanceCases: [{ id: 'M1', serviceLevel: 'A 保修(一年四次)' }, { id: 'M2', serviceLevel: '' }],
+  projectCases: [
+    { id: 'P1', serviceLevel: 'A 保修(一年四次)', details: { serviceLevel: 'A 保修(一年四次)' } },
+    { id: 'P2', serviceLevel: 'A 保修(一年四次)', details: { serviceLevel: 'B 保修(一年兩次)' } }
+  ],
+  surveyCases: [{ id: 'SV1', serviceLevel: 'A 保修(一年四次)' }],
+  personnelStatus: [{ id: 'PS1', serviceLevel: 'A 保修(一年四次)' }]
 });
 assertEq(renamed.customers[0].serviceLevel, 'A 全新名稱', 'customers 改名');
 assertEq(renamed.customers[1].serviceLevel, 'B 保修(一年兩次)', '非目標等級不動');
 assertEq(renamed.stores[0].serviceLevel, 'A 全新名稱', 'stores 改名');
 assertEq(renamed.cases[0].serviceLevel, 'A 全新名稱', 'cases 改名');
 assertEq(renamed.maintenanceCases[0].serviceLevel, 'A 全新名稱', 'maintenanceCases 改名');
-assertEq(renamed.changedCount, 4, 'changedCount 為 4');
+assertEq(renamed.projectCases[0].serviceLevel, 'A 全新名稱', 'projectCases 頂層 serviceLevel 改名');
+assertEq(renamed.projectCases[0].details.serviceLevel, 'A 全新名稱', 'projectCases 巢狀 details.serviceLevel 改名');
+assertEq(renamed.projectCases[1].serviceLevel, 'A 全新名稱', '僅頂層命中的 projectCases 頂層仍改名');
+assertEq(renamed.projectCases[1].details.serviceLevel, 'B 保修(一年兩次)', '僅頂層命中的 projectCases 巢狀非目標等級不動');
+assertEq(renamed.surveyCases[0].serviceLevel, 'A 全新名稱', 'surveyCases 改名');
+assertEq(renamed.personnelStatus[0].serviceLevel, 'A 全新名稱', 'personnelStatus 改名');
+// changedCount 以「欄位」為單位計數：customers/stores/cases/maintenanceCases 各 1 筆（4），
+// projectCases 第一筆頂層＋巢狀都命中算 2，第二筆只有頂層命中算 1（共 3），
+// surveyCases、personnelStatus 各 1 筆，總計 4 + 3 + 1 + 1 = 9。
+assertEq(renamed.changedCount, 9, 'changedCount 以欄位為單位計數，projectCases 頂層＋巢狀各算一次，共 9');
 const noop = SLU.renameServiceLevel('A', 'A', { customers: [{ serviceLevel: 'A' }] });
 assertEq(noop.changedCount, 0, '新舊同名時 changedCount 為 0');
 
@@ -301,8 +335,9 @@ try {
   await evaluate(`
     window.__levels = JSON.parse(JSON.stringify(INITIAL_SERVICE_LEVELS));
     window.__toasts = [];
-    window.__renderList = function (customers, stores) {
-      return ServiceLevelList({
+    window.__renderList = function (customers, stores, extra) {
+      extra = extra || {};
+      return ServiceLevelList(Object.assign({
         serviceLevels: window.__levels,
         setServiceLevels: function (v) {
           window.__levels = typeof v === 'function' ? v(window.__levels) : v;
@@ -312,7 +347,7 @@ try {
         setEditingCase: function (v) { window.__editing = v; },
         setView: function (v) { window.__view = v; },
         showToast: function (msg, kind) { window.__toasts.push([msg, kind || 'success']); }
-      });
+      }, extra));
     };
     'ok'`);
 
@@ -358,11 +393,39 @@ try {
     });
     btns[0].click();
     var count = window.__levels.length;
+    var names = window.__levels.map(function (s) { return s.name; });
     container.remove();
-    return { count: count, toasts: window.__toasts };
+    return { count: count, names: names, toasts: window.__toasts };
   })()`);
   assertEq(blocked.count, 4, '使用中的等級未被刪除');
+  assertTrue(blocked.names.indexOf('A 保修(一年四次)') !== -1, '使用中的等級「A 保修(一年四次)」本身仍存在於列表中', blocked.names.join('、'));
   assertDeep(blocked.toasts, [['此服務等級已被客戶或門市使用，無法刪除', 'error']], '跳出擋刪 toast');
+
+  const blockedByCaseOnly = await evaluate(`(function(){
+    window.__levels = JSON.parse(JSON.stringify(INITIAL_SERVICE_LEVELS));
+    window.__toasts = [];
+    // 無客戶、無門市，僅一筆叫修案件引用該服務等級：仍應擋刪
+    var node = window.__renderList([], [], {
+      cases: [{ id: 'R1', serviceLevel: 'A 保修(一年四次)' }]
+    });
+    var container = document.createElement('div');
+    document.body.appendChild(container);
+    container.appendChild(node);
+    var rows = container.querySelectorAll('tbody tr');
+    rows[0].querySelectorAll('td')[0].querySelectorAll('button')[1].click();
+    var btns = Array.prototype.filter.call(container.querySelectorAll('button'), function (b) {
+      return b.textContent.trim() === '確認刪除';
+    });
+    btns[0].click();
+    var names = window.__levels.map(function (s) { return s.name; });
+    container.remove();
+    return { count: window.__levels.length, names: names, toasts: window.__toasts };
+  })()`);
+  assertEq(blockedByCaseOnly.count, 4, '僅被叫修案件使用（無客戶／門市）的等級也未被刪除');
+  assertTrue(blockedByCaseOnly.names.indexOf('A 保修(一年四次)') !== -1,
+    '僅被案件使用的等級本身仍存在於列表中', blockedByCaseOnly.names.join('、'));
+  assertDeep(blockedByCaseOnly.toasts, [['此服務等級已被客戶或門市使用，無法刪除', 'error']],
+    '僅被案件使用時同樣跳出擋刪 toast');
 
   const removed = await evaluate(`(function(){
     window.__levels = JSON.parse(JSON.stringify(INITIAL_SERVICE_LEVELS));
@@ -398,6 +461,10 @@ try {
       window.__formStores = [{ id: 'S1', storeName: '甲一店', serviceLevel: 'A 保修(一年四次)' }];
       window.__formCases = [{ id: 'R1', serviceLevel: 'A 保修(一年四次)' }];
       window.__formMaint = [{ id: 'M1', serviceLevel: 'A 保修(一年四次)' }];
+      window.__formProjects = [{ id: 'P1', serviceLevel: 'A 保修(一年四次)',
+        details: { serviceLevel: 'A 保修(一年四次)' } }];
+      window.__formSurveys = [{ id: 'SV1', serviceLevel: 'A 保修(一年四次)' }];
+      window.__formPersonnel = [{ id: 'PS1', serviceLevel: 'A 保修(一年四次)' }];
       window.__toasts = [];
       window.__view = '';
       return ServiceLevelForm({
@@ -411,6 +478,12 @@ try {
         setCases: function (v) { window.__formCases = v; },
         maintenanceCases: window.__formMaint,
         setMaintenanceCases: function (v) { window.__formMaint = v; },
+        projectCases: window.__formProjects,
+        setProjectCases: function (v) { window.__formProjects = v; },
+        surveyCases: window.__formSurveys,
+        setSurveyCases: function (v) { window.__formSurveys = v; },
+        personnelStatus: window.__formPersonnel,
+        setPersonnelStatus: function (v) { window.__formPersonnel = v; },
         targetCase: target,
         setView: function (v) { window.__view = v; },
         showToast: function (msg, kind) { window.__toasts.push([msg, kind || 'success']); }
@@ -581,6 +654,10 @@ try {
     out.store = window.__formStores[0].serviceLevel;
     out.case = window.__formCases[0].serviceLevel;
     out.maint = window.__formMaint[0].serviceLevel;
+    out.projectTop = window.__formProjects[0].serviceLevel;
+    out.projectNested = window.__formProjects[0].details.serviceLevel;
+    out.survey = window.__formSurveys[0].serviceLevel;
+    out.personnel = window.__formPersonnel[0].serviceLevel;
     out.toasts = window.__toasts;
     node.remove();
     return out;
@@ -592,8 +669,14 @@ try {
   assertEq(editRenamed.store, 'A 保修(季保)', 'stores 已同步');
   assertEq(editRenamed.case, 'A 保修(季保)', 'cases 已同步');
   assertEq(editRenamed.maint, 'A 保修(季保)', 'maintenanceCases 已同步');
-  assertDeep(editRenamed.toasts, [['服務等級更新成功，已同步 4 筆既有資料', 'success']],
-    'toast 註明同步筆數');
+  assertEq(editRenamed.projectTop, 'A 保修(季保)', 'projectCases 頂層 serviceLevel 已同步');
+  assertEq(editRenamed.projectNested, 'A 保修(季保)', 'projectCases 巢狀 details.serviceLevel 已同步');
+  assertEq(editRenamed.survey, 'A 保修(季保)', 'surveyCases 已同步');
+  assertEq(editRenamed.personnel, 'A 保修(季保)', 'personnelStatus 已同步');
+  // changedCount：customers/stores/cases/maintenanceCases 各 1（4）＋ projectCases
+  // 頂層與巢狀都命中算 2 ＋ surveyCases 1 ＋ personnelStatus 1 = 8。
+  assertDeep(editRenamed.toasts, [['服務等級更新成功，已同步 8 筆既有資料', 'success']],
+    'toast 註明同步筆數（含新收錄的 projectCases／surveyCases／personnelStatus）');
 
   const editNoRename = await evaluate(`(function(){
     var target = JSON.parse(JSON.stringify(INITIAL_SERVICE_LEVELS))[1];
@@ -821,6 +904,22 @@ try {
   assertDeep(rowShape, [{ customerName: '甲', storeCount: 2, serviceLevel: 'B 保修(一年兩次)' }],
     'getCustomerRows 回傳 serviceLevel 且濾掉 D 等級門市');
 
+  const mismatchRows = await evaluate(`(function(){
+    // 客戶服務等級已改為 D（0 次、不納入保養分配），但門市尚未重新儲存，
+    // 仍帶著舊的 B 等級（納入分配）。修正前：getCoveredStoresForAssignee 以門市
+    // 等級篩選會收錄該門市，getCustomerRows 卻以客戶等級（D，0 區間）產生列，
+    // 導致「有列但點哪個月都不在區間內」的死列。修正後：整列應直接不出現。
+    var assignee = { id: 'A1', name: 'A組', districts: ['台北市信義區'] };
+    var customers = [{ id: 'C1', name: '甲', serviceLevel: 'D 維修(無簽約客戶)' }];
+    var stores = [
+      { id: 'S1', customerName: '甲', storeName: '甲一', serviceLevel: 'B 保修(一年兩次)',
+        storeStatus: '正常營業', companyCity: '台北市', companyDistrict: '信義區' }
+    ];
+    return MaintenanceAllocationUtils.getCustomerRows(assignee, customers, stores, INITIAL_SERVICE_LEVELS);
+  })()`);
+  assertDeep(mismatchRows, [],
+    '客戶服務等級（不納入分配）與門市服務等級（納入分配）不一致時，不產生死列');
+
   // 注意：AssigneeUtils.getPerformanceAssignee 讀的是單數欄位
   // record.performanceAssignee（沒有則退回 record.assignee），
   // 不是陣列欄位 performanceAssignees，故 fixture 改用單數欄位，
@@ -1041,6 +1140,8 @@ try {
     container.remove();
     return out;
   })()`);
+  assertEq(autoFillCase.beforeSelect, '—',
+    '尚未選擇客戶前，服務等級欄位顯示「—」（空白初始值），不再寫死 D 維修(無簽約客戶)');
   assertEq(autoFillCase.withLevel, 'B 保修(一年兩次)',
     '選擇服務等級為 B 的客戶後，服務等級欄位自動帶入 B 保修(一年兩次)');
   assertEq(autoFillCase.withBlankLevel, '—',

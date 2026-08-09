@@ -2,6 +2,8 @@
  * features/permissions/service-level-form.js — 服務等級管理：新增/編輯表單
  * props: { serviceLevels, setServiceLevels, customers, setCustomers, stores, setStores,
  *          cases, setCases, maintenanceCases, setMaintenanceCases,
+ *          projectCases, setProjectCases, surveyCases, setSurveyCases,
+ *          personnelStatus, setPersonnelStatus,
  *          targetCase, setView, showToast }
  */
 (function () {
@@ -56,12 +58,18 @@
         customers: props.customers,
         stores: props.stores,
         cases: props.cases,
-        maintenanceCases: props.maintenanceCases
+        maintenanceCases: props.maintenanceCases,
+        projectCases: props.projectCases,
+        surveyCases: props.surveyCases,
+        personnelStatus: props.personnelStatus
       });
       props.setCustomers(result.customers);
       props.setStores(result.stores);
       props.setCases(result.cases);
       props.setMaintenanceCases(result.maintenanceCases);
+      props.setProjectCases(result.projectCases);
+      props.setSurveyCases(result.surveyCases);
+      props.setPersonnelStatus(result.personnelStatus);
       return result.changedCount;
     }
 

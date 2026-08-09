@@ -82,7 +82,7 @@
       expectedTimeStart: '',
       expectedTimeEnd: '',
       reporter: currentOperatorName,
-      serviceLevel: 'D 維修(無簽約客戶)'
+      serviceLevel: ''
     };
 
     return stateful(function (rerender) {

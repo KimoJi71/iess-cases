@@ -1,6 +1,7 @@
 /*
  * features/permissions/service-level-list.js — 服務等級管理：列表
- * props: { serviceLevels, setServiceLevels, customers, stores, setEditingCase, setView, showToast }
+ * props: { serviceLevels, setServiceLevels, customers, stores, cases, maintenanceCases,
+ *          projectCases, surveyCases, personnelStatus, setEditingCase, setView, showToast }
  */
 (function () {
   'use strict';
@@ -26,6 +27,11 @@
     var setServiceLevels = props.setServiceLevels;
     var customers = props.customers || [];
     var stores = props.stores || [];
+    var cases = props.cases || [];
+    var maintenanceCases = props.maintenanceCases || [];
+    var projectCases = props.projectCases || [];
+    var surveyCases = props.surveyCases || [];
+    var personnelStatus = props.personnelStatus || [];
     var setEditingCase = props.setEditingCase;
     var setView = props.setView;
     var showToast = props.showToast;
@@ -58,7 +64,15 @@
           rerender();
           return;
         }
-        if (ServiceLevelUtils.isServiceLevelInUse(target.name, customers, stores)) {
+        if (ServiceLevelUtils.isServiceLevelInUse(target.name, {
+          customers: customers,
+          stores: stores,
+          cases: cases,
+          maintenanceCases: maintenanceCases,
+          projectCases: projectCases,
+          surveyCases: surveyCases,
+          personnelStatus: personnelStatus
+        })) {
           showToast('此服務等級已被客戶或門市使用，無法刪除', 'error');
           deleteModal = { show: false, id: null, label: '' };
           rerender();

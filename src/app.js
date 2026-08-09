@@ -87,6 +87,8 @@
     mobileSidebarOpen: false,
     view: initialView,
     cases: INITIAL_CASES,
+    // 僅在 store 建構時執行一次：之後編輯服務等級的「每年保養次數」不會回頭重新產生到期保養案件
+    // （這是記憶體版 demo 可接受的限制，需重新整理頁面才會依最新設定重算）
     maintenanceCases: ScheduleUtils.generateDueMaintenanceCases(INITIAL_CUSTOMERS, INITIAL_STORES, INITIAL_MAINTENANCE_CASES, INITIAL_SERVICE_LEVELS),
     projectCases: INITIAL_PROJECT_CASES,
     surveyCases: INITIAL_SURVEY_CASES,
@@ -368,7 +370,6 @@
         return h(MaintenanceList, {
           cases: s.maintenanceCases, setCases: setMaintenanceCases,
           stores: s.stores, setStores: setStores, customers: s.customers,
-          serviceLevels: s.serviceLevels,
           setViewingCase: setViewingCase, setEditingCase: setEditingCase,
           setView: setView, showToast: showToast
         });
@@ -701,6 +702,11 @@
           setServiceLevels: setServiceLevels,
           customers: s.customers,
           stores: s.stores,
+          cases: s.cases,
+          maintenanceCases: s.maintenanceCases,
+          projectCases: s.projectCases,
+          surveyCases: s.surveyCases,
+          personnelStatus: s.personnelStatus,
           setEditingCase: setEditingCase,
           setView: setView,
           showToast: showToast
@@ -713,6 +719,9 @@
           stores: s.stores, setStores: setStores,
           cases: s.cases, setCases: setCasesData,
           maintenanceCases: s.maintenanceCases, setMaintenanceCases: setMaintenanceCases,
+          projectCases: s.projectCases, setProjectCases: setProjectCases,
+          surveyCases: s.surveyCases, setSurveyCases: setSurveyCases,
+          personnelStatus: s.personnelStatus, setPersonnelStatus: setPersonnelStatus,
           setView: setView,
           showToast: showToast
         });
@@ -724,6 +733,9 @@
           stores: s.stores, setStores: setStores,
           cases: s.cases, setCases: setCasesData,
           maintenanceCases: s.maintenanceCases, setMaintenanceCases: setMaintenanceCases,
+          projectCases: s.projectCases, setProjectCases: setProjectCases,
+          surveyCases: s.surveyCases, setSurveyCases: setSurveyCases,
+          personnelStatus: s.personnelStatus, setPersonnelStatus: setPersonnelStatus,
           targetCase: s.editingCase,
           setView: setView,
           showToast: showToast

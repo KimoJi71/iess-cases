@@ -24,6 +24,11 @@
   }
 
   /**
+   * 列的服務等級（決定月份區間切段）採客戶身上的等級為準；門市身上的等級只用來
+   * 篩選該指派人員負責、且服務等級仍納入保養分配的門市數。兩者理論上應一致
+   * （門市儲存時會從所屬客戶同步），但客戶等級被改到「不納入保養分配」後、
+   * 門市尚未重新儲存前會短暫不一致——此時以客戶等級為準整列不顯示，
+   * 避免產生「有列但無區間可點」的死列。
    * @returns {Array<{ customerName, storeCount, serviceLevel }>}
    */
   function getCustomerRows(assignee, customers, stores, serviceLevels) {
@@ -36,10 +41,12 @@
     var rows = [];
     Object.keys(byCustomer).forEach(function (name) {
       var cust = (customers || []).find(function (c) { return c.name === name; });
+      var level = (cust && cust.serviceLevel) || '';
+      if (!ServiceLevelUtils.isAllocatable(serviceLevels, level)) return;
       rows.push({
         customerName: name,
         storeCount: byCustomer[name],
-        serviceLevel: (cust && cust.serviceLevel) || ''
+        serviceLevel: level
       });
     });
     rows.sort(function (a, b) {

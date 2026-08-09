@@ -436,6 +436,9 @@
           scheduleModal.formData.companyCity = '';
           scheduleModal.formData.companyDistrict = '';
           scheduleModal.formData.storeAddress = '';
+          // 排程 Modal 刻意維持「查無則保留原值」：此欄僅供本次排程參考用的顯示，
+          // 換客戶查無服務等級時清空反而會讓使用者誤以為原本的排程資訊被清掉，
+          // 與其他表單「查無即清空」的一致性取捨不同，非遺漏。
           scheduleModal.formData.serviceLevel =
             CustomerUtils.getServiceLevelByCustomerName(customers, value)
             || scheduleModal.formData.serviceLevel;
