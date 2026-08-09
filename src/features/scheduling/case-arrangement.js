@@ -55,6 +55,7 @@
     var assignees = props.assignees || [];
     var processMethods = props.processMethods || [];
     var deviceCategories = props.deviceCategories || [];
+    var serviceLevels = props.serviceLevels || [];
     var showToast = props.showToast;
 
     var calState = loadArrangementCalState();
@@ -717,10 +718,10 @@
 
       function renderMaintenanceScheduleDetails(formData) {
         var store = ScheduleUtils.resolveStore(stores, formData.customerName, formData.storeName);
-        var customer = customers.find(function (c) { return c.name === formData.customerName; });
-        var maintenanceInterval = customer ? customer.maintenanceInterval : '';
+        var levelName = formData.serviceLevel
+          || CustomerUtils.getServiceLevelByCustomerName(customers, formData.customerName);
         var refDate = ScheduleUtils.resolveMaintenanceReferenceDate(formData);
-        var periodLabel = ScheduleUtils.formatMaintenancePeriod(refDate, maintenanceInterval);
+        var periodLabel = ScheduleUtils.formatMaintenancePeriod(refDate, serviceLevels, levelName);
         var inputCls = 'w-full p-2 border rounded-md outline-none focus:border-blue-500 text-sm';
 
         return h('div', { className: 'space-y-4' },

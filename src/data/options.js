@@ -54,7 +54,6 @@ const STORE_AREA_OPTIONS = (function () {
 // 服務等級選項：由 ServiceLevelUtils.syncServiceLevelOptions() 於啟動與每次異動時就地填入。
 // 保留常數本身，因為 customer-form.js 與 data-retrieval.js 直接引用此參考。
 const SERVICE_LEVEL_OPTIONS = [];
-const MAINTENANCE_INTERVAL_OPTIONS = ['每季', '每半年', '每年'];
 const CUSTOMER_ENABLED_FILTERS = ['全部', '啟用', '停用'];
 const STORE_STATUS_OPTIONS = ['正常營業', '整裝', '撤店'];
 const WORK_ORDER_APPLY_OPTIONS = ['是', '否'];

@@ -711,7 +711,9 @@ try {
   const callSites = [
     ['src/features/repair/case-form.js', 2],
     ['src/features/project/project-form.js', 2],
-    ['src/features/scheduling/case-arrangement.js', 1]
+    // Task 6 加了第 2 處呼叫（renderMaintenanceScheduleDetails 的目前保養季度
+    // 標籤改吃服務等級），故此檔的預期次數由 1 上修為 2。
+    ['src/features/scheduling/case-arrangement.js', 2]
   ];
   for (const [rel, expectedCount] of callSites) {
     const src = readFileSync(join(ROOT, rel), 'utf8');
@@ -738,6 +740,60 @@ try {
   const arrangementSrc = readFileSync(join(ROOT, 'src/features/scheduling/case-arrangement.js'), 'utf8');
   assertEq((arrangementSrc.match(/getServiceLevelByCustomerName\(customers, value\)\s*\|\|\s*scheduleModal\.formData\.serviceLevel;/g) || []).length, 1,
     'case-arrangement.js 查無客戶服務等級時仍 OR 回原有 scheduleModal.formData.serviceLevel');
+
+  console.log('\nSection 6｜客戶不再有 maintenanceInterval');
+  assertEq(await evaluate(`INITIAL_CUSTOMERS.some(function (c) { return 'maintenanceInterval' in c; })`),
+    false, 'seed 客戶已移除 maintenanceInterval');
+  assertEq(await evaluate('typeof window.MAINTENANCE_INTERVAL_OPTIONS'), 'undefined',
+    'MAINTENANCE_INTERVAL_OPTIONS 已刪除');
+  const custFormSrc = readFileSync(join(ROOT, 'src/features/customer/customer-form.js'), 'utf8');
+  assertEq((custFormSrc.match(/maintenanceInterval/g) || []).length, 0,
+    'customer-form.js 已移除保養區間欄位');
+  assertTrue(custFormSrc.includes("SERVICE_LEVEL_OPTIONS[0] || ''"),
+    'customer-form.js 服務等級預設值改為 SERVICE_LEVEL_OPTIONS[0]');
+
+  console.log('\nSection 6｜formatMaintenancePeriod 改吃服務等級');
+  assertEq(await evaluate(`ScheduleUtils.formatMaintenancePeriod('2026-05-10', INITIAL_SERVICE_LEVELS, 'A 保修(一年四次)')`),
+    '2026 第2次', 'A 的 5 月落在第 2 次');
+  assertEq(await evaluate(`ScheduleUtils.formatMaintenancePeriod('2026-08-01', INITIAL_SERVICE_LEVELS, 'B 保修(一年兩次)')`),
+    '2026 第2次', 'B 的 8 月落在第 2 次');
+  assertEq(await evaluate(`ScheduleUtils.formatMaintenancePeriod('2026-08-01', INITIAL_SERVICE_LEVELS, 'D 維修(無簽約客戶)')`),
+    '2026', 'D 無區間時只顯示年份');
+  assertEq(await evaluate(`ScheduleUtils.formatMaintenancePeriod('', INITIAL_SERVICE_LEVELS, 'A 保修(一年四次)')`),
+    '', '日期為空回空字串');
+  assertEq(await evaluate(`ScheduleUtils.formatMaintenancePeriod('2026-05-10', INITIAL_SERVICE_LEVELS, '查無此等級')`),
+    '2026', '查無等級只顯示年份');
+
+  console.log('\nSection 6｜generateDueMaintenanceCases 改吃服務等級');
+  const dueResult = await evaluate(`(function(){
+    var levels = INITIAL_SERVICE_LEVELS;
+    var customers = [
+      { id: 'C1', name: '四次客', serviceLevel: 'A 保修(一年四次)', enabled: true },
+      { id: 'C2', name: '零次客', serviceLevel: 'D 維修(無簽約客戶)', enabled: true },
+      { id: 'C3', name: '停用客', serviceLevel: 'A 保修(一年四次)', enabled: false }
+    ];
+    var stores = [
+      { id: 'S1', customerName: '四次客', storeName: '四次一店', storeStatus: '正常營業',
+        lastMaintenanceDate: '2000-01', serviceLevel: 'A 保修(一年四次)' },
+      { id: 'S2', customerName: '零次客', storeName: '零次一店', storeStatus: '正常營業',
+        lastMaintenanceDate: '2000-01', serviceLevel: 'D 維修(無簽約客戶)' },
+      { id: 'S3', customerName: '停用客', storeName: '停用一店', storeStatus: '正常營業',
+        lastMaintenanceDate: '2000-01', serviceLevel: 'A 保修(一年四次)' }
+    ];
+    var out = ScheduleUtils.generateDueMaintenanceCases(customers, stores, [], levels);
+    return out.map(function (c) { return c.storeName; });
+  })()`);
+  assertDeep(dueResult, ['四次一店'], '只為有保養次數且啟用的客戶產生到期保養案件');
+
+  console.log('\nSection 6｜app.js 已往下傳 serviceLevels');
+  const appSrc6 = readFileSync(join(ROOT, 'src/app.js'), 'utf8');
+  assertTrue(appSrc6.includes('generateDueMaintenanceCases(INITIAL_CUSTOMERS, INITIAL_STORES, INITIAL_MAINTENANCE_CASES, INITIAL_SERVICE_LEVELS)'),
+    'app.js 的 generateDueMaintenanceCases 已補傳 INITIAL_SERVICE_LEVELS');
+  for (const comp of ['MaintenanceList', 'MaintenanceViewEditForm', 'CaseArrangement']) {
+    const i = appSrc6.indexOf(comp + ', {');
+    assertTrue(i !== -1 && appSrc6.slice(i, i + 500).includes('serviceLevels'),
+      `app.js 的 ${comp} 呼叫含 serviceLevels`);
+  }
 
   // === UI sections 由後續 Task 追加 ===
 

@@ -323,6 +323,7 @@
     var backView = props.backView === undefined ? 'maintenance-list' : props.backView;
 
     var customers = props.customers;
+    var serviceLevels = props.serviceLevels || [];
     var formData = targetCase;
     var isEdit = mode === 'edit';
 
@@ -330,15 +331,11 @@
       return ScheduleUtils.resolveStore(stores, c && c.customerName, c && c.storeName);
     }
 
-    function getMaintenanceInterval(c) {
-      if (!customers || !c) return '';
-      var customer = customers.find(function (cust) { return cust.name === c.customerName; });
-      return customer ? customer.maintenanceInterval : '';
-    }
-
     function getMaintenancePeriodLabel(c) {
       var refDate = ScheduleUtils.resolveMaintenanceReferenceDate(c);
-      return ScheduleUtils.formatMaintenancePeriod(refDate, getMaintenanceInterval(c));
+      var level = (c && c.serviceLevel)
+        || CustomerUtils.getServiceLevelByCustomerName(customers, c && c.customerName);
+      return ScheduleUtils.formatMaintenancePeriod(refDate, serviceLevels, level);
     }
 
     function ReadOnlyField(p) {
