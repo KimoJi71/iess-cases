@@ -435,7 +435,9 @@
           scheduleModal.formData.companyCity = '';
           scheduleModal.formData.companyDistrict = '';
           scheduleModal.formData.storeAddress = '';
-          scheduleModal.formData.serviceLevel = CUSTOMER_SERVICE_LEVEL_MAP[value] || scheduleModal.formData.serviceLevel;
+          scheduleModal.formData.serviceLevel =
+            CustomerUtils.getServiceLevelByCustomerName(customers, value)
+            || scheduleModal.formData.serviceLevel;
         }
         if (name === 'storeName') {
           var synced = ScheduleUtils.applyStoreSnapshot(scheduleModal.formData, stores);

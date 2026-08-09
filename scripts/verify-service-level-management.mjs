@@ -685,6 +685,45 @@ try {
   assertTrue(appSrc4.slice(statsIdx, statsIdx + 500).includes('serviceLevels'),
     'app.js 的 CasePerformanceStats 呼叫含 serviceLevels');
 
+  console.log('\nSection 5｜getServiceLevelByCustomerName');
+  await evaluate(`
+    window.__custs = [
+      { id: 'C1', name: '屈臣氏', serviceLevel: 'A 保修(一年四次)' },
+      { id: 'C2', name: '統一超商', serviceLevel: '' }
+    ];
+    'ok'`);
+  assertEq(await evaluate(`CustomerUtils.getServiceLevelByCustomerName(window.__custs, '屈臣氏')`),
+    'A 保修(一年四次)', '命中客戶回其服務等級');
+  assertEq(await evaluate(`CustomerUtils.getServiceLevelByCustomerName(window.__custs, '統一超商')`),
+    '', '客戶服務等級為空字串時回空字串');
+  assertEq(await evaluate(`CustomerUtils.getServiceLevelByCustomerName(window.__custs, '不存在')`),
+    '', '查無客戶回空字串');
+  assertEq(await evaluate(`CustomerUtils.getServiceLevelByCustomerName(null, '屈臣氏')`),
+    '', 'customers 為 null 回空字串');
+  assertEq(await evaluate(`typeof window.CUSTOMER_SERVICE_LEVEL_MAP`), 'undefined',
+    'CUSTOMER_SERVICE_LEVEL_MAP 已刪除');
+
+  console.log('\nSection 5｜五處呼叫點已改寫');
+  // 第三欄 checkNoDFallback 僅在該檔案沒有其他合法用途時才檢查裸字串
+  // 'D 維修(無簽約客戶)'：case-form.js:85 與 project-form.js:277/634 是表單初始
+  // 預設值／另一個同步邏輯的 fallback，與客戶對照表無關，不應被當成殘留清除。
+  const callSites = [
+    ['src/features/repair/case-form.js', 2, false],
+    ['src/features/project/project-form.js', 2, false],
+    ['src/features/scheduling/case-arrangement.js', 1, true]
+  ];
+  for (const [rel, expectedCount, checkNoDFallback] of callSites) {
+    const src = readFileSync(join(ROOT, rel), 'utf8');
+    assertEq((src.match(/CUSTOMER_SERVICE_LEVEL_MAP/g) || []).length, 0,
+      `${rel} 不再引用 CUSTOMER_SERVICE_LEVEL_MAP`);
+    assertEq((src.match(/getServiceLevelByCustomerName/g) || []).length, expectedCount,
+      `${rel} 有 ${expectedCount} 處改用 getServiceLevelByCustomerName`);
+    if (checkNoDFallback) {
+      assertEq((src.match(/'D 維修\(無簽約客戶\)'/g) || []).length, 0,
+        `${rel} 不再硬塞 D 維修(無簽約客戶) 作為 fallback`);
+    }
+  }
+
   // === UI sections 由後續 Task 追加 ===
 
   assertEq(consoleErrors.length, 0, '全程無 JS 錯誤');

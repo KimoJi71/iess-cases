@@ -135,15 +135,6 @@ const DUCT_VENT_OUTLETS = [
 const DUCT_RETURN_OUTLETS = ['輕鋼架-抽取式回風口(60*60cm)(框+網)', '輕鋼架-一體成型回風口(60*60cm)(框+網)', '回風板(尺寸120*45cm)', '回風板(尺寸140*45cm)']; // 回風口（多選 + 數量）
 const DUCT_CUSTOM_BOX_OPTIONS = ['特製風箱(NAS附圖)', '請風管廠商前來丈量安裝']; // 特製風箱（單選 + 其他）
 
-// 客戶名稱對應服務等級的映射表
-const CUSTOMER_SERVICE_LEVEL_MAP = {
-  '屈臣氏': 'A 保修(一年四次)',
-  '星巴克': 'B 保修(一年兩次)',
-  '萊爾富': 'C 保養(一年一次)',
-  '統一超商': 'D 維修(無簽約客戶)',
-  '全家便利商店': 'D 維修(無簽約客戶)'
-};
-
 // --- 日期計算 ---
 const today = new Date();
 const todayDate = today.toISOString().split('T')[0];
