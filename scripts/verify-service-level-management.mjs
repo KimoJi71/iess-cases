@@ -704,25 +704,40 @@ try {
     'CUSTOMER_SERVICE_LEVEL_MAP 已刪除');
 
   console.log('\nSection 5｜五處呼叫點已改寫');
-  // 第三欄 checkNoDFallback 僅在該檔案沒有其他合法用途時才檢查裸字串
-  // 'D 維修(無簽約客戶)'：case-form.js:85 與 project-form.js:277/634 是表單初始
-  // 預設值／另一個同步邏輯的 fallback，與客戶對照表無關，不應被當成殘留清除。
+  // 注意：case-form.js:85、project-form.js:277/634 仍合法保有裸字串
+  // 'D 維修(無簽約客戶)'（表單初始預設值／另一個同步邏輯的 fallback，與客戶
+  // 對照表無關），所以不能對整檔做「零次出現裸字串」的粗略檢查；改為精準比對
+  // 「轉換後的呼叫點是否仍以該字串當 OR fallback」，才是這次重構真正要保證的事。
   const callSites = [
-    ['src/features/repair/case-form.js', 2, false],
-    ['src/features/project/project-form.js', 2, false],
-    ['src/features/scheduling/case-arrangement.js', 1, true]
+    ['src/features/repair/case-form.js', 2],
+    ['src/features/project/project-form.js', 2],
+    ['src/features/scheduling/case-arrangement.js', 1]
   ];
-  for (const [rel, expectedCount, checkNoDFallback] of callSites) {
+  for (const [rel, expectedCount] of callSites) {
     const src = readFileSync(join(ROOT, rel), 'utf8');
     assertEq((src.match(/CUSTOMER_SERVICE_LEVEL_MAP/g) || []).length, 0,
       `${rel} 不再引用 CUSTOMER_SERVICE_LEVEL_MAP`);
     assertEq((src.match(/getServiceLevelByCustomerName/g) || []).length, expectedCount,
       `${rel} 有 ${expectedCount} 處改用 getServiceLevelByCustomerName`);
-    if (checkNoDFallback) {
-      assertEq((src.match(/'D 維修\(無簽約客戶\)'/g) || []).length, 0,
-        `${rel} 不再硬塞 D 維修(無簽約客戶) 作為 fallback`);
-    }
+    assertEq((src.match(/getServiceLevelByCustomerName\([^)]*\)\s*\|\|\s*'D 維修\(無簽約客戶\)'/g) || []).length, 0,
+      `${rel} 轉換後的呼叫點不再以 'D 維修(無簽約客戶)' 作為 OR fallback`);
   }
+
+  console.log('\nSection 5｜case-form.js／project-form.js 呼叫點無 OR fallback');
+  const noFallbackSites = [
+    ['src/features/repair/case-form.js', 2],
+    ['src/features/project/project-form.js', 2]
+  ];
+  for (const [rel, expectedCount] of noFallbackSites) {
+    const src = readFileSync(join(ROOT, rel), 'utf8');
+    assertEq((src.match(/getServiceLevelByCustomerName\(customers, value\);/g) || []).length, expectedCount,
+      `${rel} 的呼叫點賦值直接以呼叫結果結尾，無任何 || fallback`);
+  }
+
+  console.log('\nSection 5｜case-arrangement.js 呼叫點保留查無則沿用原值');
+  const arrangementSrc = readFileSync(join(ROOT, 'src/features/scheduling/case-arrangement.js'), 'utf8');
+  assertEq((arrangementSrc.match(/getServiceLevelByCustomerName\(customers, value\)\s*\|\|\s*scheduleModal\.formData\.serviceLevel;/g) || []).length, 1,
+    'case-arrangement.js 查無客戶服務等級時仍 OR 回原有 scheduleModal.formData.serviceLevel');
 
   // === UI sections 由後續 Task 追加 ===
 
