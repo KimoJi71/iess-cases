@@ -44,6 +44,7 @@
     '帳號管理': 'account-list',
     '指派人員管理': 'assignee-list',
     '設備分類管理': 'device-category-list',
+    '服務等級管理': 'service-level-list',
     '處理方式與積分管理': 'process-method-list',
     '保養分配': 'maintenance-allocation',
     '績效區域管理': 'performance-area-list'
@@ -683,6 +684,16 @@
           deviceCategories: s.deviceCategories,
           setDeviceCategories: setDeviceCategories,
           targetCase: s.editingCase,
+          setView: setView,
+          showToast: showToast
+        });
+      case 'service-level-list':
+        return h(ServiceLevelList, {
+          serviceLevels: s.serviceLevels,
+          setServiceLevels: setServiceLevels,
+          customers: s.customers,
+          stores: s.stores,
+          setEditingCase: setEditingCase,
           setView: setView,
           showToast: showToast
         });

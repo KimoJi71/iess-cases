@@ -4,10 +4,12 @@
  * Section 1-3 以 node:vm 載入 IIFE 模組做純函式驗證；
  * Section 4-7 由後續 Task 追加（headless Chrome + CDP 的 UI 驗證）。
  */
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import vm from 'node:vm';
+import { spawn } from 'node:child_process';
+import { setTimeout as sleep } from 'node:timers/promises';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -221,6 +223,182 @@ assertEq(renamed.maintenanceCases[0].serviceLevel, 'A 全新名稱', 'maintenanc
 assertEq(renamed.changedCount, 4, 'changedCount 為 4');
 const noop = SLU.renameServiceLevel('A', 'A', { customers: [{ serviceLevel: 'A' }] });
 assertEq(noop.changedCount, 0, '新舊同名時 changedCount 為 0');
+
+// ---------- headless Chrome 區段 ----------
+const CHROME = process.env.CHROME_PATH
+  || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+const PORT = Number(process.env.CDP_PORT || 9341);
+if (!existsSync(CHROME)) {
+  console.error(`找不到 Chrome：${CHROME}\n可用 CHROME_PATH 環境變數指定路徑。`);
+  process.exit(2);
+}
+
+const chrome = spawn(CHROME, [
+  '--headless', '--disable-gpu', '--no-first-run', '--no-default-browser-check',
+  `--remote-debugging-port=${PORT}`, '--user-data-dir=/tmp/iess-service-level-check-profile',
+  'about:blank'
+], { stdio: 'ignore' });
+
+let ws, msgId = 0;
+const pending = new Map();
+const consoleErrors = [];
+function send(method, params = {}) {
+  const id = ++msgId;
+  ws.send(JSON.stringify({ id, method, params }));
+  return new Promise((res, rej) => pending.set(id, { res, rej }));
+}
+async function evaluate(expression) {
+  const r = await send('Runtime.evaluate', {
+    expression, returnByValue: true, awaitPromise: true
+  });
+  if (r.exceptionDetails) {
+    throw new Error(r.exceptionDetails.exception?.description || JSON.stringify(r.exceptionDetails));
+  }
+  return r.result.value;
+}
+
+try {
+  let targets;
+  for (let i = 0; i < 50; i++) {
+    try { targets = await (await fetch(`http://127.0.0.1:${PORT}/json/list`)).json(); break; }
+    catch { await sleep(200); }
+  }
+  const page = targets.find(t => t.type === 'page');
+  ws = new WebSocket(page.webSocketDebuggerUrl);
+  await new Promise(res => { ws.onopen = res; });
+  ws.onmessage = (ev) => {
+    const m = JSON.parse(ev.data);
+    if (m.id && pending.has(m.id)) {
+      const { res, rej } = pending.get(m.id);
+      pending.delete(m.id);
+      m.error ? rej(new Error(JSON.stringify(m.error))) : res(m.result);
+    } else if (m.method === 'Runtime.exceptionThrown') {
+      consoleErrors.push(m.params.exceptionDetails.exception?.description
+        || m.params.exceptionDetails.text);
+    } else if (m.method === 'Runtime.consoleAPICalled' && m.params.type === 'error') {
+      consoleErrors.push(m.params.args.map(a => a.value ?? a.description).join(' '));
+    }
+  };
+  await send('Runtime.enable');
+  await send('Page.enable');
+  await send('Page.navigate', { url: `file://${ROOT}/index.html` });
+  await sleep(4000);
+
+  console.log('\nSection 2｜頁面載入與預設資料');
+  assertEq(consoleErrors.length, 0, '載入時無 JS 錯誤');
+  assertEq(await evaluate('INITIAL_SERVICE_LEVELS.length'), 4, 'INITIAL_SERVICE_LEVELS 有四筆');
+  assertDeep(await evaluate('SERVICE_LEVEL_OPTIONS'),
+    ['A 保修(一年四次)', 'B 保修(一年兩次)', 'C 保養(一年一次)', 'D 維修(無簽約客戶)'],
+    '啟動時 SERVICE_LEVEL_OPTIONS 已被填入');
+  assertTrue(await evaluate('PERMISSION_FUNCTIONS.indexOf("服務等級管理") !== -1'),
+    'PERMISSION_FUNCTIONS 含服務等級管理');
+  assertTrue(await evaluate(`(function(){
+    var node = PERMISSION_TREE.find(function (n) { return n.id === '系統權限'; });
+    return node.children.indexOf('服務等級管理') === node.children.indexOf('設備分類管理') + 1;
+  })()`), 'PERMISSION_TREE 系統權限的服務等級管理緊接設備分類管理之後');
+
+  console.log('\nSection 2｜列表渲染');
+  await evaluate(`
+    window.__levels = JSON.parse(JSON.stringify(INITIAL_SERVICE_LEVELS));
+    window.__toasts = [];
+    window.__renderList = function (customers, stores) {
+      return ServiceLevelList({
+        serviceLevels: window.__levels,
+        setServiceLevels: function (v) {
+          window.__levels = typeof v === 'function' ? v(window.__levels) : v;
+        },
+        customers: customers || [],
+        stores: stores || [],
+        setEditingCase: function (v) { window.__editing = v; },
+        setView: function (v) { window.__view = v; },
+        showToast: function (msg, kind) { window.__toasts.push([msg, kind || 'success']); }
+      });
+    };
+    'ok'`);
+
+  const listHeaders = await evaluate(`(function(){
+    var node = window.__renderList();
+    var ths = Array.prototype.map.call(node.querySelectorAll('thead th'),
+      function (t) { return t.textContent.trim(); });
+    node.remove();
+    return ths;
+  })()`);
+  assertDeep(listHeaders,
+    ['操作', '服務等級名稱', '每年保養次數', '是否計算增額積分', '保養區間'],
+    '列表表頭五欄');
+
+  const rowTexts = await evaluate(`(function(){
+    var node = window.__renderList();
+    var out = Array.prototype.map.call(node.querySelectorAll('tbody tr'), function (tr) {
+      return Array.prototype.map.call(tr.querySelectorAll('td'), function (td) {
+        return td.textContent.trim();
+      }).slice(1);
+    });
+    node.remove();
+    return out;
+  })()`);
+  assertEq(rowTexts.length, 4, '列表渲染四筆');
+  assertDeep(rowTexts[0],
+    ['A 保修(一年四次)', '4', '否', '第1次 1-3月、第2次 4-6月、第3次 7-9月、第4次 10-12月'],
+    'A 列內容正確');
+  assertDeep(rowTexts[3], ['D 維修(無簽約客戶)', '0', '是', '—'], 'D 列內容正確');
+
+  console.log('\nSection 2｜刪除保護');
+  const blocked = await evaluate(`(function(){
+    window.__toasts = [];
+    var custs = [{ id: 'C1', name: '甲', serviceLevel: 'A 保修(一年四次)' }];
+    var node = window.__renderList(custs, []);
+    var container = document.createElement('div');
+    document.body.appendChild(container);
+    container.appendChild(node);
+    var rows = container.querySelectorAll('tbody tr');
+    rows[0].querySelectorAll('td')[0].querySelectorAll('button')[1].click();
+    var btns = Array.prototype.filter.call(container.querySelectorAll('button'), function (b) {
+      return b.textContent.trim() === '確認刪除';
+    });
+    btns[0].click();
+    var count = window.__levels.length;
+    container.remove();
+    return { count: count, toasts: window.__toasts };
+  })()`);
+  assertEq(blocked.count, 4, '使用中的等級未被刪除');
+  assertDeep(blocked.toasts, [['此服務等級已被客戶或門市使用，無法刪除', 'error']], '跳出擋刪 toast');
+
+  const removed = await evaluate(`(function(){
+    window.__levels = JSON.parse(JSON.stringify(INITIAL_SERVICE_LEVELS));
+    window.__toasts = [];
+    var node = window.__renderList([], []);
+    var container = document.createElement('div');
+    document.body.appendChild(container);
+    container.appendChild(node);
+    container.querySelectorAll('tbody tr')[0].querySelectorAll('td')[0].querySelectorAll('button')[1].click();
+    Array.prototype.filter.call(container.querySelectorAll('button'), function (b) {
+      return b.textContent.trim() === '確認刪除';
+    })[0].click();
+    var names = window.__levels.map(function (s) { return s.name; });
+    container.remove();
+    return { names: names, toasts: window.__toasts };
+  })()`);
+  assertEq(removed.names.indexOf('A 保修(一年四次)'), -1, '未使用的等級刪除成功');
+  assertEq(removed.names.length, 3, '刪除後剩三筆');
+  assertDeep(removed.toasts, [['服務等級已刪除', 'success']], '跳出刪除成功 toast');
+
+  console.log('\nSection 2｜app.js 路由與選單');
+  const appSrc = readFileSync(join(ROOT, 'src/app.js'), 'utf8');
+  assertTrue(appSrc.includes(`'服務等級管理': 'service-level-list'`), 'app.js 有選單映射');
+  assertTrue(appSrc.includes(`case 'service-level-list':`), 'app.js 有 service-level-list 路由');
+  const sidebarSrc = readFileSync(join(ROOT, 'src/shell/permissions-sidebar.js'), 'utf8');
+  assertTrue(sidebarSrc.includes('服務等級管理'), 'permissions-sidebar 有選單項目');
+
+  // === UI sections 由後續 Task 追加 ===
+
+  assertEq(consoleErrors.length, 0, '全程無 JS 錯誤');
+} catch (e) {
+  fail('driver', e.message);
+} finally {
+  try { ws?.close(); } catch {}
+  chrome.kill();
+}
 
 console.log(`\n${passed} passed, ${failed} failed`);
 process.exit(failed ? 1 : 0);
