@@ -4,20 +4,8 @@
 (function () {
   'use strict';
 
-  var ALLOCATABLE_SERVICE_LEVELS = [
-    'A 保修(一年四次)',
-    'B 保修(一年兩次)',
-    'C 保養(一年一次)'
-  ];
-
-  function isAllocatableServiceLevel(level) {
-    return ALLOCATABLE_SERVICE_LEVELS.indexOf(level) !== -1;
-  }
-
-  function getVisitIndexOptions(maintenanceInterval) {
-    if (maintenanceInterval === '每季') return [1, 2, 3, 4];
-    if (maintenanceInterval === '每半年') return [1, 2];
-    return [1]; // 每年或其他
+  function isAllocatableServiceLevel(level, serviceLevels) {
+    return ServiceLevelUtils.isAllocatable(serviceLevels, level);
   }
 
   function formatCellLabel(allocation) {
@@ -25,23 +13,23 @@
     return '第' + allocation.visitIndex + '次 ' + allocation.targetCount;
   }
 
-  function getCoveredStoresForAssignee(stores, assignee, customerName) {
+  function getCoveredStoresForAssignee(stores, assignee, customerName, serviceLevels) {
     return (stores || []).filter(function (s) {
       if (customerName && s.customerName !== customerName) return false;
       if (!StoreUtils.isActiveStore(s)) return false;
-      if (!isAllocatableServiceLevel(s.serviceLevel)) return false;
+      if (!isAllocatableServiceLevel(s.serviceLevel, serviceLevels)) return false;
       var area = StoreUtils.getStoreArea(s);
       return StoreUtils.assigneeCoversArea(assignee, area);
     });
   }
 
   /**
-   * @returns {Array<{ customerName, storeCount, maintenanceInterval }>}
+   * @returns {Array<{ customerName, storeCount, serviceLevel }>}
    */
-  function getCustomerRows(assignee, customers, stores) {
+  function getCustomerRows(assignee, customers, stores, serviceLevels) {
     if (!assignee) return [];
     var byCustomer = {};
-    getCoveredStoresForAssignee(stores, assignee, null).forEach(function (s) {
+    getCoveredStoresForAssignee(stores, assignee, null, serviceLevels).forEach(function (s) {
       if (!byCustomer[s.customerName]) byCustomer[s.customerName] = 0;
       byCustomer[s.customerName] += 1;
     });
@@ -51,13 +39,36 @@
       rows.push({
         customerName: name,
         storeCount: byCustomer[name],
-        maintenanceInterval: (cust && cust.maintenanceInterval) || '每年'
+        serviceLevel: (cust && cust.serviceLevel) || ''
       });
     });
     rows.sort(function (a, b) {
       return a.customerName.localeCompare(b.customerName, 'zh-Hant');
     });
     return rows;
+  }
+
+  /**
+   * 該區間月份內、該指派人員 × 該客戶、已結案保養案件的不重複門市數。
+   * 日期取 completionDate，無則取 planDate；年份限定為傳入的 year。
+   */
+  function countCompletedStores(maintenanceCases, assignee, customerName, period, year) {
+    if (!period) return 0;
+    var yearPrefix = String(year);
+    var start = Number(period.startMonth);
+    var end = Number(period.endMonth);
+    var seen = {};
+    (maintenanceCases || []).forEach(function (c) {
+      if (!c || !c.isClosed) return;
+      if (c.customerName !== customerName) return;
+      if (AssigneeUtils.getPerformanceAssignee(c) !== assignee) return;
+      var dateStr = String(c.completionDate || c.planDate || '');
+      if (dateStr.slice(0, 4) !== yearPrefix) return;
+      var month = Number(dateStr.slice(5, 7));
+      if (!(month >= start && month <= end)) return;
+      if (c.storeName) seen[c.storeName] = true;
+    });
+    return Object.keys(seen).length;
   }
 
   function findAllocation(allocations, assigneeId, customerName, month) {
@@ -141,12 +152,11 @@
   }
 
   window.MaintenanceAllocationUtils = {
-    ALLOCATABLE_SERVICE_LEVELS: ALLOCATABLE_SERVICE_LEVELS,
     isAllocatableServiceLevel: isAllocatableServiceLevel,
-    getVisitIndexOptions: getVisitIndexOptions,
     formatCellLabel: formatCellLabel,
     getCoveredStoresForAssignee: getCoveredStoresForAssignee,
     getCustomerRows: getCustomerRows,
+    countCompletedStores: countCompletedStores,
     findAllocation: findAllocation,
     sumVisitIndexTotal: sumVisitIndexTotal,
     buildSaveWarnings: buildSaveWarnings,

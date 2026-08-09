@@ -795,6 +795,166 @@ try {
       `app.js 的 ${comp} 呼叫含 serviceLevels`);
   }
 
+  console.log('\nSection 7｜allocation utils');
+  assertEq(await evaluate('typeof MaintenanceAllocationUtils.ALLOCATABLE_SERVICE_LEVELS'), 'undefined',
+    'ALLOCATABLE_SERVICE_LEVELS 已移除');
+  assertEq(await evaluate('typeof MaintenanceAllocationUtils.getVisitIndexOptions'), 'undefined',
+    'getVisitIndexOptions 已移除');
+  assertEq(await evaluate(`MaintenanceAllocationUtils.isAllocatableServiceLevel('C 保養(一年一次)', INITIAL_SERVICE_LEVELS)`),
+    true, 'C 納入保養分配');
+  assertEq(await evaluate(`MaintenanceAllocationUtils.isAllocatableServiceLevel('D 維修(無簽約客戶)', INITIAL_SERVICE_LEVELS)`),
+    false, 'D 不納入保養分配');
+
+  const rowShape = await evaluate(`(function(){
+    var assignee = { id: 'A1', name: 'A組', districts: ['台北市信義區'] };
+    var customers = [{ id: 'C1', name: '甲', serviceLevel: 'B 保修(一年兩次)' }];
+    var stores = [
+      { id: 'S1', customerName: '甲', storeName: '甲一', serviceLevel: 'B 保修(一年兩次)',
+        storeStatus: '正常營業', companyCity: '台北市', companyDistrict: '信義區' },
+      { id: 'S2', customerName: '甲', storeName: '甲二', serviceLevel: 'B 保修(一年兩次)',
+        storeStatus: '正常營業', companyCity: '台北市', companyDistrict: '信義區' },
+      { id: 'S3', customerName: '甲', storeName: '甲三', serviceLevel: 'D 維修(無簽約客戶)',
+        storeStatus: '正常營業', companyCity: '台北市', companyDistrict: '信義區' }
+    ];
+    return MaintenanceAllocationUtils.getCustomerRows(assignee, customers, stores, INITIAL_SERVICE_LEVELS);
+  })()`);
+  assertDeep(rowShape, [{ customerName: '甲', storeCount: 2, serviceLevel: 'B 保修(一年兩次)' }],
+    'getCustomerRows 回傳 serviceLevel 且濾掉 D 等級門市');
+
+  // 注意：AssigneeUtils.getPerformanceAssignee 讀的是單數欄位
+  // record.performanceAssignee（沒有則退回 record.assignee），
+  // 不是陣列欄位 performanceAssignees，故 fixture 改用單數欄位，
+  // 才能驗證到 countCompletedStores 真的有依人員過濾。
+  const completed = await evaluate(`(function(){
+    var year = new Date().getFullYear();
+    var cases = [
+      { id: 'M1', customerName: '甲', storeName: '甲一', isClosed: true,
+        completionDate: year + '-02-10', performanceAssignee: 'A組' },
+      { id: 'M2', customerName: '甲', storeName: '甲一', isClosed: true,
+        completionDate: year + '-03-01', performanceAssignee: 'A組' },
+      { id: 'M3', customerName: '甲', storeName: '甲二', isClosed: true,
+        planDate: year + '-01-15', performanceAssignee: 'A組' },
+      { id: 'M4', customerName: '甲', storeName: '甲三', isClosed: false,
+        completionDate: year + '-02-10', performanceAssignee: 'A組' },
+      { id: 'M5', customerName: '甲', storeName: '甲四', isClosed: true,
+        completionDate: year + '-05-10', performanceAssignee: 'A組' },
+      { id: 'M6', customerName: '乙', storeName: '乙一', isClosed: true,
+        completionDate: year + '-02-10', performanceAssignee: 'A組' },
+      { id: 'M7', customerName: '甲', storeName: '甲五', isClosed: true,
+        completionDate: year + '-02-10', performanceAssignee: 'B組' },
+      { id: 'M8', customerName: '甲', storeName: '甲六', isClosed: true,
+        completionDate: (year - 1) + '-02-10', performanceAssignee: 'A組' }
+    ];
+    var period = { visitIndex: 1, startMonth: 1, endMonth: 3 };
+    return MaintenanceAllocationUtils.countCompletedStores(cases, 'A組', '甲', period, year);
+  })()`);
+  assertEq(completed, 2, 'countCompletedStores 計不重複門市（甲一、甲二），排除未結案／他客戶／他人員／跨年／區間外');
+
+  console.log('\nSection 7｜保養分配表格');
+  // src/core/searchable-select.js 攔截了 h('select', ...)：保養分配的「指派人員」
+  // 下拉沒有原生 <select>，也沒有設定 name prop，改用
+  // input[role="combobox"]（唯一一個）以 mousedown 開啟選單、
+  // 選項按鈕（portal 到 document.body 的 .searchable-select__menu--portal 內）
+  // 以 mousedown 選取，見 Section 3 對此機制的說明。另外 stateful() 是以
+  // parentNode.replaceChild 換掉整棵樹，故用一個固定的容器 div 承接元件節點，
+  // 之後一律透過容器查詢，才能拿到 rerender 後的最新 DOM。
+  await evaluate(`
+    window.__chooseAllocAssignee = function (container, label) {
+      var input = container.querySelector('input[role="combobox"]');
+      input.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
+      var btns = Array.prototype.filter.call(
+        document.querySelectorAll('.searchable-select__menu--portal .searchable-select__option'),
+        function (b) { return b.textContent.trim() === label; }
+      );
+      if (!btns.length) throw new Error('__chooseAllocAssignee: 找不到選項 ' + label);
+      btns[0].dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
+    };
+    'ok'`);
+
+  const grid = await evaluate(`(function(){
+    var assignees = [{ id: 'A1', name: 'A組', districts: ['台北市信義區'] }];
+    var customers = [{ id: 'C1', name: '甲', serviceLevel: 'B 保修(一年兩次)' }];
+    var stores = [
+      { id: 'S1', customerName: '甲', storeName: '甲一', serviceLevel: 'B 保修(一年兩次)',
+        storeStatus: '正常營業', companyCity: '台北市', companyDistrict: '信義區' },
+      { id: 'S2', customerName: '甲', storeName: '甲二', serviceLevel: 'B 保修(一年兩次)',
+        storeStatus: '正常營業', companyCity: '台北市', companyDistrict: '信義區' }
+    ];
+    var year = new Date().getFullYear();
+    var maint = [{ id: 'M1', customerName: '甲', storeName: '甲一', isClosed: true,
+      completionDate: year + '-02-10', performanceAssignee: 'A組' }];
+    window.__allocToasts = [];
+    var container = document.createElement('div');
+    document.body.appendChild(container);
+    container.appendChild(MaintenanceAllocation({
+      assignees: assignees, customers: customers, stores: stores,
+      maintenanceCases: maint, serviceLevels: INITIAL_SERVICE_LEVELS,
+      maintenanceAllocations: [], setMaintenanceAllocations: function () {},
+      showToast: function (m, k) { window.__allocToasts.push([m, k || 'success']); }
+    }));
+    window.__chooseAllocAssignee(container, 'A組');
+    var row = container.querySelector('tbody tr');
+    var badge = row.querySelector('span').textContent.trim();
+    var tds = row.querySelectorAll('td');
+    var monthCells = Array.prototype.slice.call(tds, 2);
+    var out = {
+      badge: badge,
+      firstPeriodHeader: monthCells[0].textContent.trim(),
+      secondPeriodHeader: monthCells[6].textContent.trim(),
+      midCellHasHeader: monthCells[1].textContent.indexOf('第') !== -1
+    };
+    // 點第 2 月（在區間內）應開啟 Modal
+    monthCells[1].querySelector('div').click();
+    out.modalOpened = container.textContent.indexOf('編輯保養分配') !== -1;
+    out.visitReadOnly = container.querySelectorAll('input[role="combobox"]').length;
+    container.remove();
+    return out;
+  })()`);
+  assertTrue(grid.badge === 'B 保修(一年兩次)', '列首 badge 顯示服務等級', grid.badge);
+  assertTrue(grid.firstPeriodHeader.indexOf('第1次 1/2') === 0,
+    '第 1 區間首欄顯示「第1次 1/2」', grid.firstPeriodHeader);
+  assertTrue(grid.secondPeriodHeader.indexOf('第2次 0/2') === 0,
+    '第 2 區間首欄顯示「第2次 0/2」', grid.secondPeriodHeader);
+  assertEq(grid.midCellHasHeader, false, '非區間首欄不顯示小字標頭');
+  assertEq(grid.modalOpened, true, '點區間內月份會開啟編輯 Modal');
+  assertEq(grid.visitReadOnly, 1, 'Modal 內沒有保養次數下拉（僅剩指派人員下拉）');
+
+  const outsideClick = await evaluate(`(function(){
+    var assignees = [{ id: 'A1', name: 'A組', districts: ['台北市信義區'] }];
+    var customers = [{ id: 'C1', name: '甲', serviceLevel: 'E 半年檔' }];
+    var levels = [{ id: 'SLE', name: 'E 半年檔', maintenanceCount: 1, countsBonusPoints: false,
+      periods: [{ visitIndex: 1, startMonth: 1, endMonth: 6 }] }];
+    var stores = [{ id: 'S1', customerName: '甲', storeName: '甲一', serviceLevel: 'E 半年檔',
+      storeStatus: '正常營業', companyCity: '台北市', companyDistrict: '信義區' }];
+    window.__allocToasts = [];
+    var container = document.createElement('div');
+    document.body.appendChild(container);
+    container.appendChild(MaintenanceAllocation({
+      assignees: assignees, customers: customers, stores: stores,
+      maintenanceCases: [], serviceLevels: levels,
+      maintenanceAllocations: [], setMaintenanceAllocations: function () {},
+      showToast: function (m, k) { window.__allocToasts.push([m, k || 'success']); }
+    }));
+    window.__chooseAllocAssignee(container, 'A組');
+    var tds = container.querySelector('tbody tr').querySelectorAll('td');
+    Array.prototype.slice.call(tds, 2)[11].querySelector('div').click();
+    var out = { toasts: window.__allocToasts,
+      modalOpened: container.textContent.indexOf('編輯保養分配') !== -1 };
+    container.remove();
+    return out;
+  })()`);
+  assertEq(outsideClick.modalOpened, false, '點區間外月份不開 Modal');
+  assertDeep(outsideClick.toasts, [['此月份不在該服務等級的保養區間內', 'error']],
+    '點區間外月份跳出提示 toast');
+
+  console.log('\nSection 7｜app.js 已往下傳 maintenanceCases / serviceLevels');
+  const appSrc7 = readFileSync(join(ROOT, 'src/app.js'), 'utf8');
+  const allocIdx = appSrc7.indexOf('MaintenanceAllocation, {');
+  assertTrue(appSrc7.slice(allocIdx, allocIdx + 500).includes('maintenanceCases'),
+    'app.js 的 MaintenanceAllocation 呼叫含 maintenanceCases');
+  assertTrue(appSrc7.slice(allocIdx, allocIdx + 500).includes('serviceLevels'),
+    'app.js 的 MaintenanceAllocation 呼叫含 serviceLevels');
+
   // === UI sections 由後續 Task 追加 ===
 
   assertEq(consoleErrors.length, 0, '全程無 JS 錯誤');

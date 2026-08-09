@@ -1,12 +1,14 @@
 /*
  * features/permissions/maintenance-allocation.js — 保養分配：客戶月份網格、編輯 Modal、刪除確認
- * props: { assignees, customers, stores, maintenanceAllocations, setMaintenanceAllocations, showToast }
+ * props: { assignees, customers, stores, maintenanceCases, serviceLevels, maintenanceAllocations, setMaintenanceAllocations, showToast }
  */
 (function () {
   'use strict';
 
   var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful, useDragScroll = IESS.useDragScroll;
   var MONTHS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+  var SEGMENT_BG = ['bg-sky-50/70', 'bg-amber-50/70'];
+  var CURRENT_YEAR = new Date().getFullYear();
   var persistedSelectedAssigneeId = '';
   var persistedScrollLeft = 0;
 
@@ -14,6 +16,8 @@
     var assignees = props.assignees || [];
     var customers = props.customers || [];
     var stores = props.stores || [];
+    var maintenanceCases = props.maintenanceCases || [];
+    var serviceLevels = props.serviceLevels || [];
     var maintenanceAllocations = props.maintenanceAllocations || [];
     var setMaintenanceAllocations = props.setMaintenanceAllocations;
     var showToast = props.showToast;
@@ -70,21 +74,27 @@
     }
 
     function openEditModal(row, month) {
+      var period = ServiceLevelUtils.findPeriodForMonth(serviceLevels, row.serviceLevel, month);
+      if (!period) {
+        showToast('此月份不在該服務等級的保養區間內', 'error');
+        return false;
+      }
       var existing = MaintenanceAllocationUtils.findAllocation(
         maintenanceAllocations,
         selectedAssigneeId,
         row.customerName,
         month
       );
-      var visitOptions = MaintenanceAllocationUtils.getVisitIndexOptions(row.maintenanceInterval);
       editModal = {
         customerName: row.customerName,
         month: month,
-        visitIndex: existing ? existing.visitIndex : visitOptions[0],
+        visitIndex: period.visitIndex,
+        period: period,
         targetCount: existing ? existing.targetCount : '',
         storeCount: row.storeCount,
-        maintenanceInterval: row.maintenanceInterval
+        serviceLevel: row.serviceLevel
       };
+      return true;
     }
 
     return stateful(function (rerender) {
@@ -93,7 +103,7 @@
         return item.id === selectedAssigneeId;
       }) || null;
       var rows = assignee
-        ? MaintenanceAllocationUtils.getCustomerRows(assignee, customers, stores)
+        ? MaintenanceAllocationUtils.getCustomerRows(assignee, customers, stores, serviceLevels)
         : [];
 
       if (selectedAssigneeId && !assignee) {
@@ -166,7 +176,18 @@
         );
       }
 
-      function renderMonthCell(row, month) {
+      // 依該列服務等級的保養區間，建出「月份 → { period, order }」的對照
+      function buildSegmentMap(row) {
+        var map = {};
+        ServiceLevelUtils.getPeriods(serviceLevels, row.serviceLevel).forEach(function (p, order) {
+          for (var m = Number(p.startMonth); m <= Number(p.endMonth); m++) {
+            map[m] = { period: p, order: order };
+          }
+        });
+        return map;
+      }
+
+      function renderMonthCell(row, month, segment) {
         var cell = MaintenanceAllocationUtils.findAllocation(
           maintenanceAllocations,
           selectedAssigneeId,
@@ -175,9 +196,26 @@
         );
         var label = MaintenanceAllocationUtils.formatCellLabel(cell);
 
+        var tdClass = 'p-2 align-top';
+        var header = null;
+        if (segment) {
+          var period = segment.period;
+          tdClass += ' ' + SEGMENT_BG[segment.order % SEGMENT_BG.length];
+          if (Number(period.startMonth) === month) tdClass += ' border-l-2 border-l-blue-300';
+          if (Number(period.endMonth) === month) tdClass += ' border-r-2 border-r-blue-300';
+          if (Number(period.startMonth) === month) {
+            var done = MaintenanceAllocationUtils.countCompletedStores(
+              maintenanceCases, assignee && assignee.name, row.customerName, period, CURRENT_YEAR
+            );
+            header = h('div', { className: 'text-[11px] text-gray-500 mb-1 whitespace-nowrap' },
+              '第' + period.visitIndex + '次 ' + done + '/' + row.storeCount);
+          }
+        }
+
         return h(
           'td',
-          { key: month, className: 'p-2 align-top' },
+          { key: month, className: tdClass },
+          header,
           h(
             'div',
             {
@@ -258,6 +296,7 @@
                     h('td', { colspan: 14, className: 'p-10 text-center text-gray-400 text-base' }, '尚無符合條件的客戶')
                   )
                 : rows.map(function (row) {
+                    var segments = buildSegmentMap(row);
                     return h(
                       'tr',
                       { key: row.customerName, className: 'hover:bg-blue-50/40 transition-colors' },
@@ -270,12 +309,12 @@
                           {
                             className: 'inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-xs font-medium border border-gray-200 bg-gray-50 text-gray-600'
                           },
-                          row.maintenanceInterval || '每年'
+                          row.serviceLevel || '—'
                         )
                       ),
                       h('td', { className: 'p-3 text-center' }, String(row.storeCount)),
                       MONTHS.map(function (month) {
-                        return renderMonthCell(row, month);
+                        return renderMonthCell(row, month, segments[month] || null);
                       })
                     );
                   })
@@ -312,20 +351,9 @@
                 'div',
                 null,
                 h('label', { className: 'block text-sm text-gray-600 mb-1' }, '保養次數'),
-                h(
-                  'select',
-                  {
-                    value: String(editModal.visitIndex),
-                    onChange: function (e) {
-                      editModal.visitIndex = e.target.value;
-                      rerender();
-                    },
-                    className: 'w-full p-2.5 border rounded-md outline-none focus:border-blue-500 bg-white'
-                  },
-                  MaintenanceAllocationUtils.getVisitIndexOptions(editModal.maintenanceInterval).map(function (option) {
-                    return h('option', { key: option, value: String(option) }, '第' + option + '次');
-                  })
-                )
+                h('div', { className: 'w-full p-2.5 border rounded-md bg-gray-50 text-gray-700' },
+                  '第 ' + editModal.visitIndex + ' 次（'
+                    + editModal.period.startMonth + '-' + editModal.period.endMonth + '月）')
               ),
               h(
                 'div',

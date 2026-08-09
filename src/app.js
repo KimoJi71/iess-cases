@@ -759,6 +759,8 @@
           assignees: s.assignees,
           customers: s.customers,
           stores: s.stores,
+          maintenanceCases: s.maintenanceCases,
+          serviceLevels: s.serviceLevels,
           maintenanceAllocations: s.maintenanceAllocations,
           setMaintenanceAllocations: setMaintenanceAllocations,
           showToast: showToast
