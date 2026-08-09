@@ -94,6 +94,99 @@ assertEq(norm.periods[0].startMonth, 1, 'normalizeRecord 月份轉數字');
 assertEq(SLU.formatPeriodsLabel(LEVELS[1]), '第1次 1-6月、第2次 7-12月', 'formatPeriodsLabel 兩區間');
 assertEq(SLU.formatPeriodsLabel(LEVELS[3]), '—', 'formatPeriodsLabel 無區間回 —');
 
+console.log('\nSection 1｜validate');
+assertDeep(
+  SLU.validate({
+    name: '有效等級', maintenanceCount: 2, countsBonusPoints: false,
+    periods: [{ visitIndex: 1, startMonth: 1, endMonth: 6 }, { visitIndex: 2, startMonth: 7, endMonth: 12 }]
+  }, [], undefined),
+  [], 'validate 合法紀錄回傳空陣列');
+
+assertDeep(
+  SLU.validate({ name: '', maintenanceCount: 0, periods: [] }, [], undefined),
+  ['服務等級名稱為必填'], 'validate 空白名稱回必填錯誤');
+assertDeep(
+  SLU.validate({ name: '   ', maintenanceCount: 0, periods: [] }, [], undefined),
+  ['服務等級名稱為必填'], 'validate 純空白名稱回必填錯誤');
+
+assertDeep(
+  SLU.validate({
+    name: 'B 保修(一年兩次)', maintenanceCount: 2, periods: [
+      { visitIndex: 1, startMonth: 1, endMonth: 6 }, { visitIndex: 2, startMonth: 7, endMonth: 12 }
+    ]
+  }, LEVELS, undefined),
+  ['服務等級名稱「B 保修(一年兩次)」已存在'], 'validate 名稱與他人重複回重複錯誤');
+assertDeep(
+  SLU.validate({
+    name: 'B 保修(一年兩次)', maintenanceCount: 2, periods: [
+      { visitIndex: 1, startMonth: 1, endMonth: 6 }, { visitIndex: 2, startMonth: 7, endMonth: 12 }
+    ]
+  }, LEVELS, 'SL002'),
+  [], 'validate excludeId 排除自己時不算重複');
+
+assertDeep(
+  SLU.validate({ name: 'X', maintenanceCount: -1, periods: [] }, [], undefined),
+  ['每年保養次數需為 0 或正整數'], 'validate 保養次數為負數');
+assertDeep(
+  SLU.validate({ name: 'X', maintenanceCount: 2.5, periods: [] }, [], undefined),
+  ['每年保養次數需為 0 或正整數'], 'validate 保養次數非整數');
+
+assertDeep(
+  SLU.validate({
+    name: 'X', maintenanceCount: 2, periods: [{ visitIndex: 1, startMonth: 1, endMonth: 6 }]
+  }, [], undefined),
+  ['保養區間筆數（1）與每年保養次數（2）不符'], 'validate 區間筆數少於保養次數');
+assertDeep(
+  SLU.validate({
+    name: 'X', maintenanceCount: 1, periods: [
+      { visitIndex: 1, startMonth: 1, endMonth: 6 }, { visitIndex: 2, startMonth: 7, endMonth: 12 }
+    ]
+  }, [], undefined),
+  ['保養區間筆數（2）與每年保養次數（1）不符'], 'validate 區間筆數多於保養次數');
+
+assertDeep(
+  SLU.validate({
+    name: 'X', maintenanceCount: 1, periods: [{ visitIndex: 1, startMonth: 0, endMonth: 6 }]
+  }, [], undefined),
+  ['第1次的起始月與結束月需為 1–12 月'], 'validate 起始月為 0 超出範圍');
+assertDeep(
+  SLU.validate({
+    name: 'X', maintenanceCount: 1, periods: [{ visitIndex: 1, startMonth: 1, endMonth: 13 }]
+  }, [], undefined),
+  ['第1次的起始月與結束月需為 1–12 月'], 'validate 結束月為 13 超出範圍');
+assertDeep(
+  SLU.validate({
+    name: 'X', maintenanceCount: 1, periods: [{ visitIndex: 1, startMonth: '', endMonth: 6 }]
+  }, [], undefined),
+  ['第1次的起始月與結束月需為 1–12 月'], 'validate 起始月為空字串視為超出範圍');
+assertDeep(
+  SLU.validate({
+    name: 'X', maintenanceCount: 1, periods: [{ visitIndex: 1, startMonth: 8, endMonth: 3 }]
+  }, [], undefined),
+  ['第1次的起始月不可大於結束月'], 'validate 起始月大於結束月');
+
+assertDeep(
+  SLU.validate({
+    name: 'X', maintenanceCount: 2, periods: [
+      { visitIndex: 1, startMonth: 1, endMonth: 6 }, { visitIndex: 2, startMonth: 4, endMonth: 10 }
+    ]
+  }, [], undefined),
+  ['第1次與第2次的保養區間重疊'], 'validate 兩區間重疊');
+assertDeep(
+  SLU.validate({
+    name: 'X', maintenanceCount: 2, periods: [
+      { visitIndex: 1, startMonth: 1, endMonth: 6 }, { visitIndex: 2, startMonth: 6, endMonth: 12 }
+    ]
+  }, [], undefined),
+  ['第1次與第2次的保養區間重疊'], 'validate 共用邊界月份視為重疊');
+assertDeep(
+  SLU.validate({
+    name: 'X', maintenanceCount: 2, periods: [
+      { visitIndex: 1, startMonth: 1, endMonth: 6 }, { visitIndex: 2, startMonth: 7, endMonth: 12 }
+    ]
+  }, [], undefined),
+  [], 'validate 相鄰不重疊區間視為合法');
+
 console.log('\nSection 1｜isServiceLevelInUse');
 const custs = [{ id: 'C1', name: '甲', serviceLevel: 'A 保修(一年四次)' }];
 const strs = [{ id: 'S1', storeName: '甲一店', serviceLevel: 'B 保修(一年兩次)' }];
