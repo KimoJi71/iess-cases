@@ -5,13 +5,51 @@
  * 依賴 data/options.js 內的日期常數（todayDate / yesterdayDate / twoDaysAgoDate）。
  */
 
+// --- 初始服務等級 (系統權限 - 服務等級管理) ---
+// countsBonusPoints 的值刻意對應原本寫死的 C/D 前綴判定，確保既有績效數字不變。
+const INITIAL_SERVICE_LEVELS = [{
+  id: 'SL001',
+  name: 'A 保修(一年四次)',
+  maintenanceCount: 4,
+  countsBonusPoints: false,
+  periods: [
+    { visitIndex: 1, startMonth: 1, endMonth: 3 },
+    { visitIndex: 2, startMonth: 4, endMonth: 6 },
+    { visitIndex: 3, startMonth: 7, endMonth: 9 },
+    { visitIndex: 4, startMonth: 10, endMonth: 12 }
+  ]
+}, {
+  id: 'SL002',
+  name: 'B 保修(一年兩次)',
+  maintenanceCount: 2,
+  countsBonusPoints: false,
+  periods: [
+    { visitIndex: 1, startMonth: 1, endMonth: 6 },
+    { visitIndex: 2, startMonth: 7, endMonth: 12 }
+  ]
+}, {
+  id: 'SL003',
+  name: 'C 保養(一年一次)',
+  maintenanceCount: 1,
+  countsBonusPoints: true,
+  periods: [
+    { visitIndex: 1, startMonth: 1, endMonth: 12 }
+  ]
+}, {
+  id: 'SL004',
+  name: 'D 維修(無簽約客戶)',
+  maintenanceCount: 0,
+  countsBonusPoints: true,
+  periods: []
+}];
+
 // --- 初始模擬客戶列表 (客戶建檔) ---
 const INITIAL_CUSTOMERS = [{
   id: 'CUST1',
   name: '屈臣氏',
   taxId: '12345678',
   principal: '王大明',
-  serviceLevel: 'A 保修(一年一次)',
+  serviceLevel: 'A 保修(一年四次)',
   maintenanceInterval: '每半年',
   phone: '02-2712-3456',
   fax: '02-2712-3457',
@@ -102,7 +140,7 @@ const INITIAL_STORES = [{
   customerName: '屈臣氏',
   storeCode: 'WT-001',
   storeName: '台北信義店',
-  serviceLevel: 'A 保修(一年一次)',
+  serviceLevel: 'A 保修(一年四次)',
   companyPhone: '02-2712-3456',
   companyFax: '02-2712-3457',
   companyCity: '台北市',
@@ -169,7 +207,7 @@ const INITIAL_STORES = [{
   customerName: '屈臣氏',
   storeCode: 'WT-002',
   storeName: '台中旗艦店',
-  serviceLevel: 'A 保修(一年一次)',
+  serviceLevel: 'A 保修(一年四次)',
   companyPhone: '04-2251-1234',
   companyFax: '04-2251-1235',
   companyCity: '台中市',
@@ -446,7 +484,7 @@ const INITIAL_STORES = [{
   customerName: '屈臣氏',
   storeCode: 'WT-003',
   storeName: '大安忠孝店',
-  serviceLevel: 'A 保修(一年一次)',
+  serviceLevel: 'A 保修(一年四次)',
   companyPhone: '02-2771-8888',
   companyFax: '02-2771-8889',
   companyCity: '台北市',
@@ -696,7 +734,7 @@ const INITIAL_CASES = [{
   assignee: 'A組',
   processStatus: '待料件',
   isClosed: false,
-  serviceLevel: 'A 保修(一年一次)',
+  serviceLevel: 'A 保修(一年四次)',
   storeAddress: '台北市信義區松智路X號',
   reporter: '林店長',
   equipment: null,
@@ -867,7 +905,7 @@ const INITIAL_CASES = [{
   assignee: '',
   processStatus: '尚未處理完成',
   isClosed: false,
-  serviceLevel: 'A 保修(一年一次)',
+  serviceLevel: 'A 保修(一年四次)',
   storeAddress: '台中市西屯區台灣大道X號',
   reporter: '林店長',
   equipment: null,
@@ -895,7 +933,7 @@ const INITIAL_CASES = [{
   assignee: 'B組',
   processStatus: '尚未處理完成',
   isClosed: false,
-  serviceLevel: 'A 保修(一年一次)',
+  serviceLevel: 'A 保修(一年四次)',
   storeAddress: '台北市信義區松智路X號',
   reporter: '林店長',
   equipment: null,
@@ -996,7 +1034,7 @@ const INITIAL_CASES = [{
   assignee: 'B組',
   processStatus: '案件完成',
   isClosed: true,
-  serviceLevel: 'A 保修(一年一次)',
+  serviceLevel: 'A 保修(一年四次)',
   storeAddress: '台中市西屯區台灣大道X號',
   reporter: '張小姐',
   equipment: {
@@ -1220,7 +1258,7 @@ const INITIAL_MAINTENANCE_CASES = [{
   caseNumber: `${todayDate.replace(/-/g, '')}001`,
   customerName: '屈臣氏',
   storeName: '台北信義店',
-  serviceLevel: 'A 保修(一年一次)',
+  serviceLevel: 'A 保修(一年四次)',
   status: '已完成',
   planDate: todayDate,
   planTimeStart: '09:00',
@@ -1271,7 +1309,7 @@ const INITIAL_MAINTENANCE_CASES = [{
   caseNumber: `${yesterdayDate.replace(/-/g, '')}004`,
   customerName: '屈臣氏',
   storeName: '台中旗艦店',
-  serviceLevel: 'A 保修(一年一次)',
+  serviceLevel: 'A 保修(一年四次)',
   status: '已完成',
   planDate: yesterdayDate,
   planTimeStart: '10:00',
@@ -1303,7 +1341,7 @@ const INITIAL_MAINTENANCE_CASES = [{
   caseNumber: `${twoDaysAgoDate.replace(/-/g, '')}006`,
   customerName: '屈臣氏',
   storeName: '大安忠孝店',
-  serviceLevel: 'A 保修(一年一次)',
+  serviceLevel: 'A 保修(一年四次)',
   status: '已完成',
   planDate: twoDaysAgoDate,
   planTimeStart: '09:30',
@@ -1351,7 +1389,7 @@ const INITIAL_MAINTENANCE_CASES = [{
   caseNumber: `${twoDaysAgoDate.replace(/-/g, '')}009`,
   customerName: '屈臣氏',
   storeName: '台北信義店',
-  serviceLevel: 'A 保修(一年一次)',
+  serviceLevel: 'A 保修(一年四次)',
   status: '已完成',
   planDate: twoDaysAgoDate,
   planTimeStart: '11:00',
@@ -1367,7 +1405,7 @@ const INITIAL_MAINTENANCE_CASES = [{
   caseNumber: `${todayDate.replace(/-/g, '')}010`,
   customerName: '屈臣氏',
   storeName: '台中旗艦店',
-  serviceLevel: 'A 保修(一年一次)',
+  serviceLevel: 'A 保修(一年四次)',
   status: '已完成',
   planDate: todayDate,
   planTimeStart: '14:00',
@@ -1555,7 +1593,7 @@ const INITIAL_PROJECT_CASES = [{
   comments: [],
   details: {
     storeAddress: '台北市信義區松智路X號',
-    serviceLevel: 'A 保修(一年一次)',
+    serviceLevel: 'A 保修(一年四次)',
     contactPerson: '林店長',
     suggestedContractor: '機電維護商',
     entryDate: twoDaysAgoDate,
@@ -1621,7 +1659,7 @@ const INITIAL_PROJECT_CASES = [{
   comments: [],
   details: {
     storeAddress: '台中市西屯區台灣大道X號',
-    serviceLevel: 'A 保修(一年一次)',
+    serviceLevel: 'A 保修(一年四次)',
     contactPerson: '張小姐',
     suggestedContractor: '內部工程組',
     entryDate: yesterdayDate,

@@ -98,6 +98,7 @@
     personnelStatus: INITIAL_PERSONNEL_STATUS,
     accounts: INITIAL_ACCOUNTS,
     deviceCategories: INITIAL_DEVICE_CATEGORIES,
+    serviceLevels: INITIAL_SERVICE_LEVELS,
     processMethods: INITIAL_PROCESS_METHODS,
     assignees: INITIAL_ASSIGNEES,
     maintenanceAllocations: INITIAL_MAINTENANCE_ALLOCATIONS,
@@ -194,6 +195,14 @@
       var next = typeof v === 'function' ? v(s.deviceCategories) : v;
       DeviceCategoryUtils.syncDeviceCategoryOptions(next);
       return { deviceCategories: next };
+    });
+  }
+
+  function setServiceLevels(v) {
+    store.set(function (s) {
+      var next = typeof v === 'function' ? v(s.serviceLevels) : v;
+      ServiceLevelUtils.syncServiceLevelOptions(next);
+      return { serviceLevels: next };
     });
   }
 
@@ -839,6 +848,7 @@
     );
   }
 
+  ServiceLevelUtils.syncServiceLevelOptions(INITIAL_SERVICE_LEVELS);
   DeviceCategoryUtils.syncDeviceCategoryOptions(INITIAL_DEVICE_CATEGORIES);
   ProcessMethodUtils.syncProcessMethodOptions(INITIAL_PROCESS_METHODS);
   AssigneeUtils.syncAssigneeOptions(INITIAL_ASSIGNEES);

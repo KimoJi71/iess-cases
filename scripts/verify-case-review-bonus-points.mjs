@@ -108,7 +108,7 @@ try {
         closeDate: '${todayDate} 10:00',
         processRecords: [{ points: 5, qty: 2 }, { points: 3, qty: 1 }] },
       { id: 'R2', caseNumber: 'BP002', customerName: 'A級客戶', storeName: '門市二',
-        serviceLevel: 'A 保修(一年一次)', workCategory: '一般叫修', repairItem: '冷氣',
+        serviceLevel: 'A 保修(一年四次)', workCategory: '一般叫修', repairItem: '冷氣',
         repairReason: '異音', actualReason: '軸承', isClosed: true,
         closeDate: '${todayDate} 10:00',
         equipment: { model: 'ADD-1' },
@@ -125,7 +125,7 @@ try {
         closeDate: '${todayDate} 10:00',
         processRecords: [] },
       { id: 'R5', caseNumber: 'BP006', customerName: 'A級客戶2', storeName: '門市六',
-        serviceLevel: 'A 保修(一年一次)', workCategory: '一般叫修', repairItem: '冷氣',
+        serviceLevel: 'A 保修(一年四次)', workCategory: '一般叫修', repairItem: '冷氣',
         repairReason: '不冷', actualReason: '缺冷媒', isClosed: true,
         closeDate: '${todayDate} 10:00',
         processRecords: [{ points: 6, qty: 1 }] }

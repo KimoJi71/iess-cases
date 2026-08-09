@@ -5,7 +5,7 @@
   'use strict';
 
   var ALLOCATABLE_SERVICE_LEVELS = [
-    'A 保修(一年一次)',
+    'A 保修(一年四次)',
     'B 保修(一年兩次)',
     'C 保養(一年一次)'
   ];

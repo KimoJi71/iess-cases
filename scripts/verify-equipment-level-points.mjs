@@ -179,9 +179,9 @@ function caseWith(serviceLevel, model) {
 
 const PU = sandbox.window.PerformanceUtils;
 
-assertEq(PU.isBonusEligible(caseWith('A 保修(一年一次)', 'RAS-100'), cats), false,
+assertEq(PU.isBonusEligible(caseWith('A 保修(一年四次)', 'RAS-100'), cats), false,
   'A + 基礎設備 不計分');
-assertEq(PU.isBonusEligible(caseWith('A 保修(一年一次)', 'FXYP100'), cats), true,
+assertEq(PU.isBonusEligible(caseWith('A 保修(一年四次)', 'FXYP100'), cats), true,
   'A + 增額設備 計分');
 assertEq(PU.isBonusEligible(caseWith('B 保修(一年兩次)', 'FXYP100'), cats), true,
   'B + 增額設備 計分');
@@ -191,11 +191,11 @@ assertEq(PU.isBonusEligible(caseWith('C 保養(一年一次)', 'RAS-100'), cats)
   'C + 基礎設備 仍計分（回歸）');
 assertEq(PU.isBonusEligible(caseWith('D 維修(無簽約客戶)', 'RAS-100'), cats), true,
   'D + 基礎設備 仍計分（回歸）');
-assertEq(PU.isBonusEligible(caseWith('A 保修(一年一次)', '查無此型號'), cats), false,
+assertEq(PU.isBonusEligible(caseWith('A 保修(一年四次)', '查無此型號'), cats), false,
   'A + 型號查無分類 不計分');
-assertEq(PU.isBonusEligible(caseWith('A 保修(一年一次)', null), cats), false,
+assertEq(PU.isBonusEligible(caseWith('A 保修(一年四次)', null), cats), false,
   'A + 案件無設備 不計分');
-assertEq(PU.isBonusEligible(caseWith('A 保修(一年一次)', 'PA-063'), cats), false,
+assertEq(PU.isBonusEligible(caseWith('A 保修(一年四次)', 'PA-063'), cats), false,
   'A + 分類無 equipmentLevel 欄位 不計分');
 assertEq(PU.isBonusEligible(caseWith('', 'FXYP100'), cats), true,
   '服務等級為空 + 增額設備 計分');
@@ -224,19 +224,19 @@ function bonusOf(cases) {
   })[0].bonusPoints;
 }
 
-assertEq(bonusOf([caseWith('A 保修(一年一次)', 'RAS-100')]), 0,
+assertEq(bonusOf([caseWith('A 保修(一年四次)', 'RAS-100')]), 0,
   'A + 基礎設備 積分為 0');
-assertEq(bonusOf([caseWith('A 保修(一年一次)', 'FXYP100')]), 10,
+assertEq(bonusOf([caseWith('A 保修(一年四次)', 'FXYP100')]), 10,
   'A + 增額設備 取得全額 10 分');
 assertEq(bonusOf([caseWith('C 保養(一年一次)', 'RAS-100')]), 10,
   'C + 基礎設備 取得全額 10 分（回歸）');
 
-const excluded = caseWith('A 保修(一年一次)', 'FXYP100');
+const excluded = caseWith('A 保修(一年四次)', 'FXYP100');
 excluded.isPerformanceIncluded = false;
 assertEq(bonusOf([excluded]), 0,
   'isPerformanceIncluded 為 false 時不計分');
 
-const outOfRange = caseWith('A 保修(一年一次)', 'FXYP100');
+const outOfRange = caseWith('A 保修(一年四次)', 'FXYP100');
 outOfRange.completionDate = '2026-06-30';
 assertEq(bonusOf([outOfRange]), 0,
   '季度範圍外不計分');
@@ -261,17 +261,17 @@ function bonusForMulti(serviceLevel, model) {
   })[0].bonusPoints;
 }
 
-assertEq(bonusForMulti('A 保修(一年一次)', 'FXYP100'), 3,
+assertEq(bonusForMulti('A 保修(一年四次)', 'FXYP100'), 3,
   'A + 增額 多人指派含協作，分攤得 3 分');
 assertEq(
-  bonusForMulti('A 保修(一年一次)', 'FXYP100'),
+  bonusForMulti('A 保修(一年四次)', 'FXYP100'),
   bonusForMulti('C 保養(一年一次)', 'RAS-100'),
   'A/增額 與 C/基礎 的分攤結果一致'
 );
 
 assertEq(
   PU.computeAssigneePerformance({
-    cases: [caseWith('A 保修(一年一次)', 'FXYP100')],
+    cases: [caseWith('A 保修(一年四次)', 'FXYP100')],
     maintenanceCases: [],
     assignees: assignees,
     allocations: [],

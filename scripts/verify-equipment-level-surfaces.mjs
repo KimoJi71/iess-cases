@@ -163,7 +163,7 @@ try {
   const view = await evaluate(`(function(){
     var node = ViewCaseForm({
       viewingCase: { id:'R1', caseNumber:'R-001', customerName:'測試客戶',
-        storeName:'測試門市', workCategory:'維修', serviceLevel:'A 保修(一年一次)',
+        storeName:'測試門市', workCategory:'維修', serviceLevel:'A 保修(一年四次)',
         equipment: window.__equip('大金'), processRecords: [] },
       setView: function(){}, backView: 'record-list',
       processMethods: [], deviceCategories: window.__cats
@@ -244,7 +244,7 @@ try {
   const storeProj = await evaluate(`(function(){
     var node = StoreProjectForm({
       store: { id:'S1', customerName:'測試客戶', storeName:'測試門市', storeAddress:'某地',
-        serviceLevel:'A 保修(一年一次)' },
+        serviceLevel:'A 保修(一年四次)' },
       cases: [], setCases: function(){}, deviceCategories: window.__cats,
       setView: function(){}, showToast: function(){}
     });

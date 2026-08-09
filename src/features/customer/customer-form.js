@@ -20,7 +20,7 @@
       name: (targetCase && targetCase.name) || '',
       taxId: (targetCase && targetCase.taxId) || '',
       principal: (targetCase && targetCase.principal) || '',
-      serviceLevel: (targetCase && targetCase.serviceLevel) || 'A 保修(一年一次)',
+      serviceLevel: (targetCase && targetCase.serviceLevel) || 'A 保修(一年四次)',
       maintenanceInterval: (targetCase && targetCase.maintenanceInterval) || '每半年',
       phone: (targetCase && targetCase.phone) || '',
       fax: (targetCase && targetCase.fax) || '',
