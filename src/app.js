@@ -44,6 +44,7 @@
     '帳號管理': 'account-list',
     '指派人員管理': 'assignee-list',
     '設備分類管理': 'device-category-list',
+    '服務等級管理': 'service-level-list',
     '處理方式與積分管理': 'process-method-list',
     '保養分配': 'maintenance-allocation',
     '績效區域管理': 'performance-area-list'
@@ -86,7 +87,9 @@
     mobileSidebarOpen: false,
     view: initialView,
     cases: INITIAL_CASES,
-    maintenanceCases: ScheduleUtils.generateDueMaintenanceCases(INITIAL_CUSTOMERS, INITIAL_STORES, INITIAL_MAINTENANCE_CASES),
+    // 僅在 store 建構時執行一次：之後編輯服務等級的「每年保養次數」不會回頭重新產生到期保養案件
+    // （這是記憶體版 demo 可接受的限制，需重新整理頁面才會依最新設定重算）
+    maintenanceCases: ScheduleUtils.generateDueMaintenanceCases(INITIAL_CUSTOMERS, INITIAL_STORES, INITIAL_MAINTENANCE_CASES, INITIAL_SERVICE_LEVELS),
     projectCases: INITIAL_PROJECT_CASES,
     surveyCases: INITIAL_SURVEY_CASES,
     customers: INITIAL_CUSTOMERS,
@@ -98,6 +101,7 @@
     personnelStatus: INITIAL_PERSONNEL_STATUS,
     accounts: INITIAL_ACCOUNTS,
     deviceCategories: INITIAL_DEVICE_CATEGORIES,
+    serviceLevels: INITIAL_SERVICE_LEVELS,
     processMethods: INITIAL_PROCESS_METHODS,
     assignees: INITIAL_ASSIGNEES,
     maintenanceAllocations: INITIAL_MAINTENANCE_ALLOCATIONS,
@@ -194,6 +198,14 @@
       var next = typeof v === 'function' ? v(s.deviceCategories) : v;
       DeviceCategoryUtils.syncDeviceCategoryOptions(next);
       return { deviceCategories: next };
+    });
+  }
+
+  function setServiceLevels(v) {
+    store.set(function (s) {
+      var next = typeof v === 'function' ? v(s.serviceLevels) : v;
+      ServiceLevelUtils.syncServiceLevelOptions(next);
+      return { serviceLevels: next };
     });
   }
 
@@ -346,6 +358,7 @@
           cases: s.cases, setCases: setCasesData,
           maintenanceCases: s.maintenanceCases, setMaintenanceCases: setMaintenanceCases,
           assignees: s.assignees, deviceCategories: s.deviceCategories,
+          serviceLevels: s.serviceLevels,
           setViewingCase: setViewingCase, setView: setView, showToast: showToast
         });
       case 'review-view':
@@ -363,17 +376,20 @@
       case 'maintenance-view':
         return h(MaintenanceViewEditForm, {
           targetCase: s.viewingCase, stores: s.stores, customers: s.customers,
+          serviceLevels: s.serviceLevels,
           setView: setView, mode: 'view', showToast: showToast, backView: 'maintenance-list'
         });
       case 'review-maintenance-view':
         return h(MaintenanceViewEditForm, {
           targetCase: s.viewingCase, stores: s.stores, customers: s.customers,
+          serviceLevels: s.serviceLevels,
           setView: setView, mode: 'view', showToast: showToast, backView: 'review-list'
         });
       case 'maintenance-edit':
         return h(MaintenanceViewEditForm, {
           targetCase: s.editingCase, cases: s.maintenanceCases, setCases: setMaintenanceCases,
           stores: s.stores, setStores: setStores, customers: s.customers,
+          serviceLevels: s.serviceLevels,
           setView: setView, mode: 'edit', showToast: showToast
         });
       case 'project-list':
@@ -456,6 +472,7 @@
         return h(MaintenanceViewEditForm, {
           targetCase: StoreUtils.withStoreHistoryContext(s.viewingCase, s.historyStore),
           stores: s.stores, customers: s.customers,
+          serviceLevels: s.serviceLevels,
           setView: setView, mode: 'view', showToast: showToast, backView: 'store-history'
         });
       case 'store-history-project-view':
@@ -537,6 +554,7 @@
           personnelStatus: s.personnelStatus,
           setPersonnelStatus: setPersonnelStatus,
           customers: s.customers,
+          serviceLevels: s.serviceLevels,
           stores: s.stores,
           assignees: s.assignees,
           processMethods: s.processMethods,
@@ -567,7 +585,8 @@
           maintenanceAllocations: s.maintenanceAllocations,
           stores: s.stores,
           performanceAreas: s.performanceAreas,
-          deviceCategories: s.deviceCategories
+          deviceCategories: s.deviceCategories,
+          serviceLevels: s.serviceLevels
         });
       case 'data-retrieval':
         return h(DataRetrieval, {
@@ -677,6 +696,50 @@
           setView: setView,
           showToast: showToast
         });
+      case 'service-level-list':
+        return h(ServiceLevelList, {
+          serviceLevels: s.serviceLevels,
+          setServiceLevels: setServiceLevels,
+          customers: s.customers,
+          stores: s.stores,
+          cases: s.cases,
+          maintenanceCases: s.maintenanceCases,
+          projectCases: s.projectCases,
+          surveyCases: s.surveyCases,
+          personnelStatus: s.personnelStatus,
+          setEditingCase: setEditingCase,
+          setView: setView,
+          showToast: showToast
+        });
+      case 'service-level-add':
+        return h(ServiceLevelForm, {
+          serviceLevels: s.serviceLevels,
+          setServiceLevels: setServiceLevels,
+          customers: s.customers, setCustomers: setCustomers,
+          stores: s.stores, setStores: setStores,
+          cases: s.cases, setCases: setCasesData,
+          maintenanceCases: s.maintenanceCases, setMaintenanceCases: setMaintenanceCases,
+          projectCases: s.projectCases, setProjectCases: setProjectCases,
+          surveyCases: s.surveyCases, setSurveyCases: setSurveyCases,
+          personnelStatus: s.personnelStatus, setPersonnelStatus: setPersonnelStatus,
+          setView: setView,
+          showToast: showToast
+        });
+      case 'service-level-edit':
+        return h(ServiceLevelForm, {
+          serviceLevels: s.serviceLevels,
+          setServiceLevels: setServiceLevels,
+          customers: s.customers, setCustomers: setCustomers,
+          stores: s.stores, setStores: setStores,
+          cases: s.cases, setCases: setCasesData,
+          maintenanceCases: s.maintenanceCases, setMaintenanceCases: setMaintenanceCases,
+          projectCases: s.projectCases, setProjectCases: setProjectCases,
+          surveyCases: s.surveyCases, setSurveyCases: setSurveyCases,
+          personnelStatus: s.personnelStatus, setPersonnelStatus: setPersonnelStatus,
+          targetCase: s.editingCase,
+          setView: setView,
+          showToast: showToast
+        });
       case 'process-method-list':
         return h(ProcessMethodList, {
           processMethods: s.processMethods,
@@ -708,6 +771,8 @@
           assignees: s.assignees,
           customers: s.customers,
           stores: s.stores,
+          maintenanceCases: s.maintenanceCases,
+          serviceLevels: s.serviceLevels,
           maintenanceAllocations: s.maintenanceAllocations,
           setMaintenanceAllocations: setMaintenanceAllocations,
           showToast: showToast
@@ -839,6 +904,7 @@
     );
   }
 
+  ServiceLevelUtils.syncServiceLevelOptions(INITIAL_SERVICE_LEVELS);
   DeviceCategoryUtils.syncDeviceCategoryOptions(INITIAL_DEVICE_CATEGORIES);
   ProcessMethodUtils.syncProcessMethodOptions(INITIAL_PROCESS_METHODS);
   AssigneeUtils.syncAssigneeOptions(INITIAL_ASSIGNEES);

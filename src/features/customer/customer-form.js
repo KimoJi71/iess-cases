@@ -20,8 +20,7 @@
       name: (targetCase && targetCase.name) || '',
       taxId: (targetCase && targetCase.taxId) || '',
       principal: (targetCase && targetCase.principal) || '',
-      serviceLevel: (targetCase && targetCase.serviceLevel) || 'A 保修(一年一次)',
-      maintenanceInterval: (targetCase && targetCase.maintenanceInterval) || '每半年',
+      serviceLevel: (targetCase && targetCase.serviceLevel) || SERVICE_LEVEL_OPTIONS[0] || '',
       phone: (targetCase && targetCase.phone) || '',
       fax: (targetCase && targetCase.fax) || '',
       address: (targetCase && targetCase.address) || '',
@@ -150,17 +149,6 @@
                 onChange: handleChange,
                 className: 'w-full p-2.5 border rounded-md outline-none'
               }, SERVICE_LEVEL_OPTIONS.map(function (opt) {
-                return h('option', { key: opt, value: opt }, opt);
-              }))
-            ),
-            h('div', null,
-              h('label', { className: 'block text-sm mb-1' }, '保養區間'),
-              h('select', {
-                name: 'maintenanceInterval',
-                value: formData.maintenanceInterval,
-                onChange: handleChange,
-                className: 'w-full p-2.5 border rounded-md outline-none'
-              }, MAINTENANCE_INTERVAL_OPTIONS.map(function (opt) {
                 return h('option', { key: opt, value: opt }, opt);
               }))
             ),

@@ -274,7 +274,7 @@
       customerName: '',
       storeName: '',
       storeAddress: '自動帶入地址',
-      serviceLevel: 'D 維修(無簽約客戶)',
+      serviceLevel: '',
       contactPerson: '',
       suggestedContractor: '',
       entryDate: '',
@@ -301,7 +301,7 @@
         var value = e.target.value;
         formData[name] = value;
         if (name === 'customerName') {
-          formData.serviceLevel = CUSTOMER_SERVICE_LEVEL_MAP[value] || 'D 維修(無簽約客戶)';
+          formData.serviceLevel = CustomerUtils.getServiceLevelByCustomerName(customers, value);
           formData.storeName = '';
           formData.storeAddress = '';
         }
@@ -631,7 +631,7 @@
           storeName: formData.storeName
         }, stores);
         detailsData.storeAddress = synced.storeAddress || detailsData.storeAddress || '';
-        detailsData.serviceLevel = synced.serviceLevel || detailsData.serviceLevel || 'D 維修(無簽約客戶)';
+        detailsData.serviceLevel = synced.serviceLevel || detailsData.serviceLevel || '';
       }
 
       function handleChange(e) {
@@ -642,7 +642,7 @@
         } else {
           formData[name] = value;
           if (name === 'customerName') {
-            detailsData.serviceLevel = CUSTOMER_SERVICE_LEVEL_MAP[value] || 'D 維修(無簽約客戶)';
+            detailsData.serviceLevel = CustomerUtils.getServiceLevelByCustomerName(customers, value);
             formData.storeName = '';
             detailsData.storeAddress = '';
           }

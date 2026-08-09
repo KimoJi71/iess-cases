@@ -55,6 +55,7 @@
     var assignees = props.assignees || [];
     var processMethods = props.processMethods || [];
     var deviceCategories = props.deviceCategories || [];
+    var serviceLevels = props.serviceLevels || [];
     var showToast = props.showToast;
 
     var calState = loadArrangementCalState();
@@ -435,7 +436,12 @@
           scheduleModal.formData.companyCity = '';
           scheduleModal.formData.companyDistrict = '';
           scheduleModal.formData.storeAddress = '';
-          scheduleModal.formData.serviceLevel = CUSTOMER_SERVICE_LEVEL_MAP[value] || scheduleModal.formData.serviceLevel;
+          // 排程 Modal 刻意維持「查無則保留原值」：此欄僅供本次排程參考用的顯示，
+          // 換客戶查無服務等級時清空反而會讓使用者誤以為原本的排程資訊被清掉，
+          // 與其他表單「查無即清空」的一致性取捨不同，非遺漏。
+          scheduleModal.formData.serviceLevel =
+            CustomerUtils.getServiceLevelByCustomerName(customers, value)
+            || scheduleModal.formData.serviceLevel;
         }
         if (name === 'storeName') {
           var synced = ScheduleUtils.applyStoreSnapshot(scheduleModal.formData, stores);
@@ -715,10 +721,10 @@
 
       function renderMaintenanceScheduleDetails(formData) {
         var store = ScheduleUtils.resolveStore(stores, formData.customerName, formData.storeName);
-        var customer = customers.find(function (c) { return c.name === formData.customerName; });
-        var maintenanceInterval = customer ? customer.maintenanceInterval : '';
+        var levelName = formData.serviceLevel
+          || CustomerUtils.getServiceLevelByCustomerName(customers, formData.customerName);
         var refDate = ScheduleUtils.resolveMaintenanceReferenceDate(formData);
-        var periodLabel = ScheduleUtils.formatMaintenancePeriod(refDate, maintenanceInterval);
+        var periodLabel = ScheduleUtils.formatMaintenancePeriod(refDate, serviceLevels, levelName);
         var inputCls = 'w-full p-2 border rounded-md outline-none focus:border-blue-500 text-sm';
 
         return h('div', { className: 'space-y-4' },

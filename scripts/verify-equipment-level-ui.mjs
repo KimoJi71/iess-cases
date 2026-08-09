@@ -261,7 +261,7 @@ try {
     var quarter = { start:'2026-07-01', end:'2026-09-30', label:'x' };
     function bonus(brand){
       return PerformanceUtils.computeAssigneePerformance({
-        cases: [{ id:'R1', serviceLevel:'A 保修(一年一次)', isPerformanceIncluded:true,
+        cases: [{ id:'R1', serviceLevel:'A 保修(一年四次)', isPerformanceIncluded:true,
           completionDate:'2026-08-05', performanceAssignees:['王小明'], collaborators:[],
           equipment: { category:'分離式', brand:brand, deviceName:'分離式冷氣',
             specification:'3.5匹', model:'DUP-1' },

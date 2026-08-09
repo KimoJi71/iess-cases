@@ -40,9 +40,17 @@
     });
   }
 
+  // 由客戶名稱查其服務等級；查無客戶或客戶未設定時回空字串
+  function getServiceLevelByCustomerName(customers, name) {
+    if (!name) return '';
+    var customer = (customers || []).find(function (c) { return c && c.name === name; });
+    return (customer && customer.serviceLevel) || '';
+  }
+
   window.CustomerUtils = {
     isEnabled: isEnabled,
     getEnabledCustomers: getEnabledCustomers,
-    getCustomerNameOptions: getCustomerNameOptions
+    getCustomerNameOptions: getCustomerNameOptions,
+    getServiceLevelByCustomerName: getServiceLevelByCustomerName
   };
 })();

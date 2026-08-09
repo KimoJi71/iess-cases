@@ -51,13 +51,9 @@ const STORE_AREA_OPTIONS = (function () {
   });
   return list;
 })();
-const SERVICE_LEVEL_OPTIONS = [
-  'A 保修(一年一次)',
-  'B 保修(一年兩次)',
-  'C 保養(一年一次)',
-  'D 維修(無簽約客戶)'
-];
-const MAINTENANCE_INTERVAL_OPTIONS = ['每季', '每半年', '每年'];
+// 服務等級選項：由 ServiceLevelUtils.syncServiceLevelOptions() 於啟動與每次異動時就地填入。
+// 保留常數本身，因為 customer-form.js 與 data-retrieval.js 直接引用此參考。
+const SERVICE_LEVEL_OPTIONS = [];
 const CUSTOMER_ENABLED_FILTERS = ['全部', '啟用', '停用'];
 const STORE_STATUS_OPTIONS = ['正常營業', '整裝', '撤店'];
 const WORK_ORDER_APPLY_OPTIONS = ['是', '否'];
@@ -138,15 +134,6 @@ const DUCT_VENT_OUTLETS = [
 const DUCT_RETURN_OUTLETS = ['輕鋼架-抽取式回風口(60*60cm)(框+網)', '輕鋼架-一體成型回風口(60*60cm)(框+網)', '回風板(尺寸120*45cm)', '回風板(尺寸140*45cm)']; // 回風口（多選 + 數量）
 const DUCT_CUSTOM_BOX_OPTIONS = ['特製風箱(NAS附圖)', '請風管廠商前來丈量安裝']; // 特製風箱（單選 + 其他）
 
-// 客戶名稱對應服務等級的映射表
-const CUSTOMER_SERVICE_LEVEL_MAP = {
-  '屈臣氏': 'A 保修(一年一次)',
-  '星巴克': 'B 保修(一年兩次)',
-  '萊爾富': 'C 保養(一年一次)',
-  '統一超商': 'D 維修(無簽約客戶)',
-  '全家便利商店': 'D 維修(無簽約客戶)'
-};
-
 // --- 日期計算 ---
 const today = new Date();
 const todayDate = today.toISOString().split('T')[0];
@@ -196,6 +183,7 @@ const PERMISSION_FUNCTIONS = [
   '帳號管理',
   '指派人員管理',
   '設備分類管理',
+  '服務等級管理',
   '處理方式與積分管理',
   '保養分配',
   '績效區域管理'
@@ -228,6 +216,6 @@ const PERMISSION_TREE = [
   },
   {
     id: '系統權限',
-    children: ['帳號管理', '指派人員管理', '設備分類管理', '處理方式與積分管理', '保養分配', '績效區域管理']
+    children: ['帳號管理', '指派人員管理', '設備分類管理', '服務等級管理', '處理方式與積分管理', '保養分配', '績效區域管理']
   }
 ];

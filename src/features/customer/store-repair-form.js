@@ -65,7 +65,7 @@
           expectedTimeStart: payload.expectedTimeStart,
           expectedTimeEnd: '',
           reporter: payload.reporter,
-          serviceLevel: store.serviceLevel || 'D 維修(無簽約客戶)',
+          serviceLevel: store.serviceLevel || '',
           companyCity: store.companyCity || '',
           companyDistrict: store.companyDistrict || '',
           storeAddress: StoreUtils.buildFullAddress(store),

@@ -4,8 +4,6 @@
 (function () {
   'use strict';
 
-  var INTERVAL_MONTHS = { '每季': 3, '每半年': 6, '每年': 12 };
-
   var CATEGORY_COLORS = {
     '保養': '#16a34a',
     '保養清潔': '#16a34a',
@@ -129,7 +127,7 @@
     return e && e !== s ? s + ' ~ ' + e : s;
   }
 
-  function generateDueMaintenanceCases(customers, stores, existingCases) {
+  function generateDueMaintenanceCases(customers, stores, existingCases, serviceLevels) {
     var result = existingCases.slice();
     var customerMap = {};
     customers.forEach(function (c) { customerMap[c.name] = c; });
@@ -138,9 +136,11 @@
     stores.forEach(function (store) {
       if (!store.lastMaintenanceDate || store.storeStatus !== '正常營業') return;
       var cust = customerMap[store.customerName];
-      if (!cust || cust.enabled === false || !cust.maintenanceInterval) return;
-      var months = INTERVAL_MONTHS[cust.maintenanceInterval];
-      if (!months) return;
+      if (!cust || cust.enabled === false) return;
+      // 每年保養次數換算到期間隔月數；次數 0（或查無等級）代表不納入保養排程
+      var visitsPerYear = ServiceLevelUtils.getMaintenanceCount(serviceLevels, cust.serviceLevel);
+      if (!visitsPerYear) return;
+      var months = Math.max(1, Math.round(12 / visitsPerYear));
 
       var dueMonth = addMonthsToMonth(store.lastMaintenanceDate, months);
       if (dueMonth > currentMonth) return;
@@ -233,22 +233,15 @@
     return '';
   }
 
-  function formatMaintenancePeriod(dateStr, maintenanceInterval) {
+  // 目前保養季度：依服務等級的保養區間，回傳「YYYY 第N次」；無區間或查無等級時只回年份
+  function formatMaintenancePeriod(dateStr, serviceLevels, serviceLevelName) {
     if (!dateStr) return '';
-    var year = parseInt(dateStr.slice(0, 4), 10);
-    var month = parseInt(dateStr.slice(5, 7), 10);
+    var year = parseInt(String(dateStr).slice(0, 4), 10);
+    var month = parseInt(String(dateStr).slice(5, 7), 10);
     if (!year || !month) return '';
-
-    if (maintenanceInterval === '每季') {
-      return year + ' Q' + Math.ceil(month / 3);
-    }
-    if (maintenanceInterval === '每半年') {
-      return year + (month <= 6 ? ' 上半年' : ' 下半年');
-    }
-    if (maintenanceInterval === '每年') {
-      return String(year);
-    }
-    return String(year);
+    var period = ServiceLevelUtils.findPeriodForMonth(serviceLevels, serviceLevelName, month);
+    if (!period) return String(year);
+    return year + ' 第' + period.visitIndex + '次';
   }
 
   function resolveMaintenanceStatus(currentStatus, planDate) {
