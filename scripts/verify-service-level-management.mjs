@@ -425,6 +425,25 @@ try {
       container.appendChild(window.__renderForm(target, levels));
       return container;
     };
+    // src/core/searchable-select.js 攔截了 h('select', ...)：頁面上完全沒有原生 <select>，
+    // 而是一個保留 name 屬性、role="combobox" 的 <input>，開啟時才會把選項選單
+    // portal 到 document.body（<ul class="searchable-select__menu--portal">，
+    // 內含 <button role="option">）。元件監聽的是 input 的 mousedown 來開啟選單、
+    // 選項按鈕的 mousedown（而非 click）來選取（見該檔 handleInputMouseDown/chooseOption）。
+    // 實測 input.focus() 在 headless Chrome 中會更新 document.activeElement，
+    // 但不一定真的觸發 'focus' 事件（需要瀏覽器視窗本身有焦點），故改用更可靠的
+    // mousedown 合成事件來開啟選單，貼近使用者以滑鼠點擊下拉框的操作。
+    window.__chooseOption = function (container, name, label) {
+      var input = container.querySelector('[name="' + name + '"]');
+      if (!input) throw new Error('__chooseOption: 找不到欄位 ' + name);
+      input.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
+      var btns = Array.prototype.filter.call(
+        document.querySelectorAll('.searchable-select__menu--portal .searchable-select__option'),
+        function (b) { return b.textContent.trim() === label; }
+      );
+      if (!btns.length) throw new Error('__chooseOption: 欄位 ' + name + ' 找不到選項 ' + label);
+      btns[0].dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
+    };
     window.__fill = function (node, values) {
       // 文字／數字 input 的 onChange 在此框架對應原生 'input' 事件（貼近 React 語意），
       // 只有 select/checkbox 等才對應 'change'，故底下依欄位型別分別 dispatch。
@@ -439,15 +458,11 @@ try {
         cnt.dispatchEvent(new Event('input', { bubbles: true }));
       }
       if (values.countsBonusPoints !== undefined) {
-        var sel = node.querySelector('select[name="countsBonusPoints"]');
-        sel.value = values.countsBonusPoints ? '是' : '否';
-        sel.dispatchEvent(new Event('change', { bubbles: true }));
+        window.__chooseOption(node, 'countsBonusPoints', values.countsBonusPoints ? '是' : '否');
       }
       (values.periods || []).forEach(function (p, i) {
-        var s = node.querySelector('select[name="startMonth-' + (i + 1) + '"]');
-        var e = node.querySelector('select[name="endMonth-' + (i + 1) + '"]');
-        s.value = String(p[0]); s.dispatchEvent(new Event('change', { bubbles: true }));
-        e.value = String(p[1]); e.dispatchEvent(new Event('change', { bubbles: true }));
+        window.__chooseOption(node, 'startMonth-' + (i + 1), p[0] + '月');
+        window.__chooseOption(node, 'endMonth-' + (i + 1), p[1] + '月');
       });
     };
     window.__submit = function (node) {
@@ -495,17 +510,19 @@ try {
 
   console.log('\nSection 3｜次數變更時區間列的增減');
   const rowCounts = await evaluate(`(function(){
+    // searchable-select 沒有原生 <select>，區間列的月份欄位改用 name 屬性選取
+    // （name 屬性仍保留在元件內部的 <input role="combobox"> 上）。
     var node = window.__mountForm(null);
     var out = {};
-    out.zero = node.querySelectorAll('select[name^="startMonth-"]').length;
+    out.zero = node.querySelectorAll('[name^="startMonth-"]').length;
     out.zeroHint = node.textContent.indexOf('此服務等級不納入保養分配') !== -1;
     window.__fill(node, { maintenanceCount: 3 });
-    out.three = node.querySelectorAll('select[name^="startMonth-"]').length;
+    out.three = node.querySelectorAll('[name^="startMonth-"]').length;
     window.__fill(node, { periods: [[1, 4], [5, 8], [9, 12]] });
     window.__fill(node, { maintenanceCount: 2 });
-    out.two = node.querySelectorAll('select[name^="startMonth-"]').length;
-    out.keptFirst = node.querySelector('select[name="startMonth-1"]').value;
-    out.keptSecond = node.querySelector('select[name="endMonth-2"]').value;
+    out.two = node.querySelectorAll('[name^="startMonth-"]').length;
+    out.keptFirst = node.querySelector('[name="startMonth-1"]').value;
+    out.keptSecond = node.querySelector('[name="endMonth-2"]').value;
     node.remove();
     return out;
   })()`);
@@ -513,8 +530,10 @@ try {
   assertEq(rowCounts.zeroHint, true, '次數 0 時顯示「此服務等級不納入保養分配」');
   assertEq(rowCounts.three, 3, '次數改 3 產生 3 列');
   assertEq(rowCounts.two, 2, '次數改 2 砍到 2 列');
-  assertEq(rowCounts.keptFirst, '1', '減少列數時保留第 1 列已填值');
-  assertEq(rowCounts.keptSecond, '8', '減少列數時保留第 2 列已填值');
+  // searchable-select 的 input.value 顯示的是選項標籤（如「1月」），而非原始數值，
+  // 故此處讀回標籤字串以證明「縮減列數時已填值仍保留」。
+  assertEq(rowCounts.keptFirst, '1月', '減少列數時保留第 1 列已填值');
+  assertEq(rowCounts.keptSecond, '8月', '減少列數時保留第 2 列已填值');
 
   console.log('\nSection 3｜新增成功');
   const added = await evaluate(`(function(){

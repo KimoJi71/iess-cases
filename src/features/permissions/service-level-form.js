@@ -131,7 +131,6 @@
               h('span', { className: 'w-16 text-sm text-gray-700' }, '第 ' + n + ' 次'),
               h('select', {
                 name: 'startMonth-' + n,
-                native: true,
                 value: p.startMonth === '' ? '' : String(p.startMonth),
                 onChange: function (e) { handleMonthChange(index, 'startMonth', e.target.value); },
                 className: 'w-28 p-2.5 border rounded-md outline-none focus:border-blue-500 bg-white'
@@ -144,7 +143,6 @@
               h('span', { className: 'text-gray-400' }, '～'),
               h('select', {
                 name: 'endMonth-' + n,
-                native: true,
                 value: p.endMonth === '' ? '' : String(p.endMonth),
                 onChange: function (e) { handleMonthChange(index, 'endMonth', e.target.value); },
                 className: 'w-28 p-2.5 border rounded-md outline-none focus:border-blue-500 bg-white'
@@ -196,7 +194,6 @@
               h('label', { className: 'block text-sm mb-1' }, '是否計算增額積分'),
               h('select', {
                 name: 'countsBonusPoints',
-                native: true,
                 value: formData.countsBonusPoints ? '是' : '否',
                 onChange: handleBonusChange,
                 className: 'w-full p-2.5 border rounded-md outline-none focus:border-blue-500 bg-white'
