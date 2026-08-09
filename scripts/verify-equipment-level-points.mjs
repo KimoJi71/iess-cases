@@ -35,6 +35,7 @@ function assertEq(actual, expected, name) {
 
 const sandbox = {
   console,
+  SERVICE_LEVEL_OPTIONS: [],
   // 必須與 src/data/options.js 的 EQUIPMENT_LEVEL_OPTIONS 一致
   EQUIPMENT_LEVEL_OPTIONS: ['基礎設備', '增額設備'],
   // 必須與 src/data/options.js 的 DEFAULT_EQUIPMENT_LEVEL 一致
@@ -65,6 +66,7 @@ sandbox.AssigneeUtils = {
 };
 
 load('src/features/permissions/device-category-utils.js');
+load('src/features/permissions/service-level-utils.js');
 load('src/features/repair/case-assignee-utils.js');
 load('src/features/reports/performance-utils.js');
 
@@ -179,25 +181,33 @@ function caseWith(serviceLevel, model) {
 
 const PU = sandbox.window.PerformanceUtils;
 
-assertEq(PU.isBonusEligible(caseWith('A 保修(一年四次)', 'RAS-100'), cats), false,
+// 與 seed 的 INITIAL_SERVICE_LEVELS 一致：A/B 不計增額積分，C/D 計增額積分
+const sls = [
+  { id: 'SL001', name: 'A 保修(一年四次)', maintenanceCount: 4, countsBonusPoints: false, periods: [] },
+  { id: 'SL002', name: 'B 保修(一年兩次)', maintenanceCount: 2, countsBonusPoints: false, periods: [] },
+  { id: 'SL003', name: 'C 保養(一年一次)', maintenanceCount: 1, countsBonusPoints: true, periods: [] },
+  { id: 'SL004', name: 'D 維修(無簽約客戶)', maintenanceCount: 0, countsBonusPoints: true, periods: [] }
+];
+
+assertEq(PU.isBonusEligible(caseWith('A 保修(一年四次)', 'RAS-100'), cats, sls), false,
   'A + 基礎設備 不計分');
-assertEq(PU.isBonusEligible(caseWith('A 保修(一年四次)', 'FXYP100'), cats), true,
+assertEq(PU.isBonusEligible(caseWith('A 保修(一年四次)', 'FXYP100'), cats, sls), true,
   'A + 增額設備 計分');
-assertEq(PU.isBonusEligible(caseWith('B 保修(一年兩次)', 'FXYP100'), cats), true,
+assertEq(PU.isBonusEligible(caseWith('B 保修(一年兩次)', 'FXYP100'), cats, sls), true,
   'B + 增額設備 計分');
-assertEq(PU.isBonusEligible(caseWith('B 保修(一年兩次)', 'RAS-100'), cats), false,
+assertEq(PU.isBonusEligible(caseWith('B 保修(一年兩次)', 'RAS-100'), cats, sls), false,
   'B + 基礎設備 不計分');
-assertEq(PU.isBonusEligible(caseWith('C 保養(一年一次)', 'RAS-100'), cats), true,
+assertEq(PU.isBonusEligible(caseWith('C 保養(一年一次)', 'RAS-100'), cats, sls), true,
   'C + 基礎設備 仍計分（回歸）');
-assertEq(PU.isBonusEligible(caseWith('D 維修(無簽約客戶)', 'RAS-100'), cats), true,
+assertEq(PU.isBonusEligible(caseWith('D 維修(無簽約客戶)', 'RAS-100'), cats, sls), true,
   'D + 基礎設備 仍計分（回歸）');
-assertEq(PU.isBonusEligible(caseWith('A 保修(一年四次)', '查無此型號'), cats), false,
+assertEq(PU.isBonusEligible(caseWith('A 保修(一年四次)', '查無此型號'), cats, sls), false,
   'A + 型號查無分類 不計分');
-assertEq(PU.isBonusEligible(caseWith('A 保修(一年四次)', null), cats), false,
+assertEq(PU.isBonusEligible(caseWith('A 保修(一年四次)', null), cats, sls), false,
   'A + 案件無設備 不計分');
-assertEq(PU.isBonusEligible(caseWith('A 保修(一年四次)', 'PA-063'), cats), false,
+assertEq(PU.isBonusEligible(caseWith('A 保修(一年四次)', 'PA-063'), cats, sls), false,
   'A + 分類無 equipmentLevel 欄位 不計分');
-assertEq(PU.isBonusEligible(caseWith('', 'FXYP100'), cats), true,
+assertEq(PU.isBonusEligible(caseWith('', 'FXYP100'), cats, sls), true,
   '服務等級為空 + 增額設備 計分');
 
 console.log('\ngetCaseEquipmentLevel null-safety');
@@ -220,6 +230,7 @@ function bonusOf(cases) {
     assignees: assignees,
     allocations: [],
     deviceCategories: cats,
+    serviceLevels: sls,
     quarter: quarter
   })[0].bonusPoints;
 }
@@ -257,6 +268,7 @@ function bonusForMulti(serviceLevel, model) {
     assignees: assignees,
     allocations: [],
     deviceCategories: cats,
+    serviceLevels: sls,
     quarter: quarter
   })[0].bonusPoints;
 }

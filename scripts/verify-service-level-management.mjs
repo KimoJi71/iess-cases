@@ -609,6 +609,82 @@ try {
   assertEq(editNoRename.bonus, true, '其他欄位更新成功');
   assertDeep(editNoRename.toasts, [['服務等級更新成功', 'success']], '未改名時 toast 不提同步筆數');
 
+  console.log('\nSection 4｜isBonusEligible 改吃 serviceLevels');
+  await evaluate(`
+    window.__cats = [
+      { id: 'DC1', category: '室內機', brand: '大金', deviceName: '分離式',
+        specification: '2噸', model: 'ADD-1', equipmentLevel: '增額設備' },
+      { id: 'DC2', category: '室內機', brand: '大金', deviceName: '分離式',
+        specification: '3噸', model: 'BASE-1', equipmentLevel: '基礎設備' }
+    ];
+    window.__case = function (level, model) {
+      return { id: 'X', serviceLevel: level, equipment: model ? { model: model } : null };
+    };
+    'ok'`);
+  const SLS = 'INITIAL_SERVICE_LEVELS';
+  assertEq(await evaluate(`PerformanceUtils.isBonusEligible(window.__case('C 保養(一年一次)', 'BASE-1'), window.__cats, ${SLS})`),
+    true, 'C（勾選計分）+ 基礎設備 計分');
+  assertEq(await evaluate(`PerformanceUtils.isBonusEligible(window.__case('D 維修(無簽約客戶)', null), window.__cats, ${SLS})`),
+    true, 'D（勾選計分）無設備仍計分');
+  assertEq(await evaluate(`PerformanceUtils.isBonusEligible(window.__case('A 保修(一年四次)', 'BASE-1'), window.__cats, ${SLS})`),
+    false, 'A（未勾選）+ 基礎設備 不計分');
+  assertEq(await evaluate(`PerformanceUtils.isBonusEligible(window.__case('A 保修(一年四次)', 'ADD-1'), window.__cats, ${SLS})`),
+    true, 'A（未勾選）+ 增額設備 計分');
+  assertEq(await evaluate(`PerformanceUtils.isBonusEligible(window.__case('B 保修(一年兩次)', 'ADD-1'), window.__cats, ${SLS})`),
+    true, 'B（未勾選）+ 增額設備 計分');
+  assertEq(await evaluate(`PerformanceUtils.isBonusEligible(window.__case('查無此等級', 'BASE-1'), window.__cats, ${SLS})`),
+    false, '查無等級 + 基礎設備 不計分');
+  assertEq(await evaluate(`PerformanceUtils.isBonusEligible(window.__case('', 'ADD-1'), window.__cats, ${SLS})`),
+    true, '等級空字串 + 增額設備 計分');
+  assertEq(await evaluate(`PerformanceUtils.isBonusEligible(window.__case('C 保養(一年一次)', 'BASE-1'), window.__cats, [])`),
+    false, 'serviceLevels 為空陣列時只看設備等級');
+  assertEq(await evaluate('typeof PerformanceUtils.isServiceLevelCD'), 'undefined',
+    'isServiceLevelCD 已自 export 移除');
+
+  console.log('\nSection 4｜銷案審核總積分欄改由服務等級旗標決定');
+  const reviewCells = await evaluate(`(function(){
+    var levels = [
+      { id: 'SL001', name: 'A 保修(一年四次)', maintenanceCount: 4, countsBonusPoints: true, periods: [] },
+      { id: 'SL003', name: 'C 保養(一年一次)', maintenanceCount: 1, countsBonusPoints: false, periods: [] }
+    ];
+    var cases = [
+      { id: 'R1', caseNumber: 'SL001', customerName: '甲', storeName: '甲一', serviceLevel: 'A 保修(一年四次)',
+        workCategory: '一般叫修', isClosed: true, closeDate: todayDate + ' 10:00',
+        processRecords: [{ points: 5, qty: 2 }] },
+      { id: 'R2', caseNumber: 'SL002', customerName: '乙', storeName: '乙一', serviceLevel: 'C 保養(一年一次)',
+        workCategory: '一般叫修', isClosed: true, closeDate: todayDate + ' 10:00',
+        processRecords: [{ points: 7, qty: 1 }] }
+    ];
+    var node = CaseReviewList({
+      cases: cases, setCases: function () {},
+      maintenanceCases: [], setMaintenanceCases: function () {},
+      assignees: [], deviceCategories: window.__cats, serviceLevels: levels,
+      setViewingCase: function () {}, setView: function () {}, showToast: function () {}
+    });
+    var headers = Array.prototype.map.call(node.querySelectorAll('thead th'),
+      function (t) { return t.textContent.trim(); });
+    var idx = headers.indexOf('總積分');
+    var out = {};
+    Array.prototype.forEach.call(node.querySelectorAll('tbody tr'), function (tr) {
+      var tds = tr.querySelectorAll('td');
+      if (!tds.length) return;
+      out[tds[2].textContent.trim()] = tds[idx].textContent.trim();
+    });
+    node.remove();
+    return out;
+  })()`);
+  assertEq(reviewCells.SL001, '10', '勾選計分的 A 顯示 5×2 = 10');
+  assertEq(reviewCells.SL002, '', '未勾選計分且非增額設備的 C 留空');
+
+  console.log('\nSection 4｜app.js 已往下傳 serviceLevels');
+  const appSrc4 = readFileSync(join(ROOT, 'src/app.js'), 'utf8');
+  const reviewIdx = appSrc4.indexOf('CaseReviewList');
+  assertTrue(appSrc4.slice(reviewIdx, reviewIdx + 400).includes('serviceLevels'),
+    'app.js 的 CaseReviewList 呼叫含 serviceLevels');
+  const statsIdx = appSrc4.indexOf('CasePerformanceStats');
+  assertTrue(appSrc4.slice(statsIdx, statsIdx + 500).includes('serviceLevels'),
+    'app.js 的 CasePerformanceStats 呼叫含 serviceLevels');
+
   // === UI sections 由後續 Task 追加 ===
 
   assertEq(consoleErrors.length, 0, '全程無 JS 錯誤');

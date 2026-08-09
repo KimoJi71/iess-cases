@@ -356,6 +356,7 @@
           cases: s.cases, setCases: setCasesData,
           maintenanceCases: s.maintenanceCases, setMaintenanceCases: setMaintenanceCases,
           assignees: s.assignees, deviceCategories: s.deviceCategories,
+          serviceLevels: s.serviceLevels,
           setViewingCase: setViewingCase, setView: setView, showToast: showToast
         });
       case 'review-view':
@@ -577,7 +578,8 @@
           maintenanceAllocations: s.maintenanceAllocations,
           stores: s.stores,
           performanceAreas: s.performanceAreas,
-          deviceCategories: s.deviceCategories
+          deviceCategories: s.deviceCategories,
+          serviceLevels: s.serviceLevels
         });
       case 'data-retrieval':
         return h(DataRetrieval, {

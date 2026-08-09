@@ -144,6 +144,7 @@ try {
         setMaintenanceCases: function () {},
         assignees: [],
         deviceCategories: window.__deviceCategories,
+        serviceLevels: INITIAL_SERVICE_LEVELS,
         setViewingCase: function () {},
         setView: function () {},
         showToast: function () {}
@@ -202,6 +203,9 @@ try {
   const callIdx = appSrc.indexOf('CaseReviewList');
   assertTrue(appSrc.slice(callIdx, callIdx + 400).includes('deviceCategories'),
     'app.js 的 CaseReviewList 呼叫含 deviceCategories');
+  const reviewIdx2 = appSrc.indexOf('CaseReviewList');
+  assertTrue(appSrc.slice(reviewIdx2, reviewIdx2 + 400).includes('serviceLevels'),
+    'app.js 的 CaseReviewList 呼叫含 serviceLevels');
 
   assertEq(consoleErrors.length, 0, '全程無 JS 錯誤');
 } catch (e) {

@@ -1,6 +1,6 @@
 /*
  * features/repair/case-review.js — 案件銷案審核列表（列入績效）
- * props: { cases, setCases, maintenanceCases, setMaintenanceCases, assignees, deviceCategories, setViewingCase, setView, showToast }
+ * props: { cases, setCases, maintenanceCases, setMaintenanceCases, assignees, deviceCategories, serviceLevels, setViewingCase, setView, showToast }
  */
 (function () {
   'use strict';
@@ -11,11 +11,11 @@
     return c && c.sourceType === 'maintenance';
   }
 
-  // 增額任務：C/D 服務等級的叫修案件，或 A/B 但設備為增額設備的叫修案件。
+  // 增額任務：服務等級設定為計算增額積分的叫修案件，或雖未設定但設備為增額設備的叫修案件。
   // 保養計劃案件不列入增額積分（與 performance-utils 的統計口徑一致），一律回 null。
-  function resolveReviewCaseBonusPoints(c, deviceCategories) {
+  function resolveReviewCaseBonusPoints(c, deviceCategories, serviceLevels) {
     if (!c || isMaintenancePlanCase(c)) return null;
-    if (!PerformanceUtils.isBonusEligible(c, deviceCategories)) return null;
+    if (!PerformanceUtils.isBonusEligible(c, deviceCategories, serviceLevels)) return null;
     return PerformanceUtils.sumProcessPoints(c);
   }
 
@@ -44,6 +44,7 @@
     var setMaintenanceCases = props.setMaintenanceCases;
     var assignees = props.assignees || [];
     var deviceCategories = props.deviceCategories || [];
+    var serviceLevels = props.serviceLevels || [];
     var setViewingCase = props.setViewingCase;
     var setView = props.setView;
     var showToast = props.showToast;
@@ -221,7 +222,7 @@
                   h('td', { className: 'p-3' }, c.storeName),
                   h('td', { className: 'p-3' }, StoreUtils.getRecordArea(c) || '—'),
                   h('td', { className: 'p-3' }, c.serviceLevel),
-                  h('td', { className: 'p-3' }, formatBonusPoints(resolveReviewCaseBonusPoints(c, deviceCategories))),
+                  h('td', { className: 'p-3' }, formatBonusPoints(resolveReviewCaseBonusPoints(c, deviceCategories, serviceLevels))),
                   h('td', { className: 'p-3' }, isMaintenance ? '例行保養' : c.workCategory),
                   h('td', { className: 'p-3' }, isMaintenance ? '' : c.repairItem),
                   h('td', { className: 'p-3' }, isMaintenance ? '' : c.repairReason),

@@ -63,6 +63,7 @@ function createSandbox() {
   const sandbox = {
     console,
     window: {},
+    SERVICE_LEVEL_OPTIONS: [],
     ASSIGNEES: [],
     ACCOUNT_ASSIGNEE_OPTIONS: [],
     SCHEDULE_ASSIGNEE_OPTIONS: [],
@@ -82,6 +83,7 @@ function loadModules() {
   const sandbox = createSandbox();
   loadIife('src/features/repair/case-assignee-utils.js', sandbox);
   loadIife('src/features/permissions/assignee-utils.js', sandbox);
+  loadIife('src/features/permissions/service-level-utils.js', sandbox);
   loadIife('src/features/reports/performance-utils.js', sandbox);
   loadIife('src/features/reports/data-retrieval-utils.js', sandbox);
   return {
@@ -210,11 +212,17 @@ function testPerformanceReport(PU) {
     { id: 'b', name: 'B組' },
     { id: 'c', name: 'C組' },
   ];
+  // makeRepairCase() 的 serviceLevel 為 fixture 用途的 'D 一般'，非 seed 的四筆正式名稱；
+  // 沿用舊版 isServiceLevelCD 的 D 前綴一律計分行為，故此處視為勾選計算增額積分。
+  const serviceLevels = [
+    { id: 'SLX', name: 'D 一般', maintenanceCount: 0, countsBonusPoints: true, periods: [] },
+  ];
   const rows = PU.computeAssigneePerformance({
     cases: [makeRepairCase()],
     maintenanceCases: [],
     assignees,
     allocations: [],
+    serviceLevels,
     quarter,
   });
   const byName = Object.fromEntries(rows.map((r) => [r.name, r.bonusPoints]));
