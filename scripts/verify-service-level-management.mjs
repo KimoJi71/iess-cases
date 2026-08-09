@@ -390,6 +390,206 @@ try {
   const sidebarSrc = readFileSync(join(ROOT, 'src/shell/permissions-sidebar.js'), 'utf8');
   assertTrue(sidebarSrc.includes('服務等級管理'), 'permissions-sidebar 有選單項目');
 
+  console.log('\nSection 3｜表單 validate 擋關');
+  await evaluate(`
+    window.__renderForm = function (target, levels) {
+      window.__formLevels = levels || JSON.parse(JSON.stringify(INITIAL_SERVICE_LEVELS));
+      window.__formCustomers = [{ id: 'C1', name: '甲', serviceLevel: 'A 保修(一年四次)' }];
+      window.__formStores = [{ id: 'S1', storeName: '甲一店', serviceLevel: 'A 保修(一年四次)' }];
+      window.__formCases = [{ id: 'R1', serviceLevel: 'A 保修(一年四次)' }];
+      window.__formMaint = [{ id: 'M1', serviceLevel: 'A 保修(一年四次)' }];
+      window.__toasts = [];
+      window.__view = '';
+      return ServiceLevelForm({
+        serviceLevels: window.__formLevels,
+        setServiceLevels: function (v) { window.__formLevels = v; },
+        customers: window.__formCustomers,
+        setCustomers: function (v) { window.__formCustomers = v; },
+        stores: window.__formStores,
+        setStores: function (v) { window.__formStores = v; },
+        cases: window.__formCases,
+        setCases: function (v) { window.__formCases = v; },
+        maintenanceCases: window.__formMaint,
+        setMaintenanceCases: function (v) { window.__formMaint = v; },
+        targetCase: target,
+        setView: function (v) { window.__view = v; },
+        showToast: function (msg, kind) { window.__toasts.push([msg, kind || 'success']); }
+      });
+    };
+    // stateful() 的 rerender 是以 parentNode.replaceChild 換掉整棵樹，
+    // 所以測試需固定持有一個「容器」節點：容器本身不會被換掉，
+    // 之後所有 fill/submit/查詢一律透過容器進行，才能拿到 rerender 後的最新樹。
+    window.__mountForm = function (target, levels) {
+      var container = document.createElement('div');
+      document.body.appendChild(container);
+      container.appendChild(window.__renderForm(target, levels));
+      return container;
+    };
+    window.__fill = function (node, values) {
+      // 文字／數字 input 的 onChange 在此框架對應原生 'input' 事件（貼近 React 語意），
+      // 只有 select/checkbox 等才對應 'change'，故底下依欄位型別分別 dispatch。
+      var name = node.querySelector('input[name="name"]');
+      if (values.name !== undefined) {
+        name.value = values.name;
+        name.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+      if (values.maintenanceCount !== undefined) {
+        var cnt = node.querySelector('input[name="maintenanceCount"]');
+        cnt.value = String(values.maintenanceCount);
+        cnt.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+      if (values.countsBonusPoints !== undefined) {
+        var sel = node.querySelector('select[name="countsBonusPoints"]');
+        sel.value = values.countsBonusPoints ? '是' : '否';
+        sel.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+      (values.periods || []).forEach(function (p, i) {
+        var s = node.querySelector('select[name="startMonth-' + (i + 1) + '"]');
+        var e = node.querySelector('select[name="endMonth-' + (i + 1) + '"]');
+        s.value = String(p[0]); s.dispatchEvent(new Event('change', { bubbles: true }));
+        e.value = String(p[1]); e.dispatchEvent(new Event('change', { bubbles: true }));
+      });
+    };
+    window.__submit = function (node) {
+      node.querySelector('form').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    };
+    'ok'`);
+
+  async function submitCase(script) {
+    return await evaluate(`(function(){
+      var node = window.__mountForm(null);
+      ${script}
+      var out = { toasts: window.__toasts, view: window.__view, count: window.__formLevels.length };
+      node.remove();
+      return out;
+    })()`);
+  }
+
+  const emptyName = await submitCase(`
+    window.__fill(node, { name: '   ', maintenanceCount: 0 });
+    window.__submit(node);`);
+  assertEq(emptyName.toasts[0][0], '服務等級名稱為必填', '名稱空白被擋');
+  assertEq(emptyName.toasts[0][1], 'error', '以 error toast 顯示');
+  assertEq(emptyName.view, '', '不關閉表單');
+  assertEq(emptyName.count, 4, '未新增任何資料');
+
+  const dupName = await submitCase(`
+    window.__fill(node, { name: 'C 保養(一年一次)', maintenanceCount: 0 });
+    window.__submit(node);`);
+  assertEq(dupName.toasts[0][0], '服務等級名稱「C 保養(一年一次)」已存在', '名稱重複被擋');
+
+  const badRange = await submitCase(`
+    window.__fill(node, { name: '新等級', maintenanceCount: 1, periods: [[6, 3]] });
+    window.__submit(node);`);
+  assertEq(badRange.toasts[0][0], '第1次的起始月不可大於結束月', '起訖月顛倒被擋');
+
+  const overlap = await submitCase(`
+    window.__fill(node, { name: '新等級', maintenanceCount: 2, periods: [[1, 6], [5, 12]] });
+    window.__submit(node);`);
+  assertEq(overlap.toasts[0][0], '第1次與第2次的保養區間重疊', '區間重疊被擋');
+
+  const blankMonth = await submitCase(`
+    window.__fill(node, { name: '新等級', maintenanceCount: 1 });
+    window.__submit(node);`);
+  assertEq(blankMonth.toasts[0][0], '第1次的起始月與結束月需為 1–12 月', '未選月份被擋');
+
+  console.log('\nSection 3｜次數變更時區間列的增減');
+  const rowCounts = await evaluate(`(function(){
+    var node = window.__mountForm(null);
+    var out = {};
+    out.zero = node.querySelectorAll('select[name^="startMonth-"]').length;
+    out.zeroHint = node.textContent.indexOf('此服務等級不納入保養分配') !== -1;
+    window.__fill(node, { maintenanceCount: 3 });
+    out.three = node.querySelectorAll('select[name^="startMonth-"]').length;
+    window.__fill(node, { periods: [[1, 4], [5, 8], [9, 12]] });
+    window.__fill(node, { maintenanceCount: 2 });
+    out.two = node.querySelectorAll('select[name^="startMonth-"]').length;
+    out.keptFirst = node.querySelector('select[name="startMonth-1"]').value;
+    out.keptSecond = node.querySelector('select[name="endMonth-2"]').value;
+    node.remove();
+    return out;
+  })()`);
+  assertEq(rowCounts.zero, 0, '次數 0 時不顯示區間列');
+  assertEq(rowCounts.zeroHint, true, '次數 0 時顯示「此服務等級不納入保養分配」');
+  assertEq(rowCounts.three, 3, '次數改 3 產生 3 列');
+  assertEq(rowCounts.two, 2, '次數改 2 砍到 2 列');
+  assertEq(rowCounts.keptFirst, '1', '減少列數時保留第 1 列已填值');
+  assertEq(rowCounts.keptSecond, '8', '減少列數時保留第 2 列已填值');
+
+  console.log('\nSection 3｜新增成功');
+  const added = await evaluate(`(function(){
+    var node = window.__mountForm(null);
+    window.__fill(node, { name: 'E 特約(一年三次)', maintenanceCount: 3, countsBonusPoints: true,
+      periods: [[1, 4], [5, 8], [9, 12]] });
+    window.__submit(node);
+    var created = window.__formLevels[0];
+    var out = {
+      count: window.__formLevels.length,
+      name: created.name,
+      maintenanceCount: created.maintenanceCount,
+      countsBonusPoints: created.countsBonusPoints,
+      periods: created.periods,
+      hasId: !!created.id,
+      view: window.__view,
+      toasts: window.__toasts
+    };
+    node.remove();
+    return out;
+  })()`);
+  assertEq(added.count, 5, '新增後共五筆');
+  assertEq(added.name, 'E 特約(一年三次)', '名稱正確');
+  assertEq(added.maintenanceCount, 3, '次數為數字 3');
+  assertEq(added.countsBonusPoints, true, 'countsBonusPoints 為 true');
+  assertDeep(added.periods, [
+    { visitIndex: 1, startMonth: 1, endMonth: 4 },
+    { visitIndex: 2, startMonth: 5, endMonth: 8 },
+    { visitIndex: 3, startMonth: 9, endMonth: 12 }
+  ], '區間正確');
+  assertEq(added.hasId, true, '有產生 id');
+  assertEq(added.view, 'service-level-list', '儲存後回列表');
+  assertDeep(added.toasts, [['服務等級新增成功', 'success']], '跳出新增成功 toast');
+
+  console.log('\nSection 3｜編輯改名時同步既有資料');
+  const editRenamed = await evaluate(`(function(){
+    var target = JSON.parse(JSON.stringify(INITIAL_SERVICE_LEVELS))[0];
+    var node = window.__mountForm(target);
+    var out = { initialName: node.querySelector('input[name="name"]').value };
+    window.__fill(node, { name: 'A 保修(季保)' });
+    window.__submit(node);
+    out.levelName = window.__formLevels[0].name;
+    out.levelCount = window.__formLevels.length;
+    out.customer = window.__formCustomers[0].serviceLevel;
+    out.store = window.__formStores[0].serviceLevel;
+    out.case = window.__formCases[0].serviceLevel;
+    out.maint = window.__formMaint[0].serviceLevel;
+    out.toasts = window.__toasts;
+    node.remove();
+    return out;
+  })()`);
+  assertEq(editRenamed.initialName, 'A 保修(一年四次)', '編輯時帶入原名稱');
+  assertEq(editRenamed.levelCount, 4, '編輯不會多出資料');
+  assertEq(editRenamed.levelName, 'A 保修(季保)', '服務等級本身已改名');
+  assertEq(editRenamed.customer, 'A 保修(季保)', 'customers 已同步');
+  assertEq(editRenamed.store, 'A 保修(季保)', 'stores 已同步');
+  assertEq(editRenamed.case, 'A 保修(季保)', 'cases 已同步');
+  assertEq(editRenamed.maint, 'A 保修(季保)', 'maintenanceCases 已同步');
+  assertDeep(editRenamed.toasts, [['服務等級更新成功，已同步 4 筆既有資料', 'success']],
+    'toast 註明同步筆數');
+
+  const editNoRename = await evaluate(`(function(){
+    var target = JSON.parse(JSON.stringify(INITIAL_SERVICE_LEVELS))[1];
+    var node = window.__mountForm(target);
+    window.__fill(node, { countsBonusPoints: true });
+    window.__submit(node);
+    var out = { name: window.__formLevels[1].name, bonus: window.__formLevels[1].countsBonusPoints,
+      toasts: window.__toasts };
+    node.remove();
+    return out;
+  })()`);
+  assertEq(editNoRename.name, 'B 保修(一年兩次)', '未改名時名稱不變');
+  assertEq(editNoRename.bonus, true, '其他欄位更新成功');
+  assertDeep(editNoRename.toasts, [['服務等級更新成功', 'success']], '未改名時 toast 不提同步筆數');
+
   // === UI sections 由後續 Task 追加 ===
 
   assertEq(consoleErrors.length, 0, '全程無 JS 錯誤');

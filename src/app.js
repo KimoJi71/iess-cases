@@ -697,6 +697,29 @@
           setView: setView,
           showToast: showToast
         });
+      case 'service-level-add':
+        return h(ServiceLevelForm, {
+          serviceLevels: s.serviceLevels,
+          setServiceLevels: setServiceLevels,
+          customers: s.customers, setCustomers: setCustomers,
+          stores: s.stores, setStores: setStores,
+          cases: s.cases, setCases: setCasesData,
+          maintenanceCases: s.maintenanceCases, setMaintenanceCases: setMaintenanceCases,
+          setView: setView,
+          showToast: showToast
+        });
+      case 'service-level-edit':
+        return h(ServiceLevelForm, {
+          serviceLevels: s.serviceLevels,
+          setServiceLevels: setServiceLevels,
+          customers: s.customers, setCustomers: setCustomers,
+          stores: s.stores, setStores: setStores,
+          cases: s.cases, setCases: setCasesData,
+          maintenanceCases: s.maintenanceCases, setMaintenanceCases: setMaintenanceCases,
+          targetCase: s.editingCase,
+          setView: setView,
+          showToast: showToast
+        });
       case 'process-method-list':
         return h(ProcessMethodList, {
           processMethods: s.processMethods,
