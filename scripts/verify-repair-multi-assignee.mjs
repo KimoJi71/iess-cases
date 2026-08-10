@@ -215,7 +215,7 @@ function testPerformanceReport(PU) {
   // makeRepairCase() 的 serviceLevel 為 fixture 用途的 'D 一般'，非 seed 的四筆正式名稱；
   // 沿用舊版 isServiceLevelCD 的 D 前綴一律計分行為，故此處視為勾選計算增額積分。
   const serviceLevels = [
-    { id: 'SLX', name: 'D 一般', maintenanceCount: 0, countsBonusPoints: true, periods: [] },
+    { id: 'SLX', name: 'D 一般', maintenanceCount: 0, countsBonusPoints: true },
   ];
   const rows = PU.computeAssigneePerformance({
     cases: [makeRepairCase()],
