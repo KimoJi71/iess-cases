@@ -346,9 +346,12 @@
       return ScheduleUtils.resolveStore(stores, c && c.customerName, c && c.storeName);
     }
 
+    // 與列表的「保養區間」同源，避免兩處對不上
     function getMaintenancePeriodLabel(c) {
-      var refDate = ScheduleUtils.resolveMaintenanceReferenceDate(c);
-      return ScheduleUtils.formatMaintenancePeriod(refDate, customers, c && c.customerName);
+      var period = ScheduleUtils.resolveCasePeriod(c, customers);
+      if (!period) return '';
+      return period.year + ' 第' + period.visitIndex + '次（'
+        + period.startMonth + '-' + period.endMonth + '月）';
     }
 
     function ReadOnlyField(p) {

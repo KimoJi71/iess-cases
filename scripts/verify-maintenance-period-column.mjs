@@ -316,6 +316,27 @@ try {
   })()`);
   assertTrue(hidden.every(label => !rows.some(r => r.period === label)),
     '其他區間的案件不出現在當月清單', JSON.stringify(hidden));
+
+  console.log('\nSection 3｜明細頁目前保養季度');
+  await evaluate(`(function () {
+    // 框架的 title prop 會轉成 aria-label（並加上 data-no-tooltip），故以 aria-label 選取
+    var btn = document.querySelector('table tbody tr button[aria-label="編輯"]');
+    if (btn) btn.click();
+    return !!btn;
+  })()`);
+  await sleep(1000);
+  const detail = await evaluate(`(function () {
+    var labels = Array.prototype.slice.call(document.querySelectorAll('span'));
+    var label = labels.filter(function (el) {
+      return el.textContent.trim() === '目前保養季度';
+    })[0];
+    if (!label) return null;
+    return label.parentNode.querySelector('div').textContent.trim();
+  })()`);
+  assertTrue(detail !== null, '明細頁有「目前保養季度」欄位');
+  assertTrue(/^\d{4} 第\d+次（\d{1,2}-\d{1,2}月）$/.test(detail),
+    '格式為「2026 第3次（7-9月）」', detail);
+
   assertEq(consoleErrors.length, 0, '操作後仍無 JS 錯誤');
 } finally {
   try { ws && ws.close(); } catch {}
