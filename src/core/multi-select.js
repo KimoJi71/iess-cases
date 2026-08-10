@@ -233,6 +233,15 @@
     });
   }
 
+  // 供呼叫端在「卸載目前選單所屬的整個面板」前主動清理用（例如切換案件類型時
+  // 整批換掉 filter 面板）。一般的滑鼠/Escape/失焦流程無需呼叫此函式，
+  // 只有在面板會被整批換掉、且新面板可能沒有相同 id 的實例可以接手清理時才需要。
+  function closeAll() {
+    openId = null;
+    destroyMenu();
+  }
+
   global.IESS = global.IESS || {};
   global.IESS.MultiSelect = MultiSelect;
+  global.IESS.MultiSelect.closeAll = closeAll;
 })(window);

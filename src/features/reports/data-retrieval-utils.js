@@ -109,6 +109,12 @@
 
   // 客戶名稱為多選：門市選項取所有已選客戶的門市聯集。
   // 未選客戶時沿用「所有營業中門市」。
+  //
+  // StoreUtils.getStoreNameOptions(stores, customer, null, true) 對單一客戶回傳的名單
+  // 會把營業中門市排在撤店門市之前（見 store-utils.js）。跨客戶合併聯集時若只用單純的
+  // localeCompare 重新排序會丟失這個分組，讓撤店門市可能排到營業門市前面且沒有任何標記
+  // 可以區分。這裡合併去重後，依「該門市名稱在已選客戶範圍內是否至少有一筆營業中的紀錄」
+  // 重新分組排序，維持與單客戶時相同的「營業在前、撤店在後」慣例。
   function getStoreOptionsForCustomers(stores, customerNames) {
     var names = [];
     var seen = {};
@@ -125,7 +131,19 @@
     customerNames.forEach(function (customerName) {
       StoreUtils.getStoreNameOptions(stores, customerName, null, true).forEach(push);
     });
-    return sortZhHant(names);
+    var activeByName = {};
+    (stores || []).forEach(function (s) {
+      if (!s.storeName || customerNames.indexOf(s.customerName) === -1) return;
+      if (activeByName[s.storeName] !== true) {
+        activeByName[s.storeName] = StoreUtils.isActiveStore(s);
+      }
+    });
+    return names.sort(function (a, b) {
+      var aActive = activeByName[a] !== false;
+      var bActive = activeByName[b] !== false;
+      if (aActive !== bActive) return aActive ? -1 : 1;
+      return a.localeCompare(b, 'zh-Hant');
+    });
   }
 
   // 縣市為多選：行政區選項取所有已選縣市的聯集，未選縣市時為空。

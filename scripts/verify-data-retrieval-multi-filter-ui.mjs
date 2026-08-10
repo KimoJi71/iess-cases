@@ -87,9 +87,9 @@ async function evaluateAsync(expression) {
 const MOUNT = `
   window.__stores = [
     { id:'S1', customerName:'甲客戶', storeName:'甲一店', storeStatus:'營業',
-      companyCity:'臺北市', companyDistrict:'中正區' },
+      companyCity:'台北市', companyDistrict:'中正區' },
     { id:'S2', customerName:'甲客戶', storeName:'甲二店', storeStatus:'營業',
-      companyCity:'臺北市', companyDistrict:'大安區' },
+      companyCity:'台北市', companyDistrict:'大安區' },
     { id:'S3', customerName:'乙客戶', storeName:'乙一店', storeStatus:'營業',
       companyCity:'新北市', companyDistrict:'板橋區' }
   ];
@@ -235,6 +235,33 @@ try {
     '門市選項為兩客戶的聯集',
     JSON.stringify(cascade.storeOptions)
   );
+
+  console.log('\n4. 鍵盤切換案件類型時，展開中的選單不會孤兒化');
+  const orphan = await evaluateAsync(`(function () {
+    var host = window.__mount();
+    // 展開第一個 MultiSelect（工項分類）。這裡直接呼叫 .click()（不經過 mousedown）
+    // 是為了重現鍵盤操作的路徑：Enter 觸發的是 click 事件，不會先觸發滑鼠版
+    // outside 監聽器賴以運作的 capture-phase mousedown。
+    host.querySelectorAll('.multi-select')[0].querySelector('.multi-select__control').click();
+    return new Promise(function (resolve) {
+      setTimeout(function () {
+        var menuBeforeSwitch = document.querySelectorAll('.multi-select__menu').length;
+        // 切換案件類型會整批換掉 filter 面板；同樣用 .click() 模擬鍵盤 Enter，
+        // 不觸發 mousedown。
+        var buttons = Array.prototype.slice.call(document.querySelectorAll('button'));
+        var maintenanceBtn = buttons.find(function (b) { return b.textContent.trim() === '保養'; });
+        maintenanceBtn.click();
+        setTimeout(function () {
+          resolve({
+            menuBeforeSwitch: menuBeforeSwitch,
+            menuAfterSwitch: document.querySelectorAll('.multi-select__menu').length
+          });
+        }, 50);
+      }, 50);
+    });
+  })()`);
+  assertEq(orphan.menuBeforeSwitch, 1, '切換案件類型前選單確實已展開');
+  assertEq(orphan.menuAfterSwitch, 0, '鍵盤（click 無 mousedown）切換案件類型後，document.body 不留下孤兒選單');
 
   assertEq(consoleErrors.length, 0, '互動過程無 JS 錯誤');
 } catch (err) {

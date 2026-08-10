@@ -74,6 +74,10 @@
     }
 
     function handleCaseTypeChange(nextType, rerender) {
+      // 切換案件類型會整批換掉 filter 面板；鍵盤操作（Tab 到案件類型按鈕再 Enter）
+      // 不會觸發 MultiSelect 的 outside mousedown 監聽器，選單可能孤兒化並持續浮動
+      // 在新面板之上（見 core/multi-select.js closeAll 的說明）。先強制關閉再重置狀態。
+      if (IESS.MultiSelect.closeAll) IESS.MultiSelect.closeAll();
       caseType = nextType;
       filterWorkCategory = [];
       filterRepairItem = [];
