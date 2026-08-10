@@ -251,6 +251,9 @@ try {
     `ScheduleUtils.formatMaintenancePeriod('', window.__PERIOD_CUSTOMERS, '甲客戶')`),
     '', '無日期回空字串');
   assertTrue(await evaluate(
+    `/CustomerUtils\\.findPeriodForMonth/.test(String(ScheduleUtils.formatMaintenancePeriod))`
+  ), 'formatMaintenancePeriod 改用 CustomerUtils.findPeriodForMonth');
+  assertTrue(await evaluate(
     `!/ServiceLevelUtils\\.findPeriodForMonth/.test(String(ScheduleUtils.formatMaintenancePeriod))`
   ), 'formatMaintenancePeriod 不再呼叫 ServiceLevelUtils.findPeriodForMonth');
 
