@@ -11,36 +11,22 @@ const INITIAL_SERVICE_LEVELS = [{
   id: 'SL001',
   name: 'A 保修(一年四次)',
   maintenanceCount: 4,
-  countsBonusPoints: false,
-  periods: [
-    { visitIndex: 1, startMonth: 1, endMonth: 3 },
-    { visitIndex: 2, startMonth: 4, endMonth: 6 },
-    { visitIndex: 3, startMonth: 7, endMonth: 9 },
-    { visitIndex: 4, startMonth: 10, endMonth: 12 }
-  ]
+  countsBonusPoints: false
 }, {
   id: 'SL002',
   name: 'B 保修(一年兩次)',
   maintenanceCount: 2,
-  countsBonusPoints: false,
-  periods: [
-    { visitIndex: 1, startMonth: 1, endMonth: 6 },
-    { visitIndex: 2, startMonth: 7, endMonth: 12 }
-  ]
+  countsBonusPoints: false
 }, {
   id: 'SL003',
   name: 'C 保養(一年一次)',
   maintenanceCount: 1,
-  countsBonusPoints: true,
-  periods: [
-    { visitIndex: 1, startMonth: 1, endMonth: 12 }
-  ]
+  countsBonusPoints: true
 }, {
   id: 'SL004',
   name: 'D 維修(無簽約客戶)',
   maintenanceCount: 0,
-  countsBonusPoints: true,
-  periods: []
+  countsBonusPoints: true
 }];
 
 // --- 初始模擬客戶列表 (客戶建檔) ---

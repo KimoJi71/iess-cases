@@ -257,6 +257,47 @@ try {
     `!/ServiceLevelUtils\\.findPeriodForMonth/.test(String(ScheduleUtils.formatMaintenancePeriod))`
   ), 'formatMaintenancePeriod 不再呼叫 ServiceLevelUtils.findPeriodForMonth');
 
+  console.log('\nSection 5｜服務等級不再持有區間');
+  assertTrue(await evaluate(`INITIAL_SERVICE_LEVELS.every(function (sl) {
+    return !('periods' in sl);
+  })`), 'INITIAL_SERVICE_LEVELS 已無 periods 欄位');
+  assertEq(await evaluate(`typeof ServiceLevelUtils.getPeriods`), 'undefined',
+    'ServiceLevelUtils.getPeriods 已移除');
+  assertEq(await evaluate(`typeof ServiceLevelUtils.findPeriodForMonth`), 'undefined',
+    'ServiceLevelUtils.findPeriodForMonth 已移除');
+  assertEq(await evaluate(`typeof ServiceLevelUtils.formatPeriodsLabel`), 'undefined',
+    'ServiceLevelUtils.formatPeriodsLabel 已移除');
+  assertDeep(await evaluate(
+    `Object.keys(ServiceLevelUtils.normalizeRecord({ name: ' X ', maintenanceCount: '2' }))`),
+    ['name', 'maintenanceCount', 'countsBonusPoints'], 'normalizeRecord 不再回 periods');
+  assertDeep(await evaluate(
+    `ServiceLevelUtils.validate({ name: 'X', maintenanceCount: 2 }, [], undefined)`),
+    [], 'validate 不再要求區間筆數');
+  assertDeep(await evaluate(
+    `ServiceLevelUtils.validate({ name: '', maintenanceCount: 1 }, [], undefined)`),
+    ['服務等級名稱為必填'], 'validate 仍檢查名稱必填');
+  assertDeep(await evaluate(
+    `ServiceLevelUtils.validate({ name: 'X', maintenanceCount: -1 }, [], undefined)`),
+    ['每年保養次數需為 0 或正整數'], 'validate 仍檢查次數');
+  assertTrue(await evaluate(`String(ServiceLevelForm).indexOf('保養區間') === -1`),
+    '服務等級表單已無「保養區間」區塊');
+  // COLUMNS 宣告在 ServiceLevelList 之外，故改以實際渲染出的表頭判斷
+  assertTrue(await evaluate(`(function(){
+    var container = document.createElement('div');
+    document.body.appendChild(container);
+    container.appendChild(ServiceLevelList({
+      serviceLevels: INITIAL_SERVICE_LEVELS,
+      setServiceLevels: function () {},
+      customers: [], stores: [], cases: [], maintenanceCases: [],
+      projectCases: [], surveyCases: [], personnelStatus: [],
+      setEditingCase: function () {}, setView: function () {}, showToast: function () {}
+    }));
+    var headers = Array.prototype.map.call(container.querySelectorAll('thead th'),
+      function (th) { return th.textContent.trim(); });
+    container.remove();
+    return headers.indexOf('保養區間') === -1;
+  })()`), '服務等級列表已無「保養區間」欄');
+
   assertEq(consoleErrors.length, 0, '全程無 JS 錯誤');
 } catch (e) {
   fail('driver', e.message);
