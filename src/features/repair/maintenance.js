@@ -323,7 +323,6 @@
     var backView = props.backView === undefined ? 'maintenance-list' : props.backView;
 
     var customers = props.customers;
-    var serviceLevels = props.serviceLevels || [];
     var formData = targetCase;
     var isEdit = mode === 'edit';
 
@@ -333,9 +332,7 @@
 
     function getMaintenancePeriodLabel(c) {
       var refDate = ScheduleUtils.resolveMaintenanceReferenceDate(c);
-      var level = (c && c.serviceLevel)
-        || CustomerUtils.getServiceLevelByCustomerName(customers, c && c.customerName);
-      return ScheduleUtils.formatMaintenancePeriod(refDate, serviceLevels, level);
+      return ScheduleUtils.formatMaintenancePeriod(refDate, customers, c && c.customerName);
     }
 
     function ReadOnlyField(p) {

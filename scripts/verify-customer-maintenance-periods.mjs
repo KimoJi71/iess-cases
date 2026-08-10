@@ -226,6 +226,34 @@ try {
     `!/ServiceLevelUtils\\.(getPeriods|findPeriodForMonth)/.test(String(MaintenanceAllocation))`
   ), '保養分配不再呼叫 ServiceLevelUtils 的區間函式');
 
+  console.log('\nSection 4｜formatMaintenancePeriod 改吃客戶區間');
+  await evaluate(`window.__PERIOD_CUSTOMERS = [
+    { id: 'C1', name: '甲客戶', periods: [
+      { visitIndex: 1, startMonth: 1, endMonth: 3 },
+      { visitIndex: 2, startMonth: 4, endMonth: 6 },
+      { visitIndex: 3, startMonth: 7, endMonth: 9 },
+      { visitIndex: 4, startMonth: 10, endMonth: 12 } ] },
+    { id: 'C2', name: '丙客戶', periods: [] }
+  ];`);
+  assertEq(await evaluate(
+    `ScheduleUtils.formatMaintenancePeriod('2026-05-10', window.__PERIOD_CUSTOMERS, '甲客戶')`),
+    '2026 第2次', '5 月為甲客戶的第 2 次');
+  assertEq(await evaluate(
+    `ScheduleUtils.formatMaintenancePeriod('2026-11-01', window.__PERIOD_CUSTOMERS, '甲客戶')`),
+    '2026 第4次', '11 月為甲客戶的第 4 次');
+  assertEq(await evaluate(
+    `ScheduleUtils.formatMaintenancePeriod('2026-08-01', window.__PERIOD_CUSTOMERS, '丙客戶')`),
+    '2026', '無區間客戶只回年份');
+  assertEq(await evaluate(
+    `ScheduleUtils.formatMaintenancePeriod('2026-05-10', window.__PERIOD_CUSTOMERS, '查無此客戶')`),
+    '2026', '查無客戶只回年份');
+  assertEq(await evaluate(
+    `ScheduleUtils.formatMaintenancePeriod('', window.__PERIOD_CUSTOMERS, '甲客戶')`),
+    '', '無日期回空字串');
+  assertTrue(await evaluate(
+    `!/ServiceLevelUtils\\.findPeriodForMonth/.test(String(ScheduleUtils.formatMaintenancePeriod))`
+  ), 'formatMaintenancePeriod 不再呼叫 ServiceLevelUtils.findPeriodForMonth');
+
   assertEq(consoleErrors.length, 0, '全程無 JS 錯誤');
 } catch (e) {
   fail('driver', e.message);

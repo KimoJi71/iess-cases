@@ -233,13 +233,13 @@
     return '';
   }
 
-  // 目前保養季度：依服務等級的保養區間，回傳「YYYY 第N次」；無區間或查無等級時只回年份
-  function formatMaintenancePeriod(dateStr, serviceLevels, serviceLevelName) {
+  // 目前保養季度：依客戶的保養區間，回傳「YYYY 第N次」；客戶無區間或查無客戶時只回年份
+  function formatMaintenancePeriod(dateStr, customers, customerName) {
     if (!dateStr) return '';
     var year = parseInt(String(dateStr).slice(0, 4), 10);
     var month = parseInt(String(dateStr).slice(5, 7), 10);
     if (!year || !month) return '';
-    var period = ServiceLevelUtils.findPeriodForMonth(serviceLevels, serviceLevelName, month);
+    var period = CustomerUtils.findPeriodForMonth(customers, customerName, month);
     if (!period) return String(year);
     return year + ' 第' + period.visitIndex + '次';
   }
