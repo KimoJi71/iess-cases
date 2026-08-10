@@ -244,6 +244,63 @@
     return year + ' 第' + period.visitIndex + '次';
   }
 
+  function padMonth(month) {
+    return String(month).length < 2 ? '0' + month : String(month);
+  }
+
+  /**
+   * 解析一筆保養案件所屬的保養區間。
+   * 優先用案件自帶的 periodYear / periodVisitIndex（區間身分），
+   * 舊案件沒有這兩個欄位時，退回用 planDate（或 dueMonth）的年月回推。
+   * 客戶未設定區間、或月份落在所有區間之外時回 null。
+   */
+  function resolveCasePeriod(maintenanceCase, customers) {
+    if (!maintenanceCase) return null;
+    var customerName = maintenanceCase.customerName;
+    var year = Number(maintenanceCase.periodYear) || 0;
+    var visitIndex = Number(maintenanceCase.periodVisitIndex) || 0;
+
+    if (year && visitIndex) {
+      var found = CustomerUtils.getPeriods(customers, customerName).find(function (p) {
+        return p.visitIndex === visitIndex;
+      });
+      if (!found) return null;
+      return {
+        year: year,
+        visitIndex: visitIndex,
+        startMonth: found.startMonth,
+        endMonth: found.endMonth
+      };
+    }
+
+    var refDate = resolveMaintenanceReferenceDate(maintenanceCase);
+    if (!refDate) return null;
+    var refYear = parseInt(String(refDate).slice(0, 4), 10);
+    var refMonth = parseInt(String(refDate).slice(5, 7), 10);
+    if (!refYear || !refMonth) return null;
+    var period = CustomerUtils.findPeriodForMonth(customers, customerName, refMonth);
+    if (!period) return null;
+    return {
+      year: refYear,
+      visitIndex: period.visitIndex,
+      startMonth: period.startMonth,
+      endMonth: period.endMonth
+    };
+  }
+
+  function formatPeriodRange(period) {
+    if (!period) return '—';
+    return '第' + period.visitIndex + '次 ' + period.startMonth + '-' + period.endMonth + '月';
+  }
+
+  function periodMonthRange(period) {
+    if (!period) return null;
+    return {
+      start: period.year + '-' + padMonth(period.startMonth),
+      end: period.year + '-' + padMonth(period.endMonth)
+    };
+  }
+
   function resolveMaintenanceStatus(currentStatus, planDate) {
     if (currentStatus === '已完成') return '已完成';
     if (planDate) return '已預約';
@@ -552,6 +609,9 @@
     getPersonnelEvents: getPersonnelEvents,
     getRepairSchedule: getRepairSchedule,
     resolveMaintenanceStatus: resolveMaintenanceStatus,
+    resolveCasePeriod: resolveCasePeriod,
+    formatPeriodRange: formatPeriodRange,
+    periodMonthRange: periodMonthRange,
     resolveStore: resolveStore,
     applyStoreSnapshot: applyStoreSnapshot,
     getStoreNamesForCustomer: getStoreNamesForCustomer,
