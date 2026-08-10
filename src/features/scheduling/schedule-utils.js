@@ -77,12 +77,6 @@
     return entries;
   }
 
-  function addMonthsToMonth(dateStr, months) {
-    var d = new Date(dateStr);
-    d.setMonth(d.getMonth() + months);
-    return d.toISOString().slice(0, 7);
-  }
-
   function getMaintenanceWorkCategory(c) {
     return c.workCategory || '保養';
   }
@@ -127,32 +121,55 @@
     return e && e !== s ? s + ' ~ ' + e : s;
   }
 
-  function generateDueMaintenanceCases(customers, stores, existingCases, serviceLevels) {
-    var result = existingCases.slice();
-    var customerMap = {};
-    customers.forEach(function (c) { customerMap[c.name] = c; });
-    var currentMonth = new Date().toISOString().slice(0, 7);
+  /**
+   * 為既有保養案件補上區間身分（periodYear / periodVisitIndex）。
+   * 用 planDate（或 dueMonth）的年月回推客戶區間；查不到就原樣保留，
+   * 該筆案件之後不會被以區間為準的月份篩選命中。
+   */
+  function backfillCasePeriods(existingCases, customers) {
+    return (existingCases || []).map(function (c) {
+      if (!c) return c;
+      if (Number(c.periodYear) && Number(c.periodVisitIndex)) return c;
+      var period = resolveCasePeriod(c, customers);
+      if (!period) return c;
+      return Object.assign({}, c, {
+        periodYear: period.year,
+        periodVisitIndex: period.visitIndex
+      });
+    });
+  }
 
-    stores.forEach(function (store) {
-      if (!store.lastMaintenanceDate || store.storeStatus !== '正常營業') return;
+  /**
+   * 依客戶的保養區間產生保養單：每個門市在「參考月份所在的區間」各一筆。
+   * 不論上一個區間是否完成，進入下一個區間都會重新建一筆。
+   * referenceMonth 為選填的 'YYYY-MM'，省略時取當月。
+   */
+  function generateDueMaintenanceCases(customers, stores, existingCases, referenceMonth) {
+    var refMonth = referenceMonth || new Date().toISOString().slice(0, 7);
+    var refYear = parseInt(String(refMonth).slice(0, 4), 10);
+    var monthNumber = parseInt(String(refMonth).slice(5, 7), 10);
+    var result = backfillCasePeriods(existingCases, customers);
+    if (!refYear || !monthNumber) return result;
+
+    var customerMap = {};
+    (customers || []).forEach(function (c) { customerMap[c.name] = c; });
+
+    (stores || []).forEach(function (store) {
+      if (store.storeStatus !== '正常營業') return;
       var cust = customerMap[store.customerName];
       if (!cust || cust.enabled === false) return;
-      // 每年保養次數換算到期間隔月數；次數 0（或查無等級）代表不納入保養排程
-      var visitsPerYear = ServiceLevelUtils.getMaintenanceCount(serviceLevels, cust.serviceLevel);
-      if (!visitsPerYear) return;
-      var months = Math.max(1, Math.round(12 / visitsPerYear));
 
-      var dueMonth = addMonthsToMonth(store.lastMaintenanceDate, months);
-      if (dueMonth > currentMonth) return;
+      var period = CustomerUtils.findPeriodForMonth(customers, store.customerName, monthNumber);
+      if (!period) return;
 
-      var hasOpen = result.some(function (m) {
-        if (m.isClosed) return false;
-        if (m.customerName !== store.customerName || m.storeName !== store.storeName) return false;
-        if (m.status === '未保養') return true;
-        var mMonth = m.planDate ? m.planDate.slice(0, 7) : (m.dueMonth || '');
-        return mMonth === dueMonth;
+      var exists = result.some(function (m) {
+        return m
+          && m.customerName === store.customerName
+          && m.storeName === store.storeName
+          && Number(m.periodYear) === refYear
+          && Number(m.periodVisitIndex) === period.visitIndex;
       });
-      if (hasOpen) return;
+      if (exists) return;
 
       result.push({
         id: 'M' + Date.now() + String(Math.floor(Math.random() * 10000)),
@@ -166,7 +183,9 @@
         planDate: '',
         planTimeStart: '',
         planTimeEnd: '',
-        dueMonth: dueMonth,
+        dueMonth: refYear + '-' + padMonth(period.startMonth),
+        periodYear: refYear,
+        periodVisitIndex: period.visitIndex,
         workCategory: '保養',
         assignee: '尚未指派',
         isClosed: false,
