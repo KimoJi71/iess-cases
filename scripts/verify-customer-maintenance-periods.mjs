@@ -412,6 +412,44 @@ try {
     return true;
   })()`);
 
+  console.log('\nSection 7｜客戶列表保養區間欄');
+  const listProbe = await evaluate(`(function(){
+    var container = document.createElement('div');
+    document.body.appendChild(container);
+    var customers = [
+      { id: 'C1', name: '完整客戶', serviceLevel: 'B 保修(一年兩次)', enabled: true,
+        createdDate: '2026-01-01', periods: [
+          { visitIndex: 1, startMonth: 1, endMonth: 6 },
+          { visitIndex: 2, startMonth: 7, endMonth: 12 } ] },
+      { id: 'C2', name: '缺漏客戶', serviceLevel: 'B 保修(一年兩次)', enabled: true,
+        createdDate: '2026-01-02', periods: [
+          { visitIndex: 1, startMonth: 1, endMonth: 6 } ] },
+      { id: 'C3', name: '免區間客戶', serviceLevel: 'D 維修(無簽約客戶)', enabled: true,
+        createdDate: '2026-01-03', periods: [] }
+    ];
+    container.appendChild(CustomerList({
+      cases: customers,
+      setCases: function () {},
+      serviceLevels: INITIAL_SERVICE_LEVELS,
+      setEditingCase: function () {},
+      setView: function () {},
+      showToast: function () {}
+    }));
+    var headers = Array.prototype.map.call(
+      container.querySelectorAll('thead th'), function (th) { return th.textContent.trim(); });
+    var byName = {};
+    Array.prototype.forEach.call(container.querySelectorAll('tbody tr'), function (tr) {
+      var tds = tr.querySelectorAll('td');
+      byName[tds[1].textContent.trim()] = tds[2].textContent.trim();
+    });
+    container.remove();
+    return { headers: headers, byName: byName };
+  })()`);
+  assertTrue(listProbe.headers.indexOf('保養區間') !== -1, '客戶列表有「保養區間」欄');
+  assertEq(listProbe.byName['完整客戶'], '第1次 1-6月、第2次 7-12月', '完整客戶顯示區間標籤');
+  assertEq(listProbe.byName['缺漏客戶'], '區間未設完整', '筆數不符的客戶顯示提示');
+  assertEq(listProbe.byName['免區間客戶'], '—', '次數 0 的客戶顯示破折號');
+
   assertEq(consoleErrors.length, 0, '全程無 JS 錯誤');
 } catch (e) {
   fail('driver', e.message);
