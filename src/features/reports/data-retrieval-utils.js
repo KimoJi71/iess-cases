@@ -103,6 +103,46 @@
     });
   }
 
+  function sortZhHant(names) {
+    return names.sort(function (a, b) { return a.localeCompare(b, 'zh-Hant'); });
+  }
+
+  // 客戶名稱為多選：門市選項取所有已選客戶的門市聯集。
+  // 未選客戶時沿用「所有營業中門市」。
+  function getStoreOptionsForCustomers(stores, customerNames) {
+    var names = [];
+    var seen = {};
+    function push(name) {
+      if (name && !seen[name]) {
+        seen[name] = true;
+        names.push(name);
+      }
+    }
+    if (!customerNames || !customerNames.length) {
+      StoreUtils.getActiveStores(stores).forEach(function (s) { push(s.storeName); });
+      return sortZhHant(names);
+    }
+    customerNames.forEach(function (customerName) {
+      StoreUtils.getStoreNameOptions(stores, customerName, null, true).forEach(push);
+    });
+    return sortZhHant(names);
+  }
+
+  // 縣市為多選：行政區選項取所有已選縣市的聯集，未選縣市時為空。
+  function getDistrictOptionsForCities(cityNames) {
+    var districts = [];
+    var seen = {};
+    (cityNames || []).forEach(function (city) {
+      StoreUtils.getDistrictsForCity(city).forEach(function (d) {
+        if (d && !seen[d]) {
+          seen[d] = true;
+          districts.push(d);
+        }
+      });
+    });
+    return districts;
+  }
+
   function mapProjectRow(c) {
     return {
       '立案編號': c.projectNumber || '—',
@@ -217,6 +257,8 @@
     filterProjectCases: filterProjectCases,
     filterRepairCases: filterRepairCases,
     filterMaintenanceCases: filterMaintenanceCases,
+    getStoreOptionsForCustomers: getStoreOptionsForCustomers,
+    getDistrictOptionsForCities: getDistrictOptionsForCities,
     formatAssignees: formatAssignees,
     getColumns: getColumns,
     buildRows: buildRows,

@@ -166,13 +166,52 @@ function testProjectAndMaintenance(DRU) {
   );
 }
 
+const STORES = [
+  { id: 'S1', customerName: '甲客戶', storeName: '甲一店', storeStatus: '營業' },
+  { id: 'S2', customerName: '甲客戶', storeName: '甲二店', storeStatus: '營業' },
+  { id: 'S3', customerName: '乙客戶', storeName: '乙一店', storeStatus: '營業' },
+  { id: 'S4', customerName: '乙客戶', storeName: '甲一店', storeStatus: '營業' },
+  { id: 'S5', customerName: '丙客戶', storeName: '丙一店', storeStatus: '撤店' },
+];
+
+function testCascadeOptions(DRU, SU) {
+  console.log('\n6. 連動欄位的選項聯集');
+  assertJson(
+    DRU.getStoreOptionsForCustomers(STORES, []),
+    ['乙一店', '甲一店', '甲二店'],
+    '未選客戶時列出所有營業中門市（去重排序，撤店不列）'
+  );
+  assertJson(
+    DRU.getStoreOptionsForCustomers(STORES, ['甲客戶']),
+    ['甲一店', '甲二店'],
+    '單選客戶'
+  );
+  assertJson(
+    DRU.getStoreOptionsForCustomers(STORES, ['甲客戶', '乙客戶']),
+    ['乙一店', '甲一店', '甲二店'],
+    '多客戶取聯集，同名門市只出現一次'
+  );
+
+  assertJson(DRU.getDistrictOptionsForCities([]), [], '未選縣市時行政區為空');
+  const taipei = SU.getDistrictsForCity('臺北市');
+  const newTaipei = SU.getDistrictsForCity('新北市');
+  const union = DRU.getDistrictOptionsForCities(['臺北市', '新北市']);
+  assertEq(union.length, taipei.length + newTaipei.length, '兩縣市行政區數量相加');
+  assertTrue(
+    taipei.every((d) => union.indexOf(d) !== -1) && newTaipei.every((d) => union.indexOf(d) !== -1),
+    '聯集包含兩個縣市的全部行政區'
+  );
+  assertEq(new Set(union).size, union.length, '行政區聯集無重複');
+}
+
 function main() {
-  const { DRU } = loadModules();
+  const { DRU, SU } = loadModules();
   testEmptyMeansAll(DRU);
   testSingleFieldOr(DRU);
   testFieldsAreAnded(DRU);
   testRepairAssigneeMultiValue(DRU);
   testProjectAndMaintenance(DRU);
+  testCascadeOptions(DRU, SU);
 
   console.log(`\n${'='.repeat(50)}`);
   console.log(`Results: ${passed} passed, ${failed} failed`);
