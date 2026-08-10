@@ -103,5 +103,111 @@ assertDeep(CU.validatePeriods([
   { visitIndex: 2, startMonth: 7, endMonth: 12 }
 ], 2), [], '相鄰不重疊區間合法');
 
+// ---------- headless Chrome 區段 ----------
+const CHROME = process.env.CHROME_PATH
+  || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+const PORT = Number(process.env.CDP_PORT || 9342);
+if (!existsSync(CHROME)) {
+  console.error(`找不到 Chrome：${CHROME}\n可用 CHROME_PATH 環境變數指定路徑。`);
+  process.exit(2);
+}
+
+const chrome = spawn(CHROME, [
+  '--headless', '--disable-gpu', '--no-first-run', '--no-default-browser-check',
+  `--remote-debugging-port=${PORT}`, '--user-data-dir=/tmp/iess-customer-periods-profile',
+  'about:blank'
+], { stdio: 'ignore' });
+
+let ws, msgId = 0;
+const pending = new Map();
+const consoleErrors = [];
+function send(method, params = {}) {
+  const id = ++msgId;
+  ws.send(JSON.stringify({ id, method, params }));
+  return new Promise((res, rej) => pending.set(id, { res, rej }));
+}
+async function evaluate(expression) {
+  const r = await send('Runtime.evaluate', {
+    expression, returnByValue: true, awaitPromise: true
+  });
+  if (r.exceptionDetails) {
+    throw new Error(r.exceptionDetails.exception?.description || JSON.stringify(r.exceptionDetails));
+  }
+  return r.result.value;
+}
+
+try {
+  let targets;
+  for (let i = 0; i < 50; i++) {
+    try { targets = await (await fetch(`http://127.0.0.1:${PORT}/json/list`)).json(); break; }
+    catch { await sleep(200); }
+  }
+  const page = targets.find(t => t.type === 'page');
+  ws = new WebSocket(page.webSocketDebuggerUrl);
+  await new Promise(res => { ws.onopen = res; });
+  ws.onmessage = (ev) => {
+    const m = JSON.parse(ev.data);
+    if (m.id && pending.has(m.id)) {
+      const { res, rej } = pending.get(m.id);
+      pending.delete(m.id);
+      m.error ? rej(new Error(JSON.stringify(m.error))) : res(m.result);
+    } else if (m.method === 'Runtime.exceptionThrown') {
+      consoleErrors.push(m.params.exceptionDetails.exception?.description
+        || m.params.exceptionDetails.text);
+    } else if (m.method === 'Runtime.consoleAPICalled' && m.params.type === 'error') {
+      consoleErrors.push(m.params.args.map(a => a.value ?? a.description).join(' '));
+    }
+  };
+  await send('Runtime.enable');
+  await send('Page.enable');
+  await send('Page.navigate', { url: `file://${ROOT}/index.html` });
+  await sleep(4000);
+
+  console.log('\nSection 2｜seed 客戶區間');
+  assertEq(consoleErrors.length, 0, '載入時無 JS 錯誤');
+  assertTrue(await evaluate(`INITIAL_CUSTOMERS.every(function (c) {
+    return Array.isArray(c.periods);
+  })`), '每筆 seed 客戶都有 periods 陣列');
+  assertTrue(await evaluate(`INITIAL_CUSTOMERS.every(function (c) {
+    var count = ServiceLevelUtils.getMaintenanceCount(INITIAL_SERVICE_LEVELS, c.serviceLevel);
+    return CustomerUtils.validatePeriods(c.periods, count).length === 0;
+  })`), '每筆 seed 客戶的區間都通過驗證');
+  assertDeep(await evaluate(`CustomerUtils.getPeriods(INITIAL_CUSTOMERS, '屈臣氏')`), [
+    { visitIndex: 1, startMonth: 1, endMonth: 3 },
+    { visitIndex: 2, startMonth: 4, endMonth: 6 },
+    { visitIndex: 3, startMonth: 7, endMonth: 9 },
+    { visitIndex: 4, startMonth: 10, endMonth: 12 }
+  ], 'A 級客戶「屈臣氏」為四季區間');
+  assertTrue(await evaluate(`(function(){
+    return INITIAL_CUSTOMERS.filter(function (c) {
+      return c.serviceLevel === 'B 保修(一年兩次)';
+    }).every(function (c) {
+      return c.periods.length === 2
+        && c.periods[0].startMonth === 1 && c.periods[0].endMonth === 6
+        && c.periods[1].startMonth === 7 && c.periods[1].endMonth === 12;
+    });
+  })()`), 'B 級客戶皆為 1-6／7-12 月');
+  assertTrue(await evaluate(`(function(){
+    return INITIAL_CUSTOMERS.filter(function (c) {
+      return c.serviceLevel === 'C 保養(一年一次)';
+    }).every(function (c) {
+      return c.periods.length === 1
+        && c.periods[0].startMonth === 1 && c.periods[0].endMonth === 12;
+    });
+  })()`), 'C 級客戶皆為 1-12 月單一區間');
+  assertTrue(await evaluate(`(function(){
+    return INITIAL_CUSTOMERS.filter(function (c) {
+      return c.serviceLevel === 'D 維修(無簽約客戶)';
+    }).every(function (c) { return c.periods.length === 0; });
+  })()`), 'D 級客戶皆無區間');
+
+  assertEq(consoleErrors.length, 0, '全程無 JS 錯誤');
+} catch (e) {
+  fail('driver', e.message);
+} finally {
+  try { ws?.close(); } catch {}
+  chrome.kill();
+}
+
 console.log(`\n${passed} passed, ${failed} failed`);
 process.exit(failed ? 1 : 0);

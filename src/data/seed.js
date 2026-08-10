@@ -50,6 +50,12 @@ const INITIAL_CUSTOMERS = [{
   taxId: '12345678',
   principal: '王大明',
   serviceLevel: 'A 保修(一年四次)',
+  periods: [
+    { visitIndex: 1, startMonth: 1, endMonth: 3 },
+    { visitIndex: 2, startMonth: 4, endMonth: 6 },
+    { visitIndex: 3, startMonth: 7, endMonth: 9 },
+    { visitIndex: 4, startMonth: 10, endMonth: 12 }
+  ],
   phone: '02-2712-3456',
   fax: '02-2712-3457',
   address: '台北市信義區松高路11號',
@@ -75,6 +81,10 @@ const INITIAL_CUSTOMERS = [{
   taxId: '23456789',
   principal: '李美玲',
   serviceLevel: 'B 保修(一年兩次)',
+  periods: [
+    { visitIndex: 1, startMonth: 1, endMonth: 6 },
+    { visitIndex: 2, startMonth: 7, endMonth: 12 }
+  ],
   phone: '02-8780-1234',
   fax: '02-8780-1235',
   address: '台北市大安區復興南路一段39號',
@@ -94,6 +104,7 @@ const INITIAL_CUSTOMERS = [{
   taxId: '34567890',
   principal: '吳建宏',
   serviceLevel: 'C 保養(一年一次)',
+  periods: [{ visitIndex: 1, startMonth: 1, endMonth: 12 }],
   phone: '03-322-8888',
   fax: '03-322-8889',
   address: '桃園市中壢區中央西路二段100號',
@@ -107,6 +118,7 @@ const INITIAL_CUSTOMERS = [{
   taxId: '45678901',
   principal: '黃經理',
   serviceLevel: 'D 維修(無簽約客戶)',
+  periods: [],
   phone: '02-2521-6688',
   fax: '',
   address: '台北市中山區中山北路X號',
@@ -120,6 +132,7 @@ const INITIAL_CUSTOMERS = [{
   taxId: '56789012',
   principal: '劉店長',
   serviceLevel: 'D 維修(無簽約客戶)',
+  periods: [],
   phone: '04-2223-8888',
   fax: '',
   address: '台中市中區建國路X號',
