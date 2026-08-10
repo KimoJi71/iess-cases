@@ -6,6 +6,22 @@
 
   var CASE_TYPES = ['維修', '保養', '工程'];
 
+  // 門市名稱會跨客戶重複（中山店同時屬於星巴克、全家、統一超商），行政區也會跨縣市重複
+  // （中正區見於台北市、基隆市、台中市）。篩選值改用「上層\u0001下層」複合鍵，
+  // 分隔字元選 \u0001 是因為它不可能出現在任何客戶、門市、縣市、行政區名稱裡。
+  var KEY_SEP = '\u0001';
+
+  function makeKey(parent, child) {
+    return String(parent == null ? '' : parent) + KEY_SEP + String(child == null ? '' : child);
+  }
+
+  function parseKey(key) {
+    var text = String(key == null ? '' : key);
+    var idx = text.indexOf(KEY_SEP);
+    if (idx === -1) return { parent: '', child: text };
+    return { parent: text.slice(0, idx), child: text.slice(idx + 1) };
+  }
+
   // 篩選值為 string[]；空陣列代表「全部」，不做篩選。
   function isAny(list) {
     return !list || !list.length;
@@ -70,7 +86,7 @@
       if (!matches(filters.repairItem, c.repairItem)) return false;
       if (!matches(filters.repairReason, c.repairReason)) return false;
       if (!matches(filters.customer, c.customerName)) return false;
-      if (!matches(filters.store, c.storeName)) return false;
+      if (!matches(filters.store, makeKey(c.customerName, c.storeName))) return false;
       if (!isAny(filters.assignee)) {
         // 任一已選人員命中即通過（案件可能多人指派）
         var hit = filters.assignee.some(function (name) {
@@ -91,7 +107,7 @@
     return (cases || []).filter(function (c) {
       var loc = resolveMaintenanceLocation(c, stores);
       if (!matches(filters.city, loc.city)) return false;
-      if (!matches(filters.district, loc.district)) return false;
+      if (!matches(filters.district, makeKey(loc.city, loc.district))) return false;
       if (!matches(filters.customer, c.customerName)) return false;
       if (!matches(filters.assignee, c.assignee)) return false;
       if (!matches(filters.serviceLevel, c.serviceLevel)) return false;
@@ -107,58 +123,70 @@
     return names.sort(function (a, b) { return a.localeCompare(b, 'zh-Hant'); });
   }
 
-  // 客戶名稱為多選：門市選項取所有已選客戶的門市聯集。
-  // 未選客戶時沿用「所有營業中門市」。
-  //
-  // StoreUtils.getStoreNameOptions(stores, customer, null, true) 對單一客戶回傳的名單
-  // 會把營業中門市排在撤店門市之前（見 store-utils.js）。跨客戶合併聯集時若只用單純的
-  // localeCompare 重新排序會丟失這個分組，讓撤店門市可能排到營業門市前面且沒有任何標記
-  // 可以區分。這裡合併去重後，依「該門市名稱在已選客戶範圍內是否至少有一筆營業中的紀錄」
-  // 重新分組排序，維持與單客戶時相同的「營業在前、撤店在後」慣例。
-  function getStoreOptionsForCustomers(stores, customerNames) {
-    var names = [];
-    var seen = {};
-    function push(name) {
-      if (name && !seen[name]) {
-        seen[name] = true;
-        names.push(name);
-      }
+  // 門市選項依客戶分組：每個客戶一個群組，選項值為「客戶\u0001門市」複合鍵，
+  // 讓跨客戶同名門市成為彼此獨立的選項。未選客戶時列出所有客戶的群組。
+  // 群組內沿用 StoreUtils 的慣例：營業中門市在前、撤店門市在後，各自再依 zh-Hant 排序。
+  function getStoreGroupsForCustomers(stores, customerNames) {
+    var list = stores || [];
+    var scope;
+    if (customerNames && customerNames.length) {
+      scope = customerNames.slice();
+    } else {
+      scope = list.map(function (s) { return s.customerName; });
     }
-    if (!customerNames || !customerNames.length) {
-      StoreUtils.getActiveStores(stores).forEach(function (s) { push(s.storeName); });
-      return sortZhHant(names);
-    }
-    customerNames.forEach(function (customerName) {
-      StoreUtils.getStoreNameOptions(stores, customerName, null, true).forEach(push);
+    var seenCustomer = {};
+    scope = scope.filter(function (name) {
+      if (!name || seenCustomer[name]) return false;
+      seenCustomer[name] = true;
+      return true;
     });
-    var activeByName = {};
-    (stores || []).forEach(function (s) {
-      if (!s.storeName || customerNames.indexOf(s.customerName) === -1) return;
-      if (activeByName[s.storeName] !== true) {
-        activeByName[s.storeName] = StoreUtils.isActiveStore(s);
-      }
-    });
-    return names.sort(function (a, b) {
-      var aActive = activeByName[a] !== false;
-      var bActive = activeByName[b] !== false;
-      if (aActive !== bActive) return aActive ? -1 : 1;
-      return a.localeCompare(b, 'zh-Hant');
-    });
-  }
+    sortZhHant(scope);
 
-  // 縣市為多選：行政區選項取所有已選縣市的聯集，未選縣市時為空。
-  function getDistrictOptionsForCities(cityNames) {
-    var districts = [];
-    var seen = {};
-    (cityNames || []).forEach(function (city) {
-      StoreUtils.getDistrictsForCity(city).forEach(function (d) {
-        if (d && !seen[d]) {
-          seen[d] = true;
-          districts.push(d);
+    return scope.map(function (customerName) {
+      // 同一客戶下可能有多筆同名門市紀錄；任一筆營業中即視為營業中。
+      var activeByName = {};
+      list.forEach(function (s) {
+        if (s.customerName !== customerName || !s.storeName) return;
+        if (activeByName[s.storeName] !== true) {
+          activeByName[s.storeName] = StoreUtils.isActiveStore(s);
         }
       });
+      var names = Object.keys(activeByName).sort(function (a, b) {
+        if (activeByName[a] !== activeByName[b]) return activeByName[a] ? -1 : 1;
+        return a.localeCompare(b, 'zh-Hant');
+      });
+      return {
+        group: customerName,
+        options: names.map(function (name) {
+          return {
+            value: makeKey(customerName, name),
+            label: name,
+            chipLabel: customerName + ' · ' + name
+          };
+        })
+      };
+    }).filter(function (g) { return g.options.length > 0; });
+  }
+
+  // 行政區選項依縣市分組，選項值為「縣市\u0001行政區」複合鍵。
+  // 未選縣市時列出所有縣市，與門市的規則一致；群組順序一律沿用 TAIWAN_CITY_OPTIONS。
+  function getDistrictGroupsForCities(cityNames) {
+    var selected = cityNames || [];
+    var cities = selected.length
+      ? TAIWAN_CITY_OPTIONS.filter(function (c) { return selected.indexOf(c) !== -1; })
+      : TAIWAN_CITY_OPTIONS.slice();
+    var groups = [];
+    cities.forEach(function (city) {
+      var districts = StoreUtils.getDistrictsForCity(city) || [];
+      if (!districts.length) return;
+      groups.push({
+        group: city,
+        options: districts.map(function (d) {
+          return { value: makeKey(city, d), label: d, chipLabel: city + ' · ' + d };
+        })
+      });
     });
-    return districts;
+    return groups;
   }
 
   function mapProjectRow(c) {
@@ -272,11 +300,13 @@
 
   window.DataRetrievalUtils = {
     CASE_TYPES: CASE_TYPES,
+    makeKey: makeKey,
+    parseKey: parseKey,
     filterProjectCases: filterProjectCases,
     filterRepairCases: filterRepairCases,
     filterMaintenanceCases: filterMaintenanceCases,
-    getStoreOptionsForCustomers: getStoreOptionsForCustomers,
-    getDistrictOptionsForCities: getDistrictOptionsForCities,
+    getStoreGroupsForCustomers: getStoreGroupsForCustomers,
+    getDistrictGroupsForCities: getDistrictGroupsForCities,
     formatAssignees: formatAssignees,
     getColumns: getColumns,
     buildRows: buildRows,
