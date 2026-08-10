@@ -1,0 +1,232 @@
+#!/usr/bin/env node
+/**
+ * 資料調閱多選篩選：UI 驗證。
+ * 啟動 headless Chrome 載入 index.html，渲染真實的 DataRetrieval 元件後斷言 DOM。
+ * 參考 scripts/verify-equipment-level-ui.mjs 的 CDP 連線流程。
+ */
+import { spawn } from 'node:child_process';
+import { setTimeout as sleep } from 'node:timers/promises';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { existsSync } from 'node:fs';
+
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
+const CHROME = process.env.CHROME_PATH
+  || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+const PORT = Number(process.env.CDP_PORT || 9334);
+
+if (!existsSync(CHROME)) {
+  console.error(`找不到 Chrome：${CHROME}\n可用 CHROME_PATH 環境變數指定路徑。`);
+  process.exit(2);
+}
+
+let passed = 0, failed = 0;
+const pass = (n, d) => { passed++; console.log(`  ✓ ${n}${d ? ` — ${d}` : ''}`); };
+const fail = (n, d) => { failed++; console.error(`  ✗ ${n}${d ? ` — ${d}` : ''}`); };
+function assertEq(actual, expected, name) {
+  if (actual === expected) pass(name, JSON.stringify(actual));
+  else fail(name, `expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`);
+}
+function assertTrue(cond, name, detail) {
+  if (cond) pass(name, detail); else fail(name, detail);
+}
+
+const chrome = spawn(CHROME, [
+  '--headless', '--disable-gpu', '--no-first-run', '--no-default-browser-check',
+  `--remote-debugging-port=${PORT}`, '--user-data-dir=/tmp/iess-dr-ui-profile',
+  'about:blank'
+], { stdio: 'ignore' });
+
+let ws, msgId = 0;
+const pending = new Map();
+const consoleErrors = [];
+
+function send(method, params = {}) {
+  const id = ++msgId;
+  ws.send(JSON.stringify({ id, method, params }));
+  return new Promise((res, rej) => pending.set(id, { res, rej }));
+}
+
+async function evaluate(expression) {
+  const r = await send('Runtime.evaluate', {
+    expression, returnByValue: true, awaitPromise: true
+  });
+  if (r.exceptionDetails) {
+    throw new Error(r.exceptionDetails.exception?.description || JSON.stringify(r.exceptionDetails));
+  }
+  return r.result.value;
+}
+
+// Headless Chrome's CDP can garbage-collect a Promise that's only reachable via the
+// Runtime.evaluate return value before it settles ("Promise was collected"), especially
+// across chained setTimeout ticks. Pin the promise to a global first so it stays
+// strongly referenced, then await it in a second round trip.
+async function evaluateAsync(expression) {
+  await evaluate(`window.__pending = (${expression}); 'queued'`);
+  return evaluate('window.__pending');
+}
+
+// 在頁面裡渲染 DataRetrieval 並掛到 document.body，回傳一段可重複使用的前置程式碼。
+const MOUNT = `
+  window.__stores = [
+    { id:'S1', customerName:'甲客戶', storeName:'甲一店', storeStatus:'營業',
+      companyCity:'臺北市', companyDistrict:'中正區' },
+    { id:'S2', customerName:'甲客戶', storeName:'甲二店', storeStatus:'營業',
+      companyCity:'臺北市', companyDistrict:'大安區' },
+    { id:'S3', customerName:'乙客戶', storeName:'乙一店', storeStatus:'營業',
+      companyCity:'新北市', companyDistrict:'板橋區' }
+  ];
+  window.__mount = function () {
+    var host = document.getElementById('dr-host');
+    if (host) host.remove();
+    host = document.createElement('div');
+    host.id = 'dr-host';
+    document.body.appendChild(host);
+    host.appendChild(DataRetrieval({
+      cases: [], maintenanceCases: [], projectCases: [],
+      customers: [{ id:'C1', name:'甲客戶' }, { id:'C2', name:'乙客戶' }],
+      stores: window.__stores,
+      showToast: function () {}
+    }));
+    return host;
+  };
+`;
+
+try {
+  let targets;
+  for (let i = 0; i < 50; i++) {
+    try { targets = await (await fetch(`http://127.0.0.1:${PORT}/json/list`)).json(); break; }
+    catch { await sleep(200); }
+  }
+  const page = targets.find(t => t.type === 'page');
+  ws = new WebSocket(page.webSocketDebuggerUrl);
+  await new Promise(res => { ws.onopen = res; });
+  ws.onmessage = (ev) => {
+    const m = JSON.parse(ev.data);
+    if (m.id && pending.has(m.id)) {
+      const { res, rej } = pending.get(m.id);
+      pending.delete(m.id);
+      m.error ? rej(new Error(JSON.stringify(m.error))) : res(m.result);
+    } else if (m.method === 'Runtime.exceptionThrown') {
+      consoleErrors.push(m.params.exceptionDetails.exception?.description
+        || m.params.exceptionDetails.text);
+    } else if (m.method === 'Runtime.consoleAPICalled' && m.params.type === 'error') {
+      consoleErrors.push(m.params.args.map(a => a.value ?? a.description).join(' '));
+    }
+  };
+
+  await send('Runtime.enable');
+  await send('Page.enable');
+  await send('Page.navigate', { url: `file://${ROOT}/index.html` });
+  await sleep(4000);
+  assertEq(consoleErrors.length, 0, '載入時無 JS 錯誤');
+  await evaluate(MOUNT + "'ok'");
+  const assigneeFirst = await evaluate('ASSIGNEES[0]');
+
+  console.log('\n1. 篩選欄位渲染為 MultiSelect');
+  const rendered = await evaluate(`(function () {
+    var host = window.__mount();
+    var labels = Array.prototype.map.call(
+      host.querySelectorAll('label'), function (l) { return l.textContent.trim(); });
+    var multi = host.querySelectorAll('.multi-select').length;
+    var placeholders = Array.prototype.map.call(
+      host.querySelectorAll('.multi-select__placeholder'),
+      function (p) { return p.textContent.trim(); });
+    return { labels: labels, multi: multi, placeholders: placeholders };
+  })()`);
+  // 預設案件類型為「維修」：工項分類/叫修項目/叫修原因/客戶名稱/門市名稱/維修人員/服務等級 = 7 個
+  assertEq(rendered.multi, 7, '維修篩選區有 7 個 MultiSelect');
+  assertTrue(rendered.labels.includes('維修人員'), '有「維修人員」欄位', rendered.labels.join(' | '));
+  assertTrue(
+    rendered.placeholders.length === 7 && rendered.placeholders.every(p => p === '全部'),
+    '未選時全部顯示 placeholder「全部」',
+    JSON.stringify(rendered.placeholders)
+  );
+
+  console.log('\n2. 選取後以 chip 呈現，且可多選');
+  const chips = await evaluateAsync(`(function () {
+    var host = window.__mount();
+    var roots = host.querySelectorAll('.multi-select');
+    // 第 6 個（index 5）為「維修人員」
+    var control = roots[5].querySelector('.multi-select__control');
+    control.click();
+    return new Promise(function (resolve) {
+      setTimeout(function () {
+        var opts = document.querySelectorAll('.multi-select__menu .multi-select__option');
+        opts[0].click();
+        // MultiSelect 選取選項後選單維持展開（一次可連續多選，不會自動關閉，
+        // 見 src/core/multi-select.js 的 toggleOption：只呼叫 onChange，不呼叫 closeMenu）。
+        // 因此不需要再次點擊 control 重新開啟，直接在同一個已展開的選單裡點第二個選項即可。
+        setTimeout(function () {
+          var opts2 = document.querySelectorAll('.multi-select__menu .multi-select__option');
+          opts2[1].click();
+          setTimeout(function () {
+            var texts = Array.prototype.map.call(
+              host.querySelectorAll('.multi-select')[5].querySelectorAll('.multi-select__chip'),
+              function (c) { return c.textContent.replace('×', '').trim(); });
+            resolve(texts);
+          }, 50);
+        }, 50);
+      }, 50);
+    });
+  })()`);
+  assertEq(chips.length, 2, '維修人員可同時選兩位', JSON.stringify(chips));
+  assertEq(chips[0], assigneeFirst, '第一個 chip 為選單第一項');
+
+  console.log('\n3. 客戶改變時清空門市，且門市選項為聯集');
+  const cascade = await evaluateAsync(`(function () {
+    var host = window.__mount();
+    function ms(i) { return host.querySelectorAll('.multi-select')[i]; }
+    function openAndClick(index, optionIndex) {
+      ms(index).querySelector('.multi-select__control').click();
+      return new Promise(function (resolve) {
+        setTimeout(function () {
+          var opts = document.querySelectorAll('.multi-select__menu .multi-select__option');
+          opts[optionIndex].click();
+          setTimeout(resolve, 50);
+        }, 50);
+      });
+    }
+    // index 3 = 客戶名稱, index 4 = 門市名稱
+    return openAndClick(3, 0)                       // 選甲客戶
+      .then(function () { return openAndClick(4, 0); })  // 選甲客戶底下第一間門市
+      .then(function () {
+        var storeChips = ms(4).querySelectorAll('.multi-select__chip').length;
+        return openAndClick(3, 1).then(function () {  // 再加選乙客戶 -> 應清空門市
+          ms(4).querySelector('.multi-select__control').click();
+          return new Promise(function (resolve) {
+            setTimeout(function () {
+              var opts = Array.prototype.map.call(
+                document.querySelectorAll('.multi-select__menu .multi-select__option'),
+                function (o) { return o.textContent.trim(); });
+              resolve({
+                storeChipsBefore: storeChips,
+                storeChipsAfter: ms(4).querySelectorAll('.multi-select__chip').length,
+                storeOptions: opts
+              });
+            }, 50);
+          });
+        });
+      });
+  })()`);
+  assertEq(cascade.storeChipsBefore, 1, '選客戶後可選到門市');
+  assertEq(cascade.storeChipsAfter, 0, '客戶變動後門市被清空');
+  assertTrue(
+    cascade.storeOptions.includes('甲一店')
+      && cascade.storeOptions.includes('甲二店')
+      && cascade.storeOptions.includes('乙一店'),
+    '門市選項為兩客戶的聯集',
+    JSON.stringify(cascade.storeOptions)
+  );
+
+  assertEq(consoleErrors.length, 0, '互動過程無 JS 錯誤');
+} catch (err) {
+  fail('腳本執行例外', err.message);
+} finally {
+  try { ws && ws.close(); } catch {}
+  chrome.kill();
+}
+
+console.log(`\n${'='.repeat(50)}`);
+console.log(`Results: ${passed} passed, ${failed} failed`);
+if (failed > 0) process.exit(1);
