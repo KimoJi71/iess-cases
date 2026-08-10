@@ -656,9 +656,9 @@ try {
   const callSites = [
     ['src/features/repair/case-form.js', 2],
     ['src/features/project/project-form.js', 2],
-    // Task 6 加了第 2 處呼叫（renderMaintenanceScheduleDetails 的目前保養季度
-    // 標籤改吃服務等級），故此檔的預期次數由 1 上修為 2。
-    ['src/features/scheduling/case-arrangement.js', 2]
+    // 保養區間搬到客戶後，renderMaintenanceScheduleDetails 直接以 customerName
+    // 取得區間，不再需要服務等級名稱，故呼叫點由 2 處回到 1 處。
+    ['src/features/scheduling/case-arrangement.js', 1]
   ];
   for (const [rel, expectedCount] of callSites) {
     const src = readFileSync(join(ROOT, rel), 'utf8');
