@@ -41,16 +41,33 @@ let ws, msgId = 0;
 const pending = new Map();
 const consoleErrors = [];
 
+// Bound how long any single CDP round trip may take. Page-side code below runs
+// inside setTimeout callbacks (e.g. clicking `opts[N]` for some hardcoded N); if a
+// selector or index is ever wrong, the callback throws, the *page-side* Promise it's
+// building never settles, and a plain `await` on it would hang the Node process
+// forever (no assertion, no exit code, no Chrome cleanup). This watchdog turns that
+// into a normal thrown Error, which the outer try/catch below converts into a failed
+// assertion — the script still exits 1 and still kills Chrome.
+const EVAL_TIMEOUT_MS = Number(process.env.EVAL_TIMEOUT_MS || 8000);
+
 function send(method, params = {}) {
   const id = ++msgId;
   ws.send(JSON.stringify({ id, method, params }));
   return new Promise((res, rej) => pending.set(id, { res, rej }));
 }
 
-async function evaluate(expression) {
-  const r = await send('Runtime.evaluate', {
+async function evaluate(expression, timeoutMs = EVAL_TIMEOUT_MS) {
+  const call = send('Runtime.evaluate', {
     expression, returnByValue: true, awaitPromise: true
   });
+  const r = await Promise.race([
+    call,
+    sleep(timeoutMs).then(() => {
+      throw new Error(
+        `逾時 ${timeoutMs}ms 無回應（可能是頁面內某個 setTimeout 回呼拋出例外，導致該 Promise 永遠不會 resolve）— 運算式開頭：${expression.slice(0, 120)}`
+      );
+    })
+  ]);
   if (r.exceptionDetails) {
     throw new Error(r.exceptionDetails.exception?.description || JSON.stringify(r.exceptionDetails));
   }
