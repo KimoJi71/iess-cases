@@ -434,12 +434,13 @@
         });
       case 'customer-add':
         return h(CustomerForm, {
-          cases: s.customers, setCases: setCustomers, setView: setView, showToast: showToast
+          cases: s.customers, setCases: setCustomers, serviceLevels: s.serviceLevels,
+          setView: setView, showToast: showToast
         });
       case 'customer-edit':
         return h(CustomerForm, {
           cases: s.customers, setCases: setCustomers, targetCase: s.editingCase,
-          setView: setView, showToast: showToast
+          serviceLevels: s.serviceLevels, setView: setView, showToast: showToast
         });
       case 'store-list':
         return h(StoreList, {

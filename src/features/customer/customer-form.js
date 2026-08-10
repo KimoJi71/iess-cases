@@ -1,11 +1,24 @@
 /*
  * features/customer/customer-form.js — 客戶建檔：新增/編輯客戶表單
- * props: { cases, setCases, setView, showToast, targetCase }
+ * props: { cases, setCases, serviceLevels, setView, showToast, targetCase }
  */
 (function () {
   'use strict';
   var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful;
   var iconActionBtn = IESS.iconActionBtn;
+
+  var MONTH_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+
+  // 依服務等級的「每年保養次數」增減區間列：增加補空白列，減少砍尾端，已填的前段保留
+  function resizePeriods(periods, count) {
+    var next = periods.slice(0, count);
+    for (var i = next.length; i < count; i++) {
+      next.push({ visitIndex: i + 1, startMonth: '', endMonth: '' });
+    }
+    return next.map(function (p, i) {
+      return { visitIndex: i + 1, startMonth: p.startMonth, endMonth: p.endMonth };
+    });
+  }
 
   function CustomerForm(props) {
     var cases = props.cases;
@@ -33,12 +46,71 @@
     var contactModal = { show: false };
     var currentContact = { id: null, title: '', name: '', phone: '', email: '' };
 
+    var serviceLevels = props.serviceLevels || [];
+
+    function expectedPeriodCount(levelName) {
+      return ServiceLevelUtils.getMaintenanceCount(serviceLevels, levelName);
+    }
+
+    var periods = resizePeriods(
+      ((targetCase && targetCase.periods) || []).map(function (p) {
+        return { visitIndex: p.visitIndex, startMonth: p.startMonth, endMonth: p.endMonth };
+      }),
+      expectedPeriodCount(formData.serviceLevel)
+    );
+
     return stateful(function (rerender) {
       function handleChange(e) {
         var name = e.target.name;
         var value = e.target.value;
         formData[name] = value;
         rerender();
+      }
+      function handleServiceLevelChange(e) {
+        formData.serviceLevel = e.target.value;
+        periods = resizePeriods(periods, expectedPeriodCount(formData.serviceLevel));
+        rerender();
+      }
+      function handleMonthChange(index, key, value) {
+        periods[index][key] = value === '' ? '' : Number(value);
+        rerender();
+      }
+      function renderPeriodRows() {
+        if (!periods.length) {
+          return h('p', { className: 'text-sm text-gray-500 bg-gray-50 border rounded-md p-4' },
+            '此服務等級不納入保養分配');
+        }
+        return h('div', { className: 'space-y-3' },
+          periods.map(function (p, index) {
+            var n = index + 1;
+            return h('div', { key: n, className: 'flex flex-wrap items-center gap-3' },
+              h('span', { className: 'w-16 text-sm text-gray-700' }, '第 ' + n + ' 次'),
+              h('select', {
+                name: 'startMonth-' + n,
+                value: p.startMonth === '' ? '' : String(p.startMonth),
+                onChange: function (e) { handleMonthChange(index, 'startMonth', e.target.value); },
+                className: 'w-28 p-2.5 border rounded-md outline-none focus:border-blue-500 bg-white'
+              },
+                h('option', { value: '' }, '起始月'),
+                MONTH_OPTIONS.map(function (m) {
+                  return h('option', { key: m, value: String(m) }, m + '月');
+                })
+              ),
+              h('span', { className: 'text-gray-400' }, '～'),
+              h('select', {
+                name: 'endMonth-' + n,
+                value: p.endMonth === '' ? '' : String(p.endMonth),
+                onChange: function (e) { handleMonthChange(index, 'endMonth', e.target.value); },
+                className: 'w-28 p-2.5 border rounded-md outline-none focus:border-blue-500 bg-white'
+              },
+                h('option', { value: '' }, '結束月'),
+                MONTH_OPTIONS.map(function (m) {
+                  return h('option', { key: m, value: String(m) }, m + '月');
+                })
+              )
+            );
+          })
+        );
       }
       function handleContactChange(e) {
         var name = e.target.name;
@@ -82,18 +154,26 @@
           showToast('客戶名稱為必填', 'error');
           return;
         }
+        var periodErrors = CustomerUtils.validatePeriods(
+          periods, expectedPeriodCount(formData.serviceLevel));
         if (isEdit) {
           setCases(cases.map(function (c) {
-            return c.id === targetCase.id ? Object.assign({}, c, formData, { contacts: contacts }) : c;
+            return c.id === targetCase.id
+              ? Object.assign({}, c, formData, { contacts: contacts, periods: periods })
+              : c;
           }));
           showToast('客戶資料更新成功');
         } else {
           var newCustomer = Object.assign({ id: 'CUST' + Date.now() }, formData, {
             contacts: contacts,
+            periods: periods,
             createdDate: todayDate
           });
           setCases([newCustomer].concat(cases));
           showToast('客戶新增成功');
+        }
+        if (periodErrors.length) {
+          showToast(periodErrors[0], 'error');
         }
         setView('customer-list');
       }
@@ -146,7 +226,7 @@
               h('select', {
                 name: 'serviceLevel',
                 value: formData.serviceLevel,
-                onChange: handleChange,
+                onChange: handleServiceLevelChange,
                 className: 'w-full p-2.5 border rounded-md outline-none'
               }, SERVICE_LEVEL_OPTIONS.map(function (opt) {
                 return h('option', { key: opt, value: opt }, opt);
@@ -207,6 +287,10 @@
                 className: 'w-full p-2.5 border rounded-md outline-none focus:border-blue-500'
               })
             )
+          ),
+          h('div', null,
+            h('h3', { className: 'font-semibold text-lg text-blue-800 border-b pb-2 mb-4' }, '保養區間'),
+            renderPeriodRows()
           ),
           h('div', null,
             h('div', { className: 'flex items-center justify-between border-b pb-2 mb-4' },

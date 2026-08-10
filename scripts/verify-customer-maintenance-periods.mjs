@@ -298,6 +298,120 @@ try {
     return headers.indexOf('保養區間') === -1;
   })()`), '服務等級列表已無「保養區間」欄');
 
+  console.log('\nSection 6｜客戶表單保養區間');
+  // 直接掛載 CustomerForm 到暫時容器，避開主畫面導覽。
+  // 注意：src/core/searchable-select.js 全域攔截了 h('select', ...)，頁面上完全沒有
+  // 原生 <select>（見 verify-service-level-management.mjs 的同一說明），服務等級與
+  // 起訖月欄位都是 searchable-select（<input name="..."> + portal 選單），故一律改用
+  // mousedown 開啟選單、點選項按鈕（.searchable-select__option）來選值，而非對
+  // <select> 直接賦值＋dispatch('change')。
+  const formProbe = await evaluate(`(function(){
+    var container = document.createElement('div');
+    document.body.appendChild(container);
+    window.__customerSaved = null;
+    window.__toasts = [];
+    window.__chooseOption = function (container, name, label) {
+      var input = container.querySelector('[name="' + name + '"]');
+      if (!input) throw new Error('__chooseOption: 找不到欄位 ' + name);
+      input.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
+      var btns = Array.prototype.filter.call(
+        document.querySelectorAll('.searchable-select__menu--portal .searchable-select__option'),
+        function (b) { return b.textContent.trim() === label; }
+      );
+      if (!btns.length) throw new Error('__chooseOption: 欄位 ' + name + ' 找不到選項 ' + label);
+      btns[0].dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
+    };
+    var node = CustomerForm({
+      cases: INITIAL_CUSTOMERS,
+      setCases: function (next) { window.__customerSaved = next[0] || null; },
+      targetCase: null,
+      serviceLevels: INITIAL_SERVICE_LEVELS,
+      setView: function () {},
+      showToast: function (msg, type) { window.__toasts.push({ msg: msg, type: type }); }
+    });
+    container.appendChild(node);
+    window.__formContainer = container;
+    var selects = container.querySelectorAll('[name^="startMonth-"]');
+    return {
+      hasSection: container.textContent.indexOf('保養區間') !== -1,
+      startCount: selects.length,
+      endCount: container.querySelectorAll('[name^="endMonth-"]').length
+    };
+  })()`);
+  assertTrue(formProbe.hasSection, '客戶表單有「保養區間」區塊');
+  assertEq(formProbe.startCount, 4, '預設服務等級（A，4 次）渲染 4 列起始月');
+  assertEq(formProbe.endCount, 4, '同樣渲染 4 列結束月');
+
+  const afterSwitch = await evaluate(`(function(){
+    var container = window.__formContainer;
+    window.__chooseOption(container, 'serviceLevel', 'B 保修(一年兩次)');
+    return container.querySelectorAll('[name^="startMonth-"]').length;
+  })()`);
+  assertEq(afterSwitch, 2, '切換到 B（2 次）後只剩 2 列');
+
+  const afterZero = await evaluate(`(function(){
+    var container = window.__formContainer;
+    window.__chooseOption(container, 'serviceLevel', 'D 維修(無簽約客戶)');
+    return {
+      rows: container.querySelectorAll('[name^="startMonth-"]').length,
+      hint: container.textContent.indexOf('此服務等級不納入保養分配') !== -1
+    };
+  })()`);
+  assertEq(afterZero.rows, 0, '次數 0 時不渲染區間列');
+  assertTrue(afterZero.hint, '次數 0 時顯示「此服務等級不納入保養分配」');
+
+  const saveResult = await evaluate(`(function(){
+    var container = window.__formContainer;
+    window.__chooseOption(container, 'serviceLevel', 'B 保修(一年兩次)');
+    var nameInput = container.querySelector('input[name="name"]');
+    nameInput.value = '測試客戶';
+    nameInput.dispatchEvent(new Event('input', { bubbles: true }));
+    nameInput.dispatchEvent(new Event('change', { bubbles: true }));
+    window.__toasts = [];
+    container.querySelector('form').dispatchEvent(
+      new Event('submit', { bubbles: true, cancelable: true }));
+    return {
+      saved: !!window.__customerSaved,
+      periods: window.__customerSaved && window.__customerSaved.periods,
+      toasts: window.__toasts.slice()
+    };
+  })()`);
+  assertTrue(saveResult.saved, '區間留空仍可儲存（不擋下）');
+  assertEq(saveResult.periods.length, 2, '儲存的客戶帶有 2 筆區間');
+  assertTrue(saveResult.toasts.some(t => t.type === 'error'
+    && t.msg.indexOf('1–12 月') !== -1), '區間未填完整時跳提醒 toast');
+
+  const saveValid = await evaluate(`(function(){
+    var container = window.__formContainer;
+    // 每次選擇都會觸發重繪換掉節點，故每步都重新以 index 定位欄位名稱
+    function chooseMonth(prefix, index, month) {
+      var name = prefix + (index + 1);
+      window.__chooseOption(container, name, month + '月');
+    }
+    chooseMonth('startMonth-', 0, 1);
+    chooseMonth('endMonth-', 0, 6);
+    chooseMonth('startMonth-', 1, 7);
+    chooseMonth('endMonth-', 1, 12);
+    window.__toasts = [];
+    container.querySelector('form').dispatchEvent(
+      new Event('submit', { bubbles: true, cancelable: true }));
+    return {
+      periods: window.__customerSaved && window.__customerSaved.periods,
+      hasError: window.__toasts.some(function (t) { return t.type === 'error'; })
+    };
+  })()`);
+  assertDeep(saveValid.periods, [
+    { visitIndex: 1, startMonth: 1, endMonth: 6 },
+    { visitIndex: 2, startMonth: 7, endMonth: 12 }
+  ], '填完整後儲存的區間為數字月份');
+  assertTrue(!saveValid.hasError, '區間合法時不跳錯誤 toast');
+
+  await evaluate(`(function(){
+    window.__formContainer.remove();
+    window.__formContainer = null;
+    return true;
+  })()`);
+
   assertEq(consoleErrors.length, 0, '全程無 JS 錯誤');
 } catch (e) {
   fail('driver', e.message);
