@@ -1,6 +1,6 @@
 /*
  * features/customer/customer-list.js — 客戶建檔：客戶列表
- * props: { cases, setCases, setEditingCase, setView, showToast }
+ * props: { cases, setCases, serviceLevels, setEditingCase, setView, showToast }
  */
 (function () {
   'use strict';
@@ -15,12 +15,23 @@
     }, isEnabled ? '啟用' : '停用');
   }
 
+  // 區間欄：驗證不過只標示、不阻擋（設定本身允許先存後補）
+  function periodsCell(customer, serviceLevels) {
+    var count = ServiceLevelUtils.getMaintenanceCount(serviceLevels, customer && customer.serviceLevel);
+    var errors = CustomerUtils.validatePeriods(customer && customer.periods, count);
+    if (errors.length) {
+      return h('span', { className: 'text-red-600', title: errors[0] }, '區間未設完整');
+    }
+    return CustomerUtils.formatPeriodsLabel(customer);
+  }
+
   function CustomerList(props) {
     var cases = props.cases;
     var setCases = props.setCases;
     var setEditingCase = props.setEditingCase;
     var setView = props.setView;
     var showToast = props.showToast;
+    var serviceLevels = props.serviceLevels || [];
 
     // 區域狀態
     var keyword = '';
@@ -107,13 +118,14 @@
               h('tr', null,
                 h('th', { className: 'p-3 font-semibold text-center w-24' }, '操作'),
                 h('th', { className: 'p-3 font-semibold' }, '客戶名稱'),
+                h('th', { className: 'p-3 font-semibold' }, '保養區間'),
                 h('th', { className: 'p-3 font-semibold' }, '啟用狀態')
               )
             ),
             h('tbody', { className: 'divide-y divide-gray-100' },
               filteredCustomers.length === 0
                 ? h('tr', null,
-                    h('td', { colspan: 3, className: 'p-10 text-center text-gray-400 text-base' }, '無資料'))
+                    h('td', { colspan: 4, className: 'p-10 text-center text-gray-400 text-base' }, '無資料'))
                 : pageResult.items.map(function (c) {
                     return h('tr', { key: c.id, className: 'hover:bg-blue-50/50 transition-colors' },
                       h('td', { className: 'p-3' },
@@ -126,6 +138,7 @@
                         )
                       ),
                       h('td', { className: 'p-3 font-medium text-gray-800' }, c.name),
+                      h('td', { className: 'p-3' }, periodsCell(c, serviceLevels)),
                       h('td', { className: 'p-3' }, enabledBadge(c.enabled))
                     );
                   })

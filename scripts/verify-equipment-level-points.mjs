@@ -183,10 +183,10 @@ const PU = sandbox.window.PerformanceUtils;
 
 // 與 seed 的 INITIAL_SERVICE_LEVELS 一致：A/B 不計增額積分，C/D 計增額積分
 const sls = [
-  { id: 'SL001', name: 'A 保修(一年四次)', maintenanceCount: 4, countsBonusPoints: false, periods: [] },
-  { id: 'SL002', name: 'B 保修(一年兩次)', maintenanceCount: 2, countsBonusPoints: false, periods: [] },
-  { id: 'SL003', name: 'C 保養(一年一次)', maintenanceCount: 1, countsBonusPoints: true, periods: [] },
-  { id: 'SL004', name: 'D 維修(無簽約客戶)', maintenanceCount: 0, countsBonusPoints: true, periods: [] }
+  { id: 'SL001', name: 'A 保修(一年四次)', maintenanceCount: 4, countsBonusPoints: false },
+  { id: 'SL002', name: 'B 保修(一年兩次)', maintenanceCount: 2, countsBonusPoints: false },
+  { id: 'SL003', name: 'C 保養(一年一次)', maintenanceCount: 1, countsBonusPoints: true },
+  { id: 'SL004', name: 'D 維修(無簽約客戶)', maintenanceCount: 0, countsBonusPoints: true }
 ];
 
 assertEq(PU.isBonusEligible(caseWith('A 保修(一年四次)', 'RAS-100'), cats, sls), false,

@@ -10,19 +10,6 @@
   'use strict';
   var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful;
 
-  var MONTH_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
-
-  // 依「每年保養次數」增減區間列：增加補空白列，減少砍尾端，已填的前段保留
-  function resizePeriods(periods, count) {
-    var next = periods.slice(0, count);
-    for (var i = next.length; i < count; i++) {
-      next.push({ visitIndex: i + 1, startMonth: '', endMonth: '' });
-    }
-    return next.map(function (p, i) {
-      return { visitIndex: i + 1, startMonth: p.startMonth, endMonth: p.endMonth };
-    });
-  }
-
   function ServiceLevelForm(props) {
     var serviceLevels = props.serviceLevels || [];
     var setServiceLevels = props.setServiceLevels;
@@ -37,19 +24,11 @@
       maintenanceCount: targetCase ? String(Number(targetCase.maintenanceCount) || 0) : '0',
       countsBonusPoints: !!(targetCase && targetCase.countsBonusPoints)
     };
-    var periods = resizePeriods(
-      ((targetCase && targetCase.periods) || []).map(function (p) {
-        return { visitIndex: p.visitIndex, startMonth: p.startMonth, endMonth: p.endMonth };
-      }),
-      Number(formData.maintenanceCount) || 0
-    );
-
     function buildRecord() {
       return {
         name: formData.name,
         maintenanceCount: formData.maintenanceCount === '' ? '' : Number(formData.maintenanceCount),
-        countsBonusPoints: formData.countsBonusPoints,
-        periods: periods
+        countsBonusPoints: formData.countsBonusPoints
       };
     }
 
@@ -78,18 +57,11 @@
 
       function handleCountChange(e) {
         formData.maintenanceCount = e.target.value;
-        var count = Number(e.target.value);
-        periods = resizePeriods(periods, isFinite(count) && count > 0 ? Math.floor(count) : 0);
         rerender();
       }
 
       function handleBonusChange(e) {
         formData.countsBonusPoints = e.target.value === '是';
-        rerender();
-      }
-
-      function handleMonthChange(index, key, value) {
-        periods[index][key] = value === '' ? '' : Number(value);
         rerender();
       }
 
@@ -127,44 +99,6 @@
         setView('service-level-list');
       }
 
-      function renderPeriodRows() {
-        if (!periods.length) {
-          return h('p', { className: 'text-sm text-gray-500 bg-gray-50 border rounded-md p-4' },
-            '此服務等級不納入保養分配');
-        }
-        return h('div', { className: 'space-y-3' },
-          periods.map(function (p, index) {
-            var n = index + 1;
-            return h('div', { key: n, className: 'flex flex-wrap items-center gap-3' },
-              h('span', { className: 'w-16 text-sm text-gray-700' }, '第 ' + n + ' 次'),
-              h('select', {
-                name: 'startMonth-' + n,
-                value: p.startMonth === '' ? '' : String(p.startMonth),
-                onChange: function (e) { handleMonthChange(index, 'startMonth', e.target.value); },
-                className: 'w-28 p-2.5 border rounded-md outline-none focus:border-blue-500 bg-white'
-              },
-                h('option', { value: '' }, '起始月'),
-                MONTH_OPTIONS.map(function (m) {
-                  return h('option', { key: m, value: String(m) }, m + '月');
-                })
-              ),
-              h('span', { className: 'text-gray-400' }, '～'),
-              h('select', {
-                name: 'endMonth-' + n,
-                value: p.endMonth === '' ? '' : String(p.endMonth),
-                onChange: function (e) { handleMonthChange(index, 'endMonth', e.target.value); },
-                className: 'w-28 p-2.5 border rounded-md outline-none focus:border-blue-500 bg-white'
-              },
-                h('option', { value: '' }, '結束月'),
-                MONTH_OPTIONS.map(function (m) {
-                  return h('option', { key: m, value: String(m) }, m + '月');
-                })
-              )
-            );
-          })
-        );
-      }
-
       return h('div', {
         className: 'max-w-3xl mx-auto bg-white rounded-lg shadow-sm border border-gray-100 relative'
       },
@@ -196,7 +130,11 @@
                 value: formData.maintenanceCount,
                 onChange: handleCountChange,
                 className: 'w-full p-2.5 border rounded-md outline-none focus:border-blue-500'
-              })
+              }),
+              h('p', { className: 'text-xs text-gray-500 mt-1' },
+                Number(formData.maintenanceCount) > 0
+                  ? '各次的月份區間由各客戶在「客戶管理」自行設定'
+                  : '此服務等級不納入保養分配')
             ),
             h('div', null,
               h('label', { className: 'block text-sm mb-1' }, '是否計算增額積分'),
@@ -210,10 +148,6 @@
                 h('option', { value: '是' }, '是')
               )
             )
-          ),
-          h('div', { className: 'mt-8' },
-            h('h3', { className: 'text-sm font-bold text-gray-700 border-b pb-2 mb-4' }, '保養區間'),
-            renderPeriodRows()
           ),
           h('div', { className: 'flex justify-end gap-3 mt-8 pt-6 border-t' },
             h('button', {

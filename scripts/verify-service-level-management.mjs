@@ -40,22 +40,10 @@ const SLU = sandbox.ServiceLevelUtils;
 
 // 與 seed 的 INITIAL_SERVICE_LEVELS 內容一致的 fixture
 const LEVELS = [
-  { id: 'SL001', name: 'A 保修(一年四次)', maintenanceCount: 4, countsBonusPoints: false,
-    periods: [
-      { visitIndex: 1, startMonth: 1, endMonth: 3 },
-      { visitIndex: 2, startMonth: 4, endMonth: 6 },
-      { visitIndex: 3, startMonth: 7, endMonth: 9 },
-      { visitIndex: 4, startMonth: 10, endMonth: 12 }
-    ] },
-  { id: 'SL002', name: 'B 保修(一年兩次)', maintenanceCount: 2, countsBonusPoints: false,
-    periods: [
-      { visitIndex: 1, startMonth: 1, endMonth: 6 },
-      { visitIndex: 2, startMonth: 7, endMonth: 12 }
-    ] },
-  { id: 'SL003', name: 'C 保養(一年一次)', maintenanceCount: 1, countsBonusPoints: true,
-    periods: [{ visitIndex: 1, startMonth: 1, endMonth: 12 }] },
-  { id: 'SL004', name: 'D 維修(無簽約客戶)', maintenanceCount: 0, countsBonusPoints: true,
-    periods: [] }
+  { id: 'SL001', name: 'A 保修(一年四次)', maintenanceCount: 4, countsBonusPoints: false },
+  { id: 'SL002', name: 'B 保修(一年兩次)', maintenanceCount: 2, countsBonusPoints: false },
+  { id: 'SL003', name: 'C 保養(一年一次)', maintenanceCount: 1, countsBonusPoints: true },
+  { id: 'SL004', name: 'D 維修(無簽約客戶)', maintenanceCount: 0, countsBonusPoints: true }
 ];
 
 console.log('Section 1｜ServiceLevelUtils 查詢函式');
@@ -68,126 +56,42 @@ assertEq(SLU.getMaintenanceCount(LEVELS, '不存在'), 0, 'getMaintenanceCount �
 assertEq(SLU.countsBonusPoints(LEVELS, 'C 保養(一年一次)'), true, 'C 計算增額積分');
 assertEq(SLU.countsBonusPoints(LEVELS, 'A 保修(一年四次)'), false, 'A 不計算增額積分');
 assertEq(SLU.countsBonusPoints(LEVELS, '不存在'), false, 'countsBonusPoints 查無回 false');
-assertEq(SLU.getPeriods(LEVELS, 'D 維修(無簽約客戶)').length, 0, 'D 無區間');
-assertEq(SLU.getPeriods(LEVELS, '不存在').length, 0, 'getPeriods 查無回空陣列');
-assertEq(SLU.getPeriods(
-  [{ name: 'X', maintenanceCount: 2, periods: [
-    { visitIndex: 2, startMonth: 7, endMonth: 12 },
-    { visitIndex: 1, startMonth: 1, endMonth: 6 }] }], 'X'
-)[0].visitIndex, 1, 'getPeriods 依 visitIndex 排序');
-assertEq(SLU.findPeriodForMonth(LEVELS, 'A 保修(一年四次)', 5).visitIndex, 2, '5 月落在 A 的第 2 次');
-assertEq(SLU.findPeriodForMonth(LEVELS, 'A 保修(一年四次)', 1).visitIndex, 1, '起始月為含界');
-assertEq(SLU.findPeriodForMonth(LEVELS, 'A 保修(一年四次)', 3).visitIndex, 1, '結束月為含界');
-assertEq(SLU.findPeriodForMonth(LEVELS, 'D 維修(無簽約客戶)', 5), null, 'D 任何月份都回 null');
 assertEq(SLU.isAllocatable(LEVELS, 'C 保養(一年一次)'), true, 'C 納入保養分配');
 assertEq(SLU.isAllocatable(LEVELS, 'D 維修(無簽約客戶)'), false, 'D 不納入保養分配');
 assertEq(SLU.isAllocatable(LEVELS, '不存在'), false, '查無等級不納入保養分配');
 
-console.log('\nSection 1｜normalizeRecord / formatPeriodsLabel');
+console.log('\nSection 1｜normalizeRecord');
 const norm = SLU.normalizeRecord({
-  name: '  X 等級 ', maintenanceCount: '2', countsBonusPoints: true,
-  periods: [{ visitIndex: 2, startMonth: '7', endMonth: '12' },
-            { visitIndex: 1, startMonth: '1', endMonth: '6' }]
+  name: '  X 等級 ', maintenanceCount: '2', countsBonusPoints: true
 });
 assertEq(norm.name, 'X 等級', 'normalizeRecord 去頭尾空白');
 assertEq(norm.maintenanceCount, 2, 'normalizeRecord maintenanceCount 轉數字');
-assertEq(norm.periods[0].visitIndex, 1, 'normalizeRecord periods 依 visitIndex 排序');
-assertEq(norm.periods[0].startMonth, 1, 'normalizeRecord 月份轉數字');
-assertEq(SLU.formatPeriodsLabel(LEVELS[1]), '第1次 1-6月、第2次 7-12月', 'formatPeriodsLabel 兩區間');
-assertEq(SLU.formatPeriodsLabel(LEVELS[3]), '—', 'formatPeriodsLabel 無區間回 —');
 
 console.log('\nSection 1｜validate');
 assertDeep(
-  SLU.validate({
-    name: '有效等級', maintenanceCount: 2, countsBonusPoints: false,
-    periods: [{ visitIndex: 1, startMonth: 1, endMonth: 6 }, { visitIndex: 2, startMonth: 7, endMonth: 12 }]
-  }, [], undefined),
+  SLU.validate({ name: '有效等級', maintenanceCount: 2, countsBonusPoints: false }, [], undefined),
   [], 'validate 合法紀錄回傳空陣列');
 
 assertDeep(
-  SLU.validate({ name: '', maintenanceCount: 0, periods: [] }, [], undefined),
+  SLU.validate({ name: '', maintenanceCount: 0 }, [], undefined),
   ['服務等級名稱為必填'], 'validate 空白名稱回必填錯誤');
 assertDeep(
-  SLU.validate({ name: '   ', maintenanceCount: 0, periods: [] }, [], undefined),
+  SLU.validate({ name: '   ', maintenanceCount: 0 }, [], undefined),
   ['服務等級名稱為必填'], 'validate 純空白名稱回必填錯誤');
 
 assertDeep(
-  SLU.validate({
-    name: 'B 保修(一年兩次)', maintenanceCount: 2, periods: [
-      { visitIndex: 1, startMonth: 1, endMonth: 6 }, { visitIndex: 2, startMonth: 7, endMonth: 12 }
-    ]
-  }, LEVELS, undefined),
+  SLU.validate({ name: 'B 保修(一年兩次)', maintenanceCount: 2 }, LEVELS, undefined),
   ['服務等級名稱「B 保修(一年兩次)」已存在'], 'validate 名稱與他人重複回重複錯誤');
 assertDeep(
-  SLU.validate({
-    name: 'B 保修(一年兩次)', maintenanceCount: 2, periods: [
-      { visitIndex: 1, startMonth: 1, endMonth: 6 }, { visitIndex: 2, startMonth: 7, endMonth: 12 }
-    ]
-  }, LEVELS, 'SL002'),
+  SLU.validate({ name: 'B 保修(一年兩次)', maintenanceCount: 2 }, LEVELS, 'SL002'),
   [], 'validate excludeId 排除自己時不算重複');
 
 assertDeep(
-  SLU.validate({ name: 'X', maintenanceCount: -1, periods: [] }, [], undefined),
+  SLU.validate({ name: 'X', maintenanceCount: -1 }, [], undefined),
   ['每年保養次數需為 0 或正整數'], 'validate 保養次數為負數');
 assertDeep(
-  SLU.validate({ name: 'X', maintenanceCount: 2.5, periods: [] }, [], undefined),
+  SLU.validate({ name: 'X', maintenanceCount: 2.5 }, [], undefined),
   ['每年保養次數需為 0 或正整數'], 'validate 保養次數非整數');
-
-assertDeep(
-  SLU.validate({
-    name: 'X', maintenanceCount: 2, periods: [{ visitIndex: 1, startMonth: 1, endMonth: 6 }]
-  }, [], undefined),
-  ['保養區間筆數（1）與每年保養次數（2）不符'], 'validate 區間筆數少於保養次數');
-assertDeep(
-  SLU.validate({
-    name: 'X', maintenanceCount: 1, periods: [
-      { visitIndex: 1, startMonth: 1, endMonth: 6 }, { visitIndex: 2, startMonth: 7, endMonth: 12 }
-    ]
-  }, [], undefined),
-  ['保養區間筆數（2）與每年保養次數（1）不符'], 'validate 區間筆數多於保養次數');
-
-assertDeep(
-  SLU.validate({
-    name: 'X', maintenanceCount: 1, periods: [{ visitIndex: 1, startMonth: 0, endMonth: 6 }]
-  }, [], undefined),
-  ['第1次的起始月與結束月需為 1–12 月'], 'validate 起始月為 0 超出範圍');
-assertDeep(
-  SLU.validate({
-    name: 'X', maintenanceCount: 1, periods: [{ visitIndex: 1, startMonth: 1, endMonth: 13 }]
-  }, [], undefined),
-  ['第1次的起始月與結束月需為 1–12 月'], 'validate 結束月為 13 超出範圍');
-assertDeep(
-  SLU.validate({
-    name: 'X', maintenanceCount: 1, periods: [{ visitIndex: 1, startMonth: '', endMonth: 6 }]
-  }, [], undefined),
-  ['第1次的起始月與結束月需為 1–12 月'], 'validate 起始月為空字串視為超出範圍');
-assertDeep(
-  SLU.validate({
-    name: 'X', maintenanceCount: 1, periods: [{ visitIndex: 1, startMonth: 8, endMonth: 3 }]
-  }, [], undefined),
-  ['第1次的起始月不可大於結束月'], 'validate 起始月大於結束月');
-
-assertDeep(
-  SLU.validate({
-    name: 'X', maintenanceCount: 2, periods: [
-      { visitIndex: 1, startMonth: 1, endMonth: 6 }, { visitIndex: 2, startMonth: 4, endMonth: 10 }
-    ]
-  }, [], undefined),
-  ['第1次與第2次的保養區間重疊'], 'validate 兩區間重疊');
-assertDeep(
-  SLU.validate({
-    name: 'X', maintenanceCount: 2, periods: [
-      { visitIndex: 1, startMonth: 1, endMonth: 6 }, { visitIndex: 2, startMonth: 6, endMonth: 12 }
-    ]
-  }, [], undefined),
-  ['第1次與第2次的保養區間重疊'], 'validate 共用邊界月份視為重疊');
-assertDeep(
-  SLU.validate({
-    name: 'X', maintenanceCount: 2, periods: [
-      { visitIndex: 1, startMonth: 1, endMonth: 6 }, { visitIndex: 2, startMonth: 7, endMonth: 12 }
-    ]
-  }, [], undefined),
-  [], 'validate 相鄰不重疊區間視為合法');
 
 console.log('\nSection 1｜isServiceLevelInUse');
 const custs = [{ id: 'C1', name: '甲', serviceLevel: 'A 保修(一年四次)' }];
@@ -359,8 +263,8 @@ try {
     return ths;
   })()`);
   assertDeep(listHeaders,
-    ['操作', '服務等級名稱', '每年保養次數', '是否計算增額積分', '保養區間'],
-    '列表表頭五欄');
+    ['操作', '服務等級名稱', '每年保養次數', '是否計算增額積分'],
+    '列表表頭四欄');
 
   const rowTexts = await evaluate(`(function(){
     var node = window.__renderList();
@@ -373,10 +277,8 @@ try {
     return out;
   })()`);
   assertEq(rowTexts.length, 4, '列表渲染四筆');
-  assertDeep(rowTexts[0],
-    ['A 保修(一年四次)', '4', '否', '第1次 1-3月、第2次 4-6月、第3次 7-9月、第4次 10-12月'],
-    'A 列內容正確');
-  assertDeep(rowTexts[3], ['D 維修(無簽約客戶)', '0', '是', '—'], 'D 列內容正確');
+  assertDeep(rowTexts[0], ['A 保修(一年四次)', '4', '否'], 'A 列內容正確');
+  assertDeep(rowTexts[3], ['D 維修(無簽約客戶)', '0', '是'], 'D 列內容正確');
 
   console.log('\nSection 2｜刪除保護');
   const blocked = await evaluate(`(function(){
@@ -533,10 +435,6 @@ try {
       if (values.countsBonusPoints !== undefined) {
         window.__chooseOption(node, 'countsBonusPoints', values.countsBonusPoints ? '是' : '否');
       }
-      (values.periods || []).forEach(function (p, i) {
-        window.__chooseOption(node, 'startMonth-' + (i + 1), p[0] + '月');
-        window.__chooseOption(node, 'endMonth-' + (i + 1), p[1] + '月');
-      });
     };
     window.__submit = function (node) {
       node.querySelector('form').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
@@ -566,53 +464,23 @@ try {
     window.__submit(node);`);
   assertEq(dupName.toasts[0][0], '服務等級名稱「C 保養(一年一次)」已存在', '名稱重複被擋');
 
-  const badRange = await submitCase(`
-    window.__fill(node, { name: '新等級', maintenanceCount: 1, periods: [[6, 3]] });
-    window.__submit(node);`);
-  assertEq(badRange.toasts[0][0], '第1次的起始月不可大於結束月', '起訖月顛倒被擋');
-
-  const overlap = await submitCase(`
-    window.__fill(node, { name: '新等級', maintenanceCount: 2, periods: [[1, 6], [5, 12]] });
-    window.__submit(node);`);
-  assertEq(overlap.toasts[0][0], '第1次與第2次的保養區間重疊', '區間重疊被擋');
-
-  const blankMonth = await submitCase(`
-    window.__fill(node, { name: '新等級', maintenanceCount: 1 });
-    window.__submit(node);`);
-  assertEq(blankMonth.toasts[0][0], '第1次的起始月與結束月需為 1–12 月', '未選月份被擋');
-
-  console.log('\nSection 3｜次數變更時區間列的增減');
-  const rowCounts = await evaluate(`(function(){
-    // searchable-select 沒有原生 <select>，區間列的月份欄位改用 name 屬性選取
-    // （name 屬性仍保留在元件內部的 <input role="combobox"> 上）。
+  console.log('\nSection 3｜次數欄位下方的說明文字');
+  const hint = await evaluate(`(function(){
     var node = window.__mountForm(null);
     var out = {};
-    out.zero = node.querySelectorAll('[name^="startMonth-"]').length;
     out.zeroHint = node.textContent.indexOf('此服務等級不納入保養分配') !== -1;
     window.__fill(node, { maintenanceCount: 3 });
-    out.three = node.querySelectorAll('[name^="startMonth-"]').length;
-    window.__fill(node, { periods: [[1, 4], [5, 8], [9, 12]] });
-    window.__fill(node, { maintenanceCount: 2 });
-    out.two = node.querySelectorAll('[name^="startMonth-"]').length;
-    out.keptFirst = node.querySelector('[name="startMonth-1"]').value;
-    out.keptSecond = node.querySelector('[name="endMonth-2"]').value;
+    out.nonZeroHint = node.textContent.indexOf('各次的月份區間由各客戶在「客戶管理」自行設定') !== -1;
     node.remove();
     return out;
   })()`);
-  assertEq(rowCounts.zero, 0, '次數 0 時不顯示區間列');
-  assertEq(rowCounts.zeroHint, true, '次數 0 時顯示「此服務等級不納入保養分配」');
-  assertEq(rowCounts.three, 3, '次數改 3 產生 3 列');
-  assertEq(rowCounts.two, 2, '次數改 2 砍到 2 列');
-  // searchable-select 的 input.value 顯示的是選項標籤（如「1月」），而非原始數值，
-  // 故此處讀回標籤字串以證明「縮減列數時已填值仍保留」。
-  assertEq(rowCounts.keptFirst, '1月', '減少列數時保留第 1 列已填值');
-  assertEq(rowCounts.keptSecond, '8月', '減少列數時保留第 2 列已填值');
+  assertEq(hint.zeroHint, true, '次數 0 時顯示「此服務等級不納入保養分配」');
+  assertEq(hint.nonZeroHint, true, '次數大於 0 時顯示「各次的月份區間由各客戶在『客戶管理』自行設定」');
 
   console.log('\nSection 3｜新增成功');
   const added = await evaluate(`(function(){
     var node = window.__mountForm(null);
-    window.__fill(node, { name: 'E 特約(一年三次)', maintenanceCount: 3, countsBonusPoints: true,
-      periods: [[1, 4], [5, 8], [9, 12]] });
+    window.__fill(node, { name: 'E 特約(一年三次)', maintenanceCount: 3, countsBonusPoints: true });
     window.__submit(node);
     var created = window.__formLevels[0];
     var out = {
@@ -620,7 +488,6 @@ try {
       name: created.name,
       maintenanceCount: created.maintenanceCount,
       countsBonusPoints: created.countsBonusPoints,
-      periods: created.periods,
       hasId: !!created.id,
       view: window.__view,
       toasts: window.__toasts
@@ -632,11 +499,6 @@ try {
   assertEq(added.name, 'E 特約(一年三次)', '名稱正確');
   assertEq(added.maintenanceCount, 3, '次數為數字 3');
   assertEq(added.countsBonusPoints, true, 'countsBonusPoints 為 true');
-  assertDeep(added.periods, [
-    { visitIndex: 1, startMonth: 1, endMonth: 4 },
-    { visitIndex: 2, startMonth: 5, endMonth: 8 },
-    { visitIndex: 3, startMonth: 9, endMonth: 12 }
-  ], '區間正確');
   assertEq(added.hasId, true, '有產生 id');
   assertEq(added.view, 'service-level-list', '儲存後回列表');
   assertDeep(added.toasts, [['服務等級新增成功', 'success']], '跳出新增成功 toast');
@@ -727,8 +589,8 @@ try {
   console.log('\nSection 4｜銷案審核總積分欄改由服務等級旗標決定');
   const reviewCells = await evaluate(`(function(){
     var levels = [
-      { id: 'SL001', name: 'A 保修(一年四次)', maintenanceCount: 4, countsBonusPoints: true, periods: [] },
-      { id: 'SL003', name: 'C 保養(一年一次)', maintenanceCount: 1, countsBonusPoints: false, periods: [] }
+      { id: 'SL001', name: 'A 保修(一年四次)', maintenanceCount: 4, countsBonusPoints: true },
+      { id: 'SL003', name: 'C 保養(一年一次)', maintenanceCount: 1, countsBonusPoints: false }
     ];
     var cases = [
       { id: 'R1', caseNumber: 'SL001', customerName: '甲', storeName: '甲一', serviceLevel: 'A 保修(一年四次)',
@@ -794,9 +656,9 @@ try {
   const callSites = [
     ['src/features/repair/case-form.js', 2],
     ['src/features/project/project-form.js', 2],
-    // Task 6 加了第 2 處呼叫（renderMaintenanceScheduleDetails 的目前保養季度
-    // 標籤改吃服務等級），故此檔的預期次數由 1 上修為 2。
-    ['src/features/scheduling/case-arrangement.js', 2]
+    // 保養區間搬到客戶後，renderMaintenanceScheduleDetails 直接以 customerName
+    // 取得區間，不再需要服務等級名稱，故呼叫點由 2 處回到 1 處。
+    ['src/features/scheduling/case-arrangement.js', 1]
   ];
   for (const [rel, expectedCount] of callSites) {
     const src = readFileSync(join(ROOT, rel), 'utf8');
@@ -834,18 +696,6 @@ try {
     'customer-form.js 已移除保養區間欄位');
   assertTrue(custFormSrc.includes("SERVICE_LEVEL_OPTIONS[0] || ''"),
     'customer-form.js 服務等級預設值改為 SERVICE_LEVEL_OPTIONS[0]');
-
-  console.log('\nSection 6｜formatMaintenancePeriod 改吃服務等級');
-  assertEq(await evaluate(`ScheduleUtils.formatMaintenancePeriod('2026-05-10', INITIAL_SERVICE_LEVELS, 'A 保修(一年四次)')`),
-    '2026 第2次', 'A 的 5 月落在第 2 次');
-  assertEq(await evaluate(`ScheduleUtils.formatMaintenancePeriod('2026-08-01', INITIAL_SERVICE_LEVELS, 'B 保修(一年兩次)')`),
-    '2026 第2次', 'B 的 8 月落在第 2 次');
-  assertEq(await evaluate(`ScheduleUtils.formatMaintenancePeriod('2026-08-01', INITIAL_SERVICE_LEVELS, 'D 維修(無簽約客戶)')`),
-    '2026', 'D 無區間時只顯示年份');
-  assertEq(await evaluate(`ScheduleUtils.formatMaintenancePeriod('', INITIAL_SERVICE_LEVELS, 'A 保修(一年四次)')`),
-    '', '日期為空回空字串');
-  assertEq(await evaluate(`ScheduleUtils.formatMaintenancePeriod('2026-05-10', INITIAL_SERVICE_LEVELS, '查無此等級')`),
-    '2026', '查無等級只顯示年份');
 
   console.log('\nSection 6｜generateDueMaintenanceCases 改吃服務等級');
   const dueResult = await evaluate(`(function(){
@@ -972,7 +822,10 @@ try {
 
   const grid = await evaluate(`(function(){
     var assignees = [{ id: 'A1', name: 'A組', districts: ['台北市信義區'] }];
-    var customers = [{ id: 'C1', name: '甲', serviceLevel: 'B 保修(一年兩次)' }];
+    var customers = [{ id: 'C1', name: '甲', serviceLevel: 'B 保修(一年兩次)', periods: [
+      { visitIndex: 1, startMonth: 1, endMonth: 6 },
+      { visitIndex: 2, startMonth: 7, endMonth: 12 }
+    ] }];
     var stores = [
       { id: 'S1', customerName: '甲', storeName: '甲一', serviceLevel: 'B 保修(一年兩次)',
         storeStatus: '正常營業', companyCity: '台北市', companyDistrict: '信義區' },
@@ -1020,9 +873,10 @@ try {
 
   const outsideClick = await evaluate(`(function(){
     var assignees = [{ id: 'A1', name: 'A組', districts: ['台北市信義區'] }];
-    var customers = [{ id: 'C1', name: '甲', serviceLevel: 'E 半年檔' }];
-    var levels = [{ id: 'SLE', name: 'E 半年檔', maintenanceCount: 1, countsBonusPoints: false,
-      periods: [{ visitIndex: 1, startMonth: 1, endMonth: 6 }] }];
+    var customers = [{ id: 'C1', name: '甲', serviceLevel: 'E 半年檔', periods: [
+      { visitIndex: 1, startMonth: 1, endMonth: 6 }
+    ] }];
+    var levels = [{ id: 'SLE', name: 'E 半年檔', maintenanceCount: 1, countsBonusPoints: false }];
     var stores = [{ id: 'S1', customerName: '甲', storeName: '甲一', serviceLevel: 'E 半年檔',
       storeStatus: '正常營業', companyCity: '台北市', companyDistrict: '信義區' }];
     window.__allocToasts = [];
@@ -1043,7 +897,7 @@ try {
     return out;
   })()`);
   assertEq(outsideClick.modalOpened, false, '點區間外月份不開 Modal');
-  assertDeep(outsideClick.toasts, [['此月份不在該服務等級的保養區間內', 'error']],
+  assertDeep(outsideClick.toasts, [['此月份不在該客戶的保養區間內', 'error']],
     '點區間外月份跳出提示 toast');
 
   console.log('\nSection 7｜app.js 已往下傳 maintenanceCases / serviceLevels');
@@ -1086,7 +940,7 @@ try {
   console.log('\nSection 8｜服務等級下拉為即時連動（非巧合寫死）');
   const liveLinkLabels = await evaluate(`(function(){
     var extended = INITIAL_SERVICE_LEVELS.concat([
-      { id: 'SLZ', name: 'Z 測試等級(端到端)', maintenanceCount: 1, countsBonusPoints: false, periods: [] }
+      { id: 'SLZ', name: 'Z 測試等級(端到端)', maintenanceCount: 1, countsBonusPoints: false }
     ]);
     ServiceLevelUtils.syncServiceLevelOptions(extended);
     var container = document.createElement('div');

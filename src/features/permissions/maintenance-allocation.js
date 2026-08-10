@@ -74,9 +74,9 @@
     }
 
     function openEditModal(row, month) {
-      var period = ServiceLevelUtils.findPeriodForMonth(serviceLevels, row.serviceLevel, month);
+      var period = CustomerUtils.findPeriodForMonth(customers, row.customerName, month);
       if (!period) {
-        showToast('此月份不在該服務等級的保養區間內', 'error');
+        showToast('此月份不在該客戶的保養區間內', 'error');
         return false;
       }
       var existing = MaintenanceAllocationUtils.findAllocation(
@@ -176,10 +176,10 @@
         );
       }
 
-      // 依該列服務等級的保養區間，建出「月份 → { period, order }」的對照
+      // 依該列客戶的保養區間，建出「月份 → { period, order }」的對照
       function buildSegmentMap(row) {
         var map = {};
-        ServiceLevelUtils.getPeriods(serviceLevels, row.serviceLevel).forEach(function (p, order) {
+        CustomerUtils.getPeriods(customers, row.customerName).forEach(function (p, order) {
           for (var m = Number(p.startMonth); m <= Number(p.endMonth); m++) {
             map[m] = { period: p, order: order };
           }

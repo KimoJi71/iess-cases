@@ -11,14 +11,12 @@
   var COLUMNS = [
     { key: 'name', label: '服務等級名稱' },
     { key: 'maintenanceCount', label: '每年保養次數' },
-    { key: 'countsBonusPoints', label: '是否計算增額積分' },
-    { key: 'periods', label: '保養區間' }
+    { key: 'countsBonusPoints', label: '是否計算增額積分' }
   ];
 
   function renderCellText(record, key) {
     if (key === 'countsBonusPoints') return record.countsBonusPoints ? '是' : '否';
     if (key === 'maintenanceCount') return String(Number(record.maintenanceCount) || 0);
-    if (key === 'periods') return ServiceLevelUtils.formatPeriodsLabel(record);
     return record.name || '—';
   }
 
