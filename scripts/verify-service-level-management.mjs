@@ -718,14 +718,29 @@ try {
   })()`);
   assertDeep(dueResult, ['四次一店'], '只為有保養次數且啟用的客戶產生到期保養案件');
 
-  console.log('\nSection 6｜app.js 已往下傳 serviceLevels');
+  console.log('\nSection 6｜app.js 的 serviceLevels 傳遞範圍');
   const appSrc6 = readFileSync(join(ROOT, 'src/app.js'), 'utf8');
   assertTrue(appSrc6.includes('generateDueMaintenanceCases(INITIAL_CUSTOMERS, INITIAL_STORES, INITIAL_MAINTENANCE_CASES, INITIAL_SERVICE_LEVELS)'),
     'app.js 的 generateDueMaintenanceCases 已補傳 INITIAL_SERVICE_LEVELS');
+  // 取該元件自己的 props 區塊（到對應的收尾 `});` 為止），避免溢出到下一個 case
+  function propsBlockOf(comp) {
+    const i = appSrc6.indexOf('h(' + comp + ', {');
+    if (i === -1) return null;
+    const end = appSrc6.indexOf('\n        });', i);
+    return end === -1 ? appSrc6.slice(i) : appSrc6.slice(i, end);
+  }
+  // 保養區間改由客戶持有後，保養列表／檢視／案件排程都改以 customerName 取區間，
+  // 不再需要 serviceLevels；服務等級只剩「每年保養次數」由 ScheduleUtils 直接查。
   for (const comp of ['MaintenanceList', 'MaintenanceViewEditForm', 'CaseArrangement']) {
-    const i = appSrc6.indexOf(comp + ', {');
-    assertTrue(i !== -1 && appSrc6.slice(i, i + 500).includes('serviceLevels'),
-      `app.js 的 ${comp} 呼叫含 serviceLevels`);
+    const block = propsBlockOf(comp);
+    assertTrue(block !== null && !block.includes('serviceLevels'),
+      `app.js 的 ${comp} 呼叫不再傳 serviceLevels`);
+  }
+  // 仍真正使用 serviceLevels 的元件必須繼續拿到它
+  for (const comp of ['CaseReviewList', 'MaintenanceAllocation', 'ServiceLevelList', 'CustomerList']) {
+    const block = propsBlockOf(comp);
+    assertTrue(block !== null && block.includes('serviceLevels'),
+      `app.js 的 ${comp} 呼叫仍傳 serviceLevels`);
   }
 
   console.log('\nSection 7｜allocation utils');

@@ -376,20 +376,17 @@
       case 'maintenance-view':
         return h(MaintenanceViewEditForm, {
           targetCase: s.viewingCase, stores: s.stores, customers: s.customers,
-          serviceLevels: s.serviceLevels,
           setView: setView, mode: 'view', showToast: showToast, backView: 'maintenance-list'
         });
       case 'review-maintenance-view':
         return h(MaintenanceViewEditForm, {
           targetCase: s.viewingCase, stores: s.stores, customers: s.customers,
-          serviceLevels: s.serviceLevels,
           setView: setView, mode: 'view', showToast: showToast, backView: 'review-list'
         });
       case 'maintenance-edit':
         return h(MaintenanceViewEditForm, {
           targetCase: s.editingCase, cases: s.maintenanceCases, setCases: setMaintenanceCases,
           stores: s.stores, setStores: setStores, customers: s.customers,
-          serviceLevels: s.serviceLevels,
           setView: setView, mode: 'edit', showToast: showToast
         });
       case 'project-list':
@@ -473,7 +470,6 @@
         return h(MaintenanceViewEditForm, {
           targetCase: StoreUtils.withStoreHistoryContext(s.viewingCase, s.historyStore),
           stores: s.stores, customers: s.customers,
-          serviceLevels: s.serviceLevels,
           setView: setView, mode: 'view', showToast: showToast, backView: 'store-history'
         });
       case 'store-history-project-view':
@@ -555,7 +551,6 @@
           personnelStatus: s.personnelStatus,
           setPersonnelStatus: setPersonnelStatus,
           customers: s.customers,
-          serviceLevels: s.serviceLevels,
           stores: s.stores,
           assignees: s.assignees,
           processMethods: s.processMethods,
