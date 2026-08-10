@@ -30,6 +30,9 @@ function assertEq(actual, expected, name) {
 function assertTrue(cond, name, detail) {
   if (cond) pass(name, detail); else fail(name, detail);
 }
+function assertJson(actual, expected, name) {
+  assertEq(JSON.stringify(actual), JSON.stringify(expected), name);
+}
 
 const chrome = spawn(CHROME, [
   '--headless', '--disable-gpu', '--no-first-run', '--no-default-browser-check',
@@ -91,7 +94,10 @@ const MOUNT = `
     { id:'S2', customerName:'甲客戶', storeName:'甲二店', storeStatus:'營業',
       companyCity:'台北市', companyDistrict:'大安區' },
     { id:'S3', customerName:'乙客戶', storeName:'乙一店', storeStatus:'營業',
-      companyCity:'新北市', companyDistrict:'板橋區' }
+      companyCity:'新北市', companyDistrict:'板橋區' },
+    // 與 S1 同名不同客戶：檢驗門市選單分組後兩者是獨立選項。
+    { id:'S4', customerName:'乙客戶', storeName:'甲一店', storeStatus:'營業',
+      companyCity:'新北市', companyDistrict:'新莊區' }
   ];
   window.__mount = function () {
     var host = document.getElementById('dr-host');
@@ -190,7 +196,7 @@ try {
   assertEq(chips.length, 2, '維修人員可同時選兩位', JSON.stringify(chips));
   assertEq(chips[0], assigneeFirst, '第一個 chip 為選單第一項');
 
-  console.log('\n3. 客戶改變時清空門市，且門市選項為聯集');
+  console.log('\n3. 客戶改變時清空門市，門市選項依客戶分組');
   const cascade = await evaluateAsync(`(function () {
     var host = window.__mount();
     function ms(i) { return host.querySelectorAll('.multi-select')[i]; }
@@ -204,36 +210,114 @@ try {
         }, 50);
       });
     }
+    // 客戶名稱選單依 zh-Hant 排序（非陣列填入順序），用文字比對找選項，
+    // 才能確實選到「甲客戶」而不是巧合命中排序後排第一的選項。
+    function openAndClickByText(index, text) {
+      ms(index).querySelector('.multi-select__control').click();
+      return new Promise(function (resolve) {
+        setTimeout(function () {
+          var opts = Array.prototype.slice.call(
+            document.querySelectorAll('.multi-select__menu .multi-select__option'));
+          var target = opts.find(function (o) { return o.textContent.trim() === text; });
+          target.click();
+          setTimeout(resolve, 50);
+        }, 50);
+      });
+    }
     // index 3 = 客戶名稱, index 4 = 門市名稱
-    return openAndClick(3, 0)                       // 選甲客戶
+    return openAndClickByText(3, '甲客戶')                // 選甲客戶
       .then(function () { return openAndClick(4, 0); })  // 選甲客戶底下第一間門市
       .then(function () {
-        var storeChips = ms(4).querySelectorAll('.multi-select__chip').length;
-        return openAndClick(3, 1).then(function () {  // 再加選乙客戶 -> 應清空門市
+        var storeChips = Array.prototype.map.call(
+          ms(4).querySelectorAll('.multi-select__chip'),
+          function (c) { return c.textContent.replace('×', '').trim(); });
+        return openAndClickByText(3, '乙客戶').then(function () {  // 再加選乙客戶 -> 應清空門市
           ms(4).querySelector('.multi-select__control').click();
           return new Promise(function (resolve) {
             setTimeout(function () {
-              var opts = Array.prototype.map.call(
-                document.querySelectorAll('.multi-select__menu .multi-select__option'),
-                function (o) { return o.textContent.trim(); });
+              var menuEl = document.querySelector('.multi-select__menu');
               resolve({
                 storeChipsBefore: storeChips,
                 storeChipsAfter: ms(4).querySelectorAll('.multi-select__chip').length,
-                storeOptions: opts
+                storeGroups: Array.prototype.map.call(
+                  menuEl.querySelectorAll('.multi-select__group'),
+                  function (g) { return g.textContent.trim(); }),
+                storeOptions: Array.prototype.map.call(
+                  menuEl.querySelectorAll('.multi-select__option'),
+                  function (o) { return o.textContent.trim(); })
               });
             }, 50);
           });
         });
       });
   })()`);
-  assertEq(cascade.storeChipsBefore, 1, '選客戶後可選到門市');
+  assertJson(cascade.storeChipsBefore, ['甲客戶 · 甲一店'], '選門市後 chip 顯示「客戶 · 門市」');
   assertEq(cascade.storeChipsAfter, 0, '客戶變動後門市被清空');
-  assertTrue(
-    cascade.storeOptions.includes('甲一店')
-      && cascade.storeOptions.includes('甲二店')
-      && cascade.storeOptions.includes('乙一店'),
-    '門市選項為兩客戶的聯集',
-    JSON.stringify(cascade.storeOptions)
+  const byZh = (a, b) => a.localeCompare(b, 'zh-Hant');
+  // 期望值用與 getStoreGroupsForCustomers 相同的 collator 推導，而不是寫死 ICU 的排序結果：
+  // 這裡要鎖定的是「群組依客戶、群組內依 zh-Hant 排序」，不是某個特定 ICU 版本的筆畫序。
+  const expectedByCustomer = {
+    '甲客戶': ['甲一店', '甲二店'].sort(byZh),
+    '乙客戶': ['乙一店', '甲一店'].sort(byZh)
+  };
+  const expectedGroups = ['甲客戶', '乙客戶'].sort(byZh);
+  const expectedOptions = expectedGroups.reduce(function (acc, c) {
+    return acc.concat(expectedByCustomer[c]);
+  }, []);
+  assertJson(cascade.storeGroups, expectedGroups, '門市選單依客戶分組（順序與 getStoreGroupsForCustomers 的 zh-Hant 排序一致）');
+  assertJson(
+    cascade.storeOptions, expectedOptions,
+    '同名門市在各自客戶群組下各出現一次（區辨式斷言：若仍以門市名去重，第二個甲一店會消失，長度會是 3）'
+  );
+  assertEq(cascade.storeOptions.length, 4, '兩客戶共 4 個門市選項（同名門市未被跨客戶去重）');
+
+  console.log('\n3b. 保養分頁行政區依縣市分組');
+  const districts = await evaluateAsync(`(function () {
+    window.__mount();
+    var buttons = Array.prototype.slice.call(document.querySelectorAll('button'));
+    buttons.find(function (b) { return b.textContent.trim() === '保養'; }).click();
+    return new Promise(function (resolve) {
+      setTimeout(function () {
+        var host = document.getElementById('dr-host');
+        function ms(i) { return host.querySelectorAll('.multi-select')[i]; }
+        // index 0 = 縣市, index 1 = 行政區
+        ms(0).querySelector('.multi-select__control').click();
+        setTimeout(function () {
+          var cityOpts = document.querySelectorAll('.multi-select__menu .multi-select__option');
+          var firstCity = cityOpts[0].textContent.trim();
+          cityOpts[0].click();
+          setTimeout(function () {
+            var host2 = document.getElementById('dr-host');
+            host2.querySelectorAll('.multi-select')[1]
+              .querySelector('.multi-select__control').click();
+            setTimeout(function () {
+              var menuEl = document.querySelector('.multi-select__menu');
+              var groups = Array.prototype.map.call(
+                menuEl.querySelectorAll('.multi-select__group'),
+                function (g) { return g.textContent.trim(); });
+              var districtOpts = menuEl.querySelectorAll('.multi-select__option');
+              var firstDistrict = districtOpts[0].textContent.trim();
+              districtOpts[0].click();
+              setTimeout(function () {
+                var host3 = document.getElementById('dr-host');
+                var chip = host3.querySelectorAll('.multi-select')[1].querySelector('.multi-select__chip');
+                resolve({
+                  firstCity: firstCity,
+                  groups: groups,
+                  firstDistrict: firstDistrict,
+                  districtChip: chip.textContent.replace('×', '').trim()
+                });
+              }, 50);
+            }, 50);
+          }, 80);
+        }, 50);
+      }, 50);
+    });
+  })()`);
+  assertJson(districts.groups, [districts.firstCity], '選一個縣市後，行政區選單只有該縣市一個群組');
+  assertEq(
+    districts.districtChip, districts.firstCity + ' · ' + districts.firstDistrict,
+    '選行政區後 chip 顯示「縣市 · 行政區」，而非帶控制字元的複合鍵原文'
   );
 
   console.log('\n4. 鍵盤切換案件類型時，展開中的選單不會孤兒化');

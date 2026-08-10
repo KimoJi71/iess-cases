@@ -123,8 +123,8 @@
 
     return stateful(function (rerender) {
       var customerOptions = CustomerUtils.getCustomerNameOptions(customers, null, true);
-      var storeOptions = DataRetrievalUtils.getStoreOptionsForCustomers(stores, filterCustomer);
-      var districtOptions = DataRetrievalUtils.getDistrictOptionsForCities(filterCity);
+      var storeOptions = DataRetrievalUtils.getStoreGroupsForCustomers(stores, filterCustomer);
+      var districtOptions = DataRetrievalUtils.getDistrictGroupsForCities(filterCity);
       var repairWorkCategories = WORK_CATEGORY_OPTIONS.filter(function (w) { return w !== '保養'; });
       var assigneeOptions = ASSIGNEES.slice();
 

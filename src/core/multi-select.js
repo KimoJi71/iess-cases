@@ -3,8 +3,11 @@
  *
  * MultiSelect({ id, options, value, onChange, placeholder, disabled, className })
  *   id       全域唯一字串；父層 rerender 重建元件後仍能維持展開狀態
- *   options  string[] 可選項目
- *   value    string[] 已選項目（受控，元件不保存資料）
+ *   options  可選項目，支援兩種形態：
+ *              A. string[]（既有呼叫端）
+ *              B. [{ group, options: [{ value, label, chipLabel }] }]
+ *                 依上層分組顯示（如客戶→門市），同名選項可用不同 value 區分
+ *   value    string[] 已選項目（受控，元件不保存資料），內容為 option 的 value
  *   onChange function (nextValues)
  *
  * 選單以 portal 掛在 document.body 並 fixed 定位，避免被外層 overflow 裁切
@@ -20,6 +23,35 @@
   var menuEl = null;
   var listeners = null;
   var autoIdSeq = 0;
+
+  // options 支援兩種形態：
+  //   A. string[]（既有呼叫端）
+  //   B. [{ group, options: [{ value, label, chipLabel }] }]（依上層分組，如客戶→門市）
+  // 內部一律轉成形態 B 的結構處理，形態 A 視為單一個 group 為 null 的群組。
+  function normalizeOption(opt) {
+    if (typeof opt === 'string') {
+      return { value: opt, label: opt, chipLabel: opt };
+    }
+    var value = String(opt.value);
+    var label = opt.label != null ? opt.label : value;
+    return {
+      value: value,
+      label: label,
+      chipLabel: opt.chipLabel != null ? opt.chipLabel : label
+    };
+  }
+
+  function normalizeGroups(options) {
+    var list = options || [];
+    var grouped = list.length && list[0] && typeof list[0] === 'object'
+      && Array.isArray(list[0].options);
+    if (!grouped) {
+      return [{ group: null, options: list.map(normalizeOption) }];
+    }
+    return list.map(function (g) {
+      return { group: g.group, options: (g.options || []).map(normalizeOption) };
+    });
+  }
 
   function renderChevron(className) {
     var Icons = global.IESS.Icons;
@@ -47,7 +79,17 @@
     var controlEl = null;
 
     return stateful(function (rerender) {
-      var options = props.options || [];
+      var groups = normalizeGroups(props.options);
+      var flatOptions = groups.reduce(function (acc, g) { return acc.concat(g.options); }, []);
+      var chipLabels = {};
+      flatOptions.forEach(function (o) { chipLabels[o.value] = o.chipLabel; });
+      // 對照不到時退回顯示 value 原文：資料來源變動時 chip 不會變成空白。
+      // 但 value 可能是帶控制字元（U+0001）的複合鍵，原封不動顯示會黏成一團看不出分界，
+      // 故把控制字元換成看得見的分隔符號。
+      function chipLabelOf(v) {
+        if (chipLabels[v] != null) return chipLabels[v];
+        return String(v).replace(/[\x00-\x1f]/g, ' · ');
+      }
       var value = (props.value || []).map(String);
       var disabled = !!props.disabled;
       var placeholder = props.placeholder || '請選擇';
@@ -125,7 +167,7 @@
 
         positionMenu();
 
-        if (!options.length) {
+        if (!flatOptions.length) {
           var empty = document.createElement('li');
           empty.className = 'multi-select__empty';
           empty.textContent = '無可選項目';
@@ -133,32 +175,45 @@
           return;
         }
 
-        options.forEach(function (opt) {
-          var checked = value.indexOf(opt) !== -1;
-          var item = document.createElement('li');
-          var btn = document.createElement('button');
-          btn.type = 'button';
-          btn.setAttribute('role', 'option');
-          btn.setAttribute('aria-selected', checked ? 'true' : 'false');
-          btn.className = 'multi-select__option' + (checked ? ' multi-select__option--selected' : '');
+        groups.forEach(function (group) {
+          if (!group.options.length) return;
+          if (group.group != null) {
+            var head = document.createElement('li');
+            head.className = 'multi-select__group';
+            head.setAttribute('role', 'presentation');
+            head.textContent = group.group;
+            menuEl.appendChild(head);
+          }
+          group.options.forEach(function (opt) {
+            var checked = value.indexOf(opt.value) !== -1;
+            var item = document.createElement('li');
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.setAttribute('role', 'option');
+            btn.setAttribute('aria-selected', checked ? 'true' : 'false');
+            btn.className = 'multi-select__option' + (checked ? ' multi-select__option--selected' : '');
 
-          var box = document.createElement('span');
-          box.className = 'multi-select__checkbox' + (checked ? ' multi-select__checkbox--checked' : '');
-          box.textContent = checked ? '✓' : '';
-          btn.appendChild(box);
-          btn.appendChild(document.createTextNode(opt));
+            var box = document.createElement('span');
+            box.className = 'multi-select__checkbox' + (checked ? ' multi-select__checkbox--checked' : '');
+            box.textContent = checked ? '✓' : '';
+            btn.appendChild(box);
+            btn.appendChild(document.createTextNode(opt.label));
+            // 群組標題是 role="presentation"，螢幕閱讀器讀不到；跨群組同名選項（不同客戶的同名門市）
+            // 必須靠 chipLabel 才分得出彼此，否則聽起來是兩個一模一樣的「甲一店」。
+            if (opt.chipLabel && opt.chipLabel !== opt.label) btn.setAttribute('aria-label', opt.chipLabel);
 
-          // 用 click 而非 mousedown：click 才會被鍵盤 Enter/Space 觸發（button 原生行為），
-          // 讓鍵盤使用者也能選取選項。改用 click 不會被 outside 監聽器誤判成「點外面」而先關閉選單，
-          // 因為 outside 監聽器（mousedown 階段）已用 menuEl.contains(e.target) 排除選單內部。
-          btn.addEventListener('click', function (e) {
-            e.preventDefault();
-            e.stopPropagation();
-            toggleOption(opt);
+            // 用 click 而非 mousedown：click 才會被鍵盤 Enter/Space 觸發（button 原生行為），
+            // 讓鍵盤使用者也能選取選項。改用 click 不會被 outside 監聽器誤判成「點外面」而先關閉選單，
+            // 因為 outside 監聽器（mousedown 階段）已用 menuEl.contains(e.target) 排除選單內部。
+            btn.addEventListener('click', function (e) {
+              e.preventDefault();
+              e.stopPropagation();
+              toggleOption(opt.value);
+            });
+
+            item.appendChild(btn);
+            menuEl.appendChild(item);
           });
-
-          item.appendChild(btn);
-          menuEl.appendChild(item);
         });
       }
 
@@ -203,19 +258,20 @@
         },
           h('div', { className: 'multi-select__chips' },
             value.length
-              ? value.map(function (opt) {
+              ? value.map(function (v) {
+                  var text = chipLabelOf(v);
                   return h('span', { className: 'multi-select__chip' },
-                    opt,
+                    text,
                     disabled ? null : h('button', {
                       type: 'button',
                       className: 'multi-select__chip-remove',
-                      'aria-label': '移除 ' + opt,
+                      'aria-label': '移除 ' + text,
                       'data-no-tooltip': true,
                       onMouseDown: function (e) { e.preventDefault(); e.stopPropagation(); },
                       onClick: function (e) {
                         e.preventDefault();
                         e.stopPropagation();
-                        removeOption(opt);
+                        removeOption(v);
                       }
                     }, '×')
                   );
