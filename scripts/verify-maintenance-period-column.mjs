@@ -163,5 +163,164 @@ assertEq(gen7.find(function (c) { return c.id === 'M8'; }).periodVisitIndex, und
 
 assertEq(typeof SU.addMonthsToMonth, 'undefined', 'addMonthsToMonth 已移除');
 
+// ---------- headless Chrome 區段 ----------
+const CHROME = process.env.CHROME_PATH
+  || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+const PORT = Number(process.env.CDP_PORT || 9344);
+if (!existsSync(CHROME)) {
+  console.error(`找不到 Chrome：${CHROME}\n可用 CHROME_PATH 環境變數指定路徑。`);
+  process.exit(2);
+}
+
+const chrome = spawn(CHROME, [
+  '--headless', '--disable-gpu', '--no-first-run', '--no-default-browser-check',
+  `--remote-debugging-port=${PORT}`, '--user-data-dir=/tmp/iess-maintenance-period-profile',
+  'about:blank'
+], { stdio: 'ignore' });
+
+let ws, msgId = 0;
+const pending = new Map();
+const consoleErrors = [];
+function send(method, params = {}) {
+  const id = ++msgId;
+  ws.send(JSON.stringify({ id, method, params }));
+  return new Promise((res, rej) => pending.set(id, { res, rej }));
+}
+async function evaluate(expression) {
+  const r = await send('Runtime.evaluate', {
+    expression, returnByValue: true, awaitPromise: true
+  });
+  if (r.exceptionDetails) {
+    throw new Error(r.exceptionDetails.exception?.description || JSON.stringify(r.exceptionDetails));
+  }
+  return r.result.value;
+}
+
+try {
+  let targets;
+  for (let i = 0; i < 50; i++) {
+    try { targets = await (await fetch(`http://127.0.0.1:${PORT}/json/list`)).json(); break; }
+    catch { await sleep(200); }
+  }
+  const page = targets.find(t => t.type === 'page');
+  ws = new WebSocket(page.webSocketDebuggerUrl);
+  await new Promise(res => { ws.onopen = res; });
+  ws.onmessage = (ev) => {
+    const m = JSON.parse(ev.data);
+    if (m.id && pending.has(m.id)) {
+      const { res, rej } = pending.get(m.id);
+      pending.delete(m.id);
+      m.error ? rej(new Error(JSON.stringify(m.error))) : res(m.result);
+    } else if (m.method === 'Runtime.exceptionThrown') {
+      consoleErrors.push(m.params.exceptionDetails.exception?.description
+        || m.params.exceptionDetails.text);
+    } else if (m.method === 'Runtime.consoleAPICalled' && m.params.type === 'error') {
+      consoleErrors.push(m.params.args.map(a => a.value ?? a.description).join(' '));
+    }
+  };
+  await send('Runtime.enable');
+  await send('Page.enable');
+  await send('Page.navigate', { url: `file://${ROOT}/index.html` });
+  await sleep(4000);
+
+  // 導覽到「保養計劃進度」
+  await evaluate(`(function () {
+    var links = Array.prototype.slice.call(document.querySelectorAll('button, a, div'));
+    var target = links.filter(function (el) {
+      return el.textContent.trim() === '保養計劃進度';
+    }).pop();
+    if (target) target.click();
+    return !!target;
+  })()`);
+  await sleep(1200);
+
+  console.log('\nSection 2｜列表欄位');
+  assertEq(consoleErrors.length, 0, '載入與導覽時無 JS 錯誤');
+  const headers = await evaluate(`Array.prototype.map.call(
+    document.querySelectorAll('table thead th'),
+    function (th) { return th.textContent.trim(); })`);
+  assertTrue(headers.indexOf('保養區間') >= 0, '表頭有「保養區間」欄', JSON.stringify(headers));
+  assertEq(headers.indexOf('保養區間'), headers.indexOf('工項類別') + 1,
+    '「保養區間」緊接在「工項類別」之後');
+  assertEq(headers.indexOf('保養日期'), headers.indexOf('保養區間') + 1,
+    '「保養日期」緊接在「保養區間」之後');
+  assertEq(await evaluate(`document.querySelectorAll('table thead th').length`), 14,
+    '表頭共 14 欄');
+
+  console.log('\nSection 2｜保養區間內容與保養日期留白');
+  const rows = await evaluate(`(function () {
+    var headerCells = Array.prototype.map.call(
+      document.querySelectorAll('table thead th'),
+      function (th) { return th.textContent.trim(); });
+    var periodIdx = headerCells.indexOf('保養區間');
+    var dateIdx = headerCells.indexOf('保養日期');
+    var customerIdx = headerCells.indexOf('客戶名稱');
+    var storeIdx = headerCells.indexOf('門市名稱');
+    return Array.prototype.map.call(
+      document.querySelectorAll('table tbody tr'),
+      function (tr) {
+        var tds = tr.querySelectorAll('td');
+        if (tds.length < 14) return null;
+        return {
+          customer: tds[customerIdx].textContent.trim(),
+          store: tds[storeIdx].textContent.trim(),
+          period: tds[periodIdx].textContent.trim(),
+          planDate: tds[dateIdx].textContent
+        };
+      }).filter(Boolean);
+  })()`);
+  assertTrue(rows.length > 0, '列表有資料列', `共 ${rows.length} 列`);
+  assertTrue(rows.every(r => /^第\d+次 \d{1,2}-\d{1,2}月$/.test(r.period)),
+    '每列保養區間格式皆為「第N次 X-Y月」',
+    JSON.stringify(rows.map(r => r.period)));
+  assertTrue(rows.every(r => !/未保養/.test(r.planDate)),
+    '保養日期欄不再出現「（未保養）」');
+  assertTrue(rows.every(r => r.planDate === '' || /^\d{4}-\d{2}-\d{2}$/.test(r.planDate)),
+    '保養日期欄若無日期則為空字串',
+    JSON.stringify(rows.map(r => r.planDate)));
+
+  console.log('\nSection 2｜當月區間涵蓋的未完成案件會出現');
+  // app 的 store 沒有掛在 window 上，改用同一組 seed 重算一份等價結果比對
+  const expected = await evaluate(`(function () {
+    var month = new Date().getMonth() + 1;
+    var year = new Date().getFullYear();
+    var period = CustomerUtils.findPeriodForMonth(INITIAL_CUSTOMERS, '屈臣氏', month);
+    if (!period) return null;
+    var all = ScheduleUtils.generateDueMaintenanceCases(
+      INITIAL_CUSTOMERS, INITIAL_STORES, INITIAL_MAINTENANCE_CASES);
+    var cases = all.filter(function (c) {
+      return !c.isClosed && c.customerName === '屈臣氏'
+        && Number(c.periodYear) === year
+        && Number(c.periodVisitIndex) === period.visitIndex;
+    });
+    return {
+      label: '第' + period.visitIndex + '次 ' + period.startMonth + '-' + period.endMonth + '月',
+      stores: cases.map(function (c) { return c.storeName; })
+    };
+  })()`);
+  assertTrue(expected && expected.stores.length > 0,
+    '屈臣氏在當月區間有未結案的保養單', JSON.stringify(expected));
+  assertTrue(expected.stores.every(name => rows.some(
+    r => r.customer === '屈臣氏' && r.store === name && r.period === expected.label)),
+    '這些門市都出現在列表且區間顯示為當月區間', expected.label);
+
+  console.log('\nSection 2｜區間不涵蓋所選月份的案件不出現');
+  const hidden = await evaluate(`(function () {
+    var month = new Date().getMonth() + 1;
+    var periods = CustomerUtils.getPeriods(INITIAL_CUSTOMERS, '屈臣氏');
+    return periods.filter(function (p) {
+      return p.startMonth > month || p.endMonth < month;
+    }).map(function (p) {
+      return '第' + p.visitIndex + '次 ' + p.startMonth + '-' + p.endMonth + '月';
+    });
+  })()`);
+  assertTrue(hidden.every(label => !rows.some(r => r.period === label)),
+    '其他區間的案件不出現在當月清單', JSON.stringify(hidden));
+  assertEq(consoleErrors.length, 0, '操作後仍無 JS 錯誤');
+} finally {
+  try { ws && ws.close(); } catch {}
+  chrome.kill();
+}
+
 console.log(`\n通過 ${passed}／失敗 ${failed}`);
 process.exit(failed === 0 ? 0 : 1);
