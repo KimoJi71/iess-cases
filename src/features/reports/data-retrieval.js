@@ -9,19 +9,16 @@
   var inputCls = 'w-full p-2 border rounded-md outline-none bg-white text-sm';
   var labelCls = 'block text-xs text-gray-500 mb-1';
 
-  function FilterSelect(props) {
+  function FilterMultiSelect(props) {
     return h('div', { className: props.className || 'min-w-0' },
       h('label', { className: labelCls }, props.label),
-      h('select', {
-        value: props.value,
+      IESS.MultiSelect({
+        id: props.id,
+        options: props.options || [],
+        value: props.value || [],
         onChange: props.onChange,
-        className: inputCls
-      },
-        h('option', { value: '全部' }, '全部'),
-        (props.options || []).map(function (opt) {
-          return h('option', { key: opt, value: opt }, opt);
-        })
-      )
+        placeholder: '全部'
+      })
     );
   }
 
@@ -57,16 +54,16 @@
     var caseType = '維修';
     var startDate = oneMonthAgoDate;
     var endDate = todayDate;
-    var filterWorkCategory = '全部';
-    var filterRepairItem = '全部';
-    var filterRepairReason = '全部';
-    var filterCustomer = '全部';
-    var filterStore = '全部';
-    var filterAssignee = '全部';
-    var filterServiceLevel = '全部';
-    var filterContactPerson = '全部';
-    var filterCity = '全部';
-    var filterDistrict = '全部';
+    var filterWorkCategory = [];
+    var filterRepairItem = [];
+    var filterRepairReason = [];
+    var filterCustomer = [];
+    var filterStore = [];
+    var filterAssignee = [];
+    var filterServiceLevel = [];
+    var filterContactPerson = [];
+    var filterCity = [];
+    var filterDistrict = [];
     var applied = null;
     var dragProps = useDragScroll();
     var listPagination = IESS.createListPagination();
@@ -78,16 +75,16 @@
 
     function handleCaseTypeChange(nextType, rerender) {
       caseType = nextType;
-      filterWorkCategory = '全部';
-      filterRepairItem = '全部';
-      filterRepairReason = '全部';
-      filterCustomer = '全部';
-      filterStore = '全部';
-      filterAssignee = '全部';
-      filterServiceLevel = '全部';
-      filterContactPerson = '全部';
-      filterCity = '全部';
-      filterDistrict = '全部';
+      filterWorkCategory = [];
+      filterRepairItem = [];
+      filterRepairReason = [];
+      filterCustomer = [];
+      filterStore = [];
+      filterAssignee = [];
+      filterServiceLevel = [];
+      filterContactPerson = [];
+      filterCity = [];
+      filterDistrict = [];
       resetApplied();
       rerender();
     }
@@ -121,19 +118,9 @@
     }
 
     return stateful(function (rerender) {
-      var customerOptions = CustomerUtils.getCustomerNameOptions(
-        customers,
-        filterCustomer !== '全部' ? filterCustomer : null,
-        true
-      );
-      var storeOptions = filterCustomer === '全部'
-        ? StoreUtils.getActiveStores(stores).map(function (s) { return s.storeName; }).filter(function (name, idx, arr) {
-          return arr.indexOf(name) === idx;
-        }).sort(function (a, b) { return a.localeCompare(b, 'zh-Hant'); })
-        : StoreUtils.getStoreNameOptions(stores, filterCustomer, filterStore !== '全部' ? filterStore : null, true);
-      var districtOptions = filterCity === '全部'
-        ? []
-        : StoreUtils.getDistrictsForCity(filterCity);
+      var customerOptions = CustomerUtils.getCustomerNameOptions(customers, null, true);
+      var storeOptions = DataRetrievalUtils.getStoreOptionsForCustomers(stores, filterCustomer);
+      var districtOptions = DataRetrievalUtils.getDistrictOptionsForCities(filterCity);
       var repairWorkCategories = WORK_CATEGORY_OPTIONS.filter(function (w) { return w !== '保養'; });
       var assigneeOptions = ASSIGNEES.slice();
 
@@ -175,22 +162,25 @@
         return h('div', {
           className: 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-end'
         },
-          FilterSelect({
+          FilterMultiSelect({
+            id: 'dr-workCategory',
             label: '工程類型',
             value: filterWorkCategory,
-            onChange: function (e) { filterWorkCategory = e.target.value; rerender(); },
+            onChange: function (next) { filterWorkCategory = next; rerender(); },
             options: PROJECT_WORK_CATEGORIES
           }),
-          FilterSelect({
+          FilterMultiSelect({
+            id: 'dr-contactPerson',
             label: '負責人員',
             value: filterContactPerson,
-            onChange: function (e) { filterContactPerson = e.target.value; rerender(); },
+            onChange: function (next) { filterContactPerson = next; rerender(); },
             options: PROJECT_ASSIGNEES.slice()
           }),
-          FilterSelect({
+          FilterMultiSelect({
+            id: 'dr-customer',
             label: '客戶名稱',
             value: filterCustomer,
-            onChange: function (e) { filterCustomer = e.target.value; rerender(); },
+            onChange: function (next) { filterCustomer = next; rerender(); },
             options: customerOptions
           }),
           FilterDateRange({
@@ -206,50 +196,57 @@
         return h('div', {
           className: 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-end'
         },
-          FilterSelect({
+          FilterMultiSelect({
+            id: 'dr-workCategory',
             label: '工項分類',
             value: filterWorkCategory,
-            onChange: function (e) { filterWorkCategory = e.target.value; rerender(); },
+            onChange: function (next) { filterWorkCategory = next; rerender(); },
             options: repairWorkCategories
           }),
-          FilterSelect({
+          FilterMultiSelect({
+            id: 'dr-repairItem',
             label: '叫修項目',
             value: filterRepairItem,
-            onChange: function (e) { filterRepairItem = e.target.value; rerender(); },
+            onChange: function (next) { filterRepairItem = next; rerender(); },
             options: REPAIR_ITEMS
           }),
-          FilterSelect({
+          FilterMultiSelect({
+            id: 'dr-repairReason',
             label: '叫修原因',
             value: filterRepairReason,
-            onChange: function (e) { filterRepairReason = e.target.value; rerender(); },
+            onChange: function (next) { filterRepairReason = next; rerender(); },
             options: REPAIR_REASONS
           }),
-          FilterSelect({
+          FilterMultiSelect({
+            id: 'dr-customer',
             label: '客戶名稱',
             value: filterCustomer,
-            onChange: function (e) {
-              filterCustomer = e.target.value;
-              filterStore = '全部';
+            onChange: function (next) {
+              filterCustomer = next;
+              filterStore = [];
               rerender();
             },
             options: customerOptions
           }),
-          FilterSelect({
+          FilterMultiSelect({
+            id: 'dr-store',
             label: '門市名稱',
             value: filterStore,
-            onChange: function (e) { filterStore = e.target.value; rerender(); },
+            onChange: function (next) { filterStore = next; rerender(); },
             options: storeOptions
           }),
-          FilterSelect({
+          FilterMultiSelect({
+            id: 'dr-assignee',
             label: '維修人員',
             value: filterAssignee,
-            onChange: function (e) { filterAssignee = e.target.value; rerender(); },
+            onChange: function (next) { filterAssignee = next; rerender(); },
             options: assigneeOptions
           }),
-          FilterSelect({
+          FilterMultiSelect({
+            id: 'dr-serviceLevel',
             label: '服務等級',
             value: filterServiceLevel,
-            onChange: function (e) { filterServiceLevel = e.target.value; rerender(); },
+            onChange: function (next) { filterServiceLevel = next; rerender(); },
             options: SERVICE_LEVEL_OPTIONS
           }),
           FilterDateRange({
@@ -265,38 +262,43 @@
         return h('div', {
           className: 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-end'
         },
-          FilterSelect({
+          FilterMultiSelect({
+            id: 'dr-city',
             label: '縣市',
             value: filterCity,
-            onChange: function (e) {
-              filterCity = e.target.value;
-              filterDistrict = '全部';
+            onChange: function (next) {
+              filterCity = next;
+              filterDistrict = [];
               rerender();
             },
             options: TAIWAN_CITY_OPTIONS
           }),
-          FilterSelect({
+          FilterMultiSelect({
+            id: 'dr-district',
             label: '行政區',
             value: filterDistrict,
-            onChange: function (e) { filterDistrict = e.target.value; rerender(); },
+            onChange: function (next) { filterDistrict = next; rerender(); },
             options: districtOptions
           }),
-          FilterSelect({
+          FilterMultiSelect({
+            id: 'dr-customer',
             label: '客戶名稱',
             value: filterCustomer,
-            onChange: function (e) { filterCustomer = e.target.value; rerender(); },
+            onChange: function (next) { filterCustomer = next; rerender(); },
             options: customerOptions
           }),
-          FilterSelect({
+          FilterMultiSelect({
+            id: 'dr-assignee',
             label: '維修人員',
             value: filterAssignee,
-            onChange: function (e) { filterAssignee = e.target.value; rerender(); },
+            onChange: function (next) { filterAssignee = next; rerender(); },
             options: assigneeOptions
           }),
-          FilterSelect({
+          FilterMultiSelect({
+            id: 'dr-serviceLevel',
             label: '服務等級',
             value: filterServiceLevel,
-            onChange: function (e) { filterServiceLevel = e.target.value; rerender(); },
+            onChange: function (next) { filterServiceLevel = next; rerender(); },
             options: SERVICE_LEVEL_OPTIONS
           }),
           FilterDateRange({
