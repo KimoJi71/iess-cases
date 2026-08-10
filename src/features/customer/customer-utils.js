@@ -63,6 +63,17 @@
     }).sort(function (a, b) { return a.visitIndex - b.visitIndex; });
   }
 
+  // 判斷區間是否「可用」：起始月與結束月皆為 1–12 的整數，且起始月不大於結束月。
+  // 半填（例如只填了結束月）的區間視為未設定，不參與分段／月份查詢，但仍保留在
+  // normalizePeriods 的輸出中，讓表單與驗證仍能看到原始資料以便使用者補完整。
+  function isUsablePeriod(p) {
+    var s = p && p.startMonth;
+    var e = p && p.endMonth;
+    var sOk = typeof s === 'number' && Math.floor(s) === s && s >= 1 && s <= 12;
+    var eOk = typeof e === 'number' && Math.floor(e) === e && e >= 1 && e <= 12;
+    return sOk && eOk && s <= e;
+  }
+
   function findCustomerByName(customers, name) {
     var target = String(name == null ? '' : name).trim();
     if (!target) return null;
@@ -74,13 +85,14 @@
 
   function getPeriods(customers, customerName) {
     var cust = findCustomerByName(customers, customerName);
-    return cust ? normalizePeriods(cust.periods) : [];
+    if (!cust) return [];
+    return normalizePeriods(cust.periods).filter(isUsablePeriod);
   }
 
   function findPeriodForMonth(customers, customerName, month) {
     var m = Number(month);
     var found = getPeriods(customers, customerName).find(function (p) {
-      return Number(p.startMonth) <= m && m <= Number(p.endMonth);
+      return p.startMonth <= m && m <= p.endMonth;
     });
     return found || null;
   }

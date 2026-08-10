@@ -10,8 +10,12 @@
   var MONTH_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 
   // 依服務等級的「每年保養次數」增減區間列：增加補空白列，減少砍尾端，已填的前段保留
+  // 重新編號（reindex）前先依原本存的 visitIndex 排序，避免資料本身順序錯亂時被誤植新序號。
   function resizePeriods(periods, count) {
-    var next = periods.slice(0, count);
+    var sorted = (periods || []).slice().sort(function (a, b) {
+      return Number((a && a.visitIndex) || 0) - Number((b && b.visitIndex) || 0);
+    });
+    var next = sorted.slice(0, count);
     for (var i = next.length; i < count; i++) {
       next.push({ visitIndex: i + 1, startMonth: '', endMonth: '' });
     }
@@ -52,12 +56,17 @@
       return ServiceLevelUtils.getMaintenanceCount(serviceLevels, levelName);
     }
 
-    var periods = resizePeriods(
-      ((targetCase && targetCase.periods) || []).map(function (p) {
-        return { visitIndex: p.visitIndex, startMonth: p.startMonth, endMonth: p.endMonth };
-      }),
-      expectedPeriodCount(formData.serviceLevel)
-    );
+    var storedPeriods = ((targetCase && targetCase.periods) || []).map(function (p) {
+      return { visitIndex: p.visitIndex, startMonth: p.startMonth, endMonth: p.endMonth };
+    });
+    // 初始載入時，若客戶已存有區間、但目前的服務等級在服務等級清單中查無資料
+    // （例如服務等級已被刪除／改名，字串暫時對不上），保留原始區間列，不要
+    // 因 expectedPeriodCount 誤判為 0 而把既有資料整批清空。使用者主動切換到
+    // 一個「確實存在、次數為 0」的等級時，仍會如常清空（見 handleServiceLevelChange）。
+    var initialLevelResolved = !!ServiceLevelUtils.findByName(serviceLevels, formData.serviceLevel);
+    var periods = (!initialLevelResolved && storedPeriods.length)
+      ? storedPeriods
+      : resizePeriods(storedPeriods, expectedPeriodCount(formData.serviceLevel));
 
     return stateful(function (rerender) {
       function handleChange(e) {
@@ -156,17 +165,22 @@
         }
         var periodErrors = CustomerUtils.validatePeriods(
           periods, expectedPeriodCount(formData.serviceLevel));
+        // 存檔用全新物件陣列，避免與表單仍在使用的 periods 陣列共享參考——
+        // 表單若在儲存後仍開著被繼續編輯，不能回頭改到已存檔的紀錄。
+        var savedPeriods = periods.map(function (p) {
+          return { visitIndex: p.visitIndex, startMonth: p.startMonth, endMonth: p.endMonth };
+        });
         if (isEdit) {
           setCases(cases.map(function (c) {
             return c.id === targetCase.id
-              ? Object.assign({}, c, formData, { contacts: contacts, periods: periods })
+              ? Object.assign({}, c, formData, { contacts: contacts, periods: savedPeriods })
               : c;
           }));
           showToast('客戶資料更新成功');
         } else {
           var newCustomer = Object.assign({ id: 'CUST' + Date.now() }, formData, {
             contacts: contacts,
-            periods: periods,
+            periods: savedPeriods,
             createdDate: todayDate
           });
           setCases([newCustomer].concat(cases));
