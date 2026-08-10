@@ -6,8 +6,13 @@
 
   var CASE_TYPES = ['維修', '保養', '工程'];
 
-  function isAll(value) {
-    return !value || value === '全部';
+  // 篩選值為 string[]；空陣列代表「全部」，不做篩選。
+  function isAny(list) {
+    return !list || !list.length;
+  }
+
+  function matches(list, value) {
+    return isAny(list) || list.indexOf(value) !== -1;
   }
 
   function inDateRange(dateStr, start, end) {
@@ -45,11 +50,11 @@
   function filterProjectCases(cases, filters) {
     return (cases || []).filter(function (c) {
       if (!inDateRange(c.creationDate, filters.startDate, filters.endDate)) return false;
-      if (!isAll(filters.workCategory) && c.workCategory !== filters.workCategory) return false;
-      if (!isAll(filters.customer) && c.customerName !== filters.customer) return false;
-      if (!isAll(filters.contactPerson)) {
+      if (!matches(filters.workCategory, c.workCategory)) return false;
+      if (!matches(filters.customer, c.customerName)) return false;
+      if (!isAny(filters.contactPerson)) {
         var person = (c.details && c.details.contactPerson) || c.stageAssignee || '';
-        if (person !== filters.contactPerson) return false;
+        if (filters.contactPerson.indexOf(person) === -1) return false;
       }
       return true;
     }).sort(function (a, b) {
@@ -61,18 +66,21 @@
     return (cases || []).filter(function (c) {
       if (c.workCategory === '保養') return false;
       if (!inDateRange(c.repairDate, filters.startDate, filters.endDate)) return false;
-      if (!isAll(filters.workCategory) && c.workCategory !== filters.workCategory) return false;
-      if (!isAll(filters.repairItem) && c.repairItem !== filters.repairItem) return false;
-      if (!isAll(filters.repairReason) && c.repairReason !== filters.repairReason) return false;
-      if (!isAll(filters.customer) && c.customerName !== filters.customer) return false;
-      if (!isAll(filters.store) && c.storeName !== filters.store) return false;
-      if (!isAll(filters.assignee)) {
-        var hit = window.CaseAssigneeUtils
-          ? CaseAssigneeUtils.includesAssignee(c, filters.assignee)
-          : c.assignee === filters.assignee;
+      if (!matches(filters.workCategory, c.workCategory)) return false;
+      if (!matches(filters.repairItem, c.repairItem)) return false;
+      if (!matches(filters.repairReason, c.repairReason)) return false;
+      if (!matches(filters.customer, c.customerName)) return false;
+      if (!matches(filters.store, c.storeName)) return false;
+      if (!isAny(filters.assignee)) {
+        // 任一已選人員命中即通過（案件可能多人指派）
+        var hit = filters.assignee.some(function (name) {
+          return window.CaseAssigneeUtils
+            ? CaseAssigneeUtils.includesAssignee(c, name)
+            : c.assignee === name;
+        });
         if (!hit) return false;
       }
-      if (!isAll(filters.serviceLevel) && c.serviceLevel !== filters.serviceLevel) return false;
+      if (!matches(filters.serviceLevel, c.serviceLevel)) return false;
       return true;
     }).sort(function (a, b) {
       return (b.repairDate || '').localeCompare(a.repairDate || '');
@@ -82,11 +90,11 @@
   function filterMaintenanceCases(cases, stores, filters) {
     return (cases || []).filter(function (c) {
       var loc = resolveMaintenanceLocation(c, stores);
-      if (!isAll(filters.city) && loc.city !== filters.city) return false;
-      if (!isAll(filters.district) && loc.district !== filters.district) return false;
-      if (!isAll(filters.customer) && c.customerName !== filters.customer) return false;
-      if (!isAll(filters.assignee) && c.assignee !== filters.assignee) return false;
-      if (!isAll(filters.serviceLevel) && c.serviceLevel !== filters.serviceLevel) return false;
+      if (!matches(filters.city, loc.city)) return false;
+      if (!matches(filters.district, loc.district)) return false;
+      if (!matches(filters.customer, c.customerName)) return false;
+      if (!matches(filters.assignee, c.assignee)) return false;
+      if (!matches(filters.serviceLevel, c.serviceLevel)) return false;
       var date = getMaintenanceDate(c);
       if (!inDateRange(date, filters.startDate, filters.endDate)) return false;
       return true;

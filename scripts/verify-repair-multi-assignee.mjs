@@ -192,13 +192,13 @@ function testIncludesAssignee(CAU, DRU) {
   const filtered = DRU.filterRepairCases(cases, {
     startDate: '2026-01-01',
     endDate: '2026-12-31',
-    workCategory: '全部',
-    repairItem: '全部',
-    repairReason: '全部',
-    customer: '全部',
-    store: '全部',
-    assignee: 'A組',
-    serviceLevel: '全部',
+    workCategory: [],
+    repairItem: [],
+    repairReason: [],
+    customer: [],
+    store: [],
+    assignee: ['A組'],
+    serviceLevel: [],
   });
   assertEq(filtered.length, 1, 'filterRepairCases: only case containing A組');
   assertTrue(filtered[0].assignees.indexOf('A組') !== -1, 'filtered case includes A組');
