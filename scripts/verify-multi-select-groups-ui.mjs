@@ -27,9 +27,6 @@ function assertEq(actual, expected, name) {
   if (actual === expected) pass(name, JSON.stringify(actual));
   else fail(name, `expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`);
 }
-function assertTrue(cond, name, detail) {
-  if (cond) pass(name, detail); else fail(name, detail);
-}
 function assertJson(actual, expected, name) {
   assertEq(JSON.stringify(actual), JSON.stringify(expected), name);
 }
@@ -250,6 +247,67 @@ try {
   })()`);
   assertEq(empty.empty, 1, '所有群組皆空時顯示「無可選項目」');
   assertEq(empty.groups, 0, '所有群組皆空時不渲染任何群組標題');
+
+  console.log('\n5. 選項按鈕的 aria-label：跨群組同名選項才需要，label 本身已唯一時不需要');
+  const ariaLabels = await evaluateAsync(`(function () {
+    var host = window.__mount(window.__groups);
+    host.querySelector('.multi-select__control').click();
+    return new Promise(function (resolve) {
+      setTimeout(function () {
+        var menuEl = document.querySelector('.multi-select__menu');
+        var btns = menuEl.querySelectorAll('.multi-select__option');
+        resolve(Array.prototype.map.call(btns, function (b) {
+          return { text: b.textContent.trim(), ariaLabel: b.getAttribute('aria-label') };
+        }));
+      }, 50);
+    });
+  })()`);
+  // window.__groups 的三個選項分別是 甲客戶/甲一店、甲客戶/甲二店、乙客戶/甲一店，
+  // chipLabel 皆帶客戶前綴、與純 label 不同，故三者都該有 aria-label 且等於各自 chipLabel。
+  assertJson(
+    ariaLabels,
+    [
+      { text: '甲一店', ariaLabel: '甲客戶 · 甲一店' },
+      { text: '甲二店', ariaLabel: '甲客戶 · 甲二店' },
+      { text: '甲一店', ariaLabel: '乙客戶 · 甲一店' }
+    ],
+    '跨群組同名選項的 aria-label 帶上 chipLabel，螢幕閱讀器才分得出兩個「甲一店」'
+  );
+
+  const flatAria = await evaluateAsync(`(function () {
+    var host = window.__mount(['維修', '保養']);
+    host.querySelector('.multi-select__control').click();
+    return new Promise(function (resolve) {
+      setTimeout(function () {
+        var menuEl = document.querySelector('.multi-select__menu');
+        var btns = menuEl.querySelectorAll('.multi-select__option');
+        resolve(Array.prototype.map.call(btns, function (b) { return b.getAttribute('aria-label'); }));
+      }, 50);
+    });
+  })()`);
+  assertJson(flatAria, [null, null], 'chipLabel 與 label 相同（字串陣列形態）時不畫蛇添足加 aria-label');
+
+  console.log('\n6. chip 對照不到 chipLabel 時，退回顯示 value 也要把控制字元換成看得見的分隔符');
+  const staleChip = await evaluateAsync(`(function () {
+    IESS.MultiSelect.closeAll();
+    var host = document.getElementById('ms-host');
+    if (host) host.remove();
+    host = document.createElement('div');
+    host.id = 'ms-host';
+    document.body.appendChild(host);
+    // 這個複合鍵值刻意不放進 options，模擬「已選門市在資料來源改變後消失」的情境：
+    // chipLabelOf 找不到對照，只能退回顯示 value 原文。
+    host.appendChild(IESS.MultiSelect({
+      id: 'ms-stale-test',
+      options: window.__groups,
+      value: ['丁客戶\\u0001丁一店'],
+      onChange: function () {},
+      placeholder: '全部'
+    }));
+    var chip = host.querySelector('.multi-select__chip');
+    return chip.textContent.replace('×', '').trim();
+  })()`);
+  assertEq(staleChip, '丁客戶 · 丁一店', '退回顯示的 value 原文不會黏成一團，控制字元被換成可視分隔符');
 
   assertEq(consoleErrors.length, 0, '互動過程無 JS 錯誤');
 } catch (err) {

@@ -83,8 +83,13 @@
       var flatOptions = groups.reduce(function (acc, g) { return acc.concat(g.options); }, []);
       var chipLabels = {};
       flatOptions.forEach(function (o) { chipLabels[o.value] = o.chipLabel; });
-      // 對照不到時退回顯示 value 原文：資料來源變動時 chip 不會變成空白
-      function chipLabelOf(v) { return chipLabels[v] != null ? chipLabels[v] : v; }
+      // 對照不到時退回顯示 value 原文：資料來源變動時 chip 不會變成空白。
+      // 但 value 可能是帶控制字元（U+0001）的複合鍵，原封不動顯示會黏成一團看不出分界，
+      // 故把控制字元換成看得見的分隔符號。
+      function chipLabelOf(v) {
+        if (chipLabels[v] != null) return chipLabels[v];
+        return String(v).replace(/[\x00-\x1f]/g, ' · ');
+      }
       var value = (props.value || []).map(String);
       var disabled = !!props.disabled;
       var placeholder = props.placeholder || '請選擇';
@@ -193,6 +198,9 @@
             box.textContent = checked ? '✓' : '';
             btn.appendChild(box);
             btn.appendChild(document.createTextNode(opt.label));
+            // 群組標題是 role="presentation"，螢幕閱讀器讀不到；跨群組同名選項（不同客戶的同名門市）
+            // 必須靠 chipLabel 才分得出彼此，否則聽起來是兩個一模一樣的「甲一店」。
+            if (opt.chipLabel && opt.chipLabel !== opt.label) btn.setAttribute('aria-label', opt.chipLabel);
 
             // 用 click 而非 mousedown：click 才會被鍵盤 Enter/Space 觸發（button 原生行為），
             // 讓鍵盤使用者也能選取選項。改用 click 不會被 outside 監聽器誤判成「點外面」而先關閉選單，

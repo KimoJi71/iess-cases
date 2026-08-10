@@ -292,12 +292,22 @@ try {
               .querySelector('.multi-select__control').click();
             setTimeout(function () {
               var menuEl = document.querySelector('.multi-select__menu');
-              resolve({
-                firstCity: firstCity,
-                groups: Array.prototype.map.call(
-                  menuEl.querySelectorAll('.multi-select__group'),
-                  function (g) { return g.textContent.trim(); })
-              });
+              var groups = Array.prototype.map.call(
+                menuEl.querySelectorAll('.multi-select__group'),
+                function (g) { return g.textContent.trim(); });
+              var districtOpts = menuEl.querySelectorAll('.multi-select__option');
+              var firstDistrict = districtOpts[0].textContent.trim();
+              districtOpts[0].click();
+              setTimeout(function () {
+                var host3 = document.getElementById('dr-host');
+                var chip = host3.querySelectorAll('.multi-select')[1].querySelector('.multi-select__chip');
+                resolve({
+                  firstCity: firstCity,
+                  groups: groups,
+                  firstDistrict: firstDistrict,
+                  districtChip: chip.textContent.replace('×', '').trim()
+                });
+              }, 50);
             }, 50);
           }, 80);
         }, 50);
@@ -305,6 +315,10 @@ try {
     });
   })()`);
   assertJson(districts.groups, [districts.firstCity], '選一個縣市後，行政區選單只有該縣市一個群組');
+  assertEq(
+    districts.districtChip, districts.firstCity + ' · ' + districts.firstDistrict,
+    '選行政區後 chip 顯示「縣市 · 行政區」，而非帶控制字元的複合鍵原文'
+  );
 
   console.log('\n4. 鍵盤切換案件類型時，展開中的選單不會孤兒化');
   const orphan = await evaluateAsync(`(function () {

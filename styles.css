@@ -804,6 +804,11 @@ body {
 }
 
 .multi-select__group {
+  /* 選單捲動時群組標題會被捲出視窗，使用者只看得到選項卻看不到它屬於哪個上層
+     （例如哪個縣市底下的行政區），故釘在選單頂端隨捲動保持可見；已有不透明底色
+     可蓋住捲入的選項，不需額外 z-index。 */
+  position: sticky;
+  top: 0;
   padding: 0.375rem 0.75rem;
   background: #f9fafb;
   color: #6b7280;
