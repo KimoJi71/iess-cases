@@ -201,6 +201,31 @@ try {
     }).every(function (c) { return c.periods.length === 0; });
   })()`), 'D 級客戶皆無區間');
 
+  console.log('\nSection 3｜保養分配改吃客戶區間');
+  // 保養分配的月份分段來源改為客戶：把某 B 級客戶的區間改成 3-8／9-2 之外的值後，
+  // 該列的分段必須跟著變，而不是沿用服務等級。
+  assertDeep(await evaluate(`(function(){
+    var customers = [{ id: 'C1', name: '甲客戶', serviceLevel: 'B 保修(一年兩次)', periods: [
+      { visitIndex: 1, startMonth: 2, endMonth: 5 },
+      { visitIndex: 2, startMonth: 8, endMonth: 11 }
+    ] }];
+    return [
+      CustomerUtils.findPeriodForMonth(customers, '甲客戶', 3).visitIndex,
+      CustomerUtils.findPeriodForMonth(customers, '甲客戶', 9).visitIndex,
+      CustomerUtils.findPeriodForMonth(customers, '甲客戶', 1),
+      CustomerUtils.findPeriodForMonth(customers, '甲客戶', 12)
+    ];
+  })()`), [1, 2, null, null], '客戶自訂區間決定月份歸屬，區間外回 null');
+  assertTrue(await evaluate(
+    `/CustomerUtils\\.getPeriods/.test(String(MaintenanceAllocation))`
+  ), '保養分配的分段來源改用 CustomerUtils.getPeriods');
+  assertTrue(await evaluate(
+    `/CustomerUtils\\.findPeriodForMonth/.test(String(MaintenanceAllocation))`
+  ), '保養分配的月份查詢改用 CustomerUtils.findPeriodForMonth');
+  assertTrue(await evaluate(
+    `!/ServiceLevelUtils\\.(getPeriods|findPeriodForMonth)/.test(String(MaintenanceAllocation))`
+  ), '保養分配不再呼叫 ServiceLevelUtils 的區間函式');
+
   assertEq(consoleErrors.length, 0, '全程無 JS 錯誤');
 } catch (e) {
   fail('driver', e.message);
