@@ -163,6 +163,32 @@ assertEq(gen7.find(function (c) { return c.id === 'M8'; }).periodVisitIndex, und
 
 assertEq(typeof SU.addMonthsToMonth, 'undefined', 'addMonthsToMonth 已移除');
 
+console.log('\nSection 1｜門市歷史的保養立案時間');
+// dueMonth 是區間標記（區間驅動後填的是區間起始月），不是案件發生時間，
+// 因此 planDate 一旦有值就必須優先，否則長區間客戶的立案時間會早好幾個月。
+const HISTORY_STORE = { customerName: '甲客戶', storeName: '甲一店' };
+const historyRow = (maintenanceCase) => sandbox.StoreUtils
+  .buildRepairMaintenanceHistoryRows(HISTORY_STORE, [], [maintenanceCase], [])
+  .find((r) => r.sourceType === 'maintenance');
+const closedBase = {
+  customerName: '甲客戶', storeName: '甲一店', isClosed: true, closeDate: '2026-08-20'
+};
+assertEq(
+  historyRow({ ...closedBase, id: 'H1', planDate: '2026-08-14', dueMonth: '2026-01' }).filingTime,
+  '2026-08-14 00:00:00',
+  '有 planDate 時立案時間用 planDate，不用區間起始月'
+);
+assertEq(
+  historyRow({ ...closedBase, id: 'H2', planDate: '', dueMonth: '2026-05' }).filingTime,
+  '2026-05-01 00:00:00',
+  '舊案件無 planDate 時仍退回 dueMonth'
+);
+assertEq(
+  historyRow({ ...closedBase, id: 'H3', planDate: '', dueMonth: '' }).filingTime,
+  '',
+  '兩者皆空時立案時間為空字串'
+);
+
 // ---------- headless Chrome 區段 ----------
 const CHROME = process.env.CHROME_PATH
   || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
