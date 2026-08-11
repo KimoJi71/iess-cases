@@ -78,7 +78,7 @@
     reportsSubMenu: initialReportsSubMenu,
     permissionsSubMenu: initialPermissionsSubMenu,
     // 戰情室與系統權限的側選單群組共用這個陣列（群組 id 不重疊），預設全部展開
-    expandedSidebar: ['維修服務', '工程服務', '客戶建檔', '人員與權限', '服務規則設定', '保養作業'],
+    expandedSidebar: ['維修服務', '工程服務', '客戶建檔', '人員與權限', '基礎資料設定', '保養作業'],
     mobileSidebarOpen: false,
     view: initialView,
     cases: INITIAL_CASES,

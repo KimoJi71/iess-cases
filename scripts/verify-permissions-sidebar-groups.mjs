@@ -123,8 +123,8 @@ const HELPERS = `
 `;
 
 const EXPECTED_TREE = [
-  { title: '人員與權限', expanded: true, children: ['帳號管理', '指派人員管理', '績效區域管理'] },
-  { title: '服務規則設定', expanded: true, children: ['服務等級管理', '處理方式與積分管理', '設備分類管理'] },
+  { title: '人員與權限', expanded: true, children: ['帳號管理', '指派人員管理'] },
+  { title: '基礎資料設定', expanded: true, children: ['服務等級管理', '處理方式與積分管理', '設備分類管理', '績效區域管理'] },
   { title: '保養作業', expanded: true, children: ['保養分配'] }
 ];
 
@@ -174,11 +174,11 @@ try {
 
   console.log('\n2. 點群組標題可收合，再點可展開');
   const toggled = await evaluateAsync(`(function () {
-    window.__clickGroup('服務規則設定');
+    window.__clickGroup('基礎資料設定');
     return new Promise(function (resolve) {
       setTimeout(function () {
         var collapsed = window.__readSidebar();
-        window.__clickGroup('服務規則設定');
+        window.__clickGroup('基礎資料設定');
         setTimeout(function () {
           resolve({ collapsed: collapsed, reopened: window.__readSidebar() });
         }, 120);
@@ -189,7 +189,7 @@ try {
     toggled.collapsed.map(g => ({ title: g.title, expanded: g.expanded })),
     [
       { title: '人員與權限', expanded: true },
-      { title: '服務規則設定', expanded: false },
+      { title: '基礎資料設定', expanded: false },
       { title: '保養作業', expanded: true }
     ],
     '只收合被點的群組，其他群組不受影響'
@@ -236,6 +236,82 @@ try {
       { title: '客戶建檔', expanded: true }
     ],
     '共用 expandedSidebar 不會讓戰情室的群組被系統權限的展開狀態影響'
+  );
+
+  console.log('\n5. 帳號權限設定的 PERMISSION_TREE 與側選單同構');
+  const permTree = await evaluate(`(function () {
+    var top = PERMISSION_TREE.find(function (n) { return n.id === '系統權限'; });
+    return top.children.map(function (g) {
+      return { title: g.id, children: g.children.slice() };
+    });
+  })()`);
+  assertJson(
+    permTree,
+    EXPECTED_TREE.map(g => ({ title: g.title, children: g.children })),
+    'PERMISSION_TREE 的系統權限分群與側選單完全一致'
+  );
+  const permLeaves = await evaluate(`(function () {
+    var top = PERMISSION_TREE.find(function (n) { return n.id === '系統權限'; });
+    var leaves = [];
+    top.children.forEach(function (g) { leaves = leaves.concat(g.children); });
+    return {
+      missing: leaves.filter(function (fn) { return PERMISSION_FUNCTIONS.indexOf(fn) === -1; }),
+      count: leaves.length
+    };
+  })()`);
+  assertJson(permLeaves.missing, [], '每個葉節點都在 PERMISSION_FUNCTIONS 內（權限勾選才會生效）');
+  assertEq(permLeaves.count, 7, '系統權限底下仍是 7 個功能，只是重新分群');
+
+  console.log('\n6. 權限面板渲染出巢狀群組列，且群組勾選會連動底下功能');
+  const panel = await evaluateAsync(`(function () {
+    window.__perms = AccountUtils.createEmptyPermissions();
+    var host = document.getElementById('perm-host');
+    if (host) host.remove();
+    host = document.createElement('div');
+    host.id = 'perm-host';
+    document.body.appendChild(host);
+    host.appendChild(AccountPermissionsPanel({
+      permissions: window.__perms,
+      togglePermission: function () {},
+      toggleGroupPermission: function (node, op) {
+        AccountPermissionHelpers.collectLeafFunctions(node).forEach(function (fn) {
+          window.__perms[fn][op] = true;
+        });
+      },
+      toggleSelectAll: function () {}
+    }));
+    var rows = Array.prototype.map.call(host.querySelectorAll('tbody tr'), function (tr) {
+      return tr.querySelector('td').textContent.trim();
+    });
+    // 找到「基礎資料設定」那一列的群組 checkbox（檢視欄）並點下去
+    var groupRow = Array.prototype.filter.call(host.querySelectorAll('tbody tr'), function (tr) {
+      return tr.querySelector('td').textContent.trim() === '基礎資料設定';
+    })[0];
+    groupRow.querySelectorAll('input[type=checkbox]')[0].click();
+    return new Promise(function (resolve) {
+      setTimeout(function () {
+        resolve({
+          rows: rows,
+          viewAfter: ['服務等級管理', '處理方式與積分管理', '設備分類管理', '績效區域管理', '帳號管理']
+            .map(function (fn) { return window.__perms[fn].view; })
+        });
+      }, 80);
+    });
+  })()`);
+  assertJson(
+    panel.rows.slice(panel.rows.indexOf('系統權限')),
+    [
+      '系統權限',
+      '人員與權限', '帳號管理', '指派人員管理',
+      '基礎資料設定', '服務等級管理', '處理方式與積分管理', '設備分類管理', '績效區域管理',
+      '保養作業', '保養分配'
+    ],
+    '權限表格的系統權限段落照新分群展開為三層'
+  );
+  assertJson(
+    panel.viewAfter,
+    [true, true, true, true, false],
+    '勾選「基礎資料設定」的檢視會連動其四個功能，不波及其他群組'
   );
 
   assertEq(consoleErrors.length, 0, '互動過程無 JS 錯誤');
