@@ -138,11 +138,6 @@
           changed = true;
           return newName;
         });
-        var collaborators = CaseAssigneeUtils.getCollaborators(c).map(function (row) {
-          if (row.name !== oldName) return row;
-          changed = true;
-          return { name: newName, count: row.count, points: row.points };
-        });
         var performanceAssignees = (Array.isArray(c.performanceAssignees)
           ? c.performanceAssignees
           : (c.performanceAssignee ? [c.performanceAssignee] : [])).map(function (n) {
@@ -153,7 +148,6 @@
         if (c.assignee === oldName) { next.assignee = newName; changed = true; }
         if (changed) {
           next.assignees = assignees;
-          next.collaborators = collaborators;
           next.performanceAssignees = performanceAssignees;
           if (next.performanceAssignee === oldName) next.performanceAssignee = newName;
         }

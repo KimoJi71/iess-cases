@@ -77,13 +77,8 @@
     schedulingSubMenu: initialSchedulingSubMenu,
     reportsSubMenu: initialReportsSubMenu,
     permissionsSubMenu: initialPermissionsSubMenu,
-    expandedSidebar: initialTopMenu === '案件排程'
-      ? []
-      : initialTopMenu === '報表統計'
-        ? []
-        : initialTopMenu === '系統權限'
-          ? []
-          : ['維修服務', '工程服務', '客戶建檔'],
+    // 戰情室與系統權限的側選單群組共用這個陣列（群組 id 不重疊），預設全部展開
+    expandedSidebar: ['維修服務', '工程服務', '客戶建檔', '人員與權限', '基礎資料設定', '保養作業'],
     mobileSidebarOpen: false,
     view: initialView,
     cases: INITIAL_CASES,
@@ -878,7 +873,9 @@
           : s.currentTopMenu === '系統權限'
             ? h(PermissionsSidebar, {
                 currentSubMenu: s.permissionsSubMenu,
+                expandedSidebar: s.expandedSidebar,
                 setCurrentSubMenu: setPermissionsSubMenu,
+                toggleExpand: toggleExpand,
                 onClose: function () { setMobileSidebarOpen(false); }
               })
             : null;

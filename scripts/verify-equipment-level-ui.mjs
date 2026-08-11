@@ -262,7 +262,7 @@ try {
     function bonus(brand){
       return PerformanceUtils.computeAssigneePerformance({
         cases: [{ id:'R1', serviceLevel:'A 保修(一年四次)', isPerformanceIncluded:true,
-          completionDate:'2026-08-05', performanceAssignees:['王小明'], collaborators:[],
+          completionDate:'2026-08-05', performanceAssignees:['王小明'],
           equipment: { category:'分離式', brand:brand, deviceName:'分離式冷氣',
             specification:'3.5匹', model:'DUP-1' },
           processRecords:[{ processMethodId:'PS1', points:10, qty:1 }] }],
