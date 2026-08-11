@@ -334,11 +334,14 @@
     return true;
   }
 
-  // 案件用於判斷「開始保養時間」的參考年月：優先取所屬區間的起始年月，
+  // 案件用於判斷「開始保養時間」的參考年月：優先取所屬區間的「結束年月」，
   // 解析不到區間時退回 planDate（或 dueMonth）的年月，兩者皆無時回空字串。
+  // 取結束月是為了與產生端（用當月判斷）對齊：只要區間內有任何一個月已達起始
+  // 保養月，產生端就會開單，列表端就必須看得到，否則會出現開了單卻永不顯示的
+  // 孤兒案件（門市在區間中段開幕時必然發生），而該案件也就無法結案。
   function caseStartReferenceMonth(maintenanceCase, customers) {
     var period = resolveCasePeriod(maintenanceCase, customers);
-    if (period) return period.year + '-' + padMonth(period.startMonth);
+    if (period) return period.year + '-' + padMonth(period.endMonth);
     var refDate = resolveMaintenanceReferenceDate(maintenanceCase);
     return refDate ? String(refDate).slice(0, 7) : '';
   }
@@ -347,10 +350,14 @@
    * 該筆保養案件是否已達客戶設定的「開始保養時間」（開幕 N 個月後）。
    * 查無門市、或案件既無區間身分也無日期時回 true（不套用此規則）——
    * 資料不全的案件不該因此從保養計劃無聲消失。
+   * 已排定日期（有 planDate）或狀態已非「未保養」的案件同樣回 true：
+   * 已進入作業流程的單不該因為客戶事後調整設定而被追溯隱藏、變成無法結案。
    * 門市存在但沒有開幕日期時回 false，與產生端一致。
    */
   function caseMaintenanceStarted(maintenanceCase, customers, stores) {
     if (!maintenanceCase) return true;
+    if (maintenanceCase.planDate) return true;
+    if (maintenanceCase.status && maintenanceCase.status !== '未保養') return true;
     var store = resolveStore(stores, maintenanceCase.customerName, maintenanceCase.storeName);
     if (!store) return true;
     var refMonth = caseStartReferenceMonth(maintenanceCase, customers);
