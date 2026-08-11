@@ -179,5 +179,48 @@ const genKeep = SU.generateDueMaintenanceCases(CUSTOMERS, STORES, existing, '202
 assertEq(genKeep.filter(function (c) { return c.id === 'M1'; }).length, 1,
   '未滿期門市既有的案件不會被產生端移除');
 
+console.log('\nSection 3｜ScheduleUtils.caseMaintenanceStarted');
+// 甲新店（2026-06 開幕 + 6 個月 → 起始保養月 2026-12）
+assertTrue(!SU.caseMaintenanceStarted(
+  { customerName: '甲客戶', storeName: '甲新店', periodYear: 2026, periodVisitIndex: 3 },
+  CUSTOMERS, STORES),
+  '區間起始月（2026-07）早於起始保養月時不列出');
+assertTrue(!SU.caseMaintenanceStarted(
+  { customerName: '甲客戶', storeName: '甲新店', periodYear: 2026, periodVisitIndex: 4 },
+  CUSTOMERS, STORES),
+  '2026 年第 4 次區間（2026-10）仍早於起始保養月 2026-12，不列出');
+assertTrue(SU.caseMaintenanceStarted(
+  { customerName: '甲客戶', storeName: '甲新店', periodYear: 2027, periodVisitIndex: 1 },
+  CUSTOMERS, STORES),
+  '2027 年第 1 次區間（2027-01）晚於起始保養月，列出');
+assertTrue(SU.caseMaintenanceStarted(
+  { customerName: '甲客戶', storeName: '甲一店', periodYear: 2026, periodVisitIndex: 3 },
+  CUSTOMERS, STORES),
+  '已滿期門市的案件照常列出');
+assertTrue(!SU.caseMaintenanceStarted(
+  { customerName: '甲客戶', storeName: '甲無開幕店', periodYear: 2026, periodVisitIndex: 3 },
+  CUSTOMERS, STORES),
+  '門市沒有開幕日期時不列出');
+// 解析不到區間時退回 planDate／dueMonth 的年月
+assertTrue(!SU.caseMaintenanceStarted(
+  { customerName: '甲客戶', storeName: '甲新店', planDate: '2026-08-05' },
+  CUSTOMERS, STORES),
+  '無區間身分時用 planDate 的年月判斷');
+assertTrue(SU.caseMaintenanceStarted(
+  { customerName: '甲客戶', storeName: '甲新店', planDate: '2027-01-05' },
+  CUSTOMERS, STORES),
+  'planDate 已在起始保養月之後時列出');
+// 資料不全時不套用此規則，避免案件無聲消失
+assertTrue(SU.caseMaintenanceStarted(
+  { customerName: '甲客戶', storeName: '不存在的門市', periodYear: 2026, periodVisitIndex: 3 },
+  CUSTOMERS, STORES),
+  '查無門市時不套用此規則');
+assertTrue(SU.caseMaintenanceStarted(
+  { customerName: '甲客戶', storeName: '甲新店' },
+  CUSTOMERS, STORES),
+  '案件既無區間身分也無日期時不套用此規則');
+assertTrue(SU.caseMaintenanceStarted(null, CUSTOMERS, STORES),
+  '案件為 null 時不套用此規則');
+
 console.log(`\n通過 ${passed}／失敗 ${failed}`);
 process.exit(failed === 0 ? 0 : 1);

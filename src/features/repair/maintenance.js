@@ -119,6 +119,9 @@
         if (appliedFilters.storeArea !== '全部' && !StoreUtils.matchesRecordArea(c, appliedFilters.storeArea)) return false;
         if (appliedFilters.status !== '全部' && c.status !== appliedFilters.status) return false;
         if (!matchesPeriodMonthFilter(c)) return false;
+        // 客戶設定「於開幕 N 個月後開始保養」時，未滿期的門市不出現在保養計劃。
+        // 只擋這份列表——案件排程待辦、銷案審核、叫修紀錄不受影響。
+        if (!ScheduleUtils.caseMaintenanceStarted(c, customers, stores)) return false;
         return true;
       }).sort(function (a, b) {
         var aDate = a.planDate || a.dueMonth || '1970-01-01';

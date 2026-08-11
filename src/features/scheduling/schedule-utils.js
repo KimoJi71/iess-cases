@@ -334,6 +334,30 @@
     return true;
   }
 
+  // 案件用於判斷「開始保養時間」的參考年月：優先取所屬區間的起始年月，
+  // 解析不到區間時退回 planDate（或 dueMonth）的年月，兩者皆無時回空字串。
+  function caseStartReferenceMonth(maintenanceCase, customers) {
+    var period = resolveCasePeriod(maintenanceCase, customers);
+    if (period) return period.year + '-' + padMonth(period.startMonth);
+    var refDate = resolveMaintenanceReferenceDate(maintenanceCase);
+    return refDate ? String(refDate).slice(0, 7) : '';
+  }
+
+  /**
+   * 該筆保養案件是否已達客戶設定的「開始保養時間」（開幕 N 個月後）。
+   * 查無門市、或案件既無區間身分也無日期時回 true（不套用此規則）——
+   * 資料不全的案件不該因此從保養計劃無聲消失。
+   * 門市存在但沒有開幕日期時回 false，與產生端一致。
+   */
+  function caseMaintenanceStarted(maintenanceCase, customers, stores) {
+    if (!maintenanceCase) return true;
+    var store = resolveStore(stores, maintenanceCase.customerName, maintenanceCase.storeName);
+    if (!store) return true;
+    var refMonth = caseStartReferenceMonth(maintenanceCase, customers);
+    if (!refMonth) return true;
+    return CustomerUtils.isMaintenanceStartedForMonth(customers, store, refMonth);
+  }
+
   /**
    * 「YYYY 第N次（X-Y月）」——案件排程與保養明細共用，
    * 避免同一筆案件在兩處顯示的次數不一致。
@@ -656,6 +680,7 @@
     resolveCasePeriod: resolveCasePeriod,
     formatPeriodRange: formatPeriodRange,
     casePeriodMatchesMonthRange: casePeriodMatchesMonthRange,
+    caseMaintenanceStarted: caseMaintenanceStarted,
     formatCasePeriodLabel: formatCasePeriodLabel,
     periodMonthRange: periodMonthRange,
     resolveStore: resolveStore,
