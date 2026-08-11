@@ -262,7 +262,8 @@ const INITIAL_STORES = [{
   storeStatus: '整裝',
   workOrderApply: '是',
   lastRepairDate: '2026-06-01',
-  lastMaintenanceDate: '2026-04-20',
+  // 兩天前完成的保養（M2026070005）即掛在本店，兩者需一致。
+  lastMaintenanceDate: twoDaysAgoDate,
   remarks: '整裝期間僅開放夜間施工。',
   indoorHeight: '2.8m',
   outdoorHeight: '3.8m',
@@ -512,13 +513,15 @@ const INITIAL_STORES = [{
   companyCity: '台中市',
   companyDistrict: '北屯區',
   companyAddress: '崇德路X號',
-  // 三個月前開幕；星巴克設定「開幕 6 個月後才保養」，故此門市目前不應出現在保養計劃進度。
-  openDate: threeMonthsAgoDate,
+  // 本月開幕；星巴克設定「開幕 6 個月後才保養」，故此門市目前不應出現在保養計劃進度。
+  // 開幕日必須讓「起始保養月」晚於當期保養區間的結束月，未達標的示範才會全年成立。
+  openDate: todayDate,
   closeDate: '',
   storeStatus: '正常營業',
   workOrderApply: '否',
   lastRepairDate: '',
-  lastMaintenanceDate: yesterdayDate,
+  // 才剛開幕、又要等 6 個月才保養，因此沒有任何保養歷史紀錄。
+  lastMaintenanceDate: '',
   remarks: '',
   indoorHeight: '2.9m',
   outdoorHeight: '3.9m',
@@ -1323,7 +1326,9 @@ const INITIAL_MAINTENANCE_CASES = [{
   id: 'M2026070005',
   caseNumber: `${twoDaysAgoDate.replace(/-/g, '')}005`,
   customerName: '星巴克',
-  storeName: '北屯崇德店',
+  // 北屯崇德店本月才開幕、且要等 6 個月後才保養，不可能有已完成的保養紀錄，
+  // 因此這筆歷史紀錄改掛在同客戶、早已開幕的站前店（績效統計數字不變）。
+  storeName: '站前店',
   serviceLevel: 'B 保修(一年兩次)',
   status: '已完成',
   planDate: twoDaysAgoDate,
@@ -1334,7 +1339,7 @@ const INITIAL_MAINTENANCE_CASES = [{
   isClosed: true,
   isPerformanceIncluded: true,
   performanceAssignee: 'B組',
-  storeAddress: '台中市北屯區崇德路X號'
+  storeAddress: '台中市中區建國路X號'
 }, {
   id: 'M2026070006',
   caseNumber: '',
@@ -1414,6 +1419,25 @@ const INITIAL_MAINTENANCE_CASES = [{
   isPerformanceIncluded: true,
   performanceAssignee: '協力廠商',
   storeAddress: '台中市西屯區台灣大道X號'
+}, {
+  // 北屯崇德店未達「開始保養時間」（本月開幕、星巴克設定開幕 6 個月後才保養），
+  // 但仍留有一筆未結案的保養單（例如客戶事後才把開始保養時間調大）。
+  // 這筆單尚未排定日期、狀態仍是「未保養」，因此不適用「已進入作業流程」的豁免，
+  // 應被保養計劃進度的列表端過濾擋下，用來驗證該過濾確實有效。
+  id: 'M2026070011',
+  caseNumber: '',
+  customerName: '星巴克',
+  storeName: '北屯崇德店',
+  serviceLevel: 'B 保修(一年兩次)',
+  status: '未保養',
+  planDate: '',
+  planTimeStart: '',
+  planTimeEnd: '',
+  dueMonth: currentMonthStr,
+  workCategory: '保養',
+  assignee: '尚未指派',
+  isClosed: false,
+  storeAddress: '台中市北屯區崇德路X號'
 }];
 
 // --- 初始模擬工程立案列表 ---
