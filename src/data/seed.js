@@ -2,7 +2,9 @@
  * data/seed.js — 記憶體假資料（重整後重置）
  *
  * 各資料集的初始內容，對應原本的 INITIAL_* 常數。
- * 依賴 data/options.js 內的日期常數（todayDate / yesterdayDate / twoDaysAgoDate）。
+ * 依賴 data/options.js 內的日期常數（todayDate / yesterdayDate / twoDaysAgoDate /
+ * oneMonthAgoDate / threeMonthsAgoDate）。日期一律用相對常數，不要寫死，
+ * 否則假資料會隨時間變陳舊。
  */
 
 // --- 初始服務等級 (系統權限 - 服務等級管理) ---
@@ -489,7 +491,7 @@ const INITIAL_STORES = [{
   storeStatus: '正常營業',
   workOrderApply: '是',
   lastRepairDate: yesterdayDate,
-  lastMaintenanceDate: todayDate,
+  lastMaintenanceDate: threeMonthsAgoDate,
   remarks: '',
   indoorHeight: '3.1m',
   outdoorHeight: '4.2m',
@@ -1332,19 +1334,18 @@ const INITIAL_MAINTENANCE_CASES = [{
   storeAddress: '台中市北屯區崇德路X號'
 }, {
   id: 'M2026070006',
-  caseNumber: `${twoDaysAgoDate.replace(/-/g, '')}006`,
+  caseNumber: '',
   customerName: '屈臣氏',
   storeName: '大安忠孝店',
   serviceLevel: 'A 保修(一年四次)',
-  status: '已完成',
-  planDate: twoDaysAgoDate,
-  planTimeStart: '09:30',
-  planTimeEnd: '11:30',
-  completionDate: twoDaysAgoDate,
-  assignee: 'D組',
-  isClosed: true,
-  isPerformanceIncluded: true,
-  performanceAssignee: 'D組',
+  status: '未保養',
+  planDate: '',
+  planTimeStart: '',
+  planTimeEnd: '',
+  dueMonth: currentMonthStr,
+  workCategory: '保養',
+  assignee: '尚未指派',
+  isClosed: false,
   storeAddress: '台北市大安區忠孝東路X號'
 }, {
   id: 'M2026070007',

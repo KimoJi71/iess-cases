@@ -697,31 +697,15 @@ try {
   assertTrue(custFormSrc.includes("SERVICE_LEVEL_OPTIONS[0] || ''"),
     'customer-form.js 服務等級預設值改為 SERVICE_LEVEL_OPTIONS[0]');
 
-  console.log('\nSection 6｜generateDueMaintenanceCases 改吃服務等級');
-  const dueResult = await evaluate(`(function(){
-    var levels = INITIAL_SERVICE_LEVELS;
-    var customers = [
-      { id: 'C1', name: '四次客', serviceLevel: 'A 保修(一年四次)', enabled: true },
-      { id: 'C2', name: '零次客', serviceLevel: 'D 維修(無簽約客戶)', enabled: true },
-      { id: 'C3', name: '停用客', serviceLevel: 'A 保修(一年四次)', enabled: false }
-    ];
-    var stores = [
-      { id: 'S1', customerName: '四次客', storeName: '四次一店', storeStatus: '正常營業',
-        lastMaintenanceDate: '2000-01', serviceLevel: 'A 保修(一年四次)' },
-      { id: 'S2', customerName: '零次客', storeName: '零次一店', storeStatus: '正常營業',
-        lastMaintenanceDate: '2000-01', serviceLevel: 'D 維修(無簽約客戶)' },
-      { id: 'S3', customerName: '停用客', storeName: '停用一店', storeStatus: '正常營業',
-        lastMaintenanceDate: '2000-01', serviceLevel: 'A 保修(一年四次)' }
-    ];
-    var out = ScheduleUtils.generateDueMaintenanceCases(customers, stores, [], levels);
-    return out.map(function (c) { return c.storeName; });
-  })()`);
-  assertDeep(dueResult, ['四次一店'], '只為有保養次數且啟用的客戶產生到期保養案件');
+  // 註：「generateDueMaintenanceCases 改吃服務等級」一節（原以每年保養次數換算到期間隔月數）
+  // 已隨保養單改為區間驅動產生而移除；新契約 generateDueMaintenanceCases(customers, stores,
+  // existingCases, referenceMonth) 的行為改由 scripts/verify-maintenance-period-column.mjs
+  // 的「Section 1｜generateDueMaintenanceCases（區間驅動）」涵蓋。
 
   console.log('\nSection 6｜app.js 的 serviceLevels 傳遞範圍');
   const appSrc6 = readFileSync(join(ROOT, 'src/app.js'), 'utf8');
-  assertTrue(appSrc6.includes('generateDueMaintenanceCases(INITIAL_CUSTOMERS, INITIAL_STORES, INITIAL_MAINTENANCE_CASES, INITIAL_SERVICE_LEVELS)'),
-    'app.js 的 generateDueMaintenanceCases 已補傳 INITIAL_SERVICE_LEVELS');
+  // 註：generateDueMaintenanceCases 已改為區間驅動，簽章不再吃 serviceLevels，
+  // 詳見 scripts/verify-maintenance-period-column.mjs。
   // 取該元件自己的 props 區塊（到對應的收尾 `});` 為止），避免溢出到下一個 case
   function propsBlockOf(comp) {
     const i = appSrc6.indexOf('h(' + comp + ', {');
@@ -730,7 +714,8 @@ try {
     return end === -1 ? appSrc6.slice(i) : appSrc6.slice(i, end);
   }
   // 保養區間改由客戶持有後，保養列表／檢視／案件排程都改以 customerName 取區間，
-  // 不再需要 serviceLevels；服務等級只剩「每年保養次數」由 ScheduleUtils 直接查。
+  // 不再需要 serviceLevels；ScheduleUtils 已完全不碰 ServiceLevelUtils，
+  // 只把 store.serviceLevel 當欄位複製到案件上。
   for (const comp of ['MaintenanceList', 'MaintenanceViewEditForm', 'CaseArrangement']) {
     const block = propsBlockOf(comp);
     assertTrue(block !== null && !block.includes('serviceLevels'),

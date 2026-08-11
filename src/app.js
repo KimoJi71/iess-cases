@@ -87,9 +87,9 @@
     mobileSidebarOpen: false,
     view: initialView,
     cases: INITIAL_CASES,
-    // 僅在 store 建構時執行一次：之後編輯服務等級的「每年保養次數」不會回頭重新產生到期保養案件
+    // 僅在 store 建構時執行一次：之後編輯客戶的保養區間不會回頭重新產生保養案件
     // （這是記憶體版 demo 可接受的限制，需重新整理頁面才會依最新設定重算）
-    maintenanceCases: ScheduleUtils.generateDueMaintenanceCases(INITIAL_CUSTOMERS, INITIAL_STORES, INITIAL_MAINTENANCE_CASES, INITIAL_SERVICE_LEVELS),
+    maintenanceCases: ScheduleUtils.generateDueMaintenanceCases(INITIAL_CUSTOMERS, INITIAL_STORES, INITIAL_MAINTENANCE_CASES),
     projectCases: INITIAL_PROJECT_CASES,
     surveyCases: INITIAL_SURVEY_CASES,
     customers: INITIAL_CUSTOMERS,

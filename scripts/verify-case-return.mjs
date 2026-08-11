@@ -294,7 +294,9 @@ try {
           serviceLevel: 'B', status: '未保養', workCategory: '保養', assignee: '王小明',
           isClosed: false, planDate: '${todayDate}', dueMonth: '${currentMonthStr}' }
       ]),
-      setCases: function () {}, stores: [], setStores: function () {}, customers: [],
+      setCases: function () {}, stores: [], setStores: function () {},
+      customers: [{ name: '保養客戶', enabled: true,
+        periods: [{ visitIndex: 1, startMonth: 1, endMonth: 12 }] }],
       setViewingCase: function () {}, setEditingCase: function () {},
       setView: function () {}, showToast: function () {}
     });

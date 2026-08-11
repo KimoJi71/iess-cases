@@ -86,6 +86,15 @@
     var listPagination = IESS.createListPagination();
 
     return stateful(function (rerender) {
+      function getCasePeriod(c) {
+        return ScheduleUtils.resolveCasePeriod(c, customers);
+      }
+
+      function matchesPeriodMonthFilter(c) {
+        return ScheduleUtils.casePeriodMatchesMonthRange(
+          c, customers, appliedFilters.start, appliedFilters.end);
+      }
+
       var customerFilterOptions = CustomerUtils.getCustomerNameOptions(
         customers,
         filterCustomer !== '全部' ? filterCustomer : null,
@@ -109,9 +118,7 @@
         if (appliedFilters.customer !== '全部' && c.customerName !== appliedFilters.customer) return false;
         if (appliedFilters.storeArea !== '全部' && !StoreUtils.matchesRecordArea(c, appliedFilters.storeArea)) return false;
         if (appliedFilters.status !== '全部' && c.status !== appliedFilters.status) return false;
-        var caseMonth = (c.planDate && c.planDate.slice(0, 7)) || c.dueMonth || '';
-        if (caseMonth && (caseMonth < appliedFilters.start || caseMonth > appliedFilters.end)) return false;
-        if (!caseMonth && c.status !== '未保養') return false;
+        if (!matchesPeriodMonthFilter(c)) return false;
         return true;
       }).sort(function (a, b) {
         var aDate = a.planDate || a.dueMonth || '1970-01-01';
@@ -202,6 +209,8 @@
         className: "p-3 font-semibold"
       }, "工項類別"), h("th", {
         className: "p-3 font-semibold"
+      }, "保養區間"), h("th", {
+        className: "p-3 font-semibold"
       }, "保養日期"), h("th", {
         className: "p-3 font-semibold"
       }, "保養時間"), h("th", {
@@ -213,7 +222,7 @@
       }, "退回原因"))), h("tbody", {
         className: "divide-y divide-gray-100"
       }, filteredCases.length === 0 ? h("tr", null, h("td", {
-        colspan: "13",
+        colspan: "14",
         className: "text-center p-8 text-gray-400"
       }, "無符合條件之保養資料")) : pageResult.items.map(function (c) {
         var canClose = canCloseMaintenanceCase(c);
@@ -267,7 +276,9 @@
           className: "p-3"
         }, c.workCategory || '保養'), h("td", {
           className: "p-3"
-        }, c.planDate || (c.dueMonth ? c.dueMonth + '（未保養）' : '未定')), h("td", {
+        }, ScheduleUtils.formatPeriodRange(getCasePeriod(c))), h("td", {
+          className: "p-3"
+        }, c.planDate || ''), h("td", {
           className: "p-3"
         }, c.planTimeStart ? (c.planTimeEnd && c.planTimeEnd !== c.planTimeStart
           ? c.planTimeStart + ' ~ ' + c.planTimeEnd : c.planTimeStart) : '-'), h("td", {
@@ -330,9 +341,9 @@
       return ScheduleUtils.resolveStore(stores, c && c.customerName, c && c.storeName);
     }
 
+    // 與列表的「保養區間」及案件排程同源，避免各處對不上
     function getMaintenancePeriodLabel(c) {
-      var refDate = ScheduleUtils.resolveMaintenanceReferenceDate(c);
-      return ScheduleUtils.formatMaintenancePeriod(refDate, customers, c && c.customerName);
+      return ScheduleUtils.formatCasePeriodLabel(c, customers);
     }
 
     function ReadOnlyField(p) {

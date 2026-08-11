@@ -138,8 +138,10 @@
 
   function getMaintenanceFilingTime(caseItem) {
     if (!caseItem) return '';
-    if (caseItem.dueMonth) return caseItem.dueMonth + '-01 00:00:00';
+    // planDate 才是使用者實際填的保養日期；dueMonth 只是區間標記
+    // （區間驅動後填的是區間起始月，不代表案件發生的時間），僅作為舊案件的退路。
     if (caseItem.planDate) return caseItem.planDate + ' 00:00:00';
+    if (caseItem.dueMonth) return caseItem.dueMonth + '-01 00:00:00';
     return '';
   }
 
