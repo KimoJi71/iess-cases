@@ -38,6 +38,7 @@ const INITIAL_CUSTOMERS = [{
   taxId: '12345678',
   principal: '王大明',
   serviceLevel: 'A 保修(一年四次)',
+  maintenanceStartMonths: 0,
   periods: [
     { visitIndex: 1, startMonth: 1, endMonth: 3 },
     { visitIndex: 2, startMonth: 4, endMonth: 6 },
@@ -69,6 +70,7 @@ const INITIAL_CUSTOMERS = [{
   taxId: '23456789',
   principal: '李美玲',
   serviceLevel: 'B 保修(一年兩次)',
+  maintenanceStartMonths: 6,
   periods: [
     { visitIndex: 1, startMonth: 1, endMonth: 6 },
     { visitIndex: 2, startMonth: 7, endMonth: 12 }
@@ -510,7 +512,8 @@ const INITIAL_STORES = [{
   companyCity: '台中市',
   companyDistrict: '北屯區',
   companyAddress: '崇德路X號',
-  openDate: '2023-08-01',
+  // 三個月前開幕；星巴克設定「開幕 6 個月後才保養」，故此門市目前不應出現在保養計劃進度。
+  openDate: threeMonthsAgoDate,
   closeDate: '',
   storeStatus: '正常營業',
   workOrderApply: '否',

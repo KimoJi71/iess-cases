@@ -269,7 +269,7 @@
             field('公司電話', 'companyPhone'),
             field('公司傳真', 'companyFax'),
             field('公司地址', 'companyAddress', { wrap: 'col-span-full md:col-span-2' }),
-            field('開幕日期', 'openDate', { type: 'date' }),
+            field('開幕日期', 'openDate', { type: 'date', required: true }),
             field('撤店日期', 'closeDate', { type: 'date' }),
             h('div', null,
               h('label', { className: 'block text-sm mb-1' }, '門市狀態'),
