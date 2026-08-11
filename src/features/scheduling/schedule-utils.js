@@ -46,15 +46,15 @@
     var seen = {};
 
     function pushEntry(stageKey, sched, assignee) {
-      if (!sched.planDate || !sched.planTimeStart) return;
-      var key = sched.planDate + '|' + sched.planTimeStart + '|' + (assignee || '');
+      if (!sched.planDate) return;
+      var key = sched.planDate + '|' + (sched.planTimeStart || '') + '|' + (assignee || '');
       if (seen[key]) return;
       seen[key] = true;
       entries.push({
         stageKey: stageKey,
         planDate: sched.planDate,
-        planTimeStart: sched.planTimeStart,
-        planTimeEnd: sched.planTimeEnd || '',
+        planTimeStart: sched.planTimeStart || '',
+        planTimeEnd: sched.planTimeStart ? (sched.planTimeEnd || '') : '',
         assignee: assignee || c.stageAssignee || '',
         workCategory: c.workCategory
       });
@@ -119,6 +119,13 @@
     var s = formatTime24(start);
     var e = end ? formatTime24(end) : '';
     return e && e !== s ? s + ' ~ ' + e : s;
+  }
+
+  var ALL_DAY_LABEL = '整天';
+
+  /** 排程情境的時間顯示：沒填時間就是整天案件。 */
+  function formatScheduleTimeRange(start, end) {
+    return start ? formatTimeRange(start, end) : ALL_DAY_LABEL;
   }
 
   /**
@@ -453,7 +460,7 @@
       return dateStr && dateStr >= rangeStart && dateStr <= rangeEnd;
     }
     function tryPush(sourceType, sourceId, sched, customerName, storeName, storeAddress, equipmentName, eventId) {
-      if (!sched.planDate || !sched.planTimeStart) return;
+      if (!sched.planDate) return;
       if (!inRange(sched.planDate)) return;
       if (assigneeFilter !== '全部') {
         if (sched.assignees && sched.assignees.length) {
@@ -468,8 +475,9 @@
         sourceId: sourceId,
         assignee: sched.assignee,
         date: sched.planDate,
-        timeStart: sched.planTimeStart,
-        timeEnd: sched.planTimeEnd || sched.planTimeStart,
+        // 只填日期沒填時間 → 視為整天，時間一律留空
+        timeStart: sched.planTimeStart || '',
+        timeEnd: sched.planTimeStart ? (sched.planTimeEnd || sched.planTimeStart) : '',
         customerName: customerName,
         storeName: storeName,
         storeAddress: storeAddress || '',
@@ -507,9 +515,24 @@
     });
   }
 
+  /**
+   * 依有無時間決定日曆事件的時間屬性。
+   * 沒填時間 → allDay 事件，FullCalendar 會固定排在當天最上方的「整天」列。
+   */
+  function buildEventTiming(planDate, planTimeStart, planTimeEnd) {
+    if (!planTimeStart) {
+      return { start: planDate, allDay: true };
+    }
+    return {
+      start: planDate + 'T' + formatTime24(planTimeStart) + ':00',
+      end: planDate + 'T' + formatTime24(planTimeEnd || planTimeStart) + ':00',
+      allDay: false
+    };
+  }
+
   function buildEvent(sourceType, sourceId, sched, customerName, storeName, storeAddress, equipmentName, eventId) {
-    if (!sched.planDate || !sched.planTimeStart) return null;
-    var endTime = sched.planTimeEnd || sched.planTimeStart;
+    if (!sched.planDate) return null;
+    var timing = buildEventTiming(sched.planDate, sched.planTimeStart, sched.planTimeEnd);
     var wc = sched.workCategory || '其他';
     var assignee = sched.assignee || '';
     return {
@@ -518,8 +541,9 @@
         sourceType: sourceType,
         equipmentName: equipmentName
       }),
-      start: sched.planDate + 'T' + formatTime24(sched.planTimeStart) + ':00',
-      end: sched.planDate + 'T' + formatTime24(endTime) + ':00',
+      start: timing.start,
+      end: timing.end,
+      allDay: timing.allDay,
       backgroundColor: CATEGORY_COLORS[wc] || '#64748b',
       borderColor: CATEGORY_COLORS[wc] || '#64748b',
       extendedProps: {
@@ -557,14 +581,16 @@
     return getPersonnelRows(maintenanceCases, cases, projectCases, rangeStart, rangeEnd, assigneeFilter)
       .map(function (item) {
         var wc = item.workCategory;
+        var timing = buildEventTiming(item.date, item.timeStart, item.timeEnd);
         return {
           id: 'ps-' + item.id,
           title: formatScheduleEventTitle(wc, item.assignee, item.customerName, item.storeName, item.storeAddress, {
             sourceType: item.sourceType,
             equipmentName: item.equipmentName
           }),
-          start: item.date + 'T' + formatTime24(item.timeStart) + ':00',
-          end: item.date + 'T' + formatTime24(item.timeEnd) + ':00',
+          start: timing.start,
+          end: timing.end,
+          allDay: timing.allDay,
           backgroundColor: CATEGORY_COLORS[wc] || '#64748b',
           borderColor: CATEGORY_COLORS[wc] || '#64748b',
           extendedProps: {
@@ -572,7 +598,7 @@
             customerName: item.customerName,
             storeName: item.storeName,
             workCategory: wc,
-            timeRange: formatTimeRange(item.timeStart, item.timeEnd),
+            timeRange: formatScheduleTimeRange(item.timeStart, item.timeEnd),
             storeAddress: item.storeAddress || '',
             equipmentName: item.equipmentName || ''
           }
@@ -696,6 +722,8 @@
     getCustomerNamesFromStores: getCustomerNamesFromStores,
     resolveMaintenanceReferenceDate: resolveMaintenanceReferenceDate,
     formatTimeRange: formatTimeRange,
+    formatScheduleTimeRange: formatScheduleTimeRange,
+    ALL_DAY_LABEL: ALL_DAY_LABEL,
     formatTime24: formatTime24,
     formatScheduleEventTitle: formatScheduleEventTitle,
     CATEGORY_COLORS: CATEGORY_COLORS

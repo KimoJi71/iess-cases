@@ -25,10 +25,6 @@
     return !!((c && c.expectedDate) || (c && c.planDate));
   }
 
-  function hasExpectedTime(c) {
-    return !!((c && c.expectedTimeStart) || (c && c.planTimeStart));
-  }
-
   function getExpectedScheduleDate(c) {
     return (c && (c.expectedDate || c.planDate)) || '';
   }
@@ -66,8 +62,9 @@
     return 'bg-gray-300';
   }
 
+  // 只填日期沒填時間＝整天案件，日曆會排進當天的整天列，同樣視為已派工。
   function isDispatched(c) {
-    return hasValidAssignee(c) && hasExpectedDate(c) && hasExpectedTime(c);
+    return hasValidAssignee(c) && hasExpectedDate(c);
   }
 
   function getCaseListDispatchStatus(c) {

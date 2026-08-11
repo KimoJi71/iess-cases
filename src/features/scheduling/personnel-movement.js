@@ -163,7 +163,7 @@
                   },
                     h('td', { className: 'px-4 py-3 text-gray-800' }, row.date),
                     h('td', { className: 'px-4 py-3 text-gray-600' },
-                      ScheduleUtils.formatTimeRange(row.timeStart, row.timeEnd)
+                      ScheduleUtils.formatScheduleTimeRange(row.timeStart, row.timeEnd)
                     ),
                     h('td', { className: 'px-4 py-3 text-gray-800' }, row.assignee),
                     h('td', { className: 'px-4 py-3 text-gray-800' }, row.customerName),

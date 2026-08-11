@@ -70,7 +70,8 @@
         buttonText: { today: '今天', week: '週' },
         slotMinTime: '08:00:00',
         slotMaxTime: '20:00:00',
-        allDaySlot: false,
+        allDaySlot: true,
+        allDayText: '整天',
         height: 'auto',
         slotLabelFormat: timeFormat,
         eventTimeFormat: timeFormat,
@@ -106,7 +107,10 @@
           if (!options.onDrop) return;
           var ds = info.draggedEl.dataset;
           var dateStr = formatDate(info.date);
-          var timeStr = pad(info.date.getHours()) + ':' + pad(info.date.getMinutes());
+          // 丟進「整天」列時不帶時間，交由後續流程視為整天案件
+          var timeStr = info.allDay
+            ? ''
+            : pad(info.date.getHours()) + ':' + pad(info.date.getMinutes());
           options.onDrop({
             sourceType: ds.sourceType,
             sourceId: ds.sourceId,
