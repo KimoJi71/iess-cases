@@ -222,5 +222,160 @@ assertTrue(SU.caseMaintenanceStarted(
 assertTrue(SU.caseMaintenanceStarted(null, CUSTOMERS, STORES),
   '案件為 null 時不套用此規則');
 
+// ---------- headless Chrome 區段 ----------
+const CHROME = process.env.CHROME_PATH
+  || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+const PORT = Number(process.env.CDP_PORT || 9346);
+if (!existsSync(CHROME)) {
+  console.error(`找不到 Chrome：${CHROME}\n可用 CHROME_PATH 環境變數指定路徑。`);
+  process.exit(2);
+}
+
+const chrome = spawn(CHROME, [
+  '--headless', '--disable-gpu', '--no-first-run', '--no-default-browser-check',
+  `--remote-debugging-port=${PORT}`, '--user-data-dir=/tmp/iess-maintenance-start-profile',
+  'about:blank'
+], { stdio: 'ignore' });
+
+let ws, msgId = 0;
+const pending = new Map();
+const consoleErrors = [];
+function send(method, params = {}) {
+  const id = ++msgId;
+  ws.send(JSON.stringify({ id, method, params }));
+  return new Promise((res, rej) => pending.set(id, { res, rej }));
+}
+async function evaluate(expression) {
+  const r = await send('Runtime.evaluate', {
+    expression, returnByValue: true, awaitPromise: true
+  });
+  if (r.exceptionDetails) {
+    throw new Error(r.exceptionDetails.exception?.description || JSON.stringify(r.exceptionDetails));
+  }
+  return r.result.value;
+}
+function clickByText(text) {
+  return evaluate(`(function () {
+    var els = Array.prototype.slice.call(document.querySelectorAll('button, a, div'));
+    var target = els.filter(function (el) {
+      return el.textContent.trim() === ${JSON.stringify(text)};
+    }).pop();
+    if (target) target.click();
+    return !!target;
+  })()`);
+}
+
+try {
+  let targets;
+  for (let i = 0; i < 50; i++) {
+    try { targets = await (await fetch(`http://127.0.0.1:${PORT}/json/list`)).json(); break; }
+    catch { await sleep(200); }
+  }
+  const page = targets.find(t => t.type === 'page');
+  ws = new WebSocket(page.webSocketDebuggerUrl);
+  await new Promise(res => { ws.onopen = res; });
+  ws.onmessage = (ev) => {
+    const m = JSON.parse(ev.data);
+    if (m.id && pending.has(m.id)) {
+      const { res, rej } = pending.get(m.id);
+      pending.delete(m.id);
+      m.error ? rej(new Error(JSON.stringify(m.error))) : res(m.result);
+    } else if (m.method === 'Runtime.exceptionThrown') {
+      consoleErrors.push(m.params.exceptionDetails.exception?.description
+        || m.params.exceptionDetails.text);
+    } else if (m.method === 'Runtime.consoleAPICalled' && m.params.type === 'error') {
+      consoleErrors.push(m.params.args.map(a => a.value ?? a.description).join(' '));
+    }
+  };
+  await send('Runtime.enable');
+  await send('Page.enable');
+  await send('Page.navigate', { url: `file://${ROOT}/index.html` });
+  await sleep(4000);
+
+  console.log('\nSection 4｜保養計劃進度列表');
+  assertTrue(await clickByText('保養計劃進度'), '可導覽到保養計劃進度');
+  await sleep(1200);
+  const listText = await evaluate(`(function () {
+    var tbody = document.querySelector('table tbody');
+    return tbody ? tbody.textContent : '';
+  })()`);
+  assertTrue(listText.indexOf('北屯崇德店') === -1,
+    '未達開始保養時間的門市不出現在保養計劃進度');
+  assertTrue(listText.indexOf('大安忠孝店') !== -1,
+    '已達開始保養時間的門市照常出現');
+
+  console.log('\nSection 4｜客戶管理的「開始保養時間」欄位');
+  assertTrue(await clickByText('客戶管理'), '可導覽到客戶管理');
+  await sleep(1200);
+  const opened = await evaluate(`(function () {
+    var rows = Array.prototype.slice.call(document.querySelectorAll('table tbody tr'));
+    var row = rows.filter(function (r) {
+      return r.textContent.indexOf('星巴克') !== -1;
+    })[0];
+    if (!row) return false;
+    var btn = row.querySelector('button[aria-label="編輯"]');
+    if (!btn) return false;
+    btn.click();
+    return true;
+  })()`);
+  assertTrue(opened, '可開啟星巴克的編輯表單');
+  await sleep(1000);
+  const startMonthsValue = await evaluate(
+    `(function () {
+      var el = document.querySelector('input[name="maintenanceStartMonths"]');
+      return el ? el.value : null;
+    })()`);
+  assertEq(startMonthsValue, '6', '編輯表單帶出客戶已設定的開始保養時間');
+  const helperText = await evaluate(`(function () {
+    var el = document.querySelector('input[name="maintenanceStartMonths"]');
+    return el ? el.parentNode.textContent.replace(/\\s+/g, '') : '';
+  })()`);
+  assertTrue(helperText.indexOf('於開幕') !== -1 && helperText.indexOf('個月後開始保養') !== -1,
+    '欄位有「於開幕 N 個月後開始保養」說明文字', helperText);
+
+  console.log('\nSection 4｜門市開幕日期必填');
+  assertTrue(await clickByText('門市管理'), '可導覽到門市管理');
+  await sleep(1200);
+  // 門市管理頁需先透過客戶下拉（searchable-select 元件）篩選客戶才會顯示門市列表。
+  // 該元件的選項是以 mousedown（而非 click）觸發選取，且清單以 portal 掛在 document.body 下。
+  const pickedCustomer = await evaluate(`(function () {
+    var toggle = document.querySelector('.searchable-select__toggle[aria-label="展開選項"]');
+    if (!toggle) return false;
+    toggle.click();
+    var btns = Array.prototype.slice.call(document.querySelectorAll('.searchable-select__menu li button'));
+    var target = btns.filter(function (b) { return b.textContent.trim() === '屈臣氏'; })[0];
+    if (!target) return false;
+    target.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
+    return true;
+  })()`);
+  assertTrue(pickedCustomer, '可在門市管理選取客戶');
+  await sleep(300);
+  assertTrue(await clickByText('搜尋'), '可觸發門市搜尋');
+  await sleep(1200);
+  const openDateRequired = await evaluate(`(function () {
+    var rows = Array.prototype.slice.call(document.querySelectorAll('table tbody tr'));
+    var btn = rows.length ? rows[0].querySelector('button[aria-label="編輯"]') : null;
+    if (!btn) return null;
+    btn.click();
+    return true;
+  })()`);
+  assertTrue(openDateRequired === true, '可開啟門市編輯表單');
+  await sleep(1000);
+  assertEq(await evaluate(
+    `(function () {
+      var el = document.querySelector('input[name="openDate"]');
+      return el ? el.required : null;
+    })()`), true, '開幕日期為必填欄位');
+
+  assertEq(consoleErrors.length, 0, '操作後仍無 JS 錯誤');
+} catch (err) {
+  // 沒有 catch 的話，UI 區段的例外會變成 unhandled rejection，
+  // 讓腳本跳過結尾的統計與 process.exit，以難以判讀的方式結束。
+  fail('UI 驗證中斷', err && err.stack ? err.stack : String(err));
+} finally {
+  try { ws && ws.close(); } catch {}
+  chrome.kill();
+}
+
 console.log(`\n通過 ${passed}／失敗 ${failed}`);
 process.exit(failed === 0 ? 0 : 1);
