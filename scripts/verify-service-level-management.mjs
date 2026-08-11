@@ -230,10 +230,13 @@ try {
     '啟動時 SERVICE_LEVEL_OPTIONS 已被填入');
   assertTrue(await evaluate('PERMISSION_FUNCTIONS.indexOf("服務等級管理") !== -1'),
     'PERMISSION_FUNCTIONS 含服務等級管理');
+  // 系統權限自分群後改為巢狀（人員與權限／基礎資料設定／保養作業），
+  // 服務等級管理是「基礎資料設定」底下的葉節點。
   assertTrue(await evaluate(`(function(){
-    var node = PERMISSION_TREE.find(function (n) { return n.id === '系統權限'; });
-    return node.children.indexOf('服務等級管理') === node.children.indexOf('設備分類管理') + 1;
-  })()`), 'PERMISSION_TREE 系統權限的服務等級管理緊接設備分類管理之後');
+    var top = PERMISSION_TREE.find(function (n) { return n.id === '系統權限'; });
+    var group = top.children.find(function (n) { return n.id === '基礎資料設定'; });
+    return group.children.indexOf('服務等級管理') === 0;
+  })()`), 'PERMISSION_TREE 系統權限 > 基礎資料設定 的第一項是服務等級管理');
 
   console.log('\nSection 2｜列表渲染');
   await evaluate(`
