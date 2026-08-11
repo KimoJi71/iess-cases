@@ -77,7 +77,16 @@ const CUSTOMERS = [
       { visitIndex: 2, startMonth: 4, endMonth: 6 },
       { visitIndex: 3, startMonth: 7, endMonth: 9 },
       { visitIndex: 4, startMonth: 10, endMonth: 12 }
-    ] }
+    ] },
+  // 己客戶：半年一次的區間（1-6／7-12），用來驗「門市在區間中段開幕」的情境。
+  { id: 'C6', name: '己客戶', serviceLevel: 'B 保修(一年兩次)', enabled: true,
+    maintenanceStartMonths: 6, periods: [
+      { visitIndex: 1, startMonth: 1, endMonth: 6 },
+      { visitIndex: 2, startMonth: 7, endMonth: 12 }
+    ] },
+  // 庚客戶：完全沒有設定保養區間，用來驗列表端退回 planDate／dueMonth 的分支。
+  { id: 'C7', name: '庚客戶', serviceLevel: 'B 保修(一年兩次)', enabled: true,
+    maintenanceStartMonths: 6, periods: [] }
 ];
 
 console.log('Section 1｜CustomerUtils.getMaintenanceStartMonths');
@@ -150,7 +159,15 @@ const STORES = [
   // 乙客戶（未設定 → 0）：2026-08 開幕，當月即可保養
   { customerName: '乙客戶', storeName: '乙新店', storeStatus: '正常營業',
     companyCity: '台中市', companyDistrict: '西屯區',
-    serviceLevel: 'A 保修(一年四次)', openDate: '2026-08-20' }
+    serviceLevel: 'A 保修(一年四次)', openDate: '2026-08-20' },
+  // 己客戶（6 個月）：2026-02 開幕 → 起始保養月 2026-08，落在第 2 次區間（7-12）中段
+  { customerName: '己客戶', storeName: '己中段店', storeStatus: '正常營業',
+    companyCity: '台南市', companyDistrict: '東區',
+    serviceLevel: 'B 保修(一年兩次)', openDate: '2026-02-10' },
+  // 庚客戶（6 個月、無區間）：2026-06 開幕 → 起始保養月 2026-12
+  { customerName: '庚客戶', storeName: '庚無區間店', storeStatus: '正常營業',
+    companyCity: '桃園市', companyDistrict: '中壢區',
+    serviceLevel: 'B 保修(一年兩次)', openDate: '2026-06-01' }
 ];
 
 function generatedFor(cases, storeName) {
@@ -180,19 +197,21 @@ assertEq(genKeep.filter(function (c) { return c.id === 'M1'; }).length, 1,
   '未滿期門市既有的案件不會被產生端移除');
 
 console.log('\nSection 3｜ScheduleUtils.caseMaintenanceStarted');
+// 語意：一滿 N 個月，當期的保養單就要出現 —— 列表端看區間的「結束月」，
+// 只要區間內有任何一個月已達起始保養月就列出，與產生端（看當月）對齊。
 // 甲新店（2026-06 開幕 + 6 個月 → 起始保養月 2026-12）
 assertTrue(!SU.caseMaintenanceStarted(
   { customerName: '甲客戶', storeName: '甲新店', periodYear: 2026, periodVisitIndex: 3 },
   CUSTOMERS, STORES),
-  '區間起始月（2026-07）早於起始保養月時不列出');
-assertTrue(!SU.caseMaintenanceStarted(
+  '2026 年第 3 次區間（結束月 2026-09）整段都早於起始保養月 2026-12，不列出');
+assertTrue(SU.caseMaintenanceStarted(
   { customerName: '甲客戶', storeName: '甲新店', periodYear: 2026, periodVisitIndex: 4 },
   CUSTOMERS, STORES),
-  '2026 年第 4 次區間（2026-10）仍早於起始保養月 2026-12，不列出');
+  '2026 年第 4 次區間（10-12 月）內含起始保養月 2026-12，列出');
 assertTrue(SU.caseMaintenanceStarted(
   { customerName: '甲客戶', storeName: '甲新店', periodYear: 2027, periodVisitIndex: 1 },
   CUSTOMERS, STORES),
-  '2027 年第 1 次區間（2027-01）晚於起始保養月，列出');
+  '2027 年第 1 次區間（結束月 2027-03）晚於起始保養月，列出');
 assertTrue(SU.caseMaintenanceStarted(
   { customerName: '甲客戶', storeName: '甲一店', periodYear: 2026, periodVisitIndex: 3 },
   CUSTOMERS, STORES),
@@ -201,13 +220,54 @@ assertTrue(!SU.caseMaintenanceStarted(
   { customerName: '甲客戶', storeName: '甲無開幕店', periodYear: 2026, periodVisitIndex: 3 },
   CUSTOMERS, STORES),
   '門市沒有開幕日期時不列出');
-// 解析不到區間時退回 planDate／dueMonth 的年月
-assertTrue(!SU.caseMaintenanceStarted(
-  { customerName: '甲客戶', storeName: '甲新店', planDate: '2026-08-05' },
-  CUSTOMERS, STORES),
-  '無區間身分時用 planDate 的年月判斷');
+// 己中段店（2026-02 開幕 + 6 個月 → 起始保養月 2026-08，落在 7-12 月區間中段）
 assertTrue(SU.caseMaintenanceStarted(
-  { customerName: '甲客戶', storeName: '甲新店', planDate: '2027-01-05' },
+  { customerName: '己客戶', storeName: '己中段店', periodYear: 2026, periodVisitIndex: 2,
+    status: '未保養' },
+  CUSTOMERS, STORES),
+  '起始保養月落在區間中段（2026-08 於 7-12 月內）時，當期案件就要列出');
+assertTrue(!SU.caseMaintenanceStarted(
+  { customerName: '己客戶', storeName: '己中段店', periodYear: 2026, periodVisitIndex: 1,
+    status: '未保養' },
+  CUSTOMERS, STORES),
+  '同門市 2026 年第 1 次區間（結束月 2026-06）仍早於起始保養月，不列出');
+
+console.log('\nSection 3｜已進入作業流程的案件豁免此規則');
+assertTrue(SU.caseMaintenanceStarted(
+  { customerName: '甲客戶', storeName: '甲新店', periodYear: 2026, periodVisitIndex: 3,
+    status: '未保養', planDate: '2026-08-05' },
+  CUSTOMERS, STORES),
+  '未達起始保養月但已排定日期（有 planDate）時仍列出');
+assertTrue(SU.caseMaintenanceStarted(
+  { customerName: '甲客戶', storeName: '甲新店', periodYear: 2026, periodVisitIndex: 3,
+    status: '已預約' },
+  CUSTOMERS, STORES),
+  '未達起始保養月但狀態已非「未保養」（已預約）時仍列出');
+assertTrue(!SU.caseMaintenanceStarted(
+  { customerName: '甲客戶', storeName: '甲新店', periodYear: 2026, periodVisitIndex: 3,
+    status: '未保養', planDate: '' },
+  CUSTOMERS, STORES),
+  '狀態為「未保養」且無 planDate 時不豁免，照規則擋下');
+
+console.log('\nSection 3｜解析不到區間時退回 planDate／dueMonth 的年月');
+// 庚客戶完全沒有設定保養區間，resolveCasePeriod 一定回 null，
+// 因此走的是 resolveMaintenanceReferenceDate 的 fallback 分支。
+assertTrue(!SU.caseMaintenanceStarted(
+  { customerName: '庚客戶', storeName: '庚無區間店', status: '未保養', dueMonth: '2026-08' },
+  CUSTOMERS, STORES),
+  '客戶未設定區間時用 dueMonth 的年月判斷（2026-08 早於起始保養月 2026-12）');
+assertTrue(SU.caseMaintenanceStarted(
+  { customerName: '庚客戶', storeName: '庚無區間店', status: '未保養', dueMonth: '2027-01' },
+  CUSTOMERS, STORES),
+  '客戶未設定區間時用 dueMonth 的年月判斷（2027-01 已達起始保養月）');
+assertTrue(SU.caseMaintenanceStarted(
+  { customerName: '庚客戶', storeName: '庚無區間店', status: '未保養', planDate: '2026-08-05' },
+  CUSTOMERS, STORES),
+  '客戶未設定區間但案件已排定日期時，由豁免條件先行放過');
+// 甲新店 + planDate 2026-08-05 會被 resolveCasePeriod 用 planDate 月份回推成第 3 次區間，
+// 走的是區間分支而非 planDate 分支（現已先被 planDate 豁免攔下）。
+assertTrue(SU.caseMaintenanceStarted(
+  { customerName: '甲客戶', storeName: '甲新店', status: '未保養', planDate: '2027-01-05' },
   CUSTOMERS, STORES),
   'planDate 已在起始保養月之後時列出');
 // 資料不全時不套用此規則，避免案件無聲消失
@@ -216,11 +276,41 @@ assertTrue(SU.caseMaintenanceStarted(
   CUSTOMERS, STORES),
   '查無門市時不套用此規則');
 assertTrue(SU.caseMaintenanceStarted(
-  { customerName: '甲客戶', storeName: '甲新店' },
+  { customerName: '甲客戶', storeName: '甲新店', status: '未保養' },
   CUSTOMERS, STORES),
   '案件既無區間身分也無日期時不套用此規則');
 assertTrue(SU.caseMaintenanceStarted(null, CUSTOMERS, STORES),
   '案件為 null 時不套用此規則');
+
+console.log('\nSection 3｜不變式：產生端開的單，列表端一定看得到');
+// 逐月跑產生端，斷言每一筆新產生的案件在列表端都不會被擋下。
+// 這條不變式比任何個案斷言都重要：違反時就會出現「開了單卻永遠不顯示」的
+// 孤兒案件——它卡在案件排程待辦、可派工，卻因為進不了保養計劃進度而無法結案。
+const invariantViolations = [];
+let invariantGenerated = 0;
+for (let y = 2024; y <= 2028; y++) {
+  for (let m = 1; m <= 12; m++) {
+    const month = y + '-' + String(m).padStart(2, '0');
+    SU.generateDueMaintenanceCases(CUSTOMERS, STORES, [], month).forEach(function (c) {
+      invariantGenerated++;
+      if (!SU.caseMaintenanceStarted(c, CUSTOMERS, STORES)) {
+        invariantViolations.push(month + ' ' + c.storeName
+          + ' 第' + c.periodVisitIndex + '次/' + c.periodYear);
+      }
+    });
+  }
+}
+assertTrue(invariantGenerated > 0, '不變式測試確實有產生案件', `共 ${invariantGenerated} 筆`);
+assertTrue(invariantViolations.length === 0,
+  '2024-01～2028-12 逐月產生的每一筆案件，caseMaintenanceStarted 皆為 true',
+  invariantViolations.length ? invariantViolations.slice(0, 5).join('、') : '無違反');
+// 中段開幕的門市（己中段店：2026-02 開幕 + 6 個月）必須實際被涵蓋到，
+// 否則這條不變式可能只是因為沒踩到該情境而通過。
+const invariantMidStore = SU.generateDueMaintenanceCases(CUSTOMERS, STORES, [], '2026-08')
+  .filter(function (c) { return c.storeName === '己中段店'; });
+assertEq(invariantMidStore.length, 1, '中段開幕門市在起始保養月當月確實會開單');
+assertTrue(SU.caseMaintenanceStarted(invariantMidStore[0], CUSTOMERS, STORES),
+  '該筆中段開幕門市的案件在列表端看得到');
 
 // ---------- headless Chrome 區段 ----------
 const CHROME = process.env.CHROME_PATH
