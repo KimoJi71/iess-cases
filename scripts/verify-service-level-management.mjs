@@ -714,7 +714,8 @@ try {
     return end === -1 ? appSrc6.slice(i) : appSrc6.slice(i, end);
   }
   // 保養區間改由客戶持有後，保養列表／檢視／案件排程都改以 customerName 取區間，
-  // 不再需要 serviceLevels；服務等級只剩「每年保養次數」由 ScheduleUtils 直接查。
+  // 不再需要 serviceLevels；ScheduleUtils 已完全不碰 ServiceLevelUtils，
+  // 只把 store.serviceLevel 當欄位複製到案件上。
   for (const comp of ['MaintenanceList', 'MaintenanceViewEditForm', 'CaseArrangement']) {
     const block = propsBlockOf(comp);
     assertTrue(block !== null && !block.includes('serviceLevels'),

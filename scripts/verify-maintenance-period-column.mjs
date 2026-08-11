@@ -401,6 +401,10 @@ try {
     '格式為「2026 第3次（7-9月）」', detail);
 
   assertEq(consoleErrors.length, 0, '操作後仍無 JS 錯誤');
+} catch (err) {
+  // 沒有 catch 的話，UI 區段的例外會變成 unhandled rejection，
+  // 讓腳本跳過結尾的統計與 process.exit，以難以判讀的方式結束。
+  fail('UI 驗證中斷', err && err.stack ? err.stack : String(err));
 } finally {
   try { ws && ws.close(); } catch {}
   chrome.kill();

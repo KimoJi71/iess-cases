@@ -2,7 +2,9 @@
  * data/seed.js — 記憶體假資料（重整後重置）
  *
  * 各資料集的初始內容，對應原本的 INITIAL_* 常數。
- * 依賴 data/options.js 內的日期常數（todayDate / yesterdayDate / twoDaysAgoDate）。
+ * 依賴 data/options.js 內的日期常數（todayDate / yesterdayDate / twoDaysAgoDate /
+ * oneMonthAgoDate / threeMonthsAgoDate）。日期一律用相對常數，不要寫死，
+ * 否則假資料會隨時間變陳舊。
  */
 
 // --- 初始服務等級 (系統權限 - 服務等級管理) ---
@@ -489,7 +491,7 @@ const INITIAL_STORES = [{
   storeStatus: '正常營業',
   workOrderApply: '是',
   lastRepairDate: yesterdayDate,
-  lastMaintenanceDate: '2026-05-20',
+  lastMaintenanceDate: threeMonthsAgoDate,
   remarks: '',
   indoorHeight: '3.1m',
   outdoorHeight: '4.2m',

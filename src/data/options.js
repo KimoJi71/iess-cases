@@ -144,6 +144,11 @@ const oneMonthAgoDate = (function () {
   d.setMonth(d.getMonth() - 1);
   return d.toISOString().split('T')[0];
 })();
+const threeMonthsAgoDate = (function () {
+  var d = new Date();
+  d.setMonth(d.getMonth() - 3);
+  return d.toISOString().split('T')[0];
+})();
 const currentMonthStr = today.toISOString().slice(0, 7);
 
 // 案件排程專用選項
