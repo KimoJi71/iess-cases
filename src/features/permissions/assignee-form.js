@@ -142,7 +142,7 @@
               )
             ),
             h('div', null,
-              h('label', { className: 'block text-sm mb-2' }, '負責公司區域'),
+              h('label', { className: 'block text-sm mb-2' }, '負責行政區'),
               h('p', { className: 'text-xs text-gray-400 mb-3' },
                 '依縣市展開選擇行政區；勾選縣市可一次全選或取消該縣市下所有行政區'),
               h(DistrictTreePicker, {

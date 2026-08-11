@@ -116,7 +116,7 @@
                 h('th', { className: 'p-3 font-semibold text-center w-36' }, '操作'),
                 h('th', { className: 'p-3 font-semibold w-32' }, '指派人員名稱'),
                 h('th', { className: 'p-3 font-semibold w-24' }, '課長'),
-                h('th', { className: 'p-3 font-semibold w-64' }, '負責公司區域'),
+                h('th', { className: 'p-3 font-semibold w-64' }, '負責行政區'),
                 h('th', { className: 'p-3 font-semibold' }, '成員名單')
               )
             ),
