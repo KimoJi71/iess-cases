@@ -134,5 +134,50 @@ assertTrue(!CU.isMaintenanceStartedForMonth(CUSTOMERS, STORE_A, '2024'),
 assertTrue(!CU.isMaintenanceStartedForMonth(CUSTOMERS, null, '2026-08'),
   'store 為 null 時視為未達標');
 
+const STORES = [
+  // 甲客戶（6 個月）：2024-03 開幕 → 起始保養月 2024-09
+  { customerName: '甲客戶', storeName: '甲一店', storeStatus: '正常營業',
+    companyCity: '台北市', companyDistrict: '信義區',
+    serviceLevel: 'A 保修(一年四次)', openDate: '2024-03-15' },
+  // 甲客戶（6 個月）：2026-06 開幕 → 起始保養月 2026-12
+  { customerName: '甲客戶', storeName: '甲新店', storeStatus: '正常營業',
+    companyCity: '台北市', companyDistrict: '大安區',
+    serviceLevel: 'A 保修(一年四次)', openDate: '2026-06-01' },
+  // 甲客戶：沒有開幕日期
+  { customerName: '甲客戶', storeName: '甲無開幕店', storeStatus: '正常營業',
+    companyCity: '台北市', companyDistrict: '中山區',
+    serviceLevel: 'A 保修(一年四次)' },
+  // 乙客戶（未設定 → 0）：2026-08 開幕，當月即可保養
+  { customerName: '乙客戶', storeName: '乙新店', storeStatus: '正常營業',
+    companyCity: '台中市', companyDistrict: '西屯區',
+    serviceLevel: 'A 保修(一年四次)', openDate: '2026-08-20' }
+];
+
+function generatedFor(cases, storeName) {
+  return cases.filter(function (c) { return c.storeName === storeName; });
+}
+
+console.log('\nSection 2｜generateDueMaintenanceCases 依起始保養月擋單');
+const gen = SU.generateDueMaintenanceCases(CUSTOMERS, STORES, [], '2026-08');
+assertEq(generatedFor(gen, '甲一店').length, 1, '已滿期門市照常建單');
+assertEq(generatedFor(gen, '甲新店').length, 0, '未滿起始保養月的門市不建單');
+assertEq(generatedFor(gen, '甲無開幕店').length, 0, '沒有開幕日期的門市不建單');
+assertEq(generatedFor(gen, '乙新店').length, 1, '客戶未設定月數時，開幕當月即建單');
+
+const genLater = SU.generateDueMaintenanceCases(CUSTOMERS, STORES, [], '2026-12');
+assertEq(generatedFor(genLater, '甲新店').length, 1, '到達起始保養月當月即開始建單');
+
+const genBefore = SU.generateDueMaintenanceCases(CUSTOMERS, STORES, [], '2026-11');
+assertEq(generatedFor(genBefore, '甲新店').length, 0, '起始保養月前一個月仍不建單');
+
+// 已存在的案件仍會被回填區間身分，不因新規則被刪除或改寫。
+const existing = [{
+  id: 'M1', customerName: '甲客戶', storeName: '甲新店', status: '未保養',
+  planDate: '', dueMonth: '2026-07', isClosed: false
+}];
+const genKeep = SU.generateDueMaintenanceCases(CUSTOMERS, STORES, existing, '2026-08');
+assertEq(genKeep.filter(function (c) { return c.id === 'M1'; }).length, 1,
+  '未滿期門市既有的案件不會被產生端移除');
+
 console.log(`\n通過 ${passed}／失敗 ${failed}`);
 process.exit(failed === 0 ? 0 : 1);

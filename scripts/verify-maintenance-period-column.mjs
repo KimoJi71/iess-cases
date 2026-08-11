@@ -134,18 +134,24 @@ assertDeep(SU.periodMonthRange({ year: 2026, visitIndex: 4, startMonth: 10, endM
   { start: '2026-10', end: '2026-12' }, '兩位數月份不補零');
 assertEq(SU.periodMonthRange(null), null, 'null 回 null');
 
+// openDate 為必要欄位：客戶的「開始保養時間」以開幕年月起算，
+// 沒有開幕日期的門市不會被產生端開單（見 verify-maintenance-start-months.mjs）。
 const STORES = [
   { customerName: '甲客戶', storeName: '甲一店', storeStatus: '正常營業',
-    companyCity: '台北市', companyDistrict: '信義區', serviceLevel: 'A 保修(一年四次)' },
+    companyCity: '台北市', companyDistrict: '信義區', serviceLevel: 'A 保修(一年四次)',
+    openDate: '2020-01-01' },
   { customerName: '甲客戶', storeName: '甲二店', storeStatus: '正常營業',
     companyCity: '台中市', companyDistrict: '西屯區', serviceLevel: 'A 保修(一年四次)',
-    lastMaintenanceDate: '2026-05-01' },
+    lastMaintenanceDate: '2026-05-01', openDate: '2020-01-01' },
   { customerName: '甲客戶', storeName: '甲已撤店', storeStatus: '已撤店',
-    companyCity: '台北市', companyDistrict: '中山區', serviceLevel: 'A 保修(一年四次)' },
+    companyCity: '台北市', companyDistrict: '中山區', serviceLevel: 'A 保修(一年四次)',
+    openDate: '2020-01-01' },
   { customerName: '乙客戶', storeName: '乙一店', storeStatus: '正常營業',
-    companyCity: '台北市', companyDistrict: '大安區', serviceLevel: 'D 維修(無簽約客戶)' },
+    companyCity: '台北市', companyDistrict: '大安區', serviceLevel: 'D 維修(無簽約客戶)',
+    openDate: '2020-01-01' },
   { customerName: '丙客戶', storeName: '丙一店', storeStatus: '正常營業',
-    companyCity: '桃園市', companyDistrict: '中壢區', serviceLevel: 'B 保修(一年兩次)' }
+    companyCity: '桃園市', companyDistrict: '中壢區', serviceLevel: 'B 保修(一年兩次)',
+    openDate: '2020-01-01' }
 ];
 
 function generatedFor(cases, storeName) {

@@ -158,6 +158,9 @@
       if (store.storeStatus !== '正常營業') return;
       var cust = customerMap[store.customerName];
       if (!cust || cust.enabled === false) return;
+      // 客戶設定「於開幕 N 個月後開始保養」時，未滿期的門市這一輪不開單。
+      // 門市沒有開幕日期時同樣不開單（開幕日期為門市必填欄位）。
+      if (!CustomerUtils.isMaintenanceStartedForMonth(customers, store, refMonth)) return;
 
       var period = CustomerUtils.findPeriodForMonth(customers, store.customerName, monthNumber);
       if (!period) return;
