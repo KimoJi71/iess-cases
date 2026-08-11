@@ -252,17 +252,6 @@
     return '';
   }
 
-  // 目前保養季度：依客戶的保養區間，回傳「YYYY 第N次」；客戶無區間或查無客戶時只回年份
-  function formatMaintenancePeriod(dateStr, customers, customerName) {
-    if (!dateStr) return '';
-    var year = parseInt(String(dateStr).slice(0, 4), 10);
-    var month = parseInt(String(dateStr).slice(5, 7), 10);
-    if (!year || !month) return '';
-    var period = CustomerUtils.findPeriodForMonth(customers, customerName, month);
-    if (!period) return String(year);
-    return year + ' 第' + period.visitIndex + '次';
-  }
-
   function padMonth(month) {
     return String(month).length < 2 ? '0' + month : String(month);
   }
@@ -318,6 +307,39 @@
       start: period.year + '-' + padMonth(period.startMonth),
       end: period.year + '-' + padMonth(period.endMonth)
     };
+  }
+
+  // 案件是否帶有區間身分（產生時寫入的 periodYear / periodVisitIndex）。
+  function hasPeriodIdentity(maintenanceCase) {
+    return !!(maintenanceCase
+      && Number(maintenanceCase.periodYear)
+      && Number(maintenanceCase.periodVisitIndex));
+  }
+
+  /**
+   * 案件所屬區間是否與篩選的月份範圍重疊。start / end 為 'YYYY-MM'，
+   * 空字串代表該側無限制。
+   * 有區間身分但解析不到區間者（客戶服務等級調降後尾端區間被砍掉）視為符合任何月份：
+   * 這種案件在案件排程待辦仍存在且可排程，濾掉會讓它從保養計劃進度永久消失。
+   * 完全沒有區間身分、客戶也未設定區間者維持排除。
+   */
+  function casePeriodMatchesMonthRange(maintenanceCase, customers, start, end) {
+    var range = periodMonthRange(resolveCasePeriod(maintenanceCase, customers));
+    if (!range) return hasPeriodIdentity(maintenanceCase);
+    if (start && range.end < start) return false;
+    if (end && range.start > end) return false;
+    return true;
+  }
+
+  /**
+   * 「YYYY 第N次（X-Y月）」——案件排程與保養明細共用，
+   * 避免同一筆案件在兩處顯示的次數不一致。
+   */
+  function formatCasePeriodLabel(maintenanceCase, customers) {
+    var period = resolveCasePeriod(maintenanceCase, customers);
+    if (!period) return '';
+    return period.year + ' 第' + period.visitIndex + '次（'
+      + period.startMonth + '-' + period.endMonth + '月）';
   }
 
   function resolveMaintenanceStatus(currentStatus, planDate) {
@@ -630,13 +652,14 @@
     resolveMaintenanceStatus: resolveMaintenanceStatus,
     resolveCasePeriod: resolveCasePeriod,
     formatPeriodRange: formatPeriodRange,
+    casePeriodMatchesMonthRange: casePeriodMatchesMonthRange,
+    formatCasePeriodLabel: formatCasePeriodLabel,
     periodMonthRange: periodMonthRange,
     resolveStore: resolveStore,
     applyStoreSnapshot: applyStoreSnapshot,
     getStoreNamesForCustomer: getStoreNamesForCustomer,
     getCustomerNamesFromStores: getCustomerNamesFromStores,
     resolveMaintenanceReferenceDate: resolveMaintenanceReferenceDate,
-    formatMaintenancePeriod: formatMaintenancePeriod,
     formatTimeRange: formatTimeRange,
     formatTime24: formatTime24,
     formatScheduleEventTitle: formatScheduleEventTitle,

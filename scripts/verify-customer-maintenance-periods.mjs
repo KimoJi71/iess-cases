@@ -369,7 +369,7 @@ try {
   assertDeep(allocGrid.r3Toasts, [['此月份不在該客戶的保養區間內', 'error']],
     '點半填區間覆蓋的月份跳出「此月份不在該客戶的保養區間內」提示');
 
-  console.log('\nSection 4｜formatMaintenancePeriod 改吃客戶區間');
+  console.log('\nSection 4｜保養次數標籤改吃客戶區間');
   await evaluate(`window.__PERIOD_CUSTOMERS = [
     { id: 'C1', name: '甲客戶', periods: [
       { visitIndex: 1, startMonth: 1, endMonth: 3 },
@@ -379,26 +379,32 @@ try {
     { id: 'C2', name: '丙客戶', periods: [] }
   ];`);
   assertEq(await evaluate(
-    `ScheduleUtils.formatMaintenancePeriod('2026-05-10', window.__PERIOD_CUSTOMERS, '甲客戶')`),
-    '2026 第2次', '5 月為甲客戶的第 2 次');
+    `ScheduleUtils.formatCasePeriodLabel(
+      { customerName: '甲客戶', planDate: '2026-05-10' }, window.__PERIOD_CUSTOMERS)`),
+    '2026 第2次（4-6月）', '5 月為甲客戶的第 2 次');
   assertEq(await evaluate(
-    `ScheduleUtils.formatMaintenancePeriod('2026-11-01', window.__PERIOD_CUSTOMERS, '甲客戶')`),
-    '2026 第4次', '11 月為甲客戶的第 4 次');
+    `ScheduleUtils.formatCasePeriodLabel(
+      { customerName: '甲客戶', planDate: '2026-11-01' }, window.__PERIOD_CUSTOMERS)`),
+    '2026 第4次（10-12月）', '11 月為甲客戶的第 4 次');
   assertEq(await evaluate(
-    `ScheduleUtils.formatMaintenancePeriod('2026-08-01', window.__PERIOD_CUSTOMERS, '丙客戶')`),
-    '2026', '無區間客戶只回年份');
+    `ScheduleUtils.formatCasePeriodLabel(
+      { customerName: '丙客戶', planDate: '2026-08-01' }, window.__PERIOD_CUSTOMERS)`),
+    '', '無區間客戶回空字串');
   assertEq(await evaluate(
-    `ScheduleUtils.formatMaintenancePeriod('2026-05-10', window.__PERIOD_CUSTOMERS, '查無此客戶')`),
-    '2026', '查無客戶只回年份');
+    `ScheduleUtils.formatCasePeriodLabel(
+      { customerName: '查無此客戶', planDate: '2026-05-10' }, window.__PERIOD_CUSTOMERS)`),
+    '', '查無客戶回空字串');
   assertEq(await evaluate(
-    `ScheduleUtils.formatMaintenancePeriod('', window.__PERIOD_CUSTOMERS, '甲客戶')`),
-    '', '無日期回空字串');
+    `ScheduleUtils.formatCasePeriodLabel({ customerName: '甲客戶' }, window.__PERIOD_CUSTOMERS)`),
+    '', '無日期也無區間身分時回空字串');
   assertTrue(await evaluate(
-    `/CustomerUtils\\.findPeriodForMonth/.test(String(ScheduleUtils.formatMaintenancePeriod))`
-  ), 'formatMaintenancePeriod 改用 CustomerUtils.findPeriodForMonth');
+    `/CustomerUtils\\.findPeriodForMonth/.test(String(ScheduleUtils.resolveCasePeriod))`
+  ), 'resolveCasePeriod 用 CustomerUtils.findPeriodForMonth');
   assertTrue(await evaluate(
-    `!/ServiceLevelUtils\\.findPeriodForMonth/.test(String(ScheduleUtils.formatMaintenancePeriod))`
-  ), 'formatMaintenancePeriod 不再呼叫 ServiceLevelUtils.findPeriodForMonth');
+    `!/ServiceLevelUtils\\.findPeriodForMonth/.test(String(ScheduleUtils.resolveCasePeriod))`
+  ), 'resolveCasePeriod 不呼叫 ServiceLevelUtils.findPeriodForMonth');
+  assertEq(await evaluate(`typeof ScheduleUtils.formatMaintenancePeriod`), 'undefined',
+    '日期回推版的 formatMaintenancePeriod 已移除（案件排程改與保養明細同源）');
 
   console.log('\nSection 5｜服務等級不再持有區間');
   assertTrue(await evaluate(`INITIAL_SERVICE_LEVELS.every(function (sl) {

@@ -90,14 +90,9 @@
         return ScheduleUtils.resolveCasePeriod(c, customers);
       }
 
-      // 案件所屬區間的年月起訖，是否與篩選的月份範圍重疊。
-      // 篩選欄位可被清空，空字串視為該側無限制。
       function matchesPeriodMonthFilter(c) {
-        var range = ScheduleUtils.periodMonthRange(getCasePeriod(c));
-        if (!range) return false;
-        if (appliedFilters.start && range.end < appliedFilters.start) return false;
-        if (appliedFilters.end && range.start > appliedFilters.end) return false;
-        return true;
+        return ScheduleUtils.casePeriodMatchesMonthRange(
+          c, customers, appliedFilters.start, appliedFilters.end);
       }
 
       var customerFilterOptions = CustomerUtils.getCustomerNameOptions(
@@ -346,12 +341,9 @@
       return ScheduleUtils.resolveStore(stores, c && c.customerName, c && c.storeName);
     }
 
-    // 與列表的「保養區間」同源，避免兩處對不上
+    // 與列表的「保養區間」及案件排程同源，避免各處對不上
     function getMaintenancePeriodLabel(c) {
-      var period = ScheduleUtils.resolveCasePeriod(c, customers);
-      if (!period) return '';
-      return period.year + ' 第' + period.visitIndex + '次（'
-        + period.startMonth + '-' + period.endMonth + '月）';
+      return ScheduleUtils.formatCasePeriodLabel(c, customers);
     }
 
     function ReadOnlyField(p) {

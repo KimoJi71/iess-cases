@@ -83,6 +83,43 @@ assertEq(SU.resolveCasePeriod(
   '區間身分在客戶設定中找不到時回 null');
 assertEq(SU.resolveCasePeriod(null, CUSTOMERS), null, '案件為 null 回 null');
 
+console.log('\nSection 1｜ScheduleUtils.casePeriodMatchesMonthRange');
+const inCurrent = { customerName: '甲客戶', periodYear: 2026, periodVisitIndex: 3 };
+assertTrue(SU.casePeriodMatchesMonthRange(inCurrent, CUSTOMERS, '2026-08', '2026-08'),
+  '區間涵蓋所選月份時符合');
+assertTrue(!SU.casePeriodMatchesMonthRange(inCurrent, CUSTOMERS, '2026-11', '2026-11'),
+  '區間不涵蓋所選月份時不符合');
+assertTrue(SU.casePeriodMatchesMonthRange(inCurrent, CUSTOMERS, '', ''),
+  '兩側篩選皆空時符合');
+assertTrue(SU.casePeriodMatchesMonthRange(inCurrent, CUSTOMERS, '', '2026-08'),
+  '只有結束月時，區間起點在其之前即符合');
+// 服務等級調降會砍掉尾端區間（customer-form handleServiceLevelChange → resizePeriods），
+// 既有未結案的案件會留下解析不到的區間身分。這種案件若被濾掉就從列表永久消失，
+// 但在案件排程待辦仍存在且可排程，因此一律列出。
+const orphan = { customerName: '甲客戶', periodYear: 2026, periodVisitIndex: 9 };
+assertTrue(SU.casePeriodMatchesMonthRange(orphan, CUSTOMERS, '2026-08', '2026-08'),
+  '區間身分解析不到的案件視為符合任何月份（不從列表消失）');
+assertTrue(SU.casePeriodMatchesMonthRange(orphan, CUSTOMERS, '2026-01', '2026-01'),
+  '區間身分解析不到的案件在其他月份也仍列出');
+assertEq(SU.formatPeriodRange(SU.resolveCasePeriod(orphan, CUSTOMERS)), '—',
+  '解析不到區間時保養區間欄顯示破折號');
+// 從未設定區間的客戶維持排除——這是設計階段明確裁定的既定行為。
+assertTrue(!SU.casePeriodMatchesMonthRange(
+  { customerName: '乙客戶', planDate: '2026-08-15' }, CUSTOMERS, '2026-08', '2026-08'),
+  '客戶未設定區間時排除');
+
+console.log('\nSection 1｜ScheduleUtils.formatCasePeriodLabel');
+assertEq(SU.formatCasePeriodLabel(inCurrent, CUSTOMERS), '2026 第3次（7-9月）',
+  '格式為「YYYY 第N次（X-Y月）」');
+// FINAL-1：案件排程與保養明細必須同源，否則同一筆案件兩處顯示的次數會不一致。
+const drifted = {
+  customerName: '甲客戶', periodYear: 2026, periodVisitIndex: 4, planDate: '2026-08-15'
+};
+assertEq(SU.formatCasePeriodLabel(drifted, CUSTOMERS), '2026 第4次（10-12月）',
+  '有區間身分時以區間身分為準，不用 planDate 月份回推');
+assertEq(SU.formatCasePeriodLabel({ customerName: '乙客戶' }, CUSTOMERS), '',
+  '解析不到區間時回空字串');
+
 console.log('\nSection 1｜ScheduleUtils.formatPeriodRange');
 assertEq(SU.formatPeriodRange({ year: 2026, visitIndex: 3, startMonth: 7, endMonth: 9 }),
   '第3次 7-9月', '格式為「第3次 7-9月」');

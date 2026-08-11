@@ -720,9 +720,7 @@
 
       function renderMaintenanceScheduleDetails(formData) {
         var store = ScheduleUtils.resolveStore(stores, formData.customerName, formData.storeName);
-        var refDate = ScheduleUtils.resolveMaintenanceReferenceDate(formData);
-        var periodLabel = ScheduleUtils.formatMaintenancePeriod(
-          refDate, customers, formData.customerName);
+        var periodLabel = ScheduleUtils.formatCasePeriodLabel(formData, customers);
         var inputCls = 'w-full p-2 border rounded-md outline-none focus:border-blue-500 text-sm';
 
         return h('div', { className: 'space-y-4' },
