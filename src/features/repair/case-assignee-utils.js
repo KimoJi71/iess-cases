@@ -1,5 +1,5 @@
 /*
- * features/repair/case-assignee-utils.js — 叫修多指派／協作／積分
+ * features/repair/case-assignee-utils.js — 叫修多指派／積分
  */
 (function () {
   'use strict';
@@ -43,30 +43,6 @@
     return list.join('、');
   }
 
-  function normalizeCollaboratorCount(value) {
-    var n = Math.floor(Number(value));
-    return n > 0 ? n : 1;
-  }
-
-  function getCollaborators(record) {
-    if (!record || !Array.isArray(record.collaborators)) return [];
-    return record.collaborators.map(function (row) {
-      return {
-        name: String((row && row.name) || ''),
-        count: normalizeCollaboratorCount(row && row.count),
-        points: Number(row && row.points) || 0
-      };
-    }).filter(function (row) { return !!row.name; });
-  }
-
-  function formatCollaborators(record) {
-    var list = getCollaborators(record);
-    if (!list.length) return '—';
-    return list.map(function (row) {
-      return row.name + '（' + row.count + '人／' + row.points + '分）';
-    }).join('、');
-  }
-
   function includesAssignee(record, name) {
     if (!name) return false;
     return getAssignees(record).indexOf(name) !== -1;
@@ -91,7 +67,6 @@
   function normalizeRepairCase(record) {
     if (!record) return record;
     var assignees = getAssignees(record);
-    var collaborators = getCollaborators(record);
     var performanceAssignees = Array.isArray(record.performanceAssignees)
       ? asStringArray(record.performanceAssignees)
       : [];
@@ -100,10 +75,10 @@
     }
     var next = Object.assign({}, record, {
       assignees: assignees,
-      collaborators: collaborators,
       performanceAssignees: performanceAssignees
     });
     delete next.assignee;
+    delete next.collaborators;
     return next;
   }
 
@@ -120,42 +95,9 @@
   function computeBonusPointsForAssignee(record, assigneeName) {
     if (!record || !assigneeName) return 0;
     var formal = getPerformanceAssignees(record);
-    var collaborators = getCollaborators(record);
-    var total = sumProcessPoints(record);
-    var collabSum = 0;
-    var ownCollab = 0;
-    collaborators.forEach(function (row) {
-      collabSum += row.points;
-      if (row.name === assigneeName) ownCollab += row.points;
-    });
+    if (formal.indexOf(assigneeName) === -1) return 0;
     var n = formal.length;
-    var share = n > 0 ? (total - collabSum) / n : 0;
-    var fromAssign = formal.indexOf(assigneeName) !== -1 ? share : 0;
-    return fromAssign + ownCollab;
-  }
-
-  function addCollaboratorRow(collaborators) {
-    return (collaborators || []).slice().concat([{ name: '', count: 1, points: 0 }]);
-  }
-
-  function updateCollaboratorRow(collaborators, index, patch) {
-    return (collaborators || []).map(function (row, i) {
-      if (i !== index) return row;
-      return Object.assign({ name: '', count: 1, points: 0 }, row, patch || {});
-    });
-  }
-
-  function removeCollaboratorRow(collaborators, index) {
-    return (collaborators || []).filter(function (row, i) { return i !== index; });
-  }
-
-  function getAvailableCollaboratorNames(collaborators, index, allNames) {
-    var taken = (collaborators || []).map(function (row, i) {
-      return i === index ? '' : String((row && row.name) || '');
-    });
-    return (allNames || []).filter(function (name) {
-      return taken.indexOf(name) === -1;
-    });
+    return n > 0 ? sumProcessPoints(record) / n : 0;
   }
 
   window.CaseAssigneeUtils = {
@@ -165,16 +107,10 @@
     getFormalAssignees: getFormalAssignees,
     hasFormalAssignee: hasFormalAssignee,
     formatAssignees: formatAssignees,
-    getCollaborators: getCollaborators,
-    formatCollaborators: formatCollaborators,
     includesAssignee: includesAssignee,
     getPerformanceAssignees: getPerformanceAssignees,
     normalizeRepairCase: normalizeRepairCase,
     sumProcessPoints: sumProcessPoints,
-    computeBonusPointsForAssignee: computeBonusPointsForAssignee,
-    addCollaboratorRow: addCollaboratorRow,
-    updateCollaboratorRow: updateCollaboratorRow,
-    removeCollaboratorRow: removeCollaboratorRow,
-    getAvailableCollaboratorNames: getAvailableCollaboratorNames
+    computeBonusPointsForAssignee: computeBonusPointsForAssignee
   };
 })();

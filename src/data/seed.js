@@ -2094,7 +2094,6 @@ INITIAL_CASES.forEach(function (c) {
   var normalized = CaseAssigneeUtils.normalizeRepairCase(c);
   Object.keys(c).forEach(function (k) { delete c[k]; });
   Object.assign(c, normalized);
-  if (!Array.isArray(c.collaborators)) c.collaborators = [];
   if (c.isPerformanceIncluded) {
     if (!c.performanceAssignees || !c.performanceAssignees.length) {
       c.performanceAssignees = CaseAssigneeUtils.getFormalAssignees(c);

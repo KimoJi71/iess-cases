@@ -55,7 +55,6 @@
   }
 
   var renderAssigneeMultiSelect = CaseAssigneeFields.renderAssigneeMultiSelect;
-  var renderCollaboratorSettings = CaseAssigneeFields.renderCollaboratorSettings;
 
   function AddCaseForm(props) {
     var cases = props.cases;
@@ -77,7 +76,6 @@
       repairReason: '不冷',
       faultDesc: '',
       assignees: [],
-      collaborators: [],
       expectedDate: '',
       expectedTimeStart: '',
       expectedTimeEnd: '',
@@ -274,20 +272,7 @@
         value: formData.expectedTimeEnd,
         onChange: handleChange,
         className: "w-full"
-      })), renderCollaboratorSettings(formData, {
-        onAddRow: function () {
-          formData.collaborators = CaseAssigneeUtils.addCollaboratorRow(formData.collaborators);
-          rerender();
-        },
-        onUpdateRow: function (index, patch) {
-          formData.collaborators = CaseAssigneeUtils.updateCollaboratorRow(formData.collaborators, index, patch);
-          rerender();
-        },
-        onRemoveRow: function (index) {
-          formData.collaborators = CaseAssigneeUtils.removeCollaboratorRow(formData.collaborators, index);
-          rerender();
-        }
-      }))), h("div", {
+      })))), h("div", {
         className: "mt-8 pt-6 border-t flex justify-end gap-4"
       }, h("button", {
         type: "button",
@@ -577,20 +562,7 @@
         value: formData.expectedTimeEnd || '',
         onChange: handleChange,
         className: "w-full"
-      })), renderCollaboratorSettings(formData, {
-        onAddRow: function () {
-          formData.collaborators = CaseAssigneeUtils.addCollaboratorRow(formData.collaborators);
-          rerender();
-        },
-        onUpdateRow: function (index, patch) {
-          formData.collaborators = CaseAssigneeUtils.updateCollaboratorRow(formData.collaborators, index, patch);
-          rerender();
-        },
-        onRemoveRow: function (index) {
-          formData.collaborators = CaseAssigneeUtils.removeCollaboratorRow(formData.collaborators, index);
-          rerender();
-        }
-      })), h("div", {
+      }))), h("div", {
         className: "col-span-full"
       }, h("span", {
         className: "text-gray-500 block mb-1"

@@ -173,7 +173,6 @@ function caseWith(serviceLevel, model) {
     isPerformanceIncluded: true,
     completionDate: '2026-08-05',
     performanceAssignees: ['王小明'],
-    collaborators: [],
     equipment: model === null ? null : { model: model },
     processRecords: [{ processMethodId: 'PS1', points: 10, qty: 1 }]
   };
@@ -256,8 +255,7 @@ assertEq(bonusOf([outOfRange]), 0,
 function multiAssigneeCase(serviceLevel, model) {
   const c = caseWith(serviceLevel, model);
   c.performanceAssignees = ['王小明', '李大華'];
-  c.collaborators = [{ name: '陳美玲', count: 1, points: 4 }];
-  // 總分 10、協作 4 → (10 - 4) / 2 = 3 分給王小明
+  // 總分 10 → 10 / 2 = 5 分給王小明
   return c;
 }
 
@@ -273,8 +271,8 @@ function bonusForMulti(serviceLevel, model) {
   })[0].bonusPoints;
 }
 
-assertEq(bonusForMulti('A 保修(一年四次)', 'FXYP100'), 3,
-  'A + 增額 多人指派含協作，分攤得 3 分');
+assertEq(bonusForMulti('A 保修(一年四次)', 'FXYP100'), 5,
+  'A + 增額 多人指派，分攤得 5 分');
 assertEq(
   bonusForMulti('A 保修(一年四次)', 'FXYP100'),
   bonusForMulti('C 保養(一年一次)', 'RAS-100'),

@@ -10,7 +10,6 @@
   var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful, TimeInput24 = IESS.TimeInput24;
 
   var renderAssigneeMultiSelect = CaseAssigneeFields.renderAssigneeMultiSelect;
-  var renderCollaboratorSettings = CaseAssigneeFields.renderCollaboratorSettings;
 
   function StoreRepairForm(props) {
     var store = props.store || {};
@@ -31,7 +30,6 @@
       faultDesc: '',
       expectedDate: '',
       assignees: [],
-      collaborators: [],
       expectedTime: ''
     };
 
@@ -187,21 +185,7 @@
               h('div', null,
                 h('label', { className: 'block text-sm mb-1' }, '預計時間'),
                 h(TimeInput24, { name: 'expectedTime', value: formData.expectedTime, onChange: handleChange, className: 'w-full' })
-              ),
-              renderCollaboratorSettings(formData, {
-                onAddRow: function () {
-                  formData.collaborators = CaseAssigneeUtils.addCollaboratorRow(formData.collaborators);
-                  rerender();
-                },
-                onUpdateRow: function (index, patch) {
-                  formData.collaborators = CaseAssigneeUtils.updateCollaboratorRow(formData.collaborators, index, patch);
-                  rerender();
-                },
-                onRemoveRow: function (index) {
-                  formData.collaborators = CaseAssigneeUtils.removeCollaboratorRow(formData.collaborators, index);
-                  rerender();
-                }
-              })
+              )
             )
           ),
           h('div', { className: 'mt-8 pt-6 border-t flex justify-end gap-3' },
