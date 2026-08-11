@@ -106,6 +106,48 @@
   }
 
   /**
+   * 客戶的「開始保養時間」：於開幕幾個月後開始保養。
+   * 空白／非數字視為 0（開幕即可保養）；負數與非整數夾成 >= 0 的整數。
+   */
+  function normalizeStartMonths(value) {
+    var n = Number(value);
+    if (!isFinite(n)) return 0;
+    return Math.max(0, Math.floor(n));
+  }
+
+  function getMaintenanceStartMonths(customers, customerName) {
+    var cust = findCustomerByName(customers, customerName);
+    return normalizeStartMonths(cust && cust.maintenanceStartMonths);
+  }
+
+  /**
+   * 門市的起始保養月（'YYYY-MM'）＝ 開幕年月 + 客戶設定的月數。
+   * 以「月」為粒度、不看日，與保養區間同單位。
+   * 門市沒有開幕日期（或格式無效）時回空字串，呼叫端據此視為尚未達標。
+   */
+  function getMaintenanceStartMonth(customers, store) {
+    if (!store) return '';
+    var openDate = String(store.openDate == null ? '' : store.openDate);
+    var year = parseInt(openDate.slice(0, 4), 10);
+    var month = parseInt(openDate.slice(5, 7), 10);
+    if (!year || !month || month < 1 || month > 12) return '';
+    var zeroBased = (year * 12) + (month - 1)
+      + getMaintenanceStartMonths(customers, store.customerName);
+    var targetYear = Math.floor(zeroBased / 12);
+    var targetMonth = (zeroBased % 12) + 1;
+    return targetYear + '-' + (targetMonth < 10 ? '0' + targetMonth : String(targetMonth));
+  }
+
+  // referenceMonth 為 'YYYY-MM'。無開幕日期或參考月格式無效時一律回 false。
+  function isMaintenanceStartedForMonth(customers, store, referenceMonth) {
+    var startMonth = getMaintenanceStartMonth(customers, store);
+    if (!startMonth) return false;
+    var ref = String(referenceMonth == null ? '' : referenceMonth).slice(0, 7);
+    if (!/^\d{4}-\d{2}$/.test(ref)) return false;
+    return ref >= startMonth;
+  }
+
+  /**
    * 客戶保養區間驗證。expectedCount 為該客戶服務等級的「每年保養次數」。
    * 回傳錯誤訊息陣列，空陣列代表通過。呼叫端只提醒、不擋下儲存。
    */
@@ -156,6 +198,9 @@
     getPeriods: getPeriods,
     findPeriodForMonth: findPeriodForMonth,
     formatPeriodsLabel: formatPeriodsLabel,
+    getMaintenanceStartMonths: getMaintenanceStartMonths,
+    getMaintenanceStartMonth: getMaintenanceStartMonth,
+    isMaintenanceStartedForMonth: isMaintenanceStartedForMonth,
     validatePeriods: validatePeriods
   };
 })();
