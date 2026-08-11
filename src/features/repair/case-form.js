@@ -440,7 +440,7 @@
       }
       function handleSubmit() {
         if (caseStatus.hasProcessData(formData) && !formData.equipment) {
-          showToast('有處理資料時必須先掃描設備', 'error');
+          showToast('有服務項目時必須先掃描設備', 'error');
           return;
         }
         formData.planDate = formData.expectedDate || formData.planDate || '';
@@ -639,7 +639,7 @@
         className: "bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-100 relative overflow-hidden"
       }, h("h3", {
         className: "text-lg font-bold text-blue-800 border-b pb-2 mb-4"
-      }, "3. 處理資料"), h("div", {
+      }, "3. 服務項目"), h("div", {
         className: "space-y-6 " + (!formData.equipment ? 'opacity-30 pointer-events-none' : '')
       }, h("div", null, h("label", {
         className: "block text-sm mb-1"
@@ -651,7 +651,7 @@
         className: "w-full p-2 border rounded-md outline-none"
       })), h("div", null, h("label", {
         className: "block text-sm font-medium text-gray-700 mb-2"
-      }, "處理方式清單"), h("div", {
+      }, "處理方式"), h("div", {
         className: "flex flex-wrap gap-3 items-end bg-gray-50 p-4 rounded-md border border-gray-200 mb-4"
       }, h("div", {
         className: "flex-1 min-w-[100px]"

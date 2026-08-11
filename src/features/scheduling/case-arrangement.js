@@ -649,7 +649,7 @@
           ),
           h('section', { className: 'bg-gray-50 border border-gray-200 rounded-md p-4' },
             h('h4', { className: 'text-sm font-bold text-blue-800 border-b pb-2 mb-3' },
-              isOther ? '3. 備註' : '3. 處理資料'),
+              isOther ? '3. 備註' : '3. 服務項目'),
             isOther
               ? h('div', null,
                   renderScheduleFieldLabel('備註'),
@@ -680,7 +680,7 @@
                     })
                   ),
                   h('div', null,
-                    renderScheduleFieldLabel('處理方式清單'),
+                    renderScheduleFieldLabel('處理方式'),
                     h('div', { className: 'border rounded-md overflow-x-auto bg-white' },
                       h('table', { className: 'w-full text-left text-sm whitespace-nowrap' },
                         h('thead', { className: 'bg-gray-100' },

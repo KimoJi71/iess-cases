@@ -106,11 +106,11 @@
           h('h3', { className: 'text-lg font-bold text-blue-800 border-b pb-2 mb-4' }, '3. 備註'),
           h(ReadOnlyField, { label: '備註', value: viewingCase && viewingCase.remarks, fullWidth: true })
         ) : h('section', { className: 'bg-white p-6 rounded-lg shadow-sm border border-gray-100' },
-          h('h3', { className: 'text-lg font-bold text-blue-800 border-b pb-2 mb-4' }, '3. 處理資料'),
+          h('h3', { className: 'text-lg font-bold text-blue-800 border-b pb-2 mb-4' }, '3. 服務項目'),
           h('div', { className: 'space-y-6' },
             h(ReadOnlyField, { label: '實際維修原因', value: viewingCase && viewingCase.actualReason, fullWidth: true }),
             h('div', null,
-              h('span', { className: 'text-gray-500 block mb-2 text-sm' }, '處理方式清單'),
+              h('span', { className: 'text-gray-500 block mb-2 text-sm' }, '處理方式'),
               h('div', Object.assign({ className: 'border rounded-md overflow-x-auto table-scroll-hint' }, dragProps),
                 h('table', { className: 'w-full text-left text-sm whitespace-nowrap' },
                   h('thead', { className: 'bg-gray-100' },
