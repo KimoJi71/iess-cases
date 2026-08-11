@@ -38,6 +38,11 @@
       taxId: (targetCase && targetCase.taxId) || '',
       principal: (targetCase && targetCase.principal) || '',
       serviceLevel: (targetCase && targetCase.serviceLevel) || SERVICE_LEVEL_OPTIONS[0] || '',
+      // 開幕幾個月後開始保養。空字串代表未設定，讀取端（CustomerUtils）一律當 0。
+      maintenanceStartMonths: (targetCase && targetCase.maintenanceStartMonths !== undefined
+        && targetCase.maintenanceStartMonths !== null)
+        ? String(targetCase.maintenanceStartMonths)
+        : '',
       phone: (targetCase && targetCase.phone) || '',
       fax: (targetCase && targetCase.fax) || '',
       address: (targetCase && targetCase.address) || '',
@@ -170,10 +175,20 @@
         var savedPeriods = periods.map(function (p) {
           return { visitIndex: p.visitIndex, startMonth: p.startMonth, endMonth: p.endMonth };
         });
+        // 開始保養時間：留白就存空字串（讀取端當 0）；有值就夾成 >= 0 的整數。
+        // 這個欄位沒有語意模糊空間，直接夾值比跳警告乾淨。
+        var rawStartMonths = String(formData.maintenanceStartMonths || '').trim();
+        var savedStartMonths = rawStartMonths === '' || !isFinite(Number(rawStartMonths))
+          ? ''
+          : Math.max(0, Math.floor(Number(rawStartMonths)));
         if (isEdit) {
           setCases(cases.map(function (c) {
             return c.id === targetCase.id
-              ? Object.assign({}, c, formData, { contacts: contacts, periods: savedPeriods })
+              ? Object.assign({}, c, formData, {
+                  contacts: contacts,
+                  periods: savedPeriods,
+                  maintenanceStartMonths: savedStartMonths
+                })
               : c;
           }));
           showToast('客戶資料更新成功');
@@ -181,6 +196,7 @@
           var newCustomer = Object.assign({ id: 'CUST' + Date.now() }, formData, {
             contacts: contacts,
             periods: savedPeriods,
+            maintenanceStartMonths: savedStartMonths,
             createdDate: todayDate
           });
           setCases([newCustomer].concat(cases));
@@ -245,6 +261,22 @@
               }, SERVICE_LEVEL_OPTIONS.map(function (opt) {
                 return h('option', { key: opt, value: opt }, opt);
               }))
+            ),
+            h('div', null,
+              h('label', { className: 'block text-sm mb-1' }, '開始保養時間'),
+              h('div', { className: 'flex items-center gap-2' },
+                h('span', { className: 'text-sm text-gray-500 whitespace-nowrap' }, '於開幕'),
+                h('input', {
+                  type: 'number',
+                  name: 'maintenanceStartMonths',
+                  min: '0',
+                  step: '1',
+                  value: formData.maintenanceStartMonths,
+                  onChange: handleChange,
+                  className: 'w-24 p-2.5 border rounded-md outline-none focus:border-blue-500'
+                }),
+                h('span', { className: 'text-sm text-gray-500 whitespace-nowrap' }, '個月後開始保養')
+              )
             ),
             h('div', null,
               h('label', { className: 'block text-sm mb-1' }, '啟用狀態'),
