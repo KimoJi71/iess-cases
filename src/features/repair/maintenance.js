@@ -7,7 +7,7 @@
 (function () {
   'use strict';
   var h = IESS.h, Fragment = IESS.Fragment, Icons = IESS.Icons,
-      stateful = IESS.stateful, useDragScroll = IESS.useDragScroll, TimeInput24 = IESS.TimeInput24;
+      stateful = IESS.stateful, TimeInput24 = IESS.TimeInput24;
 
   function getMaintenanceStatusBadgeClass(status) {
     if (status === '已完成') return 'bg-green-100 text-green-700';
@@ -81,7 +81,6 @@
       storeArea: '全部',
       status: '全部'
     };
-    var dragProps = useDragScroll();
     var closeConfirmModal = { show: false, caseId: null };
     var listPagination = IESS.createListPagination();
 
@@ -188,10 +187,10 @@
         className: "w-full xl:w-auto bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-md flex items-center justify-center gap-1.5 whitespace-nowrap min-h-[42px] transition-colors"
       }, Icons.Search({
         className: "h-4 w-4 shrink-0"
-      }), "搜尋")))), h("div", Object.assign({
-        className: "overflow-x-auto border rounded-lg cursor-grab active:cursor-grabbing"
-      }, dragProps), h("table", {
-        className: "w-full text-left text-sm text-gray-600 whitespace-nowrap select-none"
+      }), "搜尋")))), h("div", {
+        className: "overflow-x-auto border rounded-lg"
+      }, h("table", {
+        className: "w-full text-left text-sm text-gray-600 whitespace-nowrap"
       }, h("thead", {
         className: "bg-gray-50 text-gray-700 border-b"
       }, h("tr", null, h("th", {

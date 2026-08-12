@@ -198,40 +198,10 @@
     return node;
   }
 
-  /*
-   * useDragScroll() — 以滑鼠拖曳橫向捲動容器（對應原本的自訂 hook）
-   * 用法：Object.assign({ className: '...' }, useDragScroll()) 展開到容器 props。
-   */
-  function useDragScroll() {
-    var el = null;
-    var isDragging = false;
-    var startX = 0;
-    var scrollLeft = 0;
-    return {
-      ref: function (n) { el = n; },
-      onMouseDown: function (e) {
-        if (!el) return;
-        isDragging = true;
-        startX = e.pageX - el.offsetLeft;
-        scrollLeft = el.scrollLeft;
-      },
-      onMouseLeave: function () { isDragging = false; },
-      onMouseUp: function () { isDragging = false; },
-      onMouseMove: function (e) {
-        if (!isDragging || !el) return;
-        e.preventDefault();
-        var x = e.pageX - el.offsetLeft;
-        var walk = (x - startX) * 1.5;
-        el.scrollLeft = scrollLeft - walk;
-      }
-    };
-  }
-
   global.IESS = global.IESS || {};
   global.IESS.h = h;
   global.IESS.Fragment = Fragment;
   global.IESS.mount = mount;
   global.IESS.stateful = stateful;
-  global.IESS.useDragScroll = useDragScroll;
   global.IESS.deferRerenderWhileComposing = deferRerenderWhileComposing;
 })(window);

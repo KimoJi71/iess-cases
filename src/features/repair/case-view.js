@@ -4,7 +4,7 @@
  */
 (function () {
   'use strict';
-  var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful, useDragScroll = IESS.useDragScroll;
+  var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful;
   var caseDT = IESS.caseDateTime;
   var caseStatus = IESS.caseStatus;
 
@@ -15,7 +15,6 @@
     var processMethods = props.processMethods || [];
     var deviceCategories = props.deviceCategories || [];
 
-    var dragProps = useDragScroll();
     var pmColumns = ProcessMethodUtils.CASE_DISPLAY_COLUMNS;
 
     function formatTimeRange(start, end) {
@@ -106,7 +105,7 @@
             h(ReadOnlyField, { label: '實際維修原因', value: viewingCase && viewingCase.actualReason, fullWidth: true }),
             h('div', null,
               h('span', { className: 'text-gray-500 block mb-2 text-sm' }, '處理方式'),
-              h('div', Object.assign({ className: 'border rounded-md overflow-x-auto table-scroll-hint' }, dragProps),
+              h('div', { className: 'border rounded-md overflow-x-auto table-scroll-hint' },
                 h('table', { className: 'w-full text-left text-sm whitespace-nowrap' },
                   h('thead', { className: 'bg-gray-100' },
                     h('tr', null,

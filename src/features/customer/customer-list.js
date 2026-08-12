@@ -4,7 +4,7 @@
  */
 (function () {
   'use strict';
-  var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful, useDragScroll = IESS.useDragScroll;
+  var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful;
   var iconActionBtn = IESS.iconActionBtn;
 
   function enabledBadge(enabled) {
@@ -37,7 +37,6 @@
     var keyword = '';
     var appliedKeyword = '';
     var enabledFilter = '全部';
-    var dragProps = useDragScroll();
     var listPagination = IESS.createListPagination();
 
     return stateful(function (rerender) {
@@ -108,11 +107,11 @@
             icon: Icons.Plus({ className: 'h-5 w-5' })
           })
         ),
-        h('div', Object.assign({}, dragProps, {
-          className: 'overflow-x-auto border rounded-lg cursor-grab active:cursor-grabbing'
-        }),
+        h('div', {
+          className: 'overflow-x-auto border rounded-lg'
+        },
           h('table', {
-            className: 'w-full text-left text-sm text-gray-600 whitespace-nowrap select-none'
+            className: 'w-full text-left text-sm text-gray-600 whitespace-nowrap'
           },
             h('thead', { className: 'bg-gray-50 text-gray-700 border-b' },
               h('tr', null,

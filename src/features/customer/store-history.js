@@ -4,7 +4,7 @@
  */
 (function () {
   'use strict';
-  var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful, useDragScroll = IESS.useDragScroll;
+  var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful;
   var fmt = StoreUtils.formatHistoryDateTime;
 
   function StoreHistory(props) {
@@ -24,7 +24,6 @@
     var endDate = todayDate;
     var keyword = '';
     var appliedFilter = { caseType: 'repair-maintenance', start: todayDate, end: todayDate, keyword: '' };
-    var dragProps = useDragScroll();
     var listPagination = IESS.createListPagination();
 
     function getRows() {
@@ -185,10 +184,10 @@
             }, Icons.Search({ className: 'h-4 w-4' }), ' 搜尋')
             )
           ),
-          h('div', Object.assign({}, dragProps, {
-            className: 'overflow-x-auto border rounded-lg cursor-grab active:cursor-grabbing'
-          }),
-            h('table', { className: 'w-full text-left text-sm text-gray-600 select-none' },
+          h('div', {
+            className: 'overflow-x-auto border rounded-lg'
+          },
+            h('table', { className: 'w-full text-left text-sm text-gray-600' },
               h('thead', { className: 'bg-gray-50 text-gray-700 border-b whitespace-nowrap' },
                 isProject
                   ? h('tr', null,

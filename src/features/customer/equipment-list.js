@@ -9,7 +9,7 @@
  */
 (function () {
   'use strict';
-  var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful, useDragScroll = IESS.useDragScroll;
+  var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful;
   var iconActionBtn = IESS.iconActionBtn;
 
   function EquipmentList(props) {
@@ -32,7 +32,6 @@
     var showToast = props.showToast;
 
     var deleteModal = { show: false, id: null };
-    var dragProps = useDragScroll();
     var listPagination = IESS.createListPagination();
 
     function getStoreOptions() {
@@ -230,10 +229,10 @@
           ? h('div', {
               className: 'p-12 text-center text-gray-400 text-base border border-dashed rounded-lg'
             }, '請先篩選客戶與門市，才可查詢設備列表')
-          : h('div', Object.assign({}, dragProps, {
-              className: 'overflow-x-auto border rounded-lg cursor-grab active:cursor-grabbing'
-            }),
-            h('table', { className: 'w-full text-left text-sm text-gray-600 whitespace-nowrap select-none' },
+          : h('div', {
+              className: 'overflow-x-auto border rounded-lg'
+            },
+            h('table', { className: 'w-full text-left text-sm text-gray-600 whitespace-nowrap' },
               h('thead', { className: 'bg-gray-50 text-gray-700 border-b' },
                 h('tr', null,
                   h('th', { className: 'p-3 font-semibold text-center w-24' }, '操作'),

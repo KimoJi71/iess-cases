@@ -4,7 +4,7 @@
  */
 (function () {
   'use strict';
-  var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful, useDragScroll = IESS.useDragScroll;
+  var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful;
   var iconActionBtn = IESS.iconActionBtn;
   var iconActionBtn = IESS.iconActionBtn;
 
@@ -47,7 +47,6 @@
       customer: '全部',
       contactPerson: '全部'
     };
-    var dragProps = useDragScroll();
     var listPagination = IESS.createListPagination();
 
     return stateful(function (rerender) {
@@ -155,10 +154,10 @@
         className: 'flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white p-2.5 rounded-full shadow-sm transition-colors shrink-0',
         onClick: function () { setView('project-add'); },
         icon: Icons.Plus({ className: 'h-5 w-5' })
-      })), h('div', Object.assign({
-        className: 'overflow-x-auto border rounded-lg cursor-grab active:cursor-grabbing'
-      }, dragProps), h('table', {
-        className: 'w-full text-left text-sm text-gray-600 whitespace-nowrap select-none'
+      })), h('div', {
+        className: 'overflow-x-auto border rounded-lg'
+      }, h('table', {
+        className: 'w-full text-left text-sm text-gray-600 whitespace-nowrap'
       }, h('thead', {
         className: 'bg-gray-50 text-gray-700 border-b'
       }, h('tr', null, h('th', {

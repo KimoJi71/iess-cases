@@ -5,7 +5,7 @@
 (function () {
   'use strict';
 
-  var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful, useDragScroll = IESS.useDragScroll;
+  var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful;
   var MONTHS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
   var SEGMENT_BG = ['bg-sky-50/70', 'bg-amber-50/70'];
   var CURRENT_YEAR = new Date().getFullYear();
@@ -26,11 +26,6 @@
     var editModal = null;
     var deleteModal = null;
     var scrollEl = null;
-    var dragProps = useDragScroll();
-    var baseDragRef = dragProps.ref;
-    var baseDragMove = dragProps.onMouseMove;
-    var baseDragUp = dragProps.onMouseUp;
-    var baseDragLeave = dragProps.onMouseLeave;
 
     function syncScrollFromEl() {
       if (scrollEl) persistedScrollLeft = scrollEl.scrollLeft;
@@ -45,27 +40,14 @@
       });
     }
 
-    dragProps = Object.assign({}, dragProps, {
+    var scrollProps = {
       ref: function (n) {
-        baseDragRef(n);
         scrollEl = n;
         if (!n) return;
         restoreScrollLeft(n);
         n.addEventListener('scroll', syncScrollFromEl);
-      },
-      onMouseMove: function (e) {
-        baseDragMove(e);
-        syncScrollFromEl();
-      },
-      onMouseUp: function (e) {
-        baseDragUp(e);
-        syncScrollFromEl();
-      },
-      onMouseLeave: function (e) {
-        baseDragLeave(e);
-        syncScrollFromEl();
       }
-    });
+    };
 
     function getSortedAssignees() {
       return assignees.slice().sort(function (a, b) {
@@ -267,12 +249,12 @@
       function renderGrid() {
         return h(
           'div',
-          Object.assign({}, dragProps, {
-            className: 'overflow-x-auto border rounded-lg cursor-grab active:cursor-grabbing'
+          Object.assign({}, scrollProps, {
+            className: 'overflow-x-auto border rounded-lg'
           }),
           h(
             'table',
-            { className: 'w-full min-w-[1060px] table-fixed text-left text-sm text-gray-600 select-none' },
+            { className: 'w-full min-w-[1060px] table-fixed text-left text-sm text-gray-600' },
             h(
               'thead',
               { className: 'bg-gray-50 text-gray-700 border-b' },

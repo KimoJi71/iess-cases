@@ -6,7 +6,7 @@
  */
 (function () {
   'use strict';
-  var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful, useDragScroll = IESS.useDragScroll, TimeInput24 = IESS.TimeInput24;
+  var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful, TimeInput24 = IESS.TimeInput24;
   var caseDT = IESS.caseDateTime;
   var caseStatus = IESS.caseStatus;
 
@@ -308,7 +308,6 @@
     if (!formData.remarks) formData.remarks = '';
     var savedProcessStatus = editingCase.processStatus || null;
     var newRecord = ProcessMethodUtils.normalizeProcessMethodSelection(processMethods, null);
-    var dragProps = useDragScroll();
     var pmColumns = ProcessMethodUtils.CASE_DISPLAY_COLUMNS;
 
     return stateful(function (rerender) {
@@ -702,9 +701,9 @@
         type: "button",
         onClick: handleAddRecord,
         className: "bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700 h-[38px]"
-      }, "新增")), h("div", Object.assign({
+      }, "新增")), h("div", {
         className: "border rounded-md overflow-x-auto table-scroll-hint"
-      }, dragProps), h("table", {
+      }, h("table", {
         className: "w-full text-left text-sm whitespace-nowrap"
       }, h("thead", {
         className: "bg-gray-100"

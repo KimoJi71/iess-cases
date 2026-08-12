@@ -7,7 +7,7 @@
  */
 (function () {
   'use strict';
-  var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful, useDragScroll = IESS.useDragScroll;
+  var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful;
   var iconActionBtn = IESS.iconActionBtn;
 
   function StoreProjectForm(props) {
@@ -36,7 +36,6 @@
 
     var inputCls = 'w-full p-2.5 border rounded-md outline-none focus:ring-2 focus:ring-blue-500';
     var disabledCls = 'w-full p-2.5 bg-gray-50 border rounded-md text-gray-500 cursor-not-allowed';
-    var dragProps = useDragScroll();
 
     return stateful(function (rerender) {
       function handleChange(e) {
@@ -191,8 +190,8 @@
                   className: 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100 px-4 py-2 rounded-md flex items-center gap-2 font-medium transition-colors border border-indigo-200'
                 }, Icons.Plus({ className: 'h-4 w-4' }), ' 加入設備')
               ),
-              h('div', Object.assign({ className: 'overflow-x-auto border rounded-lg border-gray-200 cursor-grab active:cursor-grabbing' }, dragProps),
-                h('table', { className: 'w-full text-left text-sm text-gray-600 whitespace-nowrap select-none' },
+              h('div', { className: 'overflow-x-auto border rounded-lg border-gray-200' },
+                h('table', { className: 'w-full text-left text-sm text-gray-600 whitespace-nowrap' },
                   h('thead', { className: 'bg-gray-50 text-gray-700 border-b' },
                     h('tr', null,
                       h('th', { className: 'p-3 font-semibold' }, '設備分類'),

@@ -4,7 +4,7 @@
  */
 (function () {
   'use strict';
-  var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful, useDragScroll = IESS.useDragScroll;
+  var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful;
   var iconActionBtn = IESS.iconActionBtn;
 
   var COLUMNS = [
@@ -29,7 +29,6 @@
     var keyword = '';
     var appliedKeyword = '';
     var deleteModal = { show: false, id: null, label: '' };
-    var dragProps = useDragScroll();
     var listPagination = IESS.createListPagination();
 
     function getFilteredCategories() {
@@ -100,10 +99,10 @@
             icon: Icons.Plus({ className: 'h-5 w-5' })
           })
         ),
-        h('div', Object.assign({}, dragProps, {
-          className: 'overflow-x-auto border rounded-lg cursor-grab active:cursor-grabbing'
-        }),
-          h('table', { className: 'w-full text-left text-sm text-gray-600 whitespace-nowrap select-none' },
+        h('div', {
+          className: 'overflow-x-auto border rounded-lg'
+        },
+          h('table', { className: 'w-full text-left text-sm text-gray-600 whitespace-nowrap' },
             h('thead', { className: 'bg-gray-50 text-gray-700 border-b' },
               h('tr', null,
                 h('th', { className: 'p-3 font-semibold text-center w-36' }, '操作'),

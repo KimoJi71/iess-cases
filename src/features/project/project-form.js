@@ -5,7 +5,7 @@
  */
 (function () {
   'use strict';
-  var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful, useDragScroll = IESS.useDragScroll, TimeInput24 = IESS.TimeInput24;
+  var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful, TimeInput24 = IESS.TimeInput24;
   var iconActionBtn = IESS.iconActionBtn;
 
   function projectReadOnlyField(label, value, opts) {
@@ -321,9 +321,9 @@
   function projectEquipmentTable(equipmentList, opts) {
     opts = opts || {};
     var includeActions = !!(opts.onEdit || opts.onDelete);
-    return h('div', Object.assign({
+    return h('div', {
       className: 'overflow-x-auto border rounded-lg border-gray-200'
-    }, opts.dragProps || {}),
+    },
       h('table', { className: 'w-full text-left text-sm text-gray-600 whitespace-nowrap' },
         h('thead', { className: 'bg-gray-50 text-gray-700 border-b' },
           equipmentTableHeaders(includeActions)),
@@ -396,8 +396,7 @@
         projectCaseFieldsView(formData, detailsData)),
       projectSectionCard({ title: '2. 設備資料' },
         projectEquipmentTable(projectEquipmentList(detailsData, opts.deviceCategories), {
-          deviceCategories: opts.deviceCategories,
-          dragProps: opts.dragProps
+          deviceCategories: opts.deviceCategories
         })),
       projectSectionCard({ title: '3. 工程項目進度', indigo: true },
         projectStageList(function (stage) {
@@ -746,7 +745,6 @@
     var showAddContractor = false;
     var newContractor = '';
     var equipModal = { show: false, editingId: null, initialEquip: null };
-    var dragProps = useDragScroll();
     var stagesData = projectStagesData(formData);
     var inputCls = 'w-full p-2.5 border rounded-md outline-none focus:ring-2 focus:ring-blue-500';
     var fieldCls = isEdit ? inputCls : viewFieldCls;
@@ -1019,7 +1017,6 @@
         className: 'h-4 w-4'
       }), ' 加入設備')), projectEquipmentTable(equipmentList, {
         deviceCategories: deviceCategories,
-        dragProps: dragProps,
         onEdit: isEdit ? openEquipModal : null,
         onDelete: isEdit ? handleDeleteEquipment : null
       })), h('section', {

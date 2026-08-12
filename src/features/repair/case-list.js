@@ -4,7 +4,7 @@
  */
 (function () {
   'use strict';
-  var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful, useDragScroll = IESS.useDragScroll;
+  var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful;
   var caseStatus = IESS.caseStatus;
 
   function formatCreatedAt(c) {
@@ -27,7 +27,6 @@
     var setStatusFilter = props.setStatusFilter;
 
     var closeConfirmModal = { show: false, caseId: null, mode: 'close' };
-    var dragProps = useDragScroll();
     var listPagination = IESS.createListPagination();
 
     function isActiveInList(c) {
@@ -189,10 +188,10 @@
             icon: Icons.Plus({ className: 'h-5 w-5' })
           })
         ),
-        h('div', Object.assign({
-          className: 'overflow-x-auto border rounded-lg cursor-grab active:cursor-grabbing table-scroll-hint'
-        }, dragProps),
-          h('table', { className: 'w-full text-left text-sm text-gray-600 whitespace-nowrap select-none' },
+        h('div', {
+          className: 'overflow-x-auto border rounded-lg table-scroll-hint'
+        },
+          h('table', { className: 'w-full text-left text-sm text-gray-600 whitespace-nowrap' },
             h('thead', { className: 'bg-gray-50 text-gray-700 border-b' },
               h('tr', null,
                 h('th', { className: 'p-3 font-semibold text-center min-w-[140px]' }, '操作'),

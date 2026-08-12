@@ -11,7 +11,7 @@ index.html            頁面殼層（Tailwind CDN + 依序載入下列 script）
 styles.css            全域樣式
 src/
 ├── core/             基礎設施
-│   ├── dom.js        h() 建立 DOM 的 helper、stateful 元件基座、useDragScroll
+│   ├── dom.js        h() 建立 DOM 的 helper、stateful 元件基座
 │   ├── icons.js      內嵌 SVG 圖示（取代 lucide-react）
 │   ├── store.js      極簡全域狀態容器（訂閱／通知重繪）
 │   └── toast.js      右上角提示訊息

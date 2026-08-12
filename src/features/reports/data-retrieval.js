@@ -4,7 +4,7 @@
  */
 (function () {
   'use strict';
-  var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful, useDragScroll = IESS.useDragScroll;
+  var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful;
 
   var inputCls = 'w-full p-2 border rounded-md outline-none bg-white text-sm';
   var labelCls = 'block text-xs text-gray-500 mb-1';
@@ -65,7 +65,6 @@
     var filterCity = [];
     var filterDistrict = [];
     var applied = null;
-    var dragProps = useDragScroll();
     var listPagination = IESS.createListPagination();
 
     function resetApplied() {
@@ -364,10 +363,10 @@
                   className: 'text-sm font-medium text-gray-600 bg-gray-100 px-3 py-1.5 rounded-full'
                 }, '共 ' + resultItems.length + ' 筆')
               ),
-              h('div', Object.assign({
-                className: 'overflow-x-auto border rounded-lg cursor-grab active:cursor-grabbing'
-              }, dragProps),
-                h('table', { className: 'w-full text-left text-sm text-gray-600 whitespace-nowrap select-none' },
+              h('div', {
+                className: 'overflow-x-auto border rounded-lg'
+              },
+                h('table', { className: 'w-full text-left text-sm text-gray-600 whitespace-nowrap' },
                   h('thead', { className: 'bg-gray-50 text-gray-700 border-b' },
                     h('tr', null,
                       columns.map(function (col) {

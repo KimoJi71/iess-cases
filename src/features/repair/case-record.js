@@ -4,7 +4,7 @@
  */
 (function () {
   'use strict';
-  var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful, useDragScroll = IESS.useDragScroll;
+  var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful;
 
   function CaseRecordList(props) {
     var cases = props.cases;
@@ -14,7 +14,6 @@
     var startDate = todayDate;
     var endDate = todayDate;
     var appliedDateRange = { start: todayDate, end: todayDate };
-    var dragProps = useDragScroll();
     var listPagination = IESS.createListPagination();
 
     return stateful(function (rerender) {
@@ -55,10 +54,10 @@
             className: 'bg-blue-600 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors hover:bg-blue-700'
           }, Icons.Search({ className: 'h-4 w-4' }), ' 搜尋')
         ),
-        h('div', Object.assign({
-          className: 'overflow-x-auto border rounded-lg cursor-grab active:cursor-grabbing'
-        }, dragProps),
-          h('table', { className: 'w-full text-left text-sm text-gray-600 whitespace-nowrap select-none' },
+        h('div', {
+          className: 'overflow-x-auto border rounded-lg'
+        },
+          h('table', { className: 'w-full text-left text-sm text-gray-600 whitespace-nowrap' },
             h('thead', { className: 'bg-gray-50 text-gray-700 border-b' },
               h('tr', null,
                 h('th', { className: 'p-3 w-20 text-center' }, '操作'),
