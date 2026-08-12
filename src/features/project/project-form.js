@@ -260,6 +260,152 @@
       includeActions ? h('th', { className: 'p-3 font-semibold text-center w-24' }, '操作') : null);
   }
 
+  /* --- 以下為「編輯／查看工程案件」的版面組件 ---
+   * 「案件安排」日曆點開工程立案單的排程詳細也共用同一組排版，
+   * 兩處畫面才不會各自漂移；唯讀欄位一律走這裡的 view 版本。
+   */
+
+  function projectStagesData(formData) {
+    var stages = {};
+    PROJECT_STAGES.forEach(function (s) {
+      var existing = (formData.history || []).find(function (hh) { return hh.stage === s; });
+      stages[s] = {
+        date: (existing && existing.date) || '',
+        assignee: (existing && existing.assignee) || '',
+        timeStart: (existing && existing.timeStart) || '',
+        timeEnd: (existing && existing.timeEnd) || ''
+      };
+    });
+    return stages;
+  }
+
+  function projectEquipmentList(detailsData, deviceCategories) {
+    return ((detailsData && detailsData.equipment) || []).slice().map(function (eq) {
+      return Object.assign({ id: eq.id }, normalizeEquip(eq, deviceCategories));
+    });
+  }
+
+  function projectSectionCard(opts, body) {
+    opts = opts || {};
+    var header = opts.headerExtra
+      ? h('div', { className: 'flex justify-between items-center border-b pb-2 mb-4' },
+          h('h3', { className: 'text-lg font-bold text-blue-800' }, opts.title),
+          opts.headerExtra)
+      : h('h3', {
+          className: opts.indigo
+            ? 'text-lg font-bold text-indigo-800 border-b border-indigo-100 pb-2 mb-6'
+            : 'text-lg font-bold text-blue-800 border-b pb-2 mb-4'
+        }, opts.title);
+    return h('section', {
+      className: opts.indigo
+        ? 'bg-white p-6 rounded-lg shadow-sm border border-indigo-100 ring-1 ring-indigo-50'
+        : 'bg-white p-6 rounded-lg shadow-sm border border-gray-100'
+    }, header, body);
+  }
+
+  function projectCaseFieldsView(formData, detailsData) {
+    return h('div', { className: 'grid grid-cols-1 md:grid-cols-3 gap-6' },
+      projectReadOnlyField('工項分類', formData.workCategory),
+      projectReadOnlyField('客戶名稱', formData.customerName),
+      projectReadOnlyField('門市名稱', formData.storeName),
+      projectReadOnlyField('門市地址', detailsData.storeAddress, { fullWidth: true }),
+      projectReadOnlyField('服務等級', detailsData.serviceLevel),
+      projectReadOnlyField('負責人員', detailsData.contactPerson),
+      projectReadOnlyField('建議施作單位', detailsData.suggestedContractor),
+      projectReadOnlyField('進場日期', detailsData.entryDate),
+      projectReadOnlyField('立案日期', formData.creationDate),
+      projectReadOnlyField('其他事項說明', detailsData.remarks, { fullWidth: true })
+    );
+  }
+
+  function projectEquipmentTable(equipmentList, opts) {
+    opts = opts || {};
+    var includeActions = !!(opts.onEdit || opts.onDelete);
+    return h('div', Object.assign({
+      className: 'overflow-x-auto border rounded-lg border-gray-200'
+    }, opts.dragProps || {}),
+      h('table', { className: 'w-full text-left text-sm text-gray-600 whitespace-nowrap' },
+        h('thead', { className: 'bg-gray-50 text-gray-700 border-b' },
+          equipmentTableHeaders(includeActions)),
+        h('tbody', { className: 'divide-y divide-gray-100' },
+          equipmentList.length === 0
+            ? h('tr', null, h('td', {
+                colspan: includeActions ? '10' : '9',
+                className: 'text-center p-8 text-gray-400 bg-gray-50/50'
+              }, '尚未加入任何設備資料'))
+            : equipmentList.map(function (eq) {
+              return renderEquipmentTableRow(eq, {
+                deviceCategories: opts.deviceCategories,
+                onEdit: opts.onEdit,
+                onDelete: opts.onDelete
+              });
+            })
+        )
+      )
+    );
+  }
+
+  function projectStageViewFields(stage, stagesData) {
+    return [
+      projectReadOnlyField('作業日期', stagesData[stage].date),
+      projectReadOnlyField('開始時間', stagesData[stage].timeStart),
+      projectReadOnlyField('結束時間', stagesData[stage].timeEnd),
+      projectReadOnlyField('負責人員', stagesData[stage].assignee || '尚未指派')
+    ];
+  }
+
+  function projectStageList(renderFields, opts) {
+    opts = opts || {};
+    return h('div', { className: 'space-y-4 mb-2' },
+      PROJECT_STAGES.map(function (stage, idx) {
+        var highlighted = opts.highlightStage === stage;
+        return h('div', {
+          key: stage,
+          className: 'flex flex-col md:flex-row md:items-center gap-4 ' + (
+            highlighted
+              ? 'bg-indigo-50 ring-2 ring-indigo-200 border-indigo-300'
+              : 'bg-gray-50'
+          ) + ' p-4 rounded-lg border' + (highlighted ? '' : ' border-gray-200')
+        }, h('div', { className: 'flex items-center gap-3 w-48 shrink-0' },
+          h('div', {
+            className: 'w-6 h-6 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-bold'
+          }, idx + 1),
+          highlighted
+            ? h('div', null,
+                h('span', { className: 'font-medium text-gray-800' }, stage),
+                h('span', { className: 'block text-xs text-indigo-600' }, '本次排程階段'))
+            : h('span', { className: 'font-medium text-gray-800' }, stage)
+        ), h('div', {
+          className: 'flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4'
+        }, renderFields(stage, idx)));
+      })
+    );
+  }
+
+  /**
+   * 工程立案單的唯讀三段式版面（案件資料／設備資料／工程項目進度），
+   * 與「查看工程案件」頁完全相同；回傳三個 section 供呼叫端排入容器。
+   */
+  function renderProjectViewSections(projectCase, opts) {
+    opts = opts || {};
+    var formData = projectCase || {};
+    var detailsData = formData.details || {};
+    var stagesData = projectStagesData(formData);
+    return [
+      projectSectionCard({ title: '1. 案件資料' },
+        projectCaseFieldsView(formData, detailsData)),
+      projectSectionCard({ title: '2. 設備資料' },
+        projectEquipmentTable(projectEquipmentList(detailsData, opts.deviceCategories), {
+          deviceCategories: opts.deviceCategories,
+          dragProps: opts.dragProps
+        })),
+      projectSectionCard({ title: '3. 工程項目進度', indigo: true },
+        projectStageList(function (stage) {
+          return projectStageViewFields(stage, stagesData);
+        }, { highlightStage: opts.highlightStage }))
+    ];
+  }
+
   function AddProjectForm(props) {
     var cases = props.cases;
     var setCases = props.setCases;
@@ -592,9 +738,7 @@
     var formData = JSON.parse(JSON.stringify(editingCase));
     if (!formData.details) formData.details = {};
     var detailsData = formData.details;
-    var equipmentList = (detailsData.equipment || []).slice().map(function (eq) {
-      return Object.assign({ id: eq.id }, normalizeEquip(eq, deviceCategories));
-    });
+    var equipmentList = projectEquipmentList(detailsData, deviceCategories);
     var contractors = ['內部工程組', '外包廠商A', '外包廠商B', '機電維護商'];
     if (detailsData.suggestedContractor && contractors.indexOf(detailsData.suggestedContractor) === -1) {
       contractors = contractors.concat([detailsData.suggestedContractor]);
@@ -603,17 +747,7 @@
     var newContractor = '';
     var equipModal = { show: false, editingId: null, initialEquip: null };
     var dragProps = useDragScroll();
-    var initialStages = {};
-    PROJECT_STAGES.forEach(function (s) {
-      var existing = (formData.history || []).find(function (hh) { return hh.stage === s; });
-      initialStages[s] = {
-        date: (existing && existing.date) || '',
-        assignee: (existing && existing.assignee) || '',
-        timeStart: (existing && existing.timeStart) || '',
-        timeEnd: (existing && existing.timeEnd) || ''
-      };
-    });
-    var stagesData = initialStages;
+    var stagesData = projectStagesData(formData);
     var inputCls = 'w-full p-2.5 border rounded-md outline-none focus:ring-2 focus:ring-blue-500';
     var fieldCls = isEdit ? inputCls : viewFieldCls;
 
@@ -871,20 +1005,7 @@
         rows: '3',
         placeholder: '請輸入其他補充事項...',
         className: fieldCls + ' resize-none'
-      }))) : h('div', {
-        className: 'grid grid-cols-1 md:grid-cols-3 gap-6'
-      },
-        projectReadOnlyField('工項分類', formData.workCategory),
-        projectReadOnlyField('客戶名稱', formData.customerName),
-        projectReadOnlyField('門市名稱', formData.storeName),
-        projectReadOnlyField('門市地址', detailsData.storeAddress, { fullWidth: true }),
-        projectReadOnlyField('服務等級', detailsData.serviceLevel),
-        projectReadOnlyField('負責人員', detailsData.contactPerson),
-        projectReadOnlyField('建議施作單位', detailsData.suggestedContractor),
-        projectReadOnlyField('進場日期', detailsData.entryDate),
-        projectReadOnlyField('立案日期', formData.creationDate),
-        projectReadOnlyField('其他事項說明', detailsData.remarks, { fullWidth: true })
-      ))), h('section', {
+      }))) : projectCaseFieldsView(formData, detailsData))), h('section', {
         className: 'bg-white p-6 rounded-lg shadow-sm border border-gray-100'
       }, h('div', {
         className: 'flex justify-between items-center border-b pb-2 mb-4'
@@ -896,42 +1017,17 @@
         className: 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100 px-4 py-2 rounded-md flex items-center gap-2 font-medium transition-colors border border-indigo-200'
       }, Icons.Plus({
         className: 'h-4 w-4'
-      }), ' 加入設備')), h('div', Object.assign({
-        className: 'overflow-x-auto border rounded-lg border-gray-200'
-      }, dragProps), h('table', {
-        className: 'w-full text-left text-sm text-gray-600 whitespace-nowrap'
-      }, h('thead', {
-        className: 'bg-gray-50 text-gray-700 border-b'
-      }, equipmentTableHeaders(isEdit)), h('tbody', {
-        className: 'divide-y divide-gray-100'
-      }, equipmentList.length === 0 ? h('tr', null, h('td', {
-        colspan: isEdit ? '10' : '9',
-        className: 'text-center p-8 text-gray-400 bg-gray-50/50'
-      }, '尚未加入任何設備資料')) : equipmentList.map(function (eq) {
-        return renderEquipmentTableRow(eq, isEdit ? {
-          deviceCategories: deviceCategories,
-          onEdit: openEquipModal,
-          onDelete: handleDeleteEquipment
-        } : { deviceCategories: deviceCategories });
-      }))))), h('section', {
+      }), ' 加入設備')), projectEquipmentTable(equipmentList, {
+        deviceCategories: deviceCategories,
+        dragProps: dragProps,
+        onEdit: isEdit ? openEquipModal : null,
+        onDelete: isEdit ? handleDeleteEquipment : null
+      })), h('section', {
         className: 'bg-white p-6 rounded-lg shadow-sm border border-indigo-100 ring-1 ring-indigo-50'
       }, h('h3', {
         className: 'text-lg font-bold text-indigo-800 border-b border-indigo-100 pb-2 mb-6'
-      }, '3. 工程項目進度'), h('div', {
-        className: 'space-y-4 mb-2'
-      }, PROJECT_STAGES.map(function (stage, idx) {
-        return h('div', {
-          key: stage,
-          className: 'flex flex-col md:flex-row md:items-center gap-4 bg-gray-50 p-4 rounded-lg border border-gray-200'
-        }, h('div', {
-          className: 'flex items-center gap-3 w-48 shrink-0'
-        }, h('div', {
-          className: 'w-6 h-6 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-bold'
-        }, idx + 1), h('span', {
-          className: 'font-medium text-gray-800'
-        }, stage)), h('div', {
-          className: 'flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4'
-        }, isEdit ? [h('div', { key: stage + '-date' }, h('label', {
+      }, '3. 工程項目進度'), projectStageList(function (stage) {
+        return isEdit ? [h('div', { key: stage + '-date' }, h('label', {
           className: 'block text-xs text-gray-500 mb-1'
         }, '作業日期'), h('input', {
           type: 'date',
@@ -960,13 +1056,8 @@
           value: ''
         }, '尚未指派'), stagePersonOptions.map(function (opt) {
           return h('option', { key: opt, value: opt }, opt);
-        })))] : [
-          projectReadOnlyField('作業日期', stagesData[stage].date),
-          projectReadOnlyField('開始時間', stagesData[stage].timeStart),
-          projectReadOnlyField('結束時間', stagesData[stage].timeEnd),
-          projectReadOnlyField('負責人員', stagesData[stage].assignee || '尚未指派')
-        ]));
-      }))), isEdit && h('div', {
+        })))] : projectStageViewFields(stage, stagesData);
+      })), isEdit && h('div', {
         className: 'mt-8 pt-6 border-t flex justify-end gap-4'
       }, h('button', {
         type: 'button',
@@ -1019,6 +1110,10 @@
     });
   }
 
+  window.ProjectDetailView = {
+    renderSections: renderProjectViewSections,
+    getStagesData: projectStagesData
+  };
   window.AddProjectForm = AddProjectForm;
   window.EditProjectForm = EditProjectForm;
   window.ProjectEquipModal = ProjectEquipModal;
