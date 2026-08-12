@@ -179,10 +179,21 @@
             String(Math.floor(Math.random() * 1000)).padStart(3, '0');
         }
       } else if (sourceType === 'project') {
-        merged.stageDate = payload.planDate;
-        merged.stageAssignee = payload.assignee;
+        // 與 ScheduleUtils.applyScheduleUpdate 一致：只動點到的那一段階段，
+        // 目前階段才連帶更新案件層級的 stageDate／stageAssignee。
+        var targetStage = (payload.stageKey && payload.stageKey !== 'current')
+          ? payload.stageKey
+          : (merged.currentStage || '');
+        if (targetStage === (merged.currentStage || '')) {
+          merged.stageDate = payload.planDate;
+          merged.stageAssignee = payload.assignee;
+        } else {
+          delete merged.planDate;
+          delete merged.planTimeStart;
+          delete merged.planTimeEnd;
+        }
         merged.history = (merged.history || []).map(function (entry) {
-          if (entry.stage !== merged.currentStage) return entry;
+          if (entry.stage !== targetStage) return entry;
           return Object.assign({}, entry, {
             date: payload.planDate,
             timeStart: payload.planTimeStart,
@@ -242,9 +253,7 @@
         onEventClick: function (event) {
           var props = event.extendedProps || {};
           if (props.isPreview || !props.sourceType || !props.sourceId) return;
-          if (props.sourceType === 'repair' || props.sourceType === 'maintenance') {
-            openEditScheduleModalRef(props.sourceType, props.sourceId);
-          }
+          openEditScheduleModalRef(props.sourceType, props.sourceId, props.stageKey);
         }
       });
       refreshCalendar();
@@ -320,6 +329,8 @@
           item: {
             sourceType: sourceType,
             sourceId: sourceId,
+            stageKey: sourceType === 'project' ? 'current' : '',
+            stageLabel: sourceType === 'project' ? (record.currentStage || '') : '',
             customerName: record.customerName,
             storeName: record.storeName,
             workCategory: record.workCategory || '保養'
@@ -353,20 +364,26 @@
         rerender();
       }
 
-      function openEditScheduleModal(sourceType, sourceId) {
+      function openEditScheduleModal(sourceType, sourceId, stageKey) {
         var record = resolveCaseRecord(sourceType, sourceId);
         if (!record) {
           showToast('找不到案件資料');
           return;
         }
-        var sched = sourceType === 'repair'
-          ? ScheduleUtils.getRepairSchedule(record)
-          : {
+        var sched;
+        if (sourceType === 'repair') {
+          sched = ScheduleUtils.getRepairSchedule(record);
+        } else if (sourceType === 'project') {
+          // 工程立案單以「點到的那一段階段排程」為準，而非案件層級欄位
+          sched = ScheduleUtils.getProjectStageSchedule(record, stageKey);
+        } else {
+          sched = {
             planDate: record.planDate,
             planTimeStart: record.planTimeStart,
             planTimeEnd: record.planTimeEnd,
             assignee: record.assignee
           };
+        }
         var repairAssignees = sourceType === 'repair'
           ? ((sched.assignees && sched.assignees.length)
               ? sched.assignees.slice()
@@ -377,6 +394,8 @@
           item: {
             sourceType: sourceType,
             sourceId: sourceId,
+            stageKey: sourceType === 'project' ? (sched.stageKey || 'current') : '',
+            stageLabel: sourceType === 'project' ? (sched.stage || '') : '',
             customerName: record.customerName,
             storeName: record.storeName,
             workCategory: record.workCategory || '保養'
@@ -481,6 +500,7 @@
           planDate: scheduleModal.planDate,
           planTimeStart: scheduleModal.planTimeStart,
           planTimeEnd: scheduleModal.planTimeEnd,
+          stageKey: item.stageKey || '',
           assignees: isRepair ? repairAssignees : undefined,
           assignee: isRepair
             ? formatRepairModalAssignees(repairAssignees)
@@ -792,11 +812,34 @@
         );
       }
 
+      /**
+       * 工程立案單在日曆上點開時，直接沿用「編輯工程立案」頁的三段式排版
+       * （ProjectDetailView.renderSections），案件內容一律唯讀——工程立案頁才是
+       * 編輯入口，這裡只讓使用者調整本次階段的排程時間與負責人員。
+       */
+      function renderProjectScheduleDetails(formData, item) {
+        return h('div', { className: 'space-y-8 bg-gray-50 -m-2 p-4 rounded-lg' },
+          h('div', { className: 'flex items-center gap-2' },
+            h('span', { className: 'text-sm font-bold text-gray-800' }, '工程立案單'),
+            formData.projectNumber
+              ? h('span', {
+                  className: 'px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 text-xs font-medium border border-blue-100'
+                }, formData.projectNumber)
+              : null
+          ),
+          ProjectDetailView.renderSections(formData, {
+            deviceCategories: deviceCategories,
+            highlightStage: item.stageLabel || formData.currentStage || ''
+          })
+        );
+      }
+
       function renderScheduleModalDetails(item) {
         if (!scheduleModal || !scheduleModal.formData) return null;
         var formData = scheduleModal.formData;
         if (item.sourceType === 'repair') return renderRepairScheduleDetails(formData);
         if (item.sourceType === 'maintenance') return renderMaintenanceScheduleDetails(formData);
+        if (item.sourceType === 'project') return renderProjectScheduleDetails(formData, item);
         return h('div', { className: 'space-y-2 bg-gray-50 border border-gray-200 rounded-md p-4 text-sm text-gray-500' },
           '此案件類型暫不支援詳細編輯'
         );

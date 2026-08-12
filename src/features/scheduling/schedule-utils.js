@@ -41,40 +41,84 @@
     return (c.details && c.details.storeAddress) || c.storeAddress || '';
   }
 
-  function collectProjectScheduleEntries(c) {
-    var entries = [];
-    var seen = {};
-
-    function pushEntry(stageKey, sched, assignee) {
-      if (!sched.planDate) return;
-      var key = sched.planDate + '|' + (sched.planTimeStart || '') + '|' + (assignee || '');
-      if (seen[key]) return;
-      seen[key] = true;
-      entries.push({
-        stageKey: stageKey,
-        planDate: sched.planDate,
-        planTimeStart: sched.planTimeStart || '',
-        planTimeEnd: sched.planTimeStart ? (sched.planTimeEnd || '') : '',
-        assignee: assignee || c.stageAssignee || '',
-        workCategory: c.workCategory
-      });
-    }
-
-    pushEntry('current', {
-      planDate: c.planDate,
-      planTimeStart: c.planTimeStart,
-      planTimeEnd: c.planTimeEnd
-    }, c.stageAssignee);
-
-    (c.history || []).forEach(function (entry) {
-      pushEntry(entry.stage || ('stage-' + entries.length), {
-        planDate: entry.date,
-        planTimeStart: entry.timeStart,
-        planTimeEnd: entry.timeEnd
-      }, entry.assignee);
+  /**
+   * 工程案件目前階段的排程：以案件層級的 planDate 為主，
+   * 沒填時退回 history 裡「目前階段」那一筆。
+   */
+  function resolveProjectCurrentSchedule(c) {
+    var stageEntry = (c.history || []).find(function (entry) {
+      return entry.stage === (c.currentStage || '');
     });
+    if (c.planDate) {
+      return {
+        planDate: c.planDate,
+        planTimeStart: c.planTimeStart || '',
+        planTimeEnd: c.planTimeEnd || '',
+        assignee: c.stageAssignee || ''
+      };
+    }
+    if (stageEntry && stageEntry.date) {
+      return {
+        planDate: stageEntry.date,
+        planTimeStart: stageEntry.timeStart || '',
+        planTimeEnd: stageEntry.timeEnd || '',
+        assignee: stageEntry.assignee || c.stageAssignee || ''
+      };
+    }
+    return {
+      planDate: c.stageDate || '',
+      planTimeStart: '',
+      planTimeEnd: '',
+      assignee: c.stageAssignee || ''
+    };
+  }
 
-    return entries;
+  /**
+   * 工程案件依進度往前推，日曆上只呈現「目前階段」這一段排程；
+   * 先前階段屬於已走過的歷史進度，不再排進日曆（案件安排與人員動向皆同）。
+   */
+  function collectProjectScheduleEntries(c) {
+    var sched = resolveProjectCurrentSchedule(c);
+    if (!sched.planDate) return [];
+    return [{
+      stageKey: 'current',
+      stage: c.currentStage || '',
+      planDate: sched.planDate,
+      planTimeStart: sched.planTimeStart || '',
+      planTimeEnd: sched.planTimeStart ? (sched.planTimeEnd || '') : '',
+      assignee: sched.assignee || c.stageAssignee || '',
+      workCategory: c.workCategory
+    }];
+  }
+
+  /**
+   * 取出工程案件上某一段排程。stageKey 'current'（或空值）代表案件層級的
+   * planDate／stageAssignee，其餘對應 history 內同名階段。
+   */
+  function getProjectStageSchedule(c, stageKey) {
+    if (!c) return null;
+    if (stageKey && stageKey !== 'current') {
+      var entry = (c.history || []).find(function (h) { return h.stage === stageKey; });
+      if (entry) {
+        return {
+          stageKey: stageKey,
+          stage: entry.stage,
+          planDate: entry.date || '',
+          planTimeStart: entry.timeStart || '',
+          planTimeEnd: entry.timeEnd || '',
+          assignee: entry.assignee || ''
+        };
+      }
+    }
+    var current = resolveProjectCurrentSchedule(c);
+    return {
+      stageKey: 'current',
+      stage: c.currentStage || '',
+      planDate: current.planDate,
+      planTimeStart: current.planTimeStart,
+      planTimeEnd: current.planTimeEnd,
+      assignee: current.assignee
+    };
   }
 
   function getMaintenanceWorkCategory(c) {
@@ -459,7 +503,7 @@
     function inRange(dateStr) {
       return dateStr && dateStr >= rangeStart && dateStr <= rangeEnd;
     }
-    function tryPush(sourceType, sourceId, sched, customerName, storeName, storeAddress, equipmentName, eventId) {
+    function tryPush(sourceType, sourceId, sched, customerName, storeName, storeAddress, equipmentName, eventId, stageKey) {
       if (!sched.planDate) return;
       if (!inRange(sched.planDate)) return;
       if (assigneeFilter !== '全部') {
@@ -482,7 +526,9 @@
         storeName: storeName,
         storeAddress: storeAddress || '',
         equipmentName: equipmentName || '',
-        workCategory: sched.workCategory || '其他'
+        workCategory: sched.workCategory || '其他',
+        // 工程案件一筆案子可能有多個階段排程，靠 stageKey 才知道點到的是哪一段
+        stageKey: stageKey || ''
       });
     }
     maintenanceCases.forEach(function (c) {
@@ -506,7 +552,7 @@
           planTimeEnd: entry.planTimeEnd,
           assignee: entry.assignee,
           workCategory: entry.workCategory
-        }, c.customerName, c.storeName, addr, '', 'project-' + c.id + '-' + entry.stageKey);
+        }, c.customerName, c.storeName, addr, '', 'project-' + c.id + '-' + entry.stageKey, entry.stageKey);
       });
     });
     return items.sort(function (a, b) {
@@ -530,7 +576,7 @@
     };
   }
 
-  function buildEvent(sourceType, sourceId, sched, customerName, storeName, storeAddress, equipmentName, eventId) {
+  function buildEvent(sourceType, sourceId, sched, customerName, storeName, storeAddress, equipmentName, eventId, stageKey) {
     if (!sched.planDate) return null;
     var timing = buildEventTiming(sched.planDate, sched.planTimeStart, sched.planTimeEnd);
     var wc = sched.workCategory || '其他';
@@ -554,7 +600,8 @@
         customerName: customerName,
         storeName: storeName,
         storeAddress: storeAddress || '',
-        equipmentName: equipmentName || ''
+        equipmentName: equipmentName || '',
+        stageKey: stageKey || ''
       }
     };
   }
@@ -568,7 +615,7 @@
           planTimeEnd: item.timeEnd,
           assignee: item.assignee,
           workCategory: item.workCategory
-        }, item.customerName, item.storeName, item.storeAddress, item.equipmentName, item.id);
+        }, item.customerName, item.storeName, item.storeAddress, item.equipmentName, item.id, item.stageKey);
       })
       .filter(Boolean);
   }
@@ -651,8 +698,14 @@
         customerName = c.customerName;
         storeName = c.storeName;
         workCategory = c.workCategory;
+        // 日曆上一筆工程案件可能有多段階段排程，只改點到的那一段；
+        // stageKey 未帶（或指向目前階段）時才連帶更新案件層級的排程欄位。
+        var targetStage = (payload.stageKey && payload.stageKey !== 'current')
+          ? payload.stageKey
+          : (c.currentStage || '');
+        var isCurrentStage = targetStage === (c.currentStage || '');
         var history = (c.history || []).map(function (h) {
-          if (h.stage !== c.currentStage) return h;
+          if (h.stage !== targetStage) return h;
           return Object.assign({}, h, {
             date: planDate,
             timeStart: planTimeStart,
@@ -660,20 +713,26 @@
             assignee: assignee
           });
         });
-        return Object.assign({}, c, {
-          planDate: planDate,
-          planTimeStart: planTimeStart,
-          planTimeEnd: planTimeEnd,
-          stageDate: planDate,
-          stageAssignee: assignee,
-          history: history
-        });
+        var next = Object.assign({}, c, { history: history });
+        if (isCurrentStage) {
+          next.planDate = planDate;
+          next.planTimeStart = planTimeStart;
+          next.planTimeEnd = planTimeEnd;
+          next.stageDate = planDate;
+          next.stageAssignee = assignee;
+        }
+        return next;
       }));
     }
 
+    var stageKey = sourceType === 'project' ? (payload.stageKey || 'current') : '';
     var ps = store.personnelStatus.filter(function (p) {
       if (p.sourceId !== sourceId) return true;
-      if (p.sourceType === sourceType) return false;
+      if (p.sourceType === sourceType) {
+        // 工程案件一筆案子可有多段階段排程，只取代同一階段的紀錄
+        if (sourceType === 'project') return (p.stageKey || 'current') !== stageKey;
+        return false;
+      }
       if (sourceType === 'repair' && p.sourceType === 'manual') return false;
       return true;
     });
@@ -687,7 +746,8 @@
       storeName: storeName,
       workCategory: workCategory,
       sourceType: sourceType,
-      sourceId: sourceId
+      sourceId: sourceId,
+      stageKey: stageKey
     });
     setters.setPersonnelStatus(ps);
   }
@@ -709,6 +769,7 @@
     getPersonnelRows: getPersonnelRows,
     getPersonnelEvents: getPersonnelEvents,
     getRepairSchedule: getRepairSchedule,
+    getProjectStageSchedule: getProjectStageSchedule,
     resolveMaintenanceStatus: resolveMaintenanceStatus,
     resolveCasePeriod: resolveCasePeriod,
     formatPeriodRange: formatPeriodRange,
