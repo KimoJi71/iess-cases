@@ -24,6 +24,7 @@
       username: (targetCase && targetCase.username) || '',
       password: '',
       email: (targetCase && targetCase.email) || '',
+      role: (targetCase && targetCase.role) || '',
       enabled: targetCase ? !!targetCase.enabled : true
     };
     var permissions = clonePermissions((targetCase && targetCase.permissions) || {});
@@ -114,6 +115,7 @@
               name: formData.name.trim(),
               username: formData.username.trim(),
               email: formData.email.trim(),
+              role: formData.role,
               enabled: formData.enabled,
               level: AccountUtils.getAccountLevel(a),
               permissions: normalizedPermissions
@@ -131,6 +133,7 @@
             username: formData.username.trim(),
             passwordHash: AccountUtils.hashPassword(formData.password),
             email: formData.email.trim(),
+            role: formData.role,
             enabled: formData.enabled,
             level: AccountUtils.getDefaultAccountLevel(),
             permissions: normalizedPermissions,
@@ -201,6 +204,20 @@
                   onChange: handleChange,
                   className: 'w-full p-2.5 border rounded-md outline-none focus:border-blue-500'
                 })
+              ),
+              h('div', null,
+                h('label', { className: 'block text-sm mb-1' }, '職務'),
+                h('select', {
+                  name: 'role',
+                  value: formData.role,
+                  onChange: handleChange,
+                  className: 'w-full p-2.5 border rounded-md outline-none focus:border-blue-500 bg-white'
+                },
+                  h('option', { value: '' }, '請選擇'),
+                  ACCOUNT_ROLE_OPTIONS.map(function (role) {
+                    return h('option', { key: role, value: role }, role);
+                  })
+                )
               ),
               h('div', null,
                 h('label', { className: 'block text-sm mb-1' }, '啟用狀態'),

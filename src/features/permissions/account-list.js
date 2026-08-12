@@ -33,7 +33,7 @@
       var list = accounts;
       if (kw) {
         list = accounts.filter(function (a) {
-          return [a.name, a.username, a.email]
+          return [a.name, a.username, a.email, a.role]
             .filter(Boolean)
             .some(function (v) { return String(v).toLowerCase().includes(kw); });
         });
@@ -72,7 +72,7 @@
                 value: keyword,
                 onChange: function (e) { keyword = e.target.value; rerender(); },
                 onKeyDown: handleKeyDown,
-                placeholder: '姓名 / 帳號 / Email',
+                placeholder: '姓名 / 帳號 / Email / 職務',
                 className: 'w-72 p-2.5 border rounded-md outline-none focus:border-blue-500'
               })
             ),
@@ -98,12 +98,13 @@
                 h('th', { className: 'p-3 font-semibold' }, '姓名'),
                 h('th', { className: 'p-3 font-semibold' }, '帳號'),
                 h('th', { className: 'p-3 font-semibold' }, 'Email'),
+                h('th', { className: 'p-3 font-semibold' }, '職務'),
                 h('th', { className: 'p-3 font-semibold' }, '啟用狀態')
               )
             ),
             h('tbody', { className: 'divide-y divide-gray-100' },
               filteredAccounts.length === 0
-                ? h('tr', null, h('td', { colspan: 5, className: 'p-10 text-center text-gray-400 text-base' }, '無資料'))
+                ? h('tr', null, h('td', { colspan: 6, className: 'p-10 text-center text-gray-400 text-base' }, '無資料'))
                 : pageResult.items.map(function (a) {
                     return h('tr', { key: a.id, className: 'hover:bg-blue-50/50 transition-colors' },
                       h('td', { className: 'p-3' },
@@ -124,6 +125,7 @@
                       h('td', { className: 'p-3 font-medium text-gray-800' }, a.name),
                       h('td', { className: 'p-3' }, a.username),
                       h('td', { className: 'p-3' }, a.email || '—'),
+                      h('td', { className: 'p-3' }, a.role || '—'),
                       h('td', { className: 'p-3' }, enabledBadge(a.enabled))
                     );
                   })

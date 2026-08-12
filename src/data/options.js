@@ -10,6 +10,7 @@ const WORK_CATEGORY_OPTIONS = ['一般叫修', '緊急叫修', '保養清潔', '
 const REPAIR_ITEMS = ['室內機', '室外機', '風管', '出風口', '控制面板', '跳代碼', '空氣門'];
 const REPAIR_REASONS = ['不冷', '異音', '溫控故障', '跳機', '異味', '漏水', '代碼', '其他'];
 const ASSIGNEES = ['A組', 'B組', 'C組', 'D組', '晉詮人員', '協力廠商'];
+const ACCOUNT_ROLE_OPTIONS = ['課長', '副課長', '課員', '實習生'];
 const CUSTOMER_OPTIONS = ['屈臣氏', '星巴克', '萊爾富', '統一超商', '全家便利商店'];
 const STORE_OPTIONS = ['台北信義店', '台中旗艦店', '高雄左營店', '站前店', '中山店'];
 const REPORTER_OPTIONS = ['林店長', '陳副理', '王專員', '張小姐', '李先生'];
