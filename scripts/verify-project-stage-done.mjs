@@ -80,15 +80,26 @@ const projectSeg = seedSrc.slice(segStart, segEnd);
 const doneCount = (projectSeg.match(/done: true/g) || []).length;
 assertTrue(doneCount > 0, '工程案件種子資料已標記已完成階段', `${doneCount} 筆`);
 
-// 未結案案件的「目前階段」本身不應被標成已完成。
-const firstCase = projectSeg.slice(projectSeg.indexOf('currentStage:'));
-const currentStageBlock = firstCase.slice(
-  firstCase.indexOf("stage: '現勘'"),
-  firstCase.indexOf('comments:')
-);
+// 上一層完成才能進行下一層：已完成的階段必須是從第一項起連續的一段，不得跳層。
+const STAGES = (readFileSync(join(ROOT, 'src/data/options.js'), 'utf8')
+  .match(/const PROJECT_STAGES = \[([^\]]*)\]/) || [])[1]
+  .split(',').map((v) => v.trim().replace(/^'|'$/g, ''));
+assertTrue(STAGES.length === 7, 'PROJECT_STAGES 讀得到', STAGES.join(' → '));
+
+let gapCases = [];
+projectSeg.split(/(?=\n {2}id: 'P)/).slice(1).forEach((block) => {
+  const id = (block.match(/id: '(P\d+)'/) || [])[1];
+  const hist = block.slice(block.indexOf('history:'), block.indexOf('comments:'));
+  const doneIdx = [...hist.matchAll(/stage: '([^']*)'([\s\S]*?)(?=\}, \{|\}\])/g)]
+    .filter((m) => /done: true/.test(m[2]))
+    .map((m) => STAGES.indexOf(m[1]))
+    .sort((x, y) => x - y);
+  if (!doneIdx.every((v, i) => v === i)) gapCases.push(id);
+});
 assertTrue(
-  !/done: true/.test(currentStageBlock),
-  '未結案案件的目前階段仍為未完成'
+  gapCases.length === 0,
+  '已完成階段皆為從第一項起連續的一段（不跳層）',
+  gapCases.length ? `跳層案件：${gapCases.join(', ')}` : '8 筆案件全數符合'
 );
 
 console.log(`\n${failed === 0 ? '✅ 全部通過' : '❌ 有失敗項目'}：${passed} passed, ${failed} failed\n`);

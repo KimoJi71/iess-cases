@@ -1458,13 +1458,11 @@ const INITIAL_PROJECT_CASES = [{
   history: [{
     stage: '立案時間',
     date: todayDate,
-    assignee: '系統管理員',
-    done: true
+    assignee: '系統管理員'
   }, {
     stage: '工程發包作業',
     date: todayDate,
-    assignee: '王小明',
-    done: true
+    assignee: '王小明'
   }, {
     stage: '現勘',
     date: todayDate,
