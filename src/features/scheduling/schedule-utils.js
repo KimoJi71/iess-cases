@@ -16,20 +16,32 @@
     '加裝': '#7c3aed'
   };
 
-  function formatScheduleEventTitle(workCategory, assignee, customerName, storeName, storeAddress, options) {
-    options = options || {};
-    var wc = workCategory || '其他';
-    var lines = [
-      '[' + wc + ']',
+  // 日曆事件以指派人員上色：沒有人員色票設定，改用姓名雜湊對應固定調色盤，
+  // 同一個人在任何時候、任何檢視都會拿到同一個顏色。
+  var ASSIGNEE_COLORS = [
+    '#2563eb', '#16a34a', '#ea580c', '#7c3aed', '#db2777',
+    '#0891b2', '#ca8a04', '#4f46e5', '#059669', '#dc2626'
+  ];
+  var UNASSIGNED_COLOR = '#94a3b8';
+
+  function getAssigneeColor(assignee) {
+    var name = (assignee || '').trim();
+    if (!name) return UNASSIGNED_COLOR;
+    var hash = 0;
+    for (var i = 0; i < name.length; i += 1) {
+      hash = (hash * 31 + name.charCodeAt(i)) % 100000;
+    }
+    return ASSIGNEE_COLORS[hash % ASSIGNEE_COLORS.length];
+  }
+
+  // 地址與設備仍保留在 extendedProps，只是不佔用日曆卡片版面
+  function formatScheduleEventTitle(workCategory, assignee, customerName, storeName) {
+    return [
+      '[' + (workCategory || '其他') + ']',
       assignee || '未指派',
       customerName || '',
-      storeName || '',
-      storeAddress || ''
-    ];
-    if (options.sourceType === 'repair' && options.equipmentName) {
-      lines.push(options.equipmentName);
-    }
-    return lines.join('\n');
+      storeName || ''
+    ].join('\n');
   }
 
   function getRepairEquipmentName(c) {
@@ -583,15 +595,12 @@
     var assignee = sched.assignee || '';
     return {
       id: eventId || (sourceType + '-' + sourceId),
-      title: formatScheduleEventTitle(wc, assignee, customerName, storeName, storeAddress, {
-        sourceType: sourceType,
-        equipmentName: equipmentName
-      }),
+      title: formatScheduleEventTitle(wc, assignee, customerName, storeName),
       start: timing.start,
       end: timing.end,
       allDay: timing.allDay,
-      backgroundColor: CATEGORY_COLORS[wc] || '#64748b',
-      borderColor: CATEGORY_COLORS[wc] || '#64748b',
+      backgroundColor: getAssigneeColor(assignee),
+      borderColor: getAssigneeColor(assignee),
       extendedProps: {
         sourceType: sourceType,
         sourceId: sourceId,
@@ -631,15 +640,12 @@
         var timing = buildEventTiming(item.date, item.timeStart, item.timeEnd);
         return {
           id: 'ps-' + item.id,
-          title: formatScheduleEventTitle(wc, item.assignee, item.customerName, item.storeName, item.storeAddress, {
-            sourceType: item.sourceType,
-            equipmentName: item.equipmentName
-          }),
+          title: formatScheduleEventTitle(wc, item.assignee, item.customerName, item.storeName),
           start: timing.start,
           end: timing.end,
           allDay: timing.allDay,
-          backgroundColor: CATEGORY_COLORS[wc] || '#64748b',
-          borderColor: CATEGORY_COLORS[wc] || '#64748b',
+          backgroundColor: getAssigneeColor(item.assignee),
+          borderColor: getAssigneeColor(item.assignee),
           extendedProps: {
             assignee: item.assignee,
             customerName: item.customerName,
@@ -787,6 +793,7 @@
     ALL_DAY_LABEL: ALL_DAY_LABEL,
     formatTime24: formatTime24,
     formatScheduleEventTitle: formatScheduleEventTitle,
-    CATEGORY_COLORS: CATEGORY_COLORS
+    CATEGORY_COLORS: CATEGORY_COLORS,
+    getAssigneeColor: getAssigneeColor
   };
 })();

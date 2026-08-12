@@ -19,7 +19,7 @@
       personnelCalState = {
         calDate: today,
         calAssignee: '全部',
-        appliedCal: { start: week.start, end: week.end, assignee: '全部' }
+        appliedCal: { start: week.start, end: week.end, assignee: '全部', date: today }
       };
     }
     return personnelCalState;
@@ -32,7 +32,8 @@
       appliedCal: {
         start: appliedCal.start,
         end: appliedCal.end,
-        assignee: appliedCal.assignee
+        assignee: appliedCal.assignee,
+        date: appliedCal.date
       }
     };
   }
@@ -48,7 +49,8 @@
     var appliedCal = {
       start: calState.appliedCal.start,
       end: calState.appliedCal.end,
-      assignee: calState.appliedCal.assignee
+      assignee: calState.appliedCal.assignee,
+      date: calState.appliedCal.date
     };
 
     var bridge = null;
@@ -74,6 +76,7 @@
       bridge = CalendarBridge.createBridge(el, {
         rangeStart: appliedCal.start,
         rangeEnd: appliedCal.end,
+        focusDate: appliedCal.date,
         initialEvents: getEvents(),
         readOnly: true
       });
@@ -90,11 +93,11 @@
 
       function handleSearch() {
         var week = CalendarBridge.getWeekRange(calDate);
-        appliedCal = { start: week.start, end: week.end, assignee: calAssignee };
+        appliedCal = { start: week.start, end: week.end, assignee: calAssignee, date: calDate };
         persistPersonnelCalState(calDate, calAssignee, appliedCal);
         listPagination.resetPage();
         if (bridge) {
-          bridge.gotoRange(appliedCal.start, appliedCal.end);
+          bridge.gotoRange(appliedCal.start, appliedCal.end, appliedCal.date);
           bridge.setEvents(getEvents());
         }
         rerender();

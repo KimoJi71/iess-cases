@@ -4,6 +4,9 @@
 (function () {
   'use strict';
 
+  var DEFAULT_CALENDAR_HEIGHT = 700;
+  var DEFAULT_DAY_MAX_EVENTS = 2;
+
   function pad(n) { return String(n).padStart(2, '0'); }
 
   function formatDate(d) {
@@ -66,13 +69,21 @@
 
       calendar = new FullCalendar.Calendar(containerEl, {
         initialView: 'timeGridWeek',
-        headerToolbar: { left: 'prev,next today', center: 'title', right: '' },
-        buttonText: { today: '今天', week: '週' },
-        slotMinTime: '08:00:00',
-        slotMaxTime: '20:00:00',
+        // 週檢視以週一起算，與 getWeekRange 的查詢區間對齊
+        firstDay: 1,
+        headerToolbar: { left: 'prev,next today', center: 'title', right: 'timeGridWeek,timeGridDay' },
+        buttonText: { today: '今天', week: '週', day: '日' },
+        // 時間軸涵蓋完整 24 小時，預設捲動到 08:00；固定高度才會產生捲軸
+        slotMinTime: '00:00:00',
+        slotMaxTime: '24:00:00',
+        scrollTime: '08:00:00',
         allDaySlot: true,
         allDayText: '整天',
-        height: 'auto',
+        // 整天列預設會隨事件數無限長高，把下方時間格擠掉並撐破容器；
+        // 限制筆數後多的收進「+N」浮層，整天列高度才固定得住
+        dayMaxEvents: options.dayMaxEvents || DEFAULT_DAY_MAX_EVENTS,
+        moreLinkText: function (n) { return '+' + n + ' 筆'; },
+        height: options.height || DEFAULT_CALENDAR_HEIGHT,
         slotLabelFormat: timeFormat,
         eventTimeFormat: timeFormat,
         editable: startEditable || durationEditable,
@@ -128,14 +139,14 @@
         }
       });
       calendar.render();
-      if (options.rangeStart) calendar.gotoDate(options.rangeStart);
+      var initialDate = options.focusDate || options.rangeStart;
+      if (initialDate) calendar.gotoDate(initialDate);
     }
 
     function buildPreviewTitle(ds) {
       if (window.ScheduleUtils && ScheduleUtils.formatScheduleEventTitle) {
         return ScheduleUtils.formatScheduleEventTitle(
-          ds.workCategory, ds.assignee, ds.customerName, ds.storeName, ds.storeAddress || '',
-          { sourceType: ds.sourceType, equipmentName: ds.equipmentName || '' }
+          ds.workCategory, ds.assignee, ds.customerName, ds.storeName
         );
       }
       return '[' + (ds.workCategory || '其他') + ']\n' + (ds.assignee || '未指派') + '\n' +
@@ -153,9 +164,14 @@
         itemSelector: '.pending-item',
         eventData: function (eventEl) {
           var ds = eventEl.dataset;
+          var color = window.ScheduleUtils && ScheduleUtils.getAssigneeColor
+            ? ScheduleUtils.getAssigneeColor(ds.assignee)
+            : undefined;
           return {
             title: buildPreviewTitle(ds),
             duration: '02:00',
+            backgroundColor: color,
+            borderColor: color,
             extendedProps: {
               isPreview: true,
               sourceType: ds.sourceType,
@@ -171,11 +187,13 @@
       draggableInstances.push(draggable);
     }
 
-    function gotoRange(startStr, endStr) {
+    // focusDate：使用者實際查詢的那一天。日檢視要停在這一天，
+    // 週檢視則會顯示包含這一天的整週，兩種檢視切換時焦點才一致。
+    function gotoRange(startStr, endStr, focusDate) {
       if (!calendar) return;
       var endPlusOne = new Date(new Date(endStr).getTime() + 86400000).toISOString().split('T')[0];
       calendar.setOption('visibleRange', { start: startStr, end: endPlusOne });
-      calendar.gotoDate(startStr);
+      calendar.gotoDate(focusDate || startStr);
     }
 
     init();

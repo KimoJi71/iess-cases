@@ -23,7 +23,7 @@
       arrangementCalState = {
         calDate: today,
         calAssignee: '全部',
-        appliedCal: { start: week.start, end: week.end, assignee: '全部' }
+        appliedCal: { start: week.start, end: week.end, assignee: '全部', date: today }
       };
     }
     return arrangementCalState;
@@ -36,7 +36,8 @@
       appliedCal: {
         start: appliedCal.start,
         end: appliedCal.end,
-        assignee: appliedCal.assignee
+        assignee: appliedCal.assignee,
+        date: appliedCal.date
       }
     };
   }
@@ -63,7 +64,8 @@
     var appliedCal = {
       start: calState.appliedCal.start,
       end: calState.appliedCal.end,
-      assignee: calState.appliedCal.assignee
+      assignee: calState.appliedCal.assignee,
+      date: calState.appliedCal.date
     };
 
     var pendingWorkCategory = '';
@@ -231,7 +233,8 @@
       appliedCal = {
         start: week.start,
         end: week.end,
-        assignee: '全部'
+        assignee: '全部',
+        date: payload.planDate
       };
       persistArrangementCalState(calDate, calAssignee, appliedCal);
       applyScheduleFromPayload(sourceType, sourceId, payload);
@@ -247,6 +250,7 @@
       bridge = CalendarBridge.createBridge(el, {
         rangeStart: appliedCal.start,
         rangeEnd: appliedCal.end,
+        focusDate: appliedCal.date,
         initialEvents: getEvents(),
         eventStartEditable: false,
         eventDurationEditable: false,
@@ -287,10 +291,10 @@
 
       function handleCalSearch() {
         var week = CalendarBridge.getWeekRange(calDate);
-        appliedCal = { start: week.start, end: week.end, assignee: calAssignee };
+        appliedCal = { start: week.start, end: week.end, assignee: calAssignee, date: calDate };
         persistArrangementCalState(calDate, calAssignee, appliedCal);
         if (bridge) {
-          bridge.gotoRange(appliedCal.start, appliedCal.end);
+          bridge.gotoRange(appliedCal.start, appliedCal.end, appliedCal.date);
           bridge.setEvents(getEvents());
         }
         rerender();
@@ -849,12 +853,19 @@
         if (!scheduleModal) return null;
         var isEdit = scheduleModal.mode === 'edit';
         return h('div', { className: 'app-modal-overlay p-4' },
-          h('div', { className: 'bg-white rounded-lg shadow-xl w-full max-w-5xl max-h-[90vh] overflow-y-auto' },
-            h('div', { className: 'p-6 border-b border-gray-100' },
+          // 頭尾 shrink-0、只讓中段捲動，按鈕才不會被長內容推出畫面
+          h('div', { className: 'bg-white rounded-lg shadow-xl w-full max-w-5xl max-h-[90vh] flex flex-col' },
+            h('div', { className: 'flex items-center justify-between p-6 border-b border-gray-100 shrink-0' },
               h('h3', { className: 'text-lg font-bold text-gray-800' },
-                isEdit ? '編輯排程' : '安排排程')
+                isEdit ? '編輯排程' : '安排排程'),
+              h('button', {
+                type: 'button',
+                onClick: function () { scheduleModal = null; rerender(); },
+                title: '關閉',
+                className: 'text-gray-500 hover:bg-gray-100 p-1.5 rounded-full transition-colors'
+              }, Icons.X({ className: 'h-5 w-5' }))
             ),
-            h('div', { className: 'p-6 space-y-6' },
+            h('div', { className: 'flex-1 overflow-y-auto p-6 space-y-6' },
               h('div', { className: 'grid grid-cols-1 sm:grid-cols-3 gap-4' },
                 h('div', null,
                   h('label', { className: 'block text-xs text-gray-500 mb-1' }, '預計日期'),
@@ -888,7 +899,7 @@
                 renderScheduleModalDetails(scheduleModal.item)
               )
             ),
-            h('div', { className: 'p-6 border-t border-gray-100 flex justify-end gap-3' },
+            h('div', { className: 'p-6 border-t border-gray-100 flex justify-end gap-3 shrink-0 bg-white rounded-b-lg' },
               h('button', {
                 onClick: function () { scheduleModal = null; rerender(); },
                 className: 'px-4 py-2 border rounded-md text-gray-600 hover:bg-gray-50'
