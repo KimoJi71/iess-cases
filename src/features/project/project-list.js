@@ -219,19 +219,29 @@
           className: 'p-3 border-r'
         }, (c.details && c.details.contactPerson) || '-'), PROJECT_STAGES.map(function (stage) {
           var stageData = c.history && c.history.find(function (item) { return item.stage === stage; });
+          // 已完成綠底（附勾勾，不只靠顏色辨識）／未完成但已排程琥珀底／無資料灰「-」
+          var done = !!(stageData && stageData.done);
           return h('td', {
             key: stage,
             className: 'p-2 border-r min-w-[120px]'
           }, stageData ? h('div', {
-            className: 'flex flex-col items-center justify-center bg-blue-50/50 rounded p-1.5 border border-blue-100'
+            className: 'flex flex-col items-center justify-center rounded p-1.5 border ' + (
+              done ? 'bg-green-50 border-green-200' : 'bg-amber-50 border-amber-200'
+            ),
+            title: stage + '：' + (done ? '已完成' : '未完成')
           }, h('span', {
-            className: 'font-medium text-gray-800 text-xs mb-0.5'
-          }, stageData.date), stageData.timeStart && h('span', {
+            className: 'font-medium text-xs mb-0.5 flex items-center gap-1 ' + (
+              done ? 'text-green-800' : 'text-amber-900'
+            )
+          }, done ? Icons.CheckCircle({ className: 'h-3 w-3 shrink-0' }) : null,
+            stageData.date || '未排定'), stageData.timeStart && h('span', {
             className: 'text-[10px] text-gray-500'
           }, stageData.timeStart + (stageData.timeEnd ? ' ~ ' + stageData.timeEnd : '')), h('span', {
-            className: 'text-blue-700 text-[11px] bg-blue-100 px-1.5 rounded truncate max-w-full',
+            className: 'text-[11px] px-1.5 rounded truncate max-w-full ' + (
+              done ? 'text-green-700 bg-green-100' : 'text-amber-800 bg-amber-100'
+            ),
             title: stageData.assignee
-          }, stageData.assignee)) : h('div', {
+          }, stageData.assignee || '尚未指派')) : h('div', {
             className: 'flex items-center justify-center text-gray-300'
           }, '-'));
         }));

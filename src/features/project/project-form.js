@@ -273,10 +273,26 @@
         date: (existing && existing.date) || '',
         assignee: (existing && existing.assignee) || '',
         timeStart: (existing && existing.timeStart) || '',
-        timeEnd: (existing && existing.timeEnd) || ''
+        timeEnd: (existing && existing.timeEnd) || '',
+        // 舊資料沒有 done 欄位，一律視為未完成
+        done: !!(existing && existing.done)
       };
     });
     return stages;
+  }
+
+  function projectStageDoneBadge(done) {
+    return h('div', null,
+      h('span', { className: 'text-gray-500 block mb-1 text-xs' }, '完成狀態'),
+      h('div', {
+        className: 'font-medium p-2.5 rounded-md border min-h-[42px] flex items-center gap-1.5 ' + (
+          done
+            ? 'bg-green-50 border-green-200 text-green-700'
+            : 'bg-gray-50 border-gray-100 text-gray-500'
+        )
+      }, done ? Icons.CheckCircle({ className: 'h-4 w-4 shrink-0' }) : null,
+        done ? '已完成' : '未完成')
+    );
   }
 
   function projectEquipmentList(detailsData, deviceCategories) {
@@ -350,25 +366,32 @@
       projectReadOnlyField('作業日期', stagesData[stage].date),
       projectReadOnlyField('開始時間', stagesData[stage].timeStart),
       projectReadOnlyField('結束時間', stagesData[stage].timeEnd),
-      projectReadOnlyField('負責人員', stagesData[stage].assignee || '尚未指派')
+      projectReadOnlyField('負責人員', stagesData[stage].assignee || '尚未指派'),
+      projectStageDoneBadge(stagesData[stage].done)
     ];
   }
 
   function projectStageList(renderFields, opts) {
     opts = opts || {};
+    var stagesData = opts.stagesData;
     return h('div', { className: 'space-y-4 mb-2' },
       PROJECT_STAGES.map(function (stage, idx) {
         var highlighted = opts.highlightStage === stage;
+        var done = !!(stagesData && stagesData[stage] && stagesData[stage].done);
+        // 已完成綠底、未完成灰底；日曆的「本次排程階段」再疊一圈 indigo ring
+        var toneClass = done
+          ? 'bg-green-50 border-green-200'
+          : (highlighted ? 'bg-indigo-50 border-indigo-300' : 'bg-gray-50 border-gray-200');
         return h('div', {
           key: stage,
-          className: 'flex flex-col md:flex-row md:items-center gap-4 ' + (
-            highlighted
-              ? 'bg-indigo-50 ring-2 ring-indigo-200 border-indigo-300'
-              : 'bg-gray-50'
-          ) + ' p-4 rounded-lg border' + (highlighted ? '' : ' border-gray-200')
+          className: 'flex flex-col md:flex-row md:items-center gap-4 p-4 rounded-lg border ' + toneClass + (
+            highlighted ? ' ring-2 ring-indigo-200 border-indigo-300' : ''
+          )
         }, h('div', { className: 'flex items-center gap-3 w-48 shrink-0' },
           h('div', {
-            className: 'w-6 h-6 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-bold'
+            className: 'w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ' + (
+              done ? 'bg-green-100 text-green-700' : 'bg-indigo-100 text-indigo-700'
+            )
           }, idx + 1),
           highlighted
             ? h('div', null,
@@ -376,7 +399,7 @@
                 h('span', { className: 'block text-xs text-indigo-600' }, '本次排程階段'))
             : h('span', { className: 'font-medium text-gray-800' }, stage)
         ), h('div', {
-          className: 'flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4'
+          className: 'flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4'
         }, renderFields(stage, idx)));
       })
     );
@@ -401,7 +424,7 @@
       projectSectionCard({ title: '3. 工程項目進度', indigo: true },
         projectStageList(function (stage) {
           return projectStageViewFields(stage, stagesData);
-        }, { highlightStage: opts.highlightStage }))
+        }, { highlightStage: opts.highlightStage, stagesData: stagesData }))
     ];
   }
 
@@ -844,13 +867,14 @@
         }
         var newHistory = [];
         PROJECT_STAGES.forEach(function (stage) {
-          if (stagesData[stage].date || stagesData[stage].assignee) {
+          if (stagesData[stage].date || stagesData[stage].assignee || stagesData[stage].done) {
             newHistory.push({
               stage: stage,
               date: stagesData[stage].date,
               assignee: stagesData[stage].assignee,
               timeStart: stagesData[stage].timeStart || '',
-              timeEnd: stagesData[stage].timeEnd || ''
+              timeEnd: stagesData[stage].timeEnd || '',
+              done: !!stagesData[stage].done
             });
           }
         });
@@ -1053,8 +1077,21 @@
           value: ''
         }, '尚未指派'), stagePersonOptions.map(function (opt) {
           return h('option', { key: opt, value: opt }, opt);
-        })))] : projectStageViewFields(stage, stagesData);
-      })), isEdit && h('div', {
+        }))), h('div', { key: stage + '-done' }, h('label', {
+          className: 'block text-xs text-gray-500 mb-1'
+        }, '完成狀態'), h('label', {
+          className: 'w-full p-2 border rounded-md min-h-[42px] flex items-center gap-2 cursor-pointer transition-colors ' + (
+            stagesData[stage].done
+              ? 'bg-green-50 border-green-200 text-green-700 font-medium'
+              : 'bg-white text-gray-600'
+          )
+        }, h('input', {
+          type: 'checkbox',
+          checked: stagesData[stage].done,
+          onChange: function (e) { handleStageChange(stage, 'done', e.target.checked); },
+          className: 'h-4 w-4 accent-green-600 shrink-0'
+        }), stagesData[stage].done ? '已完成' : '未完成'))] : projectStageViewFields(stage, stagesData);
+      }, { stagesData: stagesData })), isEdit && h('div', {
         className: 'mt-8 pt-6 border-t flex justify-end gap-4'
       }, h('button', {
         type: 'button',

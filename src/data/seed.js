@@ -1458,11 +1458,13 @@ const INITIAL_PROJECT_CASES = [{
   history: [{
     stage: '立案時間',
     date: todayDate,
-    assignee: '系統管理員'
+    assignee: '系統管理員',
+    done: true
   }, {
     stage: '工程發包作業',
     date: todayDate,
-    assignee: '王小明'
+    assignee: '王小明',
+    done: true
   }, {
     stage: '現勘',
     date: todayDate,
@@ -1519,15 +1521,18 @@ const INITIAL_PROJECT_CASES = [{
   history: [{
     stage: '立案時間',
     date: yesterdayDate,
-    assignee: '系統管理員'
+    assignee: '系統管理員',
+    done: true
   }, {
     stage: '工程發包作業',
     date: yesterdayDate,
-    assignee: '王小明'
+    assignee: '王小明',
+    done: true
   }, {
     stage: '現勘',
     date: todayDate,
-    assignee: '王小明'
+    assignee: '王小明',
+    done: true
   }, {
     stage: '設備訂貨作業',
     date: todayDate,
@@ -1586,31 +1591,38 @@ const INITIAL_PROJECT_CASES = [{
   history: [{
     stage: '立案時間',
     date: twoDaysAgoDate,
-    assignee: '系統管理員'
+    assignee: '系統管理員',
+    done: true
   }, {
     stage: '工程發包作業',
     date: twoDaysAgoDate,
-    assignee: '王小明'
+    assignee: '王小明',
+    done: true
   }, {
     stage: '現勘',
     date: yesterdayDate,
-    assignee: '王小明'
+    assignee: '王小明',
+    done: true
   }, {
     stage: '設備訂貨作業',
     date: yesterdayDate,
-    assignee: '王小明'
+    assignee: '王小明',
+    done: true
   }, {
     stage: '廠商驗收作業',
     date: todayDate,
-    assignee: '王小明'
+    assignee: '王小明',
+    done: true
   }, {
     stage: '客戶驗收',
     date: todayDate,
-    assignee: '王小明'
+    assignee: '王小明',
+    done: true
   }, {
     stage: '發票請款作業',
     date: todayDate,
-    assignee: '王小明'
+    assignee: '王小明',
+    done: true
   }],
   comments: [],
   details: {
@@ -1652,31 +1664,38 @@ const INITIAL_PROJECT_CASES = [{
   history: [{
     stage: '立案時間',
     date: yesterdayDate,
-    assignee: '系統管理員'
+    assignee: '系統管理員',
+    done: true
   }, {
     stage: '工程發包作業',
     date: yesterdayDate,
-    assignee: '王小明'
+    assignee: '王小明',
+    done: true
   }, {
     stage: '現勘',
     date: yesterdayDate,
-    assignee: '王小明'
+    assignee: '王小明',
+    done: true
   }, {
     stage: '設備訂貨作業',
     date: todayDate,
-    assignee: '王小明'
+    assignee: '王小明',
+    done: true
   }, {
     stage: '廠商驗收作業',
     date: todayDate,
-    assignee: '王小明'
+    assignee: '王小明',
+    done: true
   }, {
     stage: '客戶驗收',
     date: todayDate,
-    assignee: '王小明'
+    assignee: '王小明',
+    done: true
   }, {
     stage: '發票請款作業',
     date: todayDate,
-    assignee: '王小明'
+    assignee: '王小明',
+    done: true
   }],
   comments: [],
   details: {
@@ -1706,31 +1725,38 @@ const INITIAL_PROJECT_CASES = [{
   history: [{
     stage: '立案時間',
     date: twoDaysAgoDate,
-    assignee: '系統管理員'
+    assignee: '系統管理員',
+    done: true
   }, {
     stage: '工程發包作業',
     date: twoDaysAgoDate,
-    assignee: '王小明'
+    assignee: '王小明',
+    done: true
   }, {
     stage: '現勘',
     date: yesterdayDate,
-    assignee: '王小明'
+    assignee: '王小明',
+    done: true
   }, {
     stage: '設備訂貨作業',
     date: yesterdayDate,
-    assignee: '王小明'
+    assignee: '王小明',
+    done: true
   }, {
     stage: '廠商驗收作業',
     date: todayDate,
-    assignee: '王小明'
+    assignee: '王小明',
+    done: true
   }, {
     stage: '客戶驗收',
     date: todayDate,
-    assignee: '王小明'
+    assignee: '王小明',
+    done: true
   }, {
     stage: '發票請款作業',
     date: todayDate,
-    assignee: '王小明'
+    assignee: '王小明',
+    done: true
   }],
   comments: [],
   details: {
@@ -1760,31 +1786,38 @@ const INITIAL_PROJECT_CASES = [{
   history: [{
     stage: '立案時間',
     date: oneMonthAgoDate,
-    assignee: '系統管理員'
+    assignee: '系統管理員',
+    done: true
   }, {
     stage: '工程發包作業',
     date: oneMonthAgoDate,
-    assignee: '王小明'
+    assignee: '王小明',
+    done: true
   }, {
     stage: '現勘',
     date: oneMonthAgoDate,
-    assignee: '王小明'
+    assignee: '王小明',
+    done: true
   }, {
     stage: '設備訂貨作業',
     date: yesterdayDate,
-    assignee: '王小明'
+    assignee: '王小明',
+    done: true
   }, {
     stage: '廠商驗收作業',
     date: twoDaysAgoDate,
-    assignee: '王小明'
+    assignee: '王小明',
+    done: true
   }, {
     stage: '客戶驗收',
     date: twoDaysAgoDate,
-    assignee: '王小明'
+    assignee: '王小明',
+    done: true
   }, {
     stage: '發票請款作業',
     date: twoDaysAgoDate,
-    assignee: '王小明'
+    assignee: '王小明',
+    done: true
   }],
   comments: [],
   details: {
@@ -1814,31 +1847,38 @@ const INITIAL_PROJECT_CASES = [{
   history: [{
     stage: '立案時間',
     date: yesterdayDate,
-    assignee: '系統管理員'
+    assignee: '系統管理員',
+    done: true
   }, {
     stage: '工程發包作業',
     date: yesterdayDate,
-    assignee: '王小明'
+    assignee: '王小明',
+    done: true
   }, {
     stage: '現勘',
     date: yesterdayDate,
-    assignee: '王小明'
+    assignee: '王小明',
+    done: true
   }, {
     stage: '設備訂貨作業',
     date: todayDate,
-    assignee: '王小明'
+    assignee: '王小明',
+    done: true
   }, {
     stage: '廠商驗收作業',
     date: todayDate,
-    assignee: '王小明'
+    assignee: '王小明',
+    done: true
   }, {
     stage: '客戶驗收',
     date: todayDate,
-    assignee: '王小明'
+    assignee: '王小明',
+    done: true
   }, {
     stage: '發票請款作業',
     date: todayDate,
-    assignee: '王小明'
+    assignee: '王小明',
+    done: true
   }],
   comments: [],
   details: {
