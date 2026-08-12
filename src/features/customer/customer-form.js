@@ -94,28 +94,28 @@
           return h('p', { className: 'text-sm text-gray-500 bg-gray-50 border rounded-md p-4' },
             '此服務等級不納入保養分配');
         }
-        return h('div', { className: 'space-y-3' },
+        return h('div', { className: 'grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-x-6 gap-y-3' },
           periods.map(function (p, index) {
             var n = index + 1;
-            return h('div', { key: n, className: 'flex flex-wrap items-center gap-3' },
-              h('span', { className: 'w-16 text-sm text-gray-700' }, '第 ' + n + ' 次'),
+            return h('div', { key: n, className: 'flex items-center gap-2' },
+              h('span', { className: 'w-14 shrink-0 text-sm text-gray-700' }, '第 ' + n + ' 次'),
               h('select', {
                 name: 'startMonth-' + n,
                 value: p.startMonth === '' ? '' : String(p.startMonth),
                 onChange: function (e) { handleMonthChange(index, 'startMonth', e.target.value); },
-                className: 'w-28 p-2.5 border rounded-md outline-none focus:border-blue-500 bg-white'
+                className: 'flex-1 min-w-0 p-2.5 border rounded-md outline-none focus:border-blue-500 bg-white'
               },
                 h('option', { value: '' }, '起始月'),
                 MONTH_OPTIONS.map(function (m) {
                   return h('option', { key: m, value: String(m) }, m + '月');
                 })
               ),
-              h('span', { className: 'text-gray-400' }, '～'),
+              h('span', { className: 'shrink-0 text-gray-400' }, '～'),
               h('select', {
                 name: 'endMonth-' + n,
                 value: p.endMonth === '' ? '' : String(p.endMonth),
                 onChange: function (e) { handleMonthChange(index, 'endMonth', e.target.value); },
-                className: 'w-28 p-2.5 border rounded-md outline-none focus:border-blue-500 bg-white'
+                className: 'flex-1 min-w-0 p-2.5 border rounded-md outline-none focus:border-blue-500 bg-white'
               },
                 h('option', { value: '' }, '結束月'),
                 MONTH_OPTIONS.map(function (m) {
