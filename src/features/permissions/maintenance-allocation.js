@@ -8,6 +8,10 @@
   var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful;
   var MONTHS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
   var SEGMENT_BG = ['bg-sky-50/70', 'bg-amber-50/70'];
+  // 工具列的下拉、統計、按鈕共用同一組高度與圓角，整排才會對齊在同一條基線上
+  var TOOLBAR_CONTROL = 'h-10 px-3 border rounded-md text-sm';
+  var TOOLBAR_BUTTON = TOOLBAR_CONTROL
+    + ' inline-flex items-center gap-1.5 whitespace-nowrap bg-white transition-colors';
   var persistedSelectedAssigneeId = '';
   var persistedSelectedYear = 0;
   var persistedScrollLeft = 0;
@@ -683,7 +687,7 @@
               'div',
               { className: 'flex items-center space-x-3 text-amber-600 mb-4' },
               Icons.AlertCircle({ className: 'h-6 w-6' }),
-              h('h3', { className: 'text-lg font-bold text-gray-800' }, '重新同步本年度')
+              h('h3', { className: 'text-lg font-bold text-gray-800' }, '重新同步保養區間')
             ),
             h('p', { className: 'text-gray-600 mb-2' },
               '將以現行的客戶、門市與服務等級重拍 ' + selectedYear + ' 年度的骨架：'),
@@ -786,52 +790,42 @@
         { className: 'bg-white p-6 rounded-lg shadow-sm border border-gray-100' },
         h(
           'div',
-          { className: 'flex flex-col md:flex-row justify-between items-start md:items-end mb-6 gap-4' },
+          { className: 'flex flex-col lg:flex-row lg:items-end lg:justify-between mb-6 gap-4' },
           h(
             'div',
-            { className: 'flex flex-wrap items-end gap-4' },
+            { className: 'flex flex-wrap items-end gap-3' },
             h(
               'div',
-              { className: 'w-40' },
+              { className: 'w-36' },
               h('label', { className: 'block text-xs text-gray-500 mb-1' }, '年度'),
-              h(
-                'div',
-                { className: 'flex items-center gap-2' },
-                availableYears.length
-                  ? h(
-                      'select',
-                      {
-                        value: String(selectedYear),
-                        onChange: function (e) {
-                          selectedYear = Number(e.target.value);
-                          persistedSelectedYear = selectedYear;
-                          persistedScrollLeft = 0;
-                          editModal = null;
-                          deleteModal = null;
-                          rerender();
-                        },
-                        className: 'flex-1 p-2.5 border rounded-md outline-none focus:border-blue-500 bg-white'
+              availableYears.length
+                ? h(
+                    'select',
+                    {
+                      value: String(selectedYear),
+                      onChange: function (e) {
+                        selectedYear = Number(e.target.value);
+                        persistedSelectedYear = selectedYear;
+                        persistedScrollLeft = 0;
+                        editModal = null;
+                        deleteModal = null;
+                        rerender();
                       },
-                      availableYears.map(function (y) {
-                        return h('option', { key: y, value: String(y) }, y + ' 年');
-                      })
-                    )
-                  : null,
-                h(
-                  'button',
-                  {
-                    type: 'button',
-                    title: '建立年度分配表',
-                    onClick: openCreateModal,
-                    className: 'shrink-0 flex items-center justify-center h-10 w-10 rounded-full bg-blue-600 text-white hover:bg-blue-700 transition-colors'
-                  },
-                  Icons.Plus({ className: 'h-5 w-5' })
-                )
-              )
+                      className: TOOLBAR_CONTROL + ' w-full border-gray-300 outline-none focus:border-blue-500 bg-white'
+                    },
+                    availableYears.map(function (y) {
+                      return h('option', { key: y, value: String(y) }, y + ' 年');
+                    })
+                  )
+                : h(
+                    'div',
+                    { className: TOOLBAR_CONTROL + ' w-full border-dashed border-gray-200 text-gray-400 flex items-center' },
+                    '尚未建立'
+                  )
             ),
             h(
               'div',
-              { className: 'w-full max-w-xs' },
+              { className: 'w-56' },
               h('label', { className: 'block text-xs text-gray-500 mb-1' }, '指派人員'),
               h(
                 'select',
@@ -846,36 +840,51 @@
                     deleteModal = null;
                     rerender();
                   },
-                  className: 'w-full p-2.5 border rounded-md outline-none focus:border-blue-500 bg-white'
+                  className: TOOLBAR_CONTROL + ' w-full border-gray-300 outline-none focus:border-blue-500 bg-white'
                 },
                 h('option', { value: '' }, '請選擇指派人員'),
                 sortedAssignees.map(function (item) {
                   return h('option', { key: item.id, value: item.id }, item.name);
                 })
               )
-            )
-          ),
-          h(
-            'div',
-            { className: 'flex items-center gap-4' },
+            ),
             assignee && snapshot
               ? h(
                   'div',
-                  { className: 'text-sm text-gray-500' },
+                  { className: TOOLBAR_CONTROL + ' border-transparent bg-gray-50 text-sm text-gray-500 flex items-center whitespace-nowrap' },
                   '共 ',
-                  h('span', { className: 'font-semibold text-gray-700' }, String(rows.length)),
+                  h('span', { className: 'font-semibold text-gray-700 mx-1' }, String(rows.length)),
                   ' 位客戶'
                 )
-              : null,
+              : null
+          ),
+          // 兩顆動作鈕維持同一種外框樣式與高度，才不會一顆圓形 icon、一顆方形文字鈕各走各的
+          h(
+            'div',
+            { className: 'flex flex-wrap items-center gap-2' },
+            h(
+              'button',
+              {
+                type: 'button',
+                title: '建立年度分配表',
+                onClick: openCreateModal,
+                className: TOOLBAR_BUTTON + ' border-gray-300 text-gray-600 hover:bg-gray-50 hover:border-gray-400'
+              },
+              Icons.Plus({ className: 'h-4 w-4' }),
+              '建立年度'
+            ),
             (snapshot && isCurrentYear)
               ? h(
                   'button',
                   {
                     type: 'button',
                     onClick: openResyncModal,
-                    className: 'px-3 py-2 border rounded-md text-sm text-gray-600 hover:bg-gray-50 transition-colors whitespace-nowrap'
+                    className: TOOLBAR_BUTTON + (hasDiff
+                      ? ' border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100'
+                      : ' border-gray-300 text-gray-600 hover:bg-gray-50 hover:border-gray-400')
                   },
-                  '重新同步本年度'
+                  Icons.RefreshCw({ className: 'h-4 w-4' }),
+                  '重新同步保養區間'
                 )
               : null
           )

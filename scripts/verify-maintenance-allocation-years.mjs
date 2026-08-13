@@ -777,7 +777,7 @@ try {
     out.filledBefore = cells().length;
     out.orphansBefore = orphanCells().length;
 
-    out.clickedResync = clickText('button', '重新同步本年度');
+    out.clickedResync = clickText('button', '重新同步保養區間');
     out.dialog = overlay();
     out.confirmed = clickText('.app-modal-overlay button', '確認同步');
 
@@ -809,8 +809,8 @@ try {
     '主檔變動後畫面出現黃色提示條', rs.bannerBefore);
   assertEq(rs.filledBefore, 3, 'A組 同步前有 3 個已填格子');
   assertEq(rs.orphansBefore, 0, '同步前沒有孤兒格');
-  assertTrue(rs.clickedResync, '工具列有「重新同步本年度」按鈕可點');
-  assertTrue(/^重新同步本年度 將以現行的客戶、門市與服務等級重拍 \d{4} 年度的骨架：/.test(rs.dialog),
+  assertTrue(rs.clickedResync, '工具列有「重新同步保養區間」按鈕可點');
+  assertTrue(/^重新同步保養區間 將以現行的客戶、門市與服務等級重拍 \d{4} 年度的骨架：/.test(rs.dialog),
     '確認 Modal 標題與說明正確', rs.dialog);
   assertTrue(/列設定變動 已填的目標完成數一律保留；同步後全部指派人員共有 5 格落在保養區間外，會標記為異常，需自行確認是否刪除。/
     .test(rs.dialog), 'Modal 顯示變動摘要與孤兒預估（全部指派人員共 5 格）', rs.dialog);
@@ -867,7 +867,7 @@ try {
     var btns = container.querySelectorAll('button');
     out.clicked = false;
     for (var i = 0; i < btns.length; i++) {
-      if (btns[i].textContent.trim() === '重新同步本年度') { btns[i].click(); out.clicked = true; break; }
+      if (btns[i].textContent.trim() === '重新同步保養區間') { btns[i].click(); out.clicked = true; break; }
     }
     var ov = container.querySelector('.app-modal-overlay');
     out.dialog = ov ? ov.innerText.replace(/\\s+/g, ' ').trim() : '';
@@ -880,7 +880,7 @@ try {
   })()`);
 
   assertEq(nodiff.banner, '', '主檔沒變動時不顯示提示條');
-  assertTrue(nodiff.clicked, '無變動年度一樣有「重新同步本年度」按鈕可點');
+  assertTrue(nodiff.clicked, '無變動年度一樣有「重新同步保養區間」按鈕可點');
   assertDeep(nodiff.toast, { text: '本年度骨架與現行主檔一致，無需同步', error: false },
     '無變動時按同步只跳「無需同步」的成功 toast');
   assertEq(nodiff.dialog, '', '無變動時不開同步 Modal');
@@ -1105,7 +1105,7 @@ try {
     function resyncBtn() {
       var btns = container.querySelectorAll('button');
       for (var i = 0; i < btns.length; i++) {
-        if (btns[i].textContent.trim() === '重新同步本年度') return true;
+        if (btns[i].textContent.trim() === '重新同步保養區間') return true;
       }
       return false;
     }
@@ -1147,12 +1147,12 @@ try {
   assertTrue(yearGate.curBanner.indexOf('主檔已變動：') === 0,
     '當年度：主檔變動時顯示提示條', yearGate.curBanner);
   assertEq(yearGate.curFrozen, '', '當年度：不顯示凍結說明');
-  assertTrue(yearGate.curBtn, '當年度：有「重新同步本年度」按鈕');
+  assertTrue(yearGate.curBtn, '當年度：有「重新同步保養區間」按鈕');
   assertEq(yearGate.pastYear, (THIS_YEAR - 1) + ' 年', '可切到過去年度');
   assertEq(yearGate.pastBanner, '', '過去年度：不顯示「主檔已變動」提示條');
   assertEq(yearGate.pastFrozen, (THIS_YEAR - 1) + ' 年度骨架已凍結（建立於 2019-03-04）',
     '過去年度：改顯示中性的灰字凍結說明');
-  assertTrue(!yearGate.pastBtn, '過去年度：不提供「重新同步本年度」按鈕');
+  assertTrue(!yearGate.pastBtn, '過去年度：不提供「重新同步保養區間」按鈕');
   assertEq(yearGate.pastDiffCalls, 0, '過去年度完全不呼叫 diffSnapshot');
   assertTrue(yearGate.backBanner.indexOf('主檔已變動：') === 0,
     '切回當年度後提示條回來', yearGate.backBanner);
