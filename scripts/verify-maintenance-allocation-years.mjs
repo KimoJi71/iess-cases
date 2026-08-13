@@ -780,6 +780,55 @@ try {
   assertDeep(rs.orphanClickToast, { text: '此格已不在保養區間內，僅能刪除', error: true },
     '點孤兒格跳出僅能刪除的錯誤 toast');
 
+  console.log('\nSection 5｜無變動年度：不開同步 Modal');
+  // 快照與傳進去的主檔完全一致 → hasDiff 為 false。
+  // 迴歸守門：openResyncModal 的 if (!hasDiff) 短路一旦被拿掉，
+  // 使用者按下按鈕會看到一個摘要空白的同步 Modal。
+  const nodiff = await evaluate(`(function () {
+    var year = Number(INITIAL_MAINTENANCE_ALLOCATION_YEARS[0].year);
+    var snapshot = MaintenanceAllocationUtils.buildYearSnapshot(
+      year, INITIAL_ASSIGNEES, INITIAL_CUSTOMERS, INITIAL_STORES, INITIAL_SERVICE_LEVELS, '2026-01-01'
+    );
+    var years = [snapshot];
+    var toasts = [];
+    var container = document.createElement('div');
+    document.body.appendChild(container);
+    container.appendChild(MaintenanceAllocation({
+      assignees: INITIAL_ASSIGNEES, customers: INITIAL_CUSTOMERS, stores: INITIAL_STORES,
+      maintenanceCases: [], serviceLevels: INITIAL_SERVICE_LEVELS,
+      maintenanceAllocations: INITIAL_MAINTENANCE_ALLOCATIONS.slice(),
+      setMaintenanceAllocations: function () {},
+      maintenanceAllocationYears: years,
+      setMaintenanceAllocationYears: function (next) { years = next; },
+      showToast: function (msg, type) { toasts.push({ text: msg, error: type === 'error' }); }
+    }));
+    __ma.choose(__ma.combo(container, 1), 'A組');
+    __ma.closeMenus();
+
+    var bannerEl = container.querySelector('div.border-amber-200.bg-amber-50');
+    var out = { banner: bannerEl ? bannerEl.innerText.trim() : '' };
+    var btns = container.querySelectorAll('button');
+    out.clicked = false;
+    for (var i = 0; i < btns.length; i++) {
+      if (btns[i].textContent.trim() === '重新同步本年度') { btns[i].click(); out.clicked = true; break; }
+    }
+    var ov = container.querySelector('.app-modal-overlay');
+    out.dialog = ov ? ov.innerText.replace(/\\s+/g, ' ').trim() : '';
+    out.toast = toasts.length ? toasts[toasts.length - 1] : null;
+    out.yearsUntouched = years.length === 1 && years[0] === snapshot && snapshot.syncedAt === '';
+
+    container.parentNode.removeChild(container);
+    __ma.closeMenus();
+    return out;
+  })()`);
+
+  assertEq(nodiff.banner, '', '主檔沒變動時不顯示提示條');
+  assertTrue(nodiff.clicked, '無變動年度一樣有「重新同步本年度」按鈕可點');
+  assertDeep(nodiff.toast, { text: '本年度骨架與現行主檔一致，無需同步', error: false },
+    '無變動時按同步只跳「無需同步」的成功 toast');
+  assertEq(nodiff.dialog, '', '無變動時不開同步 Modal');
+  assertTrue(nodiff.yearsUntouched, '無變動時不會寫回年度快照');
+
 } finally {
   try { ws && ws.close(); } catch {}
   chrome.kill();
