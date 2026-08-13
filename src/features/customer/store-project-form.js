@@ -8,7 +8,6 @@
 (function () {
   'use strict';
   var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful;
-  var iconActionBtn = IESS.iconActionBtn;
 
   function StoreProjectForm(props) {
     var store = props.store || {};
@@ -20,9 +19,8 @@
 
     var backToStore = function () { setView('store-edit'); };
 
-    var contractors = ['內部工程組', '外包廠商A', '外包廠商B', '機電維護商'];
-    var showAddContractor = false;
-    var newContractor = '';
+    // 施作單位選項來自組別管理，不提供新增
+    var contractors = ASSIGNEES.slice();
 
     var formData = {
       workCategory: PROJECT_WORK_CATEGORIES[0],
@@ -70,16 +68,6 @@
       function handleDeleteEquipment(id) {
         equipmentList = equipmentList.filter(function (eq) { return eq.id !== id; });
         rerender();
-      }
-      function handleAddContractor() {
-        if (newContractor.trim()) {
-          contractors = contractors.concat([newContractor.trim()]);
-          formData.suggestedContractor = newContractor.trim();
-          newContractor = '';
-          showAddContractor = false;
-          showToast('已新增並套用施作單位');
-          rerender();
-        }
       }
       function handleSubmit(e) {
         e.preventDefault();
@@ -155,18 +143,10 @@
                     PROJECT_ASSIGNEES.map(function (opt) { return h('option', { key: opt, value: opt }, opt); }))
                 ),
                 h('div', null,
-                  h('label', { className: 'block text-sm font-medium text-gray-700 mb-1' }, '建議施作單位'),
-                  h('div', { className: 'flex gap-2' },
-                    h('select', { name: 'suggestedContractor', value: formData.suggestedContractor, onChange: handleChange, className: inputCls },
-                      h('option', { value: '' }, '請選擇單位'),
-                      contractors.map(function (c) { return h('option', { key: c, value: c }, c); })),
-                    iconActionBtn({
-                      label: '新增單位選項', type: 'button',
-                      onClick: function () { showAddContractor = true; rerender(); },
-                      className: 'px-3 border border-gray-300 rounded-md bg-gray-50 text-gray-600 hover:bg-gray-100 transition-colors',
-                      icon: Icons.Plus({ className: 'h-5 w-5' })
-                    })
-                  )
+                  h('label', { className: 'block text-sm font-medium text-gray-700 mb-1' }, '施作單位'),
+                  h('select', { name: 'suggestedContractor', value: formData.suggestedContractor, onChange: handleChange, className: inputCls },
+                    h('option', { value: '' }, '請選擇單位'),
+                    contractors.map(function (c) { return h('option', { key: c, value: c }, c); }))
                 ),
                 h('div', null,
                   h('label', { className: 'block text-sm font-medium text-gray-700 mb-1' }, '進場日期'),
@@ -253,30 +233,7 @@
             rerender();
           },
           onSave: handleEquipSaved
-        }),
-        showAddContractor && h('div', { className: 'app-modal-overlay' },
-          h('div', { className: 'bg-white rounded-lg shadow-xl p-6 w-80 max-w-full m-4' },
-            h('h3', { className: 'text-lg font-bold text-gray-800 mb-4' }, '新增施作單位'),
-            h('input', {
-              type: 'text', value: newContractor,
-              onChange: function (e) { newContractor = e.target.value; rerender(); },
-              placeholder: '輸入新的單位名稱',
-              className: 'w-full p-2.5 border rounded-md outline-none focus:ring-2 focus:ring-blue-500 mb-6',
-              autoFocus: true
-            }),
-            h('div', { className: 'flex justify-end space-x-3' },
-              h('button', {
-                type: 'button',
-                onClick: function () { showAddContractor = false; newContractor = ''; rerender(); },
-                className: 'px-4 py-2 border rounded-md text-gray-600 hover:bg-gray-50'
-              }, '取消'),
-              h('button', {
-                type: 'button', onClick: handleAddContractor,
-                className: 'px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700'
-              }, '確定新增')
-            )
-          )
-        )
+        })
       );
     });
   }

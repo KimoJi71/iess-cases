@@ -1485,7 +1485,7 @@ const INITIAL_PROJECT_CASES = [{
     storeAddress: '台北市中山區中山北路X號',
     serviceLevel: 'D 維修(無簽約客戶)',
     contactPerson: '王小明',
-    suggestedContractor: '內部工程組',
+    suggestedContractor: 'A組',
     entryDate: todayDate,
     remarks: '需避開營業尖峰時段',
     equipment: [{
@@ -1541,7 +1541,7 @@ const INITIAL_PROJECT_CASES = [{
     storeAddress: '台中市中區建國路X號',
     serviceLevel: 'B 保修(一年兩次)',
     contactPerson: '王小明',
-    suggestedContractor: '機電維護商',
+    suggestedContractor: 'B組',
     entryDate: yesterdayDate,
     remarks: '',
     equipment: []
@@ -1627,7 +1627,7 @@ const INITIAL_PROJECT_CASES = [{
     storeAddress: '台北市信義區松智路X號',
     serviceLevel: 'A 保修(一年四次)',
     contactPerson: '林店長',
-    suggestedContractor: '機電維護商',
+    suggestedContractor: 'B組',
     entryDate: twoDaysAgoDate,
     remarks: '賣場主機汰換，夜間施工',
     equipment: [{
@@ -1700,7 +1700,7 @@ const INITIAL_PROJECT_CASES = [{
     storeAddress: '台中市西屯區台灣大道X號',
     serviceLevel: 'A 保修(一年四次)',
     contactPerson: '張小姐',
-    suggestedContractor: '內部工程組',
+    suggestedContractor: 'A組',
     entryDate: yesterdayDate,
     remarks: '倉庫區加裝分離式冷氣',
     equipment: []
@@ -1761,7 +1761,7 @@ const INITIAL_PROJECT_CASES = [{
     storeAddress: '台中市中區建國路X號',
     serviceLevel: 'D 維修(無簽約客戶)',
     contactPerson: '王專員',
-    suggestedContractor: '協力廠商',
+    suggestedContractor: 'C組',
     entryDate: twoDaysAgoDate,
     remarks: '新開店空調工程',
     equipment: []
@@ -1822,7 +1822,7 @@ const INITIAL_PROJECT_CASES = [{
     storeAddress: '台北市中山區中山北路X號',
     serviceLevel: 'D 維修(無簽約客戶)',
     contactPerson: '李先生',
-    suggestedContractor: '內部工程組',
+    suggestedContractor: 'A組',
     entryDate: oneMonthAgoDate,
     remarks: '設備拆除回收',
     equipment: []
@@ -1883,7 +1883,7 @@ const INITIAL_PROJECT_CASES = [{
     storeAddress: '台北市中山區中山北路X號',
     serviceLevel: 'B 保修(一年兩次)',
     contactPerson: '陳副理',
-    suggestedContractor: '機電維護商',
+    suggestedContractor: 'B組',
     entryDate: yesterdayDate,
     remarks: '吧台區空調整裝',
     equipment: []

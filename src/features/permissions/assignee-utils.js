@@ -52,7 +52,8 @@
   function projectReferencesAssignee(c, name) {
     if (!c || !name) return false;
     return c.assignee === name || c.stageAssignee === name
-      || (c.details && c.details.contactPerson === name);
+      || (c.details && (c.details.contactPerson === name
+        || c.details.suggestedContractor === name));
   }
 
   function hasOpenCasesForAssignee(name, cases, maintenanceCases, projectCases) {
@@ -198,7 +199,11 @@
       if (c.assignee === oldName) { next.assignee = newName; changed = true; }
       if (c.stageAssignee === oldName) { next.stageAssignee = newName; changed = true; }
       if (c.details && c.details.contactPerson === oldName) {
-        next.details = Object.assign({}, c.details, { contactPerson: newName });
+        next.details = Object.assign({}, next.details || c.details, { contactPerson: newName });
+        changed = true;
+      }
+      if (c.details && c.details.suggestedContractor === oldName) {
+        next.details = Object.assign({}, next.details || c.details, { suggestedContractor: newName });
         changed = true;
       }
       return changed ? next : c;

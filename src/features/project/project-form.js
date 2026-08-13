@@ -327,7 +327,7 @@
       projectReadOnlyField('門市地址', detailsData.storeAddress, { fullWidth: true }),
       projectReadOnlyField('服務等級', detailsData.serviceLevel),
       projectReadOnlyField('負責人員', detailsData.contactPerson),
-      projectReadOnlyField('建議施作單位', detailsData.suggestedContractor),
+      projectReadOnlyField('施作單位', detailsData.suggestedContractor),
       projectReadOnlyField('進場日期', detailsData.entryDate),
       projectReadOnlyField('立案日期', formData.creationDate),
       projectReadOnlyField('其他事項說明', detailsData.remarks, { fullWidth: true })
@@ -448,9 +448,8 @@
       entryDate: '',
       remarks: ''
     };
-    var contractors = ['內部工程組', '外包廠商A', '外包廠商B', '機電維護商'];
-    var showAddContractor = false;
-    var newContractor = '';
+    // 施作單位選項來自組別管理，不提供新增
+    var contractors = ASSIGNEES.slice();
     var equipmentList = [];
     var equipModal = { show: false, editingId: null, initialEquip: null };
 
@@ -504,16 +503,6 @@
       function handleDeleteEquipment(id) {
         equipmentList = equipmentList.filter(function (eq) { return eq.id !== id; });
         rerender();
-      }
-      function handleAddContractor() {
-        if (newContractor.trim()) {
-          contractors = contractors.concat([newContractor.trim()]);
-          formData.suggestedContractor = newContractor.trim();
-          newContractor = '';
-          showAddContractor = false;
-          showToast('已新增並套用施作單位');
-          rerender();
-        }
       }
       function handleSubmit(e) {
         e.preventDefault();
@@ -629,9 +618,7 @@
         return h('option', { key: opt, value: opt }, opt);
       }))), h('div', null, h('label', {
         className: 'block text-sm font-medium text-gray-700 mb-1'
-      }, '建議施作單位'), h('div', {
-        className: 'flex gap-2'
-      }, h('select', {
+      }, '施作單位'), h('select', {
         name: 'suggestedContractor',
         value: formData.suggestedContractor,
         onChange: handleChange,
@@ -640,11 +627,7 @@
         value: ''
       }, '請選擇單位'), contractors.map(function (c) {
         return h('option', { key: c, value: c }, c);
-      })), iconActionBtn({ label: '新增單位選項', type: 'button',
-        onClick: function () { showAddContractor = true; rerender(); },
-        className: 'px-3 border border-gray-300 rounded-md bg-gray-50 text-gray-600 hover:bg-gray-100 transition-colors', icon: Icons.Plus({
-        className: 'h-5 w-5'
-      }) }))), h('div', null, h('label', {
+      }))), h('div', null, h('label', {
         className: 'block text-sm font-medium text-gray-700 mb-1'
       }, '進場日期'), h('input', {
         type: 'date',
@@ -711,34 +694,7 @@
           rerender();
         },
         onSave: handleEquipSaved
-      }), showAddContractor && h('div', {
-        className: 'app-modal-overlay'
-      }, h('div', {
-        className: 'bg-white rounded-lg shadow-xl p-6 w-80 max-w-full m-4'
-      }, h('h3', {
-        className: 'text-lg font-bold text-gray-800 mb-4'
-      }, '新增施作單位'), h('input', {
-        type: 'text',
-        value: newContractor,
-        onChange: function (e) { newContractor = e.target.value; rerender(); },
-        placeholder: '輸入新的單位名稱',
-        className: 'w-full p-2.5 border rounded-md outline-none focus:ring-2 focus:ring-blue-500 mb-6',
-        autoFocus: true
-      }), h('div', {
-        className: 'flex justify-end space-x-3'
-      }, h('button', {
-        type: 'button',
-        onClick: function () {
-          showAddContractor = false;
-          newContractor = '';
-          rerender();
-        },
-        className: 'px-4 py-2 border rounded-md text-gray-600 hover:bg-gray-50'
-      }, '取消'), h('button', {
-        type: 'button',
-        onClick: handleAddContractor,
-        className: 'px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700'
-      }, '確定新增')))));
+      }));
     });
   }
 
@@ -761,12 +717,11 @@
     if (!formData.details) formData.details = {};
     var detailsData = formData.details;
     var equipmentList = projectEquipmentList(detailsData, deviceCategories);
-    var contractors = ['內部工程組', '外包廠商A', '外包廠商B', '機電維護商'];
+    // 施作單位選項來自組別管理，不提供新增；舊資料若已存在其他值仍保留可見
+    var contractors = ASSIGNEES.slice();
     if (detailsData.suggestedContractor && contractors.indexOf(detailsData.suggestedContractor) === -1) {
       contractors = contractors.concat([detailsData.suggestedContractor]);
     }
-    var showAddContractor = false;
-    var newContractor = '';
     var equipModal = { show: false, editingId: null, initialEquip: null };
     var stagesData = projectStagesData(formData);
     var inputCls = 'w-full p-2.5 border rounded-md outline-none focus:ring-2 focus:ring-blue-500';
@@ -846,17 +801,6 @@
         }
         equipmentList = equipmentList.filter(function (eq) { return eq.id !== id; });
         rerender();
-      }
-
-      function handleAddContractor() {
-        if (newContractor.trim()) {
-          contractors = contractors.concat([newContractor.trim()]);
-          detailsData.suggestedContractor = newContractor.trim();
-          newContractor = '';
-          showAddContractor = false;
-          showToast('已新增並套用施作單位');
-          rerender();
-        }
       }
 
       function handleSubmit(e) {
@@ -986,9 +930,7 @@
         return h('option', { key: opt, value: opt }, opt);
       }))), h('div', null, h('label', {
         className: 'block text-sm font-medium text-gray-700 mb-1'
-      }, '建議施作單位'), h('div', {
-        className: 'flex gap-2'
-      }, h('select', {
+      }, '施作單位'), h('select', {
         name: 'details.suggestedContractor',
         value: detailsData.suggestedContractor || '',
         onChange: handleChange,
@@ -997,11 +939,7 @@
         value: ''
       }, '請選擇單位'), contractors.map(function (c) {
         return h('option', { key: c, value: c }, c);
-      })), iconActionBtn({ label: '新增單位選項', type: 'button',
-        onClick: function () { showAddContractor = true; rerender(); },
-        className: 'px-3 border border-gray-300 rounded-md bg-gray-50 text-gray-600 hover:bg-gray-100 transition-colors', icon: Icons.Plus({
-        className: 'h-5 w-5'
-      }) }))), h('div', null, h('label', {
+      }))), h('div', null, h('label', {
         className: 'block text-sm font-medium text-gray-700 mb-1'
       }, '進場日期'), h('input', {
         type: 'date',
@@ -1113,34 +1051,7 @@
           rerender();
         },
         onSave: handleEquipSaved
-      }), isEdit && showAddContractor && h('div', {
-        className: 'app-modal-overlay'
-      }, h('div', {
-        className: 'bg-white rounded-lg shadow-xl p-6 w-80 max-w-full m-4'
-      }, h('h3', {
-        className: 'text-lg font-bold text-gray-800 mb-4'
-      }, '新增施作單位'), h('input', {
-        type: 'text',
-        value: newContractor,
-        onChange: function (e) { newContractor = e.target.value; rerender(); },
-        placeholder: '輸入新的單位名稱',
-        className: 'w-full p-2.5 border rounded-md outline-none focus:ring-2 focus:ring-blue-500 mb-6',
-        autoFocus: true
-      }), h('div', {
-        className: 'flex justify-end space-x-3'
-      }, h('button', {
-        type: 'button',
-        onClick: function () {
-          showAddContractor = false;
-          newContractor = '';
-          rerender();
-        },
-        className: 'px-4 py-2 border rounded-md text-gray-600 hover:bg-gray-50'
-      }, '取消'), h('button', {
-        type: 'button',
-        onClick: handleAddContractor,
-        className: 'px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700'
-      }, '確定新增')))));
+      }));
     });
   }
 
