@@ -130,7 +130,7 @@
       var snapshotDiff = null;
       if (snapshot && isCurrentYear) {
         // Modal 開著時沿用上一次的結果：在「目標完成數」輸入框裡每按一鍵都會 rerender()，
-        // 沒必要為此重跑一次全指派人員 × 全門市的 buildYearSnapshot。
+        // 沒必要為此重跑一次全組別 × 全門市的 buildYearSnapshot。
         snapshotDiff = (editModal && lastSnapshotDiff)
           ? lastSnapshotDiff
           : MaintenanceAllocationUtils.diffSnapshot(
@@ -213,7 +213,7 @@
         return h(
           'div',
           { className: 'border border-dashed border-gray-200 rounded-lg p-10 text-center text-gray-400 text-base' },
-          '請先選擇指派人員'
+          '請先選擇組別'
         );
       }
 
@@ -653,9 +653,9 @@
           return Number(y.year) === Number(selectedYear) ? next : y;
         }));
         var orphans = MaintenanceAllocationUtils.countOrphans(maintenanceAllocations, next);
-        // 孤兒數是全指派人員的總數，不是目前這位的；不講清楚會讓使用者在畫面上數不到那麼多格
+        // 孤兒數是全組別的總數，不是目前這一組的；不講清楚會讓使用者在畫面上數不到那麼多格
         showToast('已重新同步 ' + selectedYear + ' 年度；' + summary
-          + (orphans ? '，全部指派人員共 ' + orphans + ' 格已不在區間內，請確認' : ''));
+          + (orphans ? '，全部組別共 ' + orphans + ' 格已不在區間內，請確認' : ''));
       }
 
       function openResyncModal() {
@@ -694,7 +694,7 @@
             h('p', { className: 'text-gray-800 font-medium mb-4' }, resyncModal.summary),
             h('p', { className: 'text-sm text-gray-500 mb-6' },
               resyncModal.orphanCount
-                ? ('已填的目標完成數一律保留；同步後全部指派人員共有 ' + resyncModal.orphanCount
+                ? ('已填的目標完成數一律保留；同步後全部組別共有 ' + resyncModal.orphanCount
                     + ' 格落在保養區間外，會標記為異常，需自行確認是否刪除。')
                 : '已填的目標完成數一律保留。'),
             h(
@@ -826,7 +826,7 @@
             h(
               'div',
               { className: 'w-56' },
-              h('label', { className: 'block text-xs text-gray-500 mb-1' }, '指派人員'),
+              h('label', { className: 'block text-xs text-gray-500 mb-1' }, '組別'),
               h(
                 'select',
                 {
@@ -842,7 +842,7 @@
                   },
                   className: TOOLBAR_CONTROL + ' w-full border-gray-300 outline-none focus:border-blue-500 bg-white'
                 },
-                h('option', { value: '' }, '請選擇指派人員'),
+                h('option', { value: '' }, '請選擇組別'),
                 sortedAssignees.map(function (item) {
                   return h('option', { key: item.id, value: item.id }, item.name);
                 })

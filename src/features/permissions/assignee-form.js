@@ -1,5 +1,5 @@
 /*
- * features/permissions/assignee-form.js — 指派人員管理：新增/編輯表單
+ * features/permissions/assignee-form.js — 組別管理：新增/編輯表單
  * props: { assignees, setAssignees, accounts, cases, setCases,
  *          maintenanceCases, setMaintenanceCases, projectCases, setProjectCases,
  *          setView, showToast, targetCase }
@@ -40,6 +40,12 @@
       : [];
 
     return stateful(function (rerender) {
+      var excludeId = isEdit ? targetCase.id : null;
+      // 規則上線前存下的重疊資料，其衝突的行政區若也反灰，使用者就無法取消勾選、
+      // 表單永遠存不了。目前已勾的一律保持可操作，取消後才會跟著反灰。
+      var occupiedDistricts = AssigneeUtils.getOccupiedDistricts(assignees, excludeId)
+        .filter(function (d) { return districts.indexOf(d) === -1; });
+
       function handleChange(e) {
         formData[e.target.name] = e.target.value;
         rerender();
@@ -56,11 +62,17 @@
         e.preventDefault();
         var name = formData.name.trim();
         if (!name) {
-          showToast('指派人員名稱為必填', 'error');
+          showToast('組別名稱為必填', 'error');
           return;
         }
-        if (AssigneeUtils.findDuplicateName(assignees, name, isEdit ? targetCase.id : null)) {
-          showToast('指派人員名稱已存在', 'error');
+        if (AssigneeUtils.findDuplicateName(assignees, name, excludeId)) {
+          showToast('組別名稱已存在', 'error');
+          return;
+        }
+        // 樹狀選單已把被佔用的行政區反灰，這裡再驗一次擋住繞過 disabled 的情況
+        var conflicts = AssigneeUtils.findConflictingDistricts(assignees, districts, excludeId);
+        if (conflicts.length) {
+          showToast('以下行政區已被其他組別使用：' + conflicts.join('、'), 'error');
           return;
         }
 
@@ -84,7 +96,7 @@
             setMaintenanceCases(updated.maintenanceCases);
             setProjectCases(updated.projectCases);
           }
-          showToast('指派人員更新成功');
+          showToast('組別更新成功');
         } else {
           var newAssignee = {
             id: 'ASG' + Date.now(),
@@ -97,7 +109,7 @@
           setAssignees(AssigneeUtils.applyMemberIds(
             [newAssignee].concat(assignees), newAssignee.id, memberIds
           ));
-          showToast('指派人員新增成功');
+          showToast('組別新增成功');
         }
         setView('assignee-list');
       }
@@ -110,7 +122,7 @@
         className: 'max-w-3xl mx-auto bg-white rounded-lg shadow-sm border border-gray-100 relative'
       },
         PageHeader({
-          title: isEdit ? '編輯指派人員' : '新增指派人員',
+          title: isEdit ? '編輯組別' : '新增組別',
           badge: isEdit ? targetCase.name : null,
           onClose: function () { setView('assignee-list'); },
           wrapperClass: 'flex justify-between items-center p-6 border-b border-gray-200 sticky top-0 z-10 bg-white rounded-t-lg'
@@ -118,7 +130,7 @@
         h('form', { onSubmit: handleSubmit, className: 'p-6' },
           h('div', { className: 'space-y-6' },
             h('div', null,
-              h('label', { className: 'block text-sm mb-1' }, '指派人員名稱 ', h('span', { className: 'text-red-500' }, '*')),
+              h('label', { className: 'block text-sm mb-1' }, '組別名稱 ', h('span', { className: 'text-red-500' }, '*')),
               h('input', {
                 type: 'text',
                 name: 'name',
@@ -144,17 +156,18 @@
             h('div', null,
               h('label', { className: 'block text-sm mb-2' }, '負責行政區'),
               h('p', { className: 'text-xs text-gray-400 mb-3' },
-                '依縣市展開選擇行政區；勾選縣市可一次全選或取消該縣市下所有行政區'),
+                '依縣市展開選擇行政區；已被其他組別使用的行政區不可勾選'),
               h(DistrictTreePicker, {
                 selectedDistricts: districts,
                 onChange: function (next) { districts = next; rerender(); },
                 expandedCities: expandedCities,
-                onExpandedCitiesChange: function (next) { expandedCities = next; rerender(); }
+                onExpandedCitiesChange: function (next) { expandedCities = next; rerender(); },
+                disabledDistricts: occupiedDistricts
               })
             ),
             h('div', null,
               h('label', { className: 'block text-sm mb-2' }, '成員名單'),
-              h('p', { className: 'text-xs text-gray-400 mb-3' }, '勾選帳號以加入此指派人員；同一帳號可同時歸屬多個指派人員'),
+              h('p', { className: 'text-xs text-gray-400 mb-3' }, '勾選帳號以加入此組別；同一帳號可同時歸屬多個組別'),
               sortedAccounts.length === 0
                 ? h('p', { className: 'text-gray-400 text-sm' }, '尚無帳號資料')
                 : h('div', { className: 'grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-64 overflow-y-auto border rounded-md p-3' },

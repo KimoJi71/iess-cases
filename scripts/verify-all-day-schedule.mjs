@@ -106,7 +106,7 @@ assertEq(dispatchOf({ assignee: '張三', expectedDate: '2026-08-12', expectedTi
 assertEq(dispatchOf({ assignee: '張三', expectedDate: '', expectedTimeStart: '' }),
   '未派工', '有人員但沒日期 → 未派工');
 assertEq(dispatchOf({ assignee: '案件待辦', expectedDate: '2026-08-12', expectedTimeStart: '' }),
-  '未派工', '沒有正式指派人員 → 未派工');
+  '未派工', '沒有正式組別 → 未派工');
 assertEq(dispatchOf({ assignee: '張三', expectedDate: '2026-08-12', processStatus: '案件完成' }),
   '已完成', '已完成的案件優先顯示已完成');
 

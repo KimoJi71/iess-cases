@@ -306,7 +306,7 @@
           return;
         }
         if (!pendingAssignee) {
-          showToast('請選擇指派人員');
+          showToast('請選擇組別');
           return;
         }
         appliedPending = {
@@ -356,7 +356,7 @@
           return;
         }
         if (!pendingAssignee) {
-          showToast('請選擇指派人員');
+          showToast('請選擇組別');
           return;
         }
         var nextModal = buildScheduleModalState(item.sourceType, item.sourceId, pendingAssignee);
@@ -485,11 +485,11 @@
         var repairAssignees = isRepair ? (scheduleModal.assignees || []).slice() : [];
         if (isRepair) {
           if (!repairAssignees.length) {
-            showToast('請至少選擇 1 位指派人員');
+            showToast('請至少選擇 1 個組別');
             return;
           }
         } else if (!assignee) {
-          showToast('請選擇指派人員');
+          showToast('請選擇組別');
           return;
         }
         if (!scheduleModal.planDate || !scheduleModal.planTimeStart || !scheduleModal.planTimeEnd) {
@@ -531,23 +531,23 @@
         if (scheduleModal.item.sourceType === 'repair') {
           var selected = scheduleModal.assignees || [];
           return h('div', { className: 'sm:col-span-3' },
-            h('label', { className: 'block text-xs text-gray-500 mb-1' }, '指派人員'),
+            h('label', { className: 'block text-xs text-gray-500 mb-1' }, '組別'),
             h('div', { className: 'border border-gray-200 rounded-md bg-white p-3 space-y-2' },
               h('div', { className: 'text-xs text-gray-500' },
-                formatRepairModalAssignees(selected) || '請至少選擇 1 位指派人員'
+                formatRepairModalAssignees(selected) || '請至少選擇 1 個組別'
               ),
               IESS.MultiSelect({
                 id: 'schedule-modal-assignees',
                 options: ASSIGNEES,
                 value: selected,
                 onChange: setScheduleModalAssignees,
-                placeholder: '請選擇指派人員'
+                placeholder: '請選擇組別'
               })
             )
           );
         }
         return h('div', { className: 'sm:col-span-3' },
-          h('label', { className: 'block text-xs text-gray-500 mb-1' }, '指派人員'),
+          h('label', { className: 'block text-xs text-gray-500 mb-1' }, '組別'),
           h('select', {
             value: scheduleModal.assignee || '',
             onChange: function (e) { updateScheduleModalAssignee(e.target.value); },
@@ -648,7 +648,7 @@
                   })
                 )
               ),
-              renderScheduleReadOnly('指派人員', formatRepairModalAssignees(scheduleModal.assignees)),
+              renderScheduleReadOnly('組別', formatRepairModalAssignees(scheduleModal.assignees)),
               h('div', { className: 'col-span-full' },
                 renderScheduleFieldLabel(isOther ? '工作描述' : '故障描述'),
                 h('textarea', {
@@ -926,7 +926,7 @@
               })
             ),
             h('div', null,
-              h('label', { className: 'block text-xs text-gray-500 mb-1' }, '指派人員'),
+              h('label', { className: 'block text-xs text-gray-500 mb-1' }, '組別'),
               h('select', {
                 value: calAssignee,
                 onChange: function (e) { calAssignee = e.target.value; rerender(); },
@@ -977,7 +977,7 @@
                 ),
                 h('div', null,
                   h('label', { className: 'block text-xs text-gray-500 mb-1' },
-                    '指派人員',
+                    '組別',
                     h('span', { className: 'text-red-500 ml-0.5' }, '*')
                   ),
                   h('select', {

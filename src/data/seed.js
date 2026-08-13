@@ -196,7 +196,7 @@ const INITIAL_STORES = [{
     equipmentArea: '倉庫',
     repairItem: '室外機',
     repairReason: '異音',
-    assignee: '協力廠商',
+    assignee: 'A組',
     repairDate: '2025-11-08',
     closeDate: '2025-11-10'
   }]
@@ -231,7 +231,7 @@ const INITIAL_STORES = [{
     equipmentArea: '賣場區',
     repairItem: '室外機',
     repairReason: '異音',
-    assignee: '協力廠商',
+    assignee: 'B組',
     repairDate: '2026-05-10',
     closeDate: '2026-05-12'
   }, {
@@ -761,7 +761,7 @@ const INITIAL_CASES = [{
   repairReason: '異音',
   faultDesc: '室外機運轉聲音很大',
   actualReason: '風扇軸承老化',
-  assignee: '協力廠商',
+  assignee: 'B組',
   processStatus: '待報價',
   isClosed: false,
   serviceLevel: 'B 保修(一年兩次)',
@@ -831,7 +831,7 @@ const INITIAL_CASES = [{
   repairReason: '不冷',
   faultDesc: '出風口沒有冷風',
   actualReason: '濾網過髒導致風量不足',
-  assignee: '晉詮人員',
+  assignee: 'A組',
   processStatus: '案件完成',
   isClosed: true,
   serviceLevel: 'D 維修(無簽約客戶)',
@@ -1103,7 +1103,7 @@ const INITIAL_CASES = [{
   repairReason: '跳機',
   faultDesc: '室外機頻繁跳機',
   actualReason: '冷媒補充完成',
-  assignee: '協力廠商',
+  assignee: 'B組',
   processStatus: '案件完成',
   isClosed: true,
   serviceLevel: 'D 維修(無簽約客戶)',
@@ -1301,10 +1301,10 @@ const INITIAL_MAINTENANCE_CASES = [{
   planTimeStart: '14:00',
   planTimeEnd: '16:00',
   completionDate: yesterdayDate,
-  assignee: '協力廠商',
+  assignee: 'C組',
   isClosed: true,
   isPerformanceIncluded: true,
-  performanceAssignee: '協力廠商',
+  performanceAssignee: 'C組',
   storeAddress: '高雄市左營區重愛路X號'
 }, {
   id: 'M2026070004',
@@ -1382,10 +1382,10 @@ const INITIAL_MAINTENANCE_CASES = [{
   planTimeStart: '16:00',
   planTimeEnd: '18:00',
   completionDate: yesterdayDate,
-  assignee: '晉詮人員',
+  assignee: 'A組',
   isClosed: true,
   isPerformanceIncluded: true,
-  performanceAssignee: '晉詮人員',
+  performanceAssignee: 'A組',
   storeAddress: '台北市中山區中山北路X號'
 }, {
   id: 'M2026070009',
@@ -1414,10 +1414,10 @@ const INITIAL_MAINTENANCE_CASES = [{
   planTimeStart: '14:00',
   planTimeEnd: '16:00',
   completionDate: todayDate,
-  assignee: '協力廠商',
+  assignee: 'B組',
   isClosed: true,
   isPerformanceIncluded: true,
-  performanceAssignee: '協力廠商',
+  performanceAssignee: 'B組',
   storeAddress: '台中市西屯區台灣大道X號'
 }, {
   // 北屯崇德店未達「開始保養時間」（本月開幕、星巴克設定開幕 6 個月後才保養），
@@ -2067,12 +2067,7 @@ const INITIAL_MAINTENANCE_ALLOCATIONS = [
   { id: 'MA5', year: SEED_YEAR, assigneeId: 'ASG2', customerName: '屈臣氏', month: 7, visitIndex: 1, targetCount: 2 },
   { id: 'MA6', year: SEED_YEAR, assigneeId: 'ASG2', customerName: '星巴克', month: 8, visitIndex: 1, targetCount: 1 },
   { id: 'MA7', year: SEED_YEAR, assigneeId: 'ASG3', customerName: '萊爾富', month: 7, visitIndex: 1, targetCount: 2 },
-  { id: 'MA8', year: SEED_YEAR, assigneeId: 'ASG4', customerName: '屈臣氏', month: 7, visitIndex: 1, targetCount: 2 },
-  { id: 'MA9', year: SEED_YEAR, assigneeId: 'ASG5', customerName: '星巴克', month: 7, visitIndex: 1, targetCount: 2 },
-  { id: 'MA10', year: SEED_YEAR, assigneeId: 'ASG5', customerName: '萊爾富', month: 8, visitIndex: 1, targetCount: 1 },
-  { id: 'MA11', year: SEED_YEAR, assigneeId: 'ASG6', customerName: '萊爾富', month: 7, visitIndex: 1, targetCount: 2 },
-  { id: 'MA12', year: SEED_YEAR, assigneeId: 'ASG6', customerName: '屈臣氏', month: 7, visitIndex: 1, targetCount: 1 },
-  { id: 'MA13', year: SEED_YEAR, assigneeId: 'ASG6', customerName: '星巴克', month: 9, visitIndex: 1, targetCount: 1 }
+  { id: 'MA8', year: SEED_YEAR, assigneeId: 'ASG4', customerName: '屈臣氏', month: 7, visitIndex: 1, targetCount: 2 }
 ];
 
 const INITIAL_PERFORMANCE_AREAS = [
@@ -2096,13 +2091,12 @@ const INITIAL_PERFORMANCE_AREAS = [
   }
 ];
 
+// 一個行政區只能歸屬一組，四組的 districts 必須互斥（見 AssigneeUtils.findConflictingDistricts）
 const INITIAL_ASSIGNEES = [
   { id: 'ASG1', name: 'A組', leaderId: 'ACC2', districts: ['台北市信義區', '台北市中山區'], memberIds: ['ACC2'], createdDate: todayDate },
   { id: 'ASG2', name: 'B組', leaderId: 'ACC3', districts: ['台中市中區', '台中市西屯區'], memberIds: ['ACC3'], createdDate: todayDate },
   { id: 'ASG3', name: 'C組', districts: ['高雄市左營區'], memberIds: [], createdDate: todayDate },
-  { id: 'ASG4', name: 'D組', districts: ['台北市信義區'], memberIds: [], createdDate: todayDate },
-  { id: 'ASG5', name: '晉詮人員', districts: ['台北市信義區', '台北市中山區', '台中市中區', '台中市西屯區', '高雄市左營區'], memberIds: [], createdDate: todayDate },
-  { id: 'ASG6', name: '協力廠商', districts: ['台北市信義區', '台北市中山區', '高雄市左營區'], memberIds: [], createdDate: todayDate }
+  { id: 'ASG4', name: 'D組', districts: ['台北市大安區', '台中市北屯區'], memberIds: [], createdDate: todayDate }
 ];
 
 const INITIAL_ACCOUNTS = [{

@@ -175,7 +175,7 @@
                 h('th', { className: 'p-3 font-semibold' }, '叫修項目'),
                 h('th', { className: 'p-3 font-semibold' }, '叫修原因'),
                 h('th', { className: 'p-3 font-semibold max-w-[150px]' }, '實際原因'),
-                h('th', { className: 'p-3 font-semibold' }, '指派人員')
+                h('th', { className: 'p-3 font-semibold' }, '組別')
               )
             ),
             h('tbody', { className: 'divide-y divide-gray-100' },

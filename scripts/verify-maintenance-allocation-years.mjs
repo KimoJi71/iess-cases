@@ -148,7 +148,7 @@ assertEq(MAU.getSnapshotRows(snap, 'ASG2')[0].storeCount, 1, '乙客戶在 B組 
 assertEq(MAU.getSnapshotRows(snap, 'ASG1')[1].serviceLevel, 'A 保修(一年四次)',
   '列上記錄當時的服務等級');
 assertEq(MAU.getSnapshotRows(snap, 'ASG1')[1].periods.length, 4, '甲客戶快照有四個區間');
-assertDeep(MAU.getSnapshotRows(snap, 'ASG9'), [], '查無指派人員回空陣列');
+assertDeep(MAU.getSnapshotRows(snap, 'ASG9'), [], '查無組別回空陣列');
 assertDeep(MAU.getSnapshotRows(null, 'ASG1'), [], 'snapshot 為 null 回空陣列');
 
 // periods 必須是深拷貝（snap.rows[0] 為乙客戶，對應 SNAP_CUSTOMERS[1]）
@@ -331,8 +331,8 @@ assertDeep(removedGroups[0].cells.map(function (c) { return c.month; }), [2, 5],
   '該客戶的格子依月份排序');
 assertDeep(MAU.getRemovedRowGroups(REMOVED_ALLOCS, snap, 'ASG2').map(function (g) {
   return g.customerName;
-}), ['丁客戶'], '另一位指派人員各自分組');
-assertDeep(MAU.getRemovedRowGroups(REMOVED_ALLOCS, snap, ''), [], '沒選指派人員回空陣列');
+}), ['丁客戶'], '另一個組別各自分組');
+assertDeep(MAU.getRemovedRowGroups(REMOVED_ALLOCS, snap, ''), [], '沒選組別回空陣列');
 assertDeep(MAU.getRemovedRowGroups(REMOVED_ALLOCS, null, 'ASG1'), [], 'snapshot 為 null 回空陣列');
 assertTrue(MAU.getRemovedRowGroups(REMOVED_ALLOCS, snap, 'ASG1')[0].cells.every(function (c) {
   return Number(c.year) === 2026;
@@ -523,7 +523,7 @@ try {
   assertDeep(await yearOptions(), [THIS_YEAR + ' 年'],
     '年度下拉一開始只有當年度一個選項');
 
-  assertTrue(await evaluate(`__ma.choose(__ma.combo(null, 1), 'A組')`), '可選取指派人員 A組');
+  assertTrue(await evaluate(`__ma.choose(__ma.combo(null, 1), 'A組')`), '可選取組別 A組');
   await sleep(600);
   const seedFilled = await evaluate(`INITIAL_MAINTENANCE_ALLOCATIONS.filter(function (a) {
     return Number(a.year) === ${THIS_YEAR} && a.assigneeId === 'ASG1';
@@ -553,7 +553,7 @@ try {
   })()`), '可在對話框輸入年份並按「建立」');
   await sleep(800);
 
-  assertEq(await evaluate(`(__ma.toast() || {}).text`), '已建立 ' + NEXT_YEAR + ' 年度分配表（12 列）',
+  assertEq(await evaluate(`(__ma.toast() || {}).text`), '已建立 ' + NEXT_YEAR + ' 年度分配表（7 列）',
     '建立成功的 toast 內容正確');
   assertDeep(await yearOptions(),
     [NEXT_YEAR + ' 年', THIS_YEAR + ' 年'], '年度下拉多出新年度且由大到小');
@@ -812,15 +812,15 @@ try {
   assertTrue(rs.clickedResync, '工具列有「重新同步保養區間」按鈕可點');
   assertTrue(/^重新同步保養區間 將以現行的客戶、門市與服務等級重拍 \d{4} 年度的骨架：/.test(rs.dialog),
     '確認 Modal 標題與說明正確', rs.dialog);
-  assertTrue(/列設定變動 已填的目標完成數一律保留；同步後全部指派人員共有 5 格落在保養區間外，會標記為異常，需自行確認是否刪除。/
-    .test(rs.dialog), 'Modal 顯示變動摘要與孤兒預估（全部指派人員共 5 格）', rs.dialog);
+  assertTrue(/列設定變動 已填的目標完成數一律保留；同步後全部組別共有 4 格落在保養區間外，會標記為異常，需自行確認是否刪除。/
+    .test(rs.dialog), 'Modal 顯示變動摘要與孤兒預估（全部組別共 4 格）', rs.dialog);
   assertTrue(rs.confirmed, 'Modal 可按「確認同步」');
   assertEq(rs.dialogAfter, '', '同步後 Modal 關閉');
   assertEq(rs.bannerAfter, '', '同步後提示條消失');
   assertTrue(
-    /^已重新同步 \d{4} 年度；.*列設定變動，全部指派人員共 5 格已不在區間內，請確認$/
+    /^已重新同步 \d{4} 年度；.*列設定變動，全部組別共 4 格已不在區間內，請確認$/
       .test((rs.syncToast || {}).text) && rs.syncToast.error === false,
-    '同步成功 toast 內容正確（含跨指派人員的孤兒總數）', JSON.stringify(rs.syncToast)
+    '同步成功 toast 內容正確（含跨組別的孤兒總數）', JSON.stringify(rs.syncToast)
   );
   assertEq(rs.createdAt, '2026-01-01', '同步後仍保留原本的 createdAt');
   assertTrue(/^\d{4}-\d{2}-\d{2}$/.test(rs.syncedAt), '同步後寫入 syncedAt', rs.syncedAt);

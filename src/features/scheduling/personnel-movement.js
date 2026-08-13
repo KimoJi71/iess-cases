@@ -116,7 +116,7 @@
             })
           ),
           h('div', null,
-            h('label', { className: 'block text-xs text-gray-500 mb-1' }, '指派人員'),
+            h('label', { className: 'block text-xs text-gray-500 mb-1' }, '組別'),
             h('select', {
               value: calAssignee,
               onChange: function (e) { calAssignee = e.target.value; rerender(); },
@@ -145,7 +145,7 @@
               h('tr', { className: 'bg-gray-50 text-gray-600 border-b border-gray-200' },
                 h('th', { className: 'px-4 py-3 font-medium' }, '日期'),
                 h('th', { className: 'px-4 py-3 font-medium' }, '時間'),
-                h('th', { className: 'px-4 py-3 font-medium' }, '指派人員'),
+                h('th', { className: 'px-4 py-3 font-medium' }, '組別'),
                 h('th', { className: 'px-4 py-3 font-medium' }, '客戶名稱'),
                 h('th', { className: 'px-4 py-3 font-medium' }, '門市名稱'),
                 h('th', { className: 'px-4 py-3 font-medium' }, '工項分類')

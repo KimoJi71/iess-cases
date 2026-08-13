@@ -1,7 +1,7 @@
 /*
  * features/repair/case-assignee-fields.js — 叫修表單共用欄位
  *
- * 指派人員：下拉複選（IESS.MultiSelect）
+ * 組別：下拉複選（IESS.MultiSelect）
  *
  * 由 case-form.js（新增／編輯）與 store-repair-form.js（門市叫修）共用。
  */
@@ -15,7 +15,7 @@
       options: ASSIGNEES,
       value: CaseAssigneeUtils.getAssignees(formData),
       onChange: onChange,
-      placeholder: '請選擇指派人員',
+      placeholder: '請選擇組別',
       disabled: !!opts.disabled,
       className: opts.className || ''
     });

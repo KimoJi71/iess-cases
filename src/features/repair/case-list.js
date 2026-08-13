@@ -203,7 +203,7 @@
                 h('th', { className: 'p-3 font-semibold' }, '工項分類'),
                 h('th', { className: 'p-3 font-semibold' }, '叫修項目/原因'),
                 h('th', { className: 'p-3 font-semibold min-w-[200px]' }, '故障描述'),
-                h('th', { className: 'p-3 font-semibold' }, '指派人員'),
+                h('th', { className: 'p-3 font-semibold' }, '組別'),
                 h('th', { className: 'p-3 font-semibold' }, '案件狀態'),
                 h('th', { className: 'p-3 font-semibold' }, '退回原因')
               )

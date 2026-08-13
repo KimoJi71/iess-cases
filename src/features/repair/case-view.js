@@ -67,7 +67,7 @@
             !isOther && h(ReadOnlyField, { label: '叫修項目', value: viewingCase && viewingCase.repairItem }),
             !isOther && h(ReadOnlyField, { label: '叫修原因', value: viewingCase && viewingCase.repairReason }),
             h(ReadOnlyField, {
-              label: '指派人員',
+              label: '組別',
               value: viewingCase && CaseAssigneeUtils.formatAssignees(viewingCase)
             }),
             h(ReadOnlyField, { label: '預計日期', value: viewingCase && (viewingCase.expectedDate || viewingCase.planDate) }),

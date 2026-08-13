@@ -42,7 +42,7 @@
 
   var PERMISSIONS_SUBMENU_DEFAULT_VIEW = {
     '帳號管理': 'account-list',
-    '指派人員管理': 'assignee-list',
+    '組別管理': 'assignee-list',
     '設備分類管理': 'device-category-list',
     '服務等級管理': 'service-level-list',
     '處理方式與積分管理': 'process-method-list',

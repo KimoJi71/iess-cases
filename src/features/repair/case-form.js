@@ -247,7 +247,7 @@
         className: "col-span-full font-semibold text-lg text-blue-800 border-b pb-2 mt-4 mb-2"
       }, "排程"), h("div", null, h("label", {
         className: "block text-sm mb-1"
-      }, "指派人員"), renderAssigneeMultiSelect(formData, function (next) {
+      }, "組別"), renderAssigneeMultiSelect(formData, function (next) {
         formData.assignees = next;
         rerender();
       }, { id: 'add-case-assignees' })), h("div", null, h("label", {
@@ -536,7 +536,7 @@
         className: "col-span-full md:col-span-2"
       }, h("span", {
         className: "text-gray-500 block mb-1"
-      }, "指派人員"), renderAssigneeMultiSelect(formData, function (next) {
+      }, "組別"), renderAssigneeMultiSelect(formData, function (next) {
         formData.assignees = next;
         rerender();
       }, { id: 'edit-case-assignees' })), h("div", null, h("span", {

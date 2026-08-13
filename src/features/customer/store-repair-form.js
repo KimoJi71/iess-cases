@@ -172,7 +172,7 @@
 
               h('div', { className: 'col-span-full font-semibold text-lg text-blue-800 border-b pb-2 mt-4 mb-2' }, '排程'),
               h('div', null,
-                h('label', { className: 'block text-sm mb-1' }, '指派人員'),
+                h('label', { className: 'block text-sm mb-1' }, '組別'),
                 renderAssigneeMultiSelect(formData, function (next) {
                   formData.assignees = next;
                   rerender();

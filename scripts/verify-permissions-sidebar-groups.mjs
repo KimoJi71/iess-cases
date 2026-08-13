@@ -123,7 +123,7 @@ const HELPERS = `
 `;
 
 const EXPECTED_TREE = [
-  { title: '人員與權限', expanded: true, children: ['帳號管理', '指派人員管理'] },
+  { title: '人員與權限', expanded: true, children: ['帳號管理', '組別管理'] },
   { title: '基礎資料設定', expanded: true, children: ['服務等級管理', '處理方式與積分管理', '設備分類管理', '績效區域管理'] },
   { title: '保養作業', expanded: true, children: ['保養分配'] }
 ];
@@ -302,7 +302,7 @@ try {
     panel.rows.slice(panel.rows.indexOf('系統權限')),
     [
       '系統權限',
-      '人員與權限', '帳號管理', '指派人員管理',
+      '人員與權限', '帳號管理', '組別管理',
       '基礎資料設定', '服務等級管理', '處理方式與積分管理', '設備分類管理', '績效區域管理',
       '保養作業', '保養分配'
     ],

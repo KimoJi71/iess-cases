@@ -253,10 +253,10 @@ try {
   // 保養區間分段：左／右邊界 class、「第N次 x/y」標頭、區間外全白、
   // 同等級但不同區間的客戶各自獨立分段，以及半填區間（Finding 1）不可編輯。
   await evaluate(`
-    // 年度下拉排在指派人員之前，指派人員是容器內第 2 個 combobox
+    // 年度下拉排在組別之前，組別是容器內第 2 個 combobox
     window.__chooseAllocAssignee2 = function (container, label) {
       var input = container.querySelectorAll('input[role="combobox"]')[1];
-      if (!input) throw new Error('__chooseAllocAssignee2: 找不到指派人員下拉');
+      if (!input) throw new Error('__chooseAllocAssignee2: 找不到組別下拉');
       input.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
       var btns = Array.prototype.filter.call(
         document.querySelectorAll('.searchable-select__menu--portal .searchable-select__option'),

@@ -175,7 +175,7 @@
         assigneeRows.length === 0
           ? h('div', {
               className: 'rounded-lg border border-dashed border-gray-200 p-10 text-center text-gray-400'
-            }, '尚無指派人員')
+            }, '尚無組別')
           : h('div', { className: 'grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5' },
               assigneeRows.map(function (row) {
                 return h(RingStatCard, {

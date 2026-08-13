@@ -803,19 +803,19 @@ try {
   assertEq(completed, 2, 'countCompletedStores 計不重複門市（甲一、甲二），排除未結案／他客戶／他人員／跨年／區間外');
 
   console.log('\nSection 7｜保養分配表格');
-  // src/core/searchable-select.js 攔截了 h('select', ...)：保養分配的「指派人員」
+  // src/core/searchable-select.js 攔截了 h('select', ...)：保養分配的「組別」
   // 下拉沒有原生 <select>，也沒有設定 name prop，改用
   // input[role="combobox"]（唯一一個）以 mousedown 開啟選單、
   // 選項按鈕（portal 到 document.body 的 .searchable-select__menu--portal 內）
   // 以 mousedown 選取，見 Section 3 對此機制的說明。另外 stateful() 是以
   // parentNode.replaceChild 換掉整棵樹，故用一個固定的容器 div 承接元件節點，
   // 之後一律透過容器查詢，才能拿到 rerender 後的最新 DOM。
-  // 保養分配改為「每年一份」後，工具列多了一個「年度」下拉排在指派人員之前，
-  // 故指派人員是容器內第 2 個 combobox（index 1），不能再取第 1 個。
+  // 保養分配改為「每年一份」後，工具列多了一個「年度」下拉排在組別之前，
+  // 故組別是容器內第 2 個 combobox（index 1），不能再取第 1 個。
   await evaluate(`
     window.__chooseAllocAssignee = function (container, label) {
       var input = container.querySelectorAll('input[role="combobox"]')[1];
-      if (!input) throw new Error('__chooseAllocAssignee: 找不到指派人員下拉');
+      if (!input) throw new Error('__chooseAllocAssignee: 找不到組別下拉');
       input.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
       var btns = Array.prototype.filter.call(
         document.querySelectorAll('.searchable-select__menu--portal .searchable-select__option'),
@@ -870,7 +870,7 @@ try {
     // 點第 2 月（在區間內）應開啟 Modal
     monthCells[1].querySelector('div').click();
     out.modalOpened = container.textContent.indexOf('編輯保養分配') !== -1;
-    // 原本是數整個容器的 combobox 數（=1，只有網格的指派人員下拉）；年度下拉加入後
+    // 原本是數整個容器的 combobox 數（=1，只有網格的組別下拉）；年度下拉加入後
     // 容器內固定有 2 個，數字會失去意義，故改為直接量 Modal 內的下拉數（應為 0）。
     var overlay = container.querySelector('.app-modal-overlay');
     out.modalComboCount = overlay ? overlay.querySelectorAll('input[role="combobox"]').length : -1;

@@ -1,5 +1,5 @@
 /*
- * features/permissions/assignee-list.js — 指派人員管理：列表
+ * features/permissions/assignee-list.js — 組別管理：列表
  * props: { assignees, accounts, cases, maintenanceCases, projectCases, setEditingCase, setView, showToast, setAssignees }
  */
 (function () {
@@ -70,14 +70,14 @@
         if (AssigneeUtils.hasOpenCasesForAssignee(
           target.name, cases, maintenanceCases, projectCases
         )) {
-          showToast('此指派人員仍有未結案案件，無法刪除', 'error');
+          showToast('此組別仍有未結案案件，無法刪除', 'error');
           deleteModal = { show: false, id: null, name: '' };
           rerender();
           return;
         }
         setAssignees(assignees.filter(function (a) { return a.id !== id; }));
         deleteModal = { show: false, id: null, name: '' };
-        showToast('指派人員已刪除');
+        showToast('組別已刪除');
       }
 
       return h('div', { className: 'bg-white p-6 rounded-lg shadow-sm border border-gray-100' },
@@ -100,7 +100,7 @@
             }, Icons.Search({ className: 'h-4 w-4' }), ' 搜尋')
           ),
           iconActionBtn({
-            label: '新增指派人員',
+            label: '新增組別',
             className: 'flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white p-2.5 rounded-full shadow-sm transition-colors shrink-0',
             onClick: function () { setEditingCase(null); setView('assignee-add'); },
             icon: Icons.Plus({ className: 'h-5 w-5' })
@@ -113,7 +113,7 @@
             h('thead', { className: 'bg-gray-50 text-gray-700 border-b' },
               h('tr', null,
                 h('th', { className: 'p-3 font-semibold text-center w-36' }, '操作'),
-                h('th', { className: 'p-3 font-semibold w-32' }, '指派人員名稱'),
+                h('th', { className: 'p-3 font-semibold w-32' }, '組別名稱'),
                 h('th', { className: 'p-3 font-semibold w-24' }, '課長'),
                 h('th', { className: 'p-3 font-semibold w-64' }, '負責行政區'),
                 h('th', { className: 'p-3 font-semibold' }, '成員名單')
@@ -157,7 +157,7 @@
               h('h3', { className: 'text-lg font-bold text-gray-800' }, '確認刪除')
             ),
             h('p', { className: 'text-gray-600 mb-6' },
-              '確定要刪除指派人員「' + deleteModal.name + '」嗎？若仍有未結案案件則無法刪除；已結案且列入績效之案件仍保留原指派人員紀錄。'),
+              '確定要刪除組別「' + deleteModal.name + '」嗎？若仍有未結案案件則無法刪除；已結案且列入績效之案件仍保留原組別紀錄。'),
             h('div', { className: 'flex justify-end space-x-3' },
               h('button', {
                 onClick: function () { deleteModal = { show: false, id: null, name: '' }; rerender(); },

@@ -1,5 +1,5 @@
 /*
- * features/permissions/assignee-utils.js — 指派人員工具函式
+ * features/permissions/assignee-utils.js — 組別工具函式
  */
 (function () {
   'use strict';
@@ -102,6 +102,37 @@
     });
   }
 
+  // 一個行政區只能歸屬一組。excludeId 是「正在編輯的這一組」，它自己已選的行政區
+  // 不算被佔用，否則編輯時會把自己的轄區鎖死。
+  function getOccupiedDistricts(assignees, excludeId) {
+    var occupied = [];
+    var seen = {};
+    (assignees || []).forEach(function (a) {
+      if (excludeId && a.id === excludeId) return;
+      (a.districts || []).forEach(function (d) {
+        if (!d || seen[d]) return;
+        seen[d] = true;
+        occupied.push(d);
+      });
+    });
+    return occupied;
+  }
+
+  function findConflictingDistricts(assignees, districts, excludeId) {
+    var occupiedSet = {};
+    getOccupiedDistricts(assignees, excludeId).forEach(function (d) {
+      occupiedSet[d] = true;
+    });
+    var conflicts = [];
+    var seen = {};
+    (districts || []).forEach(function (d) {
+      if (!d || seen[d] || !occupiedSet[d]) return;
+      seen[d] = true;
+      conflicts.push(d);
+    });
+    return conflicts;
+  }
+
   function applyMemberIds(assignees, assigneeId, memberIds) {
     return assignees.map(function (a) {
       if (a.id !== assigneeId) return a;
@@ -189,6 +220,8 @@
     buildPerformanceSnapshot: buildPerformanceSnapshot,
     getPerformanceAssignee: getPerformanceAssignee,
     findDuplicateName: findDuplicateName,
+    getOccupiedDistricts: getOccupiedDistricts,
+    findConflictingDistricts: findConflictingDistricts,
     applyMemberIds: applyMemberIds,
     removeMemberFromAll: removeMemberFromAll,
     updateAssigneeReferences: updateAssigneeReferences
