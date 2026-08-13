@@ -2,7 +2,8 @@
  * features/reports/case-performance-stats.js — 案件績效統計（環形儀表板）
  * props: {
  *   cases, maintenanceCases, assignees,
- *   maintenanceAllocations, stores, performanceAreas, deviceCategories, serviceLevels
+ *   maintenanceAllocations, maintenanceAllocationYears,
+ *   stores, performanceAreas, deviceCategories, serviceLevels
  * }
  */
 (function () {
@@ -122,7 +123,12 @@
     var performanceAreas = props.performanceAreas || [];
     var deviceCategories = props.deviceCategories || [];
     var serviceLevels = props.serviceLevels || [];
+    var allocationYears = props.maintenanceAllocationYears || [];
     var quarter = PerformanceUtils.getQuarterRange(new Date());
+    // 每年 1 月 1 日起、到有人手動建立該年度分配表之前，目標一律是 0；
+    // 沒有這行說明的話，畫面看起來就只是所有組達成率都掛 0%。
+    var quarterYear = Number(String(quarter.start).slice(0, 4));
+    var hasYearSnapshot = !!MaintenanceAllocationUtils.findYearSnapshot(allocationYears, quarterYear);
 
     var assigneeRows = PerformanceUtils.computeAssigneePerformance({
       cases: cases,
@@ -148,6 +154,12 @@
           className: 'inline-flex text-lg font-extrabold tracking-wide text-sky-700 bg-sky-50 px-4 py-2 rounded-lg border border-sky-100'
         }, quarter.label)
       ),
+
+      hasYearSnapshot
+        ? null
+        : h('div', {
+            className: 'mb-6 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800'
+          }, quarterYear + ' 年度分配表尚未建立，目標店數與達成率暫以 0 計'),
 
       h('section', { className: 'mb-10' },
         h('div', {

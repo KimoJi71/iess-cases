@@ -108,6 +108,8 @@
    * 每個「集合」在回傳物件中皆有同名欄位（見該表的 key）。
    * changedCount 以「欄位」為單位計數：projectCases 若頂層 serviceLevel 與巢狀
    * details.serviceLevel 同時命中舊名，算 2（各自代表一個獨立快照，皆需同步）。
+   * 註：保養分配的年度快照（maintenanceAllocationYears[].rows[].serviceLevel）刻意不在此同步，
+   * 歷史年度應保留建立當時的等級名稱。新增其他集合時才需納入下方同步範圍。
    * @returns {{ customers, stores, cases, maintenanceCases, projectCases, surveyCases,
    *             personnelStatus, changedCount }}
    */

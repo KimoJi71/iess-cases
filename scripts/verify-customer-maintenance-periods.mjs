@@ -231,12 +231,19 @@ try {
       CustomerUtils.findPeriodForMonth(customers, '甲客戶', 12)
     ];
   })()`), [1, 2, null, null], '客戶自訂區間決定月份歸屬，區間外回 null');
+  // 保養分配改為「每年一份、骨架凍結成年度快照」後，元件不再直接呼叫 CustomerUtils：
+  // 客戶區間在建立／重新同步年度時由 MaintenanceAllocationUtils.buildYearSnapshot
+  // 讀 CustomerUtils.getPeriods 凍進快照，元件則改讀快照。故這兩條斷言的守護對象
+  // 換成快照側的區間查詢入口，行為（分段與月份歸屬都以客戶自訂區間為準）不變。
   assertTrue(await evaluate(
-    `/CustomerUtils\\.getPeriods/.test(String(MaintenanceAllocation))`
-  ), '保養分配的分段來源改用 CustomerUtils.getPeriods');
+    `/MaintenanceAllocationUtils\\.buildSegmentMap/.test(String(MaintenanceAllocation))`
+  ), '保養分配的分段來源改用 MaintenanceAllocationUtils.buildSegmentMap（區間查詢已改由年度快照提供）');
   assertTrue(await evaluate(
-    `/CustomerUtils\\.findPeriodForMonth/.test(String(MaintenanceAllocation))`
-  ), '保養分配的月份查詢改用 CustomerUtils.findPeriodForMonth');
+    `/MaintenanceAllocationUtils\\.findPeriodInRow/.test(String(MaintenanceAllocation))`
+  ), '保養分配的月份查詢改用 MaintenanceAllocationUtils.findPeriodInRow（區間查詢已改由年度快照提供）');
+  assertTrue(await evaluate(
+    `/CustomerUtils\\.getPeriods/.test(String(MaintenanceAllocationUtils.buildYearSnapshot))`
+  ), '年度快照仍以 CustomerUtils.getPeriods 凍結客戶自訂區間');
   assertTrue(await evaluate(
     `!/ServiceLevelUtils\\.(getPeriods|findPeriodForMonth)/.test(String(MaintenanceAllocation))`
   ), '保養分配不再呼叫 ServiceLevelUtils 的區間函式');
@@ -246,8 +253,10 @@ try {
   // 保養區間分段：左／右邊界 class、「第N次 x/y」標頭、區間外全白、
   // 同等級但不同區間的客戶各自獨立分段，以及半填區間（Finding 1）不可編輯。
   await evaluate(`
+    // 年度下拉排在指派人員之前，指派人員是容器內第 2 個 combobox
     window.__chooseAllocAssignee2 = function (container, label) {
-      var input = container.querySelector('input[role="combobox"]');
+      var input = container.querySelectorAll('input[role="combobox"]')[1];
+      if (!input) throw new Error('__chooseAllocAssignee2: 找不到指派人員下拉');
       input.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
       var btns = Array.prototype.filter.call(
         document.querySelectorAll('.searchable-select__menu--portal .searchable-select__option'),
@@ -282,10 +291,17 @@ try {
     window.__allocToasts2 = [];
     var container = document.createElement('div');
     document.body.appendChild(container);
+    // 網格是從年度快照長出來的：用同一份 fixture 現拍一張當年度快照。
+    // 快照的 periods 就是 CustomerUtils.getPeriods 的輸出（半填區間已被濾掉），
+    // 故下面對「各客戶依自己的區間分段」與「半填視為未設定」的斷言守的仍是同一件事。
+    var snapshot = MaintenanceAllocationUtils.buildYearSnapshot(
+      new Date().getFullYear(), assignees, customers, stores, INITIAL_SERVICE_LEVELS, '2026-01-01'
+    );
     container.appendChild(MaintenanceAllocation({
       assignees: assignees, customers: customers, stores: stores,
       maintenanceCases: [], serviceLevels: INITIAL_SERVICE_LEVELS,
       maintenanceAllocations: [], setMaintenanceAllocations: function () {},
+      maintenanceAllocationYears: [snapshot], setMaintenanceAllocationYears: function () {},
       showToast: function (m, k) { window.__allocToasts2.push([m, k || 'success']); }
     }));
     window.__chooseAllocAssignee2(container, 'A組');
@@ -366,8 +382,8 @@ try {
   assertTrue(allocGrid.r3SeventhClass.indexOf('border-l-2') !== -1, '丙客戶完整的第2次（7-12月）仍正常有左邊界');
   assertTrue(allocGrid.r3SeventhHeader.indexOf('第2次') === 0, '丙客戶完整的第2次仍正常顯示標頭', allocGrid.r3SeventhHeader);
   assertEq(allocGrid.r3ClickOpenedModal, false, '點半填區間覆蓋的月份不開啟編輯 Modal（openEditModal 拒絕）');
-  assertDeep(allocGrid.r3Toasts, [['此月份不在該客戶的保養區間內', 'error']],
-    '點半填區間覆蓋的月份跳出「此月份不在該客戶的保養區間內」提示');
+  assertDeep(allocGrid.r3Toasts, [['此月份不在該年度的保養區間內', 'error']],
+    '點半填區間覆蓋的月份跳出「此月份不在該年度的保養區間內」提示');
 
   console.log('\nSection 4｜保養次數標籤改吃客戶區間');
   await evaluate(`window.__PERIOD_CUSTOMERS = [

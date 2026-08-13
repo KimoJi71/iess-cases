@@ -810,9 +810,12 @@ try {
   // 以 mousedown 選取，見 Section 3 對此機制的說明。另外 stateful() 是以
   // parentNode.replaceChild 換掉整棵樹，故用一個固定的容器 div 承接元件節點，
   // 之後一律透過容器查詢，才能拿到 rerender 後的最新 DOM。
+  // 保養分配改為「每年一份」後，工具列多了一個「年度」下拉排在指派人員之前，
+  // 故指派人員是容器內第 2 個 combobox（index 1），不能再取第 1 個。
   await evaluate(`
     window.__chooseAllocAssignee = function (container, label) {
-      var input = container.querySelector('input[role="combobox"]');
+      var input = container.querySelectorAll('input[role="combobox"]')[1];
+      if (!input) throw new Error('__chooseAllocAssignee: 找不到指派人員下拉');
       input.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
       var btns = Array.prototype.filter.call(
         document.querySelectorAll('.searchable-select__menu--portal .searchable-select__option'),
@@ -841,10 +844,16 @@ try {
     window.__allocToasts = [];
     var container = document.createElement('div');
     document.body.appendChild(container);
+    // 網格是從「年度快照」長出來的，元件沒有年度就只會顯示空狀態；
+    // 這裡用同一份 fixture 現拍一張當年度快照餵進去。
+    var snapshot = MaintenanceAllocationUtils.buildYearSnapshot(
+      year, assignees, customers, stores, INITIAL_SERVICE_LEVELS, year + '-01-01'
+    );
     container.appendChild(MaintenanceAllocation({
       assignees: assignees, customers: customers, stores: stores,
       maintenanceCases: maint, serviceLevels: INITIAL_SERVICE_LEVELS,
       maintenanceAllocations: [], setMaintenanceAllocations: function () {},
+      maintenanceAllocationYears: [snapshot], setMaintenanceAllocationYears: function () {},
       showToast: function (m, k) { window.__allocToasts.push([m, k || 'success']); }
     }));
     window.__chooseAllocAssignee(container, 'A組');
@@ -861,7 +870,11 @@ try {
     // 點第 2 月（在區間內）應開啟 Modal
     monthCells[1].querySelector('div').click();
     out.modalOpened = container.textContent.indexOf('編輯保養分配') !== -1;
-    out.visitReadOnly = container.querySelectorAll('input[role="combobox"]').length;
+    // 原本是數整個容器的 combobox 數（=1，只有網格的指派人員下拉）；年度下拉加入後
+    // 容器內固定有 2 個，數字會失去意義，故改為直接量 Modal 內的下拉數（應為 0）。
+    var overlay = container.querySelector('.app-modal-overlay');
+    out.modalComboCount = overlay ? overlay.querySelectorAll('input[role="combobox"]').length : -1;
+    out.modalHasVisitLabel = overlay ? overlay.textContent.indexOf('保養次數') !== -1 : false;
     container.remove();
     return out;
   })()`);
@@ -872,7 +885,8 @@ try {
     '第 2 區間首欄顯示「第2次 0/2」', grid.secondPeriodHeader);
   assertEq(grid.midCellHasHeader, false, '非區間首欄不顯示小字標頭');
   assertEq(grid.modalOpened, true, '點區間內月份會開啟編輯 Modal');
-  assertEq(grid.visitReadOnly, 1, 'Modal 內沒有保養次數下拉（僅剩指派人員下拉）');
+  assertEq(grid.modalHasVisitLabel, true, 'Modal 仍顯示「保養次數」欄位');
+  assertEq(grid.modalComboCount, 0, 'Modal 內沒有任何下拉（保養次數已改為唯讀文字）');
 
   const outsideClick = await evaluate(`(function(){
     var assignees = [{ id: 'A1', name: 'A組', districts: ['台北市信義區'] }];
@@ -885,10 +899,14 @@ try {
     window.__allocToasts = [];
     var container = document.createElement('div');
     document.body.appendChild(container);
+    var snapshot = MaintenanceAllocationUtils.buildYearSnapshot(
+      new Date().getFullYear(), assignees, customers, stores, levels, '2026-01-01'
+    );
     container.appendChild(MaintenanceAllocation({
       assignees: assignees, customers: customers, stores: stores,
       maintenanceCases: [], serviceLevels: levels,
       maintenanceAllocations: [], setMaintenanceAllocations: function () {},
+      maintenanceAllocationYears: [snapshot], setMaintenanceAllocationYears: function () {},
       showToast: function (m, k) { window.__allocToasts.push([m, k || 'success']); }
     }));
     window.__chooseAllocAssignee(container, 'A組');
@@ -900,7 +918,8 @@ try {
     return out;
   })()`);
   assertEq(outsideClick.modalOpened, false, '點區間外月份不開 Modal');
-  assertDeep(outsideClick.toasts, [['此月份不在該客戶的保養區間內', 'error']],
+  // 區間現在由年度快照提供，文案也隨之從「該客戶」改為「該年度」
+  assertDeep(outsideClick.toasts, [['此月份不在該年度的保養區間內', 'error']],
     '點區間外月份跳出提示 toast');
 
   console.log('\nSection 7｜app.js 已往下傳 maintenanceCases / serviceLevels');

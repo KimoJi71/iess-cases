@@ -73,6 +73,12 @@
     );
   }
 
+  /**
+   * 加總保養分配的目標完成數。
+   * opts: { months, year, assigneeId, customerName }
+   * 保養分配自「年度快照」後每年一份，格子帶 year；opts.year 未給時不過濾年份
+   * （維持既有呼叫相容），給了就只計該年度，年份一律以 Number() 比對。
+   */
   function sumAllocationTargets(allocations, opts) {
     opts = opts || {};
     var months = opts.months || [];
@@ -81,6 +87,7 @@
     var total = 0;
     (allocations || []).forEach(function (row) {
       if (!monthSet[row.month]) return;
+      if (opts.year != null && Number(row.year) !== Number(opts.year)) return;
       if (opts.assigneeId && row.assigneeId !== opts.assigneeId) return;
       if (opts.customerName && row.customerName !== opts.customerName) return;
       total += Number(row.targetCount) || 0;
@@ -136,6 +143,7 @@
 
       var target = sumAllocationTargets(allocations, {
         months: months,
+        year: Number(String(quarter.start).slice(0, 4)),
         assigneeId: assignee.id
       });
 
@@ -198,6 +206,7 @@
       var customers = customerNames.map(function (customerName) {
         var target = sumAllocationTargets(allocations, {
           months: months,
+          year: Number(String(quarter.start).slice(0, 4)),
           customerName: customerName
         });
         var completed = completedForCustomerInArea(customerName, pa.districts);
