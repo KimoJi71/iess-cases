@@ -2180,3 +2180,16 @@ INITIAL_CASES.forEach(function (c) {
     c.performanceMemberIds = memberIds;
   }
 });
+
+// 年度快照由現行主檔計算產生，確保 demo 資料與畫面一致。
+// maintenance-allocation-utils.js 於 index.html 中先於 seed.js 載入，故此處可直接呼叫。
+const INITIAL_MAINTENANCE_ALLOCATION_YEARS = [
+  MaintenanceAllocationUtils.buildYearSnapshot(
+    SEED_YEAR,
+    INITIAL_ASSIGNEES,
+    INITIAL_CUSTOMERS,
+    INITIAL_STORES,
+    INITIAL_SERVICE_LEVELS,
+    todayDate
+  )
+];

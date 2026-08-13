@@ -100,6 +100,7 @@
     processMethods: INITIAL_PROCESS_METHODS,
     assignees: INITIAL_ASSIGNEES,
     maintenanceAllocations: INITIAL_MAINTENANCE_ALLOCATIONS,
+    maintenanceAllocationYears: INITIAL_MAINTENANCE_ALLOCATION_YEARS,
     performanceAreas: INITIAL_PERFORMANCE_AREAS,
     editingCase: null,
     viewingCase: null,
@@ -179,6 +180,7 @@
   var setEquipmentStore = makeSetter('equipmentStore');
   var setPersonnelStatus = makeSetter('personnelStatus');
   var setMaintenanceAllocations = makeSetter('maintenanceAllocations');
+  var setMaintenanceAllocationYears = makeSetter('maintenanceAllocationYears');
   var setPerformanceAreas = makeSetter('performanceAreas');
   function setAccounts(v) {
     store.set(function (s) {
@@ -766,6 +768,8 @@
           serviceLevels: s.serviceLevels,
           maintenanceAllocations: s.maintenanceAllocations,
           setMaintenanceAllocations: setMaintenanceAllocations,
+          maintenanceAllocationYears: s.maintenanceAllocationYears,
+          setMaintenanceAllocationYears: setMaintenanceAllocationYears,
           showToast: showToast
         });
       case 'performance-area-list':

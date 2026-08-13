@@ -78,6 +78,71 @@
     return Object.keys(seen).length;
   }
 
+  /**
+   * 年度快照：把「哪些客戶入列、負責幾間門市、當時的服務等級與保養區間」凍結下來。
+   * 之後客戶改服務等級或區間都不影響已建立的年度，除非明確呼叫 resyncYear。
+   * @param {string} today 'YYYY-MM-DD'，由呼叫端傳入（utils 不取現在時間，便於測試）
+   */
+  function buildYearSnapshot(year, assignees, customers, stores, serviceLevels, today) {
+    var rows = [];
+    (assignees || []).forEach(function (assignee) {
+      getCustomerRows(assignee, customers, stores, serviceLevels).forEach(function (row) {
+        rows.push({
+          assigneeId: assignee.id,
+          customerName: row.customerName,
+          serviceLevel: row.serviceLevel,
+          storeCount: Number(row.storeCount) || 0,
+          periods: CustomerUtils.getPeriods(customers, row.customerName).map(function (p) {
+            return {
+              visitIndex: Number(p.visitIndex),
+              startMonth: Number(p.startMonth),
+              endMonth: Number(p.endMonth)
+            };
+          })
+        });
+      });
+    });
+    return { year: Number(year), createdAt: today || '', syncedAt: '', rows: rows };
+  }
+
+  function findYearSnapshot(years, year) {
+    return (years || []).find(function (y) {
+      return Number(y.year) === Number(year);
+    }) || null;
+  }
+
+  function listYears(years) {
+    return (years || []).map(function (y) { return Number(y.year); })
+      .sort(function (a, b) { return b - a; });
+  }
+
+  function getSnapshotRows(snapshot, assigneeId) {
+    if (!snapshot) return [];
+    return (snapshot.rows || []).filter(function (r) {
+      return r.assigneeId === assigneeId;
+    }).sort(function (a, b) {
+      return String(a.customerName).localeCompare(String(b.customerName), 'zh-Hant');
+    });
+  }
+
+  // 月份 → { period, order }；order 供區段底色交替使用
+  function buildSegmentMap(row) {
+    var map = {};
+    ((row && row.periods) || []).forEach(function (p, order) {
+      for (var m = Number(p.startMonth); m <= Number(p.endMonth); m++) {
+        map[m] = { period: p, order: order };
+      }
+    });
+    return map;
+  }
+
+  function findPeriodInRow(row, month) {
+    var m = Number(month);
+    return ((row && row.periods) || []).find(function (p) {
+      return m >= Number(p.startMonth) && m <= Number(p.endMonth);
+    }) || null;
+  }
+
   function findAllocation(allocations, year, assigneeId, customerName, month) {
     return (allocations || []).find(function (a) {
       return Number(a.year) === Number(year) &&
@@ -169,6 +234,12 @@
     getCoveredStoresForAssignee: getCoveredStoresForAssignee,
     getCustomerRows: getCustomerRows,
     countCompletedStores: countCompletedStores,
+    buildYearSnapshot: buildYearSnapshot,
+    findYearSnapshot: findYearSnapshot,
+    listYears: listYears,
+    getSnapshotRows: getSnapshotRows,
+    buildSegmentMap: buildSegmentMap,
+    findPeriodInRow: findPeriodInRow,
     findAllocation: findAllocation,
     sumVisitIndexTotal: sumVisitIndexTotal,
     buildSaveWarnings: buildSaveWarnings,
