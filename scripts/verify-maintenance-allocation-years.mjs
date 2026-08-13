@@ -286,5 +286,131 @@ const LATE_ALLOC = { id: 'A5', year: 2026, assigneeId: 'ASG1', customerName: '�
 assertEq(MAU.isOrphanAllocation(LATE_ALLOC, snap), false, '同步前 11 月在乙客戶第 2 次區間內');
 assertEq(MAU.isOrphanAllocation(LATE_ALLOC, shrunk), true, '同步後 11 月落在所有區間外，成為孤兒');
 
+
+// ---------- headless Chrome 區段 ----------
+const CHROME = process.env.CHROME_PATH
+  || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+const PORT = Number(process.env.CDP_PORT || 9347);
+if (!existsSync(CHROME)) {
+  console.error(`找不到 Chrome：${CHROME}\n可用 CHROME_PATH 環境變數指定路徑。`);
+  process.exit(2);
+}
+
+const chrome = spawn(CHROME, [
+  '--headless', '--disable-gpu', '--no-first-run', '--no-default-browser-check',
+  `--remote-debugging-port=${PORT}`, '--user-data-dir=/tmp/iess-allocation-years-profile',
+  'about:blank'
+], { stdio: 'ignore' });
+
+let ws, msgId = 0;
+const pending = new Map();
+const consoleErrors = [];
+function send(method, params = {}) {
+  const id = ++msgId;
+  ws.send(JSON.stringify({ id, method, params }));
+  return new Promise((res, rej) => pending.set(id, { res, rej }));
+}
+async function evaluate(expression) {
+  const r = await send('Runtime.evaluate', {
+    expression, returnByValue: true, awaitPromise: true
+  });
+  if (r.exceptionDetails) {
+    throw new Error(r.exceptionDetails.exception?.description || JSON.stringify(r.exceptionDetails));
+  }
+  return r.result.value;
+}
+
+try {
+  let targets;
+  for (let i = 0; i < 50; i++) {
+    try { targets = await (await fetch(`http://127.0.0.1:${PORT}/json/list`)).json(); break; }
+    catch { await sleep(200); }
+  }
+  const page = targets.find(t => t.type === 'page');
+  ws = new WebSocket(page.webSocketDebuggerUrl);
+  await new Promise(res => { ws.onopen = res; });
+  ws.onmessage = (ev) => {
+    const m = JSON.parse(ev.data);
+    if (m.id && pending.has(m.id)) {
+      const { res, rej } = pending.get(m.id);
+      pending.delete(m.id);
+      m.error ? rej(new Error(JSON.stringify(m.error))) : res(m.result);
+    } else if (m.method === 'Runtime.exceptionThrown') {
+      consoleErrors.push(m.params.exceptionDetails.exception?.description
+        || m.params.exceptionDetails.text);
+    } else if (m.method === 'Runtime.consoleAPICalled' && m.params.type === 'error') {
+      consoleErrors.push(m.params.args.map(a => a.value ?? a.description).join(' '));
+    }
+  };
+  await send('Runtime.enable');
+  await send('Page.enable');
+  await send('Page.navigate', { url: `file://${ROOT}/index.html` });
+  await sleep(4000);
+
+  console.log('\nSection 4｜seed 年度快照與畫面接線');
+  assertEq(consoleErrors.length, 0, '載入時無 JS 錯誤');
+  assertEq(await evaluate('INITIAL_MAINTENANCE_ALLOCATION_YEARS.length'), 1,
+    'seed 有一筆年度快照');
+  assertEq(await evaluate('Number(INITIAL_MAINTENANCE_ALLOCATION_YEARS[0].year)'),
+    new Date().getFullYear(), 'seed 快照為當年度');
+  assertTrue(await evaluate(`INITIAL_MAINTENANCE_ALLOCATIONS.every(function (a) {
+    return Number(a.year) === Number(INITIAL_MAINTENANCE_ALLOCATION_YEARS[0].year);
+  })`), 'seed 的分配格子全部屬於該年度');
+  assertTrue(await evaluate(`INITIAL_MAINTENANCE_ALLOCATION_YEARS[0].rows.every(function (r) {
+    return typeof r.assigneeId === 'string' && r.assigneeId
+      && typeof r.customerName === 'string'
+      && typeof r.storeCount === 'number'
+      && Array.isArray(r.periods);
+  })`), '快照每列的欄位齊備');
+  assertEq(await evaluate(
+    'MaintenanceAllocationUtils.countOrphans(INITIAL_MAINTENANCE_ALLOCATIONS, INITIAL_MAINTENANCE_ALLOCATION_YEARS[0])'
+  ), 0, 'seed 資料下無孤兒格子');
+  assertTrue(await evaluate(
+    `/getSnapshotRows/.test(String(MaintenanceAllocation))`
+  ), '元件的列來源改用 getSnapshotRows');
+  assertTrue(await evaluate(
+    `!/CustomerUtils\\.getPeriods/.test(String(MaintenanceAllocation))`
+  ), '元件不再直接讀客戶的 periods');
+  assertTrue(await evaluate(
+    `!/CustomerUtils\\.findPeriodForMonth/.test(String(MaintenanceAllocation))`
+  ), '元件不再用 CustomerUtils.findPeriodForMonth 查區間');
+  assertTrue(await evaluate(
+    `/findPeriodInRow/.test(String(MaintenanceAllocation))`
+  ), '元件改用 findPeriodInRow 查區間');
+
+  console.log('\nSection 4｜快照凍結：客戶改等級不影響已建立年度');
+  assertDeep(await evaluate(`(function(){
+    var years = INITIAL_MAINTENANCE_ALLOCATION_YEARS;
+    var year = Number(years[0].year);
+    var before = MaintenanceAllocationUtils.getSnapshotRows(years[0], 'ASG1')
+      .map(function (r) { return r.customerName + ':' + r.periods.length + ':' + r.storeCount; });
+    // 模擬客戶改等級與區間（只改副本，不動 seed）
+    var customers = INITIAL_CUSTOMERS.map(function (c) {
+      if (c.name !== '屈臣氏') return c;
+      return Object.assign({}, c, {
+        serviceLevel: 'B 保修(一年兩次)',
+        periods: [
+          { visitIndex: 1, startMonth: 1, endMonth: 6 },
+          { visitIndex: 2, startMonth: 7, endMonth: 12 }
+        ]
+      });
+    });
+    var after = MaintenanceAllocationUtils.getSnapshotRows(years[0], 'ASG1')
+      .map(function (r) { return r.customerName + ':' + r.periods.length + ':' + r.storeCount; });
+    var next = MaintenanceAllocationUtils.buildYearSnapshot(
+      year + 1, INITIAL_ASSIGNEES, customers, INITIAL_STORES, INITIAL_SERVICE_LEVELS, '2027-01-02'
+    );
+    var nextRow = MaintenanceAllocationUtils.getSnapshotRows(next, 'ASG1')
+      .find(function (r) { return r.customerName === '屈臣氏'; });
+    return [
+      JSON.stringify(before) === JSON.stringify(after),
+      nextRow ? nextRow.periods.length : -1
+    ];
+  })()`), [true, 2], '舊年度快照不受客戶異動影響；新年度只有兩個區間');
+} finally {
+  try { ws && ws.close(); } catch {}
+  chrome.kill();
+}
+
 console.log(`\n通過 ${passed}｜失敗 ${failed}`);
 process.exit(failed ? 1 : 0);
