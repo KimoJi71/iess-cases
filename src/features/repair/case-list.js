@@ -11,6 +11,17 @@
     return IESS.caseDateTime.format(c.createdAt || c.repairDate);
   }
 
+  function formatExpectedDate(c) {
+    return c.expectedDate || c.planDate || '—';
+  }
+
+  function formatExpectedTime(c) {
+    var start = c.expectedTimeStart || c.planTimeStart;
+    var end = c.expectedTimeEnd || c.planTimeEnd;
+    if (!start) return '—';
+    return end && end !== start ? start + ' ~ ' + end : start;
+  }
+
   function iconActionBtn(opts) {
     return IESS.iconActionBtn(opts);
   }
@@ -196,22 +207,28 @@
               h('tr', null,
                 h('th', { className: 'p-3 font-semibold text-center min-w-[140px]' }, '操作'),
                 h('th', { className: 'p-3 font-semibold text-center' }, '燈號'),
-                h('th', { className: 'p-3 font-semibold' }, '叫修時間'),
-                h('th', { className: 'p-3 font-semibold' }, '案件編號'),
-                h('th', { className: 'p-3 font-semibold' }, '客戶/門市名稱'),
-                h('th', { className: 'p-3 font-semibold' }, '公司區域'),
-                h('th', { className: 'p-3 font-semibold' }, '工項分類'),
-                h('th', { className: 'p-3 font-semibold' }, '叫修項目/原因'),
-                h('th', { className: 'p-3 font-semibold min-w-[200px]' }, '故障描述'),
-                h('th', { className: 'p-3 font-semibold' }, '組別'),
                 h('th', { className: 'p-3 font-semibold' }, '案件狀態'),
+                h('th', { className: 'p-3 font-semibold' }, '客戶名稱'),
+                h('th', { className: 'p-3 font-semibold' }, '門市名稱'),
+                h('th', { className: 'p-3 font-semibold' }, '工項分類'),
+                h('th', { className: 'p-3 font-semibold' }, '案件編號'),
+                h('th', { className: 'p-3 font-semibold' }, '建立日期'),
+                h('th', { className: 'p-3 font-semibold' }, '行政區域'),
+                h('th', { className: 'p-3 font-semibold' }, '叫修項目'),
+                h('th', { className: 'p-3 font-semibold' }, '叫修原因'),
+                h('th', { className: 'p-3 font-semibold min-w-[200px]' }, '故障描述'),
+                h('th', { className: 'p-3 font-semibold min-w-[150px]' }, '實際原因'),
+                h('th', { className: 'p-3 font-semibold' }, '組別'),
+                h('th', { className: 'p-3 font-semibold' }, '預計日期'),
+                h('th', { className: 'p-3 font-semibold' }, '預計時間'),
                 h('th', { className: 'p-3 font-semibold' }, '退回原因')
               )
             ),
             h('tbody', { className: 'divide-y divide-gray-100' },
               pageResult.items.length === 0
-                ? h('tr', null, h('td', { colspan: 12, className: 'p-10 text-center text-gray-400 text-base' }, '無資料'))
+                ? h('tr', null, h('td', { colspan: 17, className: 'p-10 text-center text-gray-400 text-base' }, '無資料'))
                 : pageResult.items.map(function (c) {
+                var isOther = c.workCategory === '其他';
                 return h('tr', { key: c.id, className: 'hover:bg-blue-50/50 transition-colors' },
                   h('td', { className: 'p-3' },
                     h('div', { className: 'flex items-center justify-center flex-wrap gap-1' },
@@ -221,25 +238,6 @@
                   h('td', { className: 'p-3 text-center' },
                     h('div', { className: 'inline-block w-3 h-3 rounded-full ' + getIndicatorColor(c) })
                   ),
-                  h('td', { className: 'p-3' }, formatCreatedAt(c)),
-                  h('td', { className: 'p-3 font-medium text-blue-700' }, c.caseNumber),
-                  h('td', { className: 'p-3' },
-                    h('div', null, c.customerName),
-                    h('div', { className: 'text-xs text-gray-500' }, c.storeName)
-                  ),
-                  h('td', { className: 'p-3' }, StoreUtils.getRecordArea(c) || '—'),
-                  h('td', { className: 'p-3' },
-                    h('span', {
-                      className: 'px-2 py-1 rounded text-xs ' +
-                        (c.workCategory === '緊急叫修' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700')
-                    }, c.workCategory)
-                  ),
-                  h('td', { className: 'p-3' },
-                    h('div', null, c.repairItem),
-                    h('div', { className: 'text-xs text-gray-500' }, c.repairReason)
-                  ),
-                  h('td', { className: 'p-3 max-w-[200px] truncate', title: c.faultDesc }, c.faultDesc),
-                  h('td', { className: 'p-3' }, CaseAssigneeUtils.formatAssignees(c)),
                   h('td', { className: 'p-3' },
                     (function () {
                       var dispatchStatus = caseStatus.getCaseListDispatchStatus(c);
@@ -249,6 +247,27 @@
                       }, dispatchStatus);
                     })()
                   ),
+                  h('td', { className: 'p-3' }, c.customerName),
+                  h('td', { className: 'p-3' }, c.storeName),
+                  h('td', { className: 'p-3' },
+                    h('span', {
+                      className: 'px-2 py-1 rounded text-xs ' +
+                        (c.workCategory === '緊急叫修' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700')
+                    }, c.workCategory)
+                  ),
+                  h('td', { className: 'p-3 font-medium text-blue-700' }, c.caseNumber),
+                  h('td', { className: 'p-3' }, formatCreatedAt(c)),
+                  h('td', { className: 'p-3' }, StoreUtils.getRecordArea(c) || '—'),
+                  h('td', { className: 'p-3' }, isOther ? '' : (c.repairItem || '—')),
+                  h('td', { className: 'p-3' }, isOther ? '' : (c.repairReason || '—')),
+                  h('td', { className: 'p-3 max-w-[200px] truncate', title: c.faultDesc }, c.faultDesc),
+                  h('td', {
+                    className: 'p-3 max-w-[150px] truncate',
+                    title: c.actualReason || ''
+                  }, c.actualReason || '—'),
+                  h('td', { className: 'p-3' }, CaseAssigneeUtils.formatAssignees(c)),
+                  h('td', { className: 'p-3' }, formatExpectedDate(c)),
+                  h('td', { className: 'p-3' }, formatExpectedTime(c)),
                   h('td', {
                     className: 'p-3 max-w-[150px] truncate',
                     title: c.returnReason ? ((c.returnedAt ? c.returnedAt + ' ' : '') + c.returnReason) : ''
