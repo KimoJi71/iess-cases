@@ -592,27 +592,13 @@
         emptyText: '請點擊上方按鈕掃描',
         emptyClass: 'text-center py-8 text-gray-400 bg-gray-50 rounded-md border border-dashed'
       })
-    ), isOther ? h("section", {
-        className: "bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-100 relative overflow-hidden"
-      }, h("h3", {
-        className: "text-lg font-bold text-blue-800 border-b pb-2 mb-4"
-      }, "3. 備註"), h("div", {
-        className: !formData.equipment ? 'opacity-30 pointer-events-none' : ''
-      }, h("textarea", {
-        name: "remarks",
-        value: formData.remarks || '',
-        onChange: handleChange,
-        disabled: !formData.equipment,
-        rows: "4",
-        className: "w-full p-2 border rounded-md outline-none disabled:bg-gray-100 disabled:cursor-not-allowed",
-        placeholder: formData.equipment ? "請輸入備註..." : "請先掃描設備"
-      }))) : h("section", {
+    ), h("section", {
         className: "bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-100 relative overflow-hidden"
       }, h("h3", {
         className: "text-lg font-bold text-blue-800 border-b pb-2 mb-4"
       }, "3. 服務項目"), h("div", {
         className: "space-y-6 " + (!formData.equipment ? 'opacity-30 pointer-events-none' : '')
-      }, h("div", null, h("label", {
+      }, !isOther && h("div", null, h("label", {
         className: "block text-sm mb-1"
       }, "實際維修原因"), h("textarea", {
         name: "actualReason",
