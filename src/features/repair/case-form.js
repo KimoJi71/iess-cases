@@ -766,7 +766,7 @@
         readOnly: true,
         value: caseDT.format(formData.createdAt || formData.repairDate)
       }), TimeRecordField({
-        label: '維修時間',
+        label: '到店時間',
         name: 'reRepairDate',
         value: formData.reRepairDate,
         onChange: handleChange
