@@ -138,7 +138,7 @@
   function fmtEquipmentList(list, deviceCategories) {
     if (!Array.isArray(list) || !list.length) return '';
     return list.map(function (eq, i) {
-      var level = DeviceCategoryUtils.formatEquipmentLevel(deviceCategories || [], eq);
+      var level = EquipmentUtils.formatLevel(eq);
       return [
         eq.category,
         eq.brand,

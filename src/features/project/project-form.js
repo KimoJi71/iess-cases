@@ -151,7 +151,7 @@
                 h('label', { className: 'block text-sm text-gray-600 mb-1' }, '設備等級'),
                 h('input', {
                   type: 'text',
-                  value: DeviceCategoryUtils.formatEquipmentLevel(deviceCategories, currentEquip),
+                  value: EquipmentUtils.formatLevel(currentEquip),
                   placeholder: '請先選擇型號',
                   disabled: true,
                   className: 'w-full p-2 bg-gray-50 border rounded text-gray-500 cursor-not-allowed'
@@ -226,7 +226,7 @@
       h('td', { className: 'p-3' }, eq.brand || '-'),
       h('td', { className: 'p-3' }, eq.specification || '-'),
       h('td', { className: 'p-3 font-medium text-indigo-600' }, eq.model || '-'),
-      h('td', { className: 'p-3' }, DeviceCategoryUtils.formatEquipmentLevel(p.deviceCategories, eq) || '-'),
+      h('td', { className: 'p-3' }, EquipmentUtils.formatLevel(eq) || '-'),
       h('td', { className: 'p-3' }, eq.area || '-'),
       h('td', { className: 'p-3' },
         h('div', { className: 'text-xs' }, '出：', eq.manufactureDate || '-'),

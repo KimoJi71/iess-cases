@@ -90,25 +90,24 @@ try {
   console.log('page load');
   assertEq(consoleErrors.length, 0, '載入時無 JS 錯誤');
   assertEq(await evaluate('typeof EQUIPMENT_LEVEL_OPTIONS'), 'object', 'EQUIPMENT_LEVEL_OPTIONS 已定義');
-  assertEq(await evaluate('DEFAULT_EQUIPMENT_LEVEL'), '基礎設備', 'DEFAULT_EQUIPMENT_LEVEL 已定義');
+  assertEq(await evaluate('DEFAULT_EQUIPMENT_LEVEL'), '一般設備', 'DEFAULT_EQUIPMENT_LEVEL 已定義');
+  assertEq(await evaluate('JSON.stringify(EQUIPMENT_LEVEL_OPTIONS)'),
+    JSON.stringify(['一般設備', '增額設備']), '選項為一般設備／增額設備');
 
-  // Shared fixture: two categories sharing a model but differing in brand AND level.
+  // Shared fixture: two categories sharing a model but differing in brand.
+  // 設備分類不再帶等級 — 等級只存在設備紀錄上。
   await evaluate(`
     window.__cats = [
       { id:'T1', category:'分離式', brand:'日立', deviceName:'分離式冷氣',
-        specification:'3.5匹', model:'DUP-1', refrigerant:'R410A', powerSource:'220V',
-        equipmentLevel:'基礎設備' },
+        specification:'3.5匹', model:'DUP-1', refrigerant:'R410A', powerSource:'220V' },
       { id:'T2', category:'分離式', brand:'大金', deviceName:'分離式冷氣',
-        specification:'3.5匹', model:'DUP-1', refrigerant:'R32', powerSource:'220V',
-        equipmentLevel:'增額設備' }
+        specification:'3.5匹', model:'DUP-1', refrigerant:'R32', powerSource:'220V' }
     ]; 'ok'`);
 
-  console.log('\n設備分類管理 — 列表');
+  console.log('\n設備分類管理 — 已移除設備等級');
   const dcList = await evaluate(`(function(){
     var node = DeviceCategoryList({
-      deviceCategories: window.__cats.concat([{ id:'T3', category:'箱型', brand:'大金',
-        deviceName:'賣場空調', specification:'5.0匹', model:'LEGACY-1',
-        refrigerant:'R32', powerSource:'220V' }]),
+      deviceCategories: window.__cats,
       setDeviceCategories: function(){}, equipments: [],
       setEditingCase: function(){}, setView: function(){}, showToast: function(){}
     });
@@ -116,71 +115,38 @@ try {
     var rows = Array.prototype.map.call(node.querySelectorAll('tbody tr'), function(tr){
       return Array.prototype.map.call(tr.querySelectorAll('td'), function(td){ return td.textContent.trim(); });
     });
-    return { ths: ths, rows: rows };
+    return { ths: ths, thCount: ths.length, tdCount: rows.length ? rows[0].length : 0 };
   })()`);
-  assertTrue(dcList.ths.includes('設備等級'), '列表有「設備等級」欄', dcList.ths.join(' | '));
-  assertEq(dcList.ths.indexOf('設備等級'), dcList.ths.indexOf('型號') + 1, '設備等級緊接在型號之後');
-  const legacyRow = dcList.rows.find(r => r.includes('LEGACY-1'));
-  assertTrue(legacyRow && legacyRow.includes('基礎設備'),
-    '舊資料（無 equipmentLevel）顯示為基礎設備', JSON.stringify(legacyRow));
-  const addOnRow = dcList.rows.find(r => r.includes('大金') && r.includes('DUP-1'));
-  assertTrue(addOnRow && addOnRow.includes('增額設備'), '增額設備紀錄正確顯示', JSON.stringify(addOnRow));
+  assertTrue(!dcList.ths.includes('設備等級'), '分類列表已無「設備等級」欄', dcList.ths.join(' | '));
+  assertEq(dcList.thCount, dcList.tdCount, '表頭欄數與資料列欄數一致');
 
-  // NOTE: src/core/searchable-select.js upgrades every h('select', ...) into the
-  // project's combobox widget — a readonly input[role=combobox] plus a dropdown.
-  // There is no raw <select> in the rendered DOM anywhere in this app.
-  console.log('\n設備分類管理 — 表單');
   const dcForm = await evaluate(`(function(){
     var node = DeviceCategoryForm({
       deviceCategories: [], setDeviceCategories: function(){},
       targetCase: null, setView: function(){}, showToast: function(){}
     });
     document.body.appendChild(node);
-    var el = node.querySelector('[name="equipmentLevel"]');
-    if (!el) return { found: false };
-    var isCombo = el.getAttribute('role') === 'combobox';
-    // open the dropdown to read the real option list
-    var toggle = el.parentNode.querySelector('.searchable-select__toggle');
-    if (toggle) toggle.click();
-    var root = el.closest('.searchable-select');
-    var opts = Array.prototype.map.call(
-      document.querySelectorAll('.searchable-select__option, [class*="searchable-select__option"]'),
-      function(o){ return o.textContent.trim(); });
-    if (!opts.length && root) {
-      opts = Array.prototype.map.call(root.querySelectorAll('li,[role="option"]'),
-        function(o){ return o.textContent.trim(); });
-    }
-    var result = { found: true, isCombo: isCombo, value: el.value, options: opts,
-      otherFieldsAreText: node.querySelector('[name="category"]').getAttribute('role') !== 'combobox' };
+    var labels = Array.prototype.map.call(node.querySelectorAll('label'), function(l){ return l.textContent.trim(); });
+    var result = { hasField: !!node.querySelector('[name="equipmentLevel"]'), labels: labels };
     node.remove();
     return result;
   })()`);
-  assertTrue(dcForm.found, '新增表單有 equipmentLevel 欄位');
-  assertTrue(dcForm.isCombo, '設備等級為下拉（專案的 searchable-select 元件）');
-  assertTrue(dcForm.otherFieldsAreText, '其他欄位仍為純文字輸入（未被誤改成下拉）');
-  assertEq(dcForm.value, '基礎設備', '新增時預設為基礎設備');
-  assertEq(JSON.stringify(dcForm.options), JSON.stringify(['基礎設備', '增額設備']), '下拉選項正確');
-
-  const dcFormLegacy = await evaluate(`(function(){
-    var node = DeviceCategoryForm({
-      deviceCategories: [], setDeviceCategories: function(){},
-      targetCase: { id:'T3', category:'箱型', brand:'大金', deviceName:'賣場空調',
-        specification:'5.0匹', model:'LEGACY-1', refrigerant:'R32', powerSource:'220V' },
-      setView: function(){}, showToast: function(){}
-    });
-    return node.querySelector('[name="equipmentLevel"]').value;
-  })()`);
-  assertEq(dcFormLegacy, '基礎設備', '編輯舊資料時等級正規化為基礎設備');
+  assertTrue(!dcForm.hasField, '分類表單已無 equipmentLevel 欄位');
+  assertTrue(!dcForm.labels.some(l => l.indexOf('設備等級') === 0), '分類表單已無「設備等級」標籤',
+    dcForm.labels.join(' | '));
 
   console.log('\n客戶設備 — 列表');
   const eqList = await evaluate(`(function(){
     var eqs = [
       { id:'E1', customerName:'測試客戶', storeName:'測試門市', category:'分離式',
         brand:'大金', deviceName:'分離式冷氣', specification:'3.5匹', model:'DUP-1',
-        status:'運轉', createdDate:'2026-08-01' },
+        equipmentLevel:'增額設備', status:'運轉', createdDate:'2026-08-01' },
       { id:'E2', customerName:'測試客戶', storeName:'測試門市', category:'分離式',
         brand:'日立', deviceName:'分離式冷氣', specification:'3.5匹', model:'DUP-1',
-        status:'運轉', createdDate:'2026-08-02' },
+        equipmentLevel:'一般設備', status:'運轉', createdDate:'2026-08-02' },
+      { id:'E4', customerName:'測試客戶', storeName:'測試門市', category:'分離式',
+        brand:'日立', deviceName:'分離式冷氣', specification:'2.0匹', model:'LEGACY-1',
+        status:'運轉', createdDate:'2026-08-04' },
       { id:'E3', customerName:'測試客戶', storeName:'測試門市', category:'分離式',
         brand:'日立', deviceName:'分離式冷氣', specification:'3.5匹', model:'',
         status:'運轉', createdDate:'2026-08-03' }
@@ -208,72 +174,85 @@ try {
   assertEq(eqList.ths.indexOf('設備等級'), eqList.ths.indexOf('型號') + 1, '設備等級緊接在型號之後');
   assertEq(eqList.thCount, eqList.tdCount, '表頭欄數與資料列欄數一致');
   const lvlIdx = eqList.ths.indexOf('設備等級');
+  const modelIdx = eqList.ths.indexOf('型號');
   const daikin = eqList.rows.find(r => r.includes('大金'));
-  const hitachi = eqList.rows.find(r => r.includes('日立') && r.includes('DUP-1'));
-  const noModel = eqList.rows.find(r => r[eqList.ths.indexOf('型號')] === '—');
-  assertEq(daikin[lvlIdx], '增額設備', '同型號不同品牌：大金那筆為增額設備');
-  assertEq(hitachi[lvlIdx], '基礎設備', '同型號不同品牌：日立那筆為基礎設備');
+  const hitachi = eqList.rows.find(r => r.includes('日立') && r[modelIdx] === 'DUP-1');
+  const legacy = eqList.rows.find(r => r[modelIdx] === 'LEGACY-1');
+  const noModel = eqList.rows.find(r => r[modelIdx] === '—');
+  assertEq(daikin[lvlIdx], '增額設備', '同型號不同品牌：設備自己存增額設備就顯示增額設備');
+  assertEq(hitachi[lvlIdx], '一般設備', '同型號不同品牌：設備自己存一般設備就顯示一般設備');
+  assertEq(legacy[lvlIdx], '一般設備', '舊設備（無 equipmentLevel）顯示一般設備');
   assertEq(noModel[lvlIdx], '—', '無型號的設備顯示「—」而非等級 badge');
 
-  console.log('\n客戶設備 — 表單');
+  // NOTE: src/core/searchable-select.js upgrades every h('select', ...) into the
+  // project's combobox widget — a readonly input[role=combobox] plus a dropdown.
+  // There is no raw <select> in the rendered DOM anywhere in this app.
+  console.log('\n客戶設備 — 表單（設備等級改為可編輯）');
   const eqForm = await evaluate(`(function(){
-    function levelOf(target){
+    function fieldOf(target){
       var node = EquipmentForm({
         equipments: [], setEquipments: function(){},
         deviceCategories: window.__cats, targetCase: target,
         equipmentCustomer: '測試客戶', equipmentStore: '測試門市',
         setView: function(){}, showToast: function(){}
       });
-      var labels = node.querySelectorAll('label');
-      for (var i = 0; i < labels.length; i++) {
-        if (labels[i].textContent.trim() === '設備等級') {
-          var inp = labels[i].parentNode.querySelector('input');
-          return { value: inp.value, disabled: !!inp.disabled, placeholder: inp.placeholder || '' };
-        }
+      document.body.appendChild(node);
+      var el = node.querySelector('[name="equipmentLevel"]');
+      if (!el) { node.remove(); return null; }
+      var isCombo = el.getAttribute('role') === 'combobox';
+      var toggle = el.parentNode.querySelector('.searchable-select__toggle');
+      if (toggle) toggle.click();
+      var root = el.closest('.searchable-select');
+      var opts = Array.prototype.map.call(
+        document.querySelectorAll('.searchable-select__option, [class*="searchable-select__option"]'),
+        function(o){ return o.textContent.trim(); });
+      if (!opts.length && root) {
+        opts = Array.prototype.map.call(root.querySelectorAll('li,[role="option"]'),
+          function(o){ return o.textContent.trim(); });
       }
-      return null;
+      var result = { value: el.value, disabled: !!el.disabled, isCombo: isCombo, options: opts };
+      node.remove();
+      return result;
     }
     return {
-      addNew: levelOf(null),
-      daikin: levelOf({ id:'E1', customerName:'測試客戶', storeName:'測試門市',
+      addNew: fieldOf(null),
+      addOn: fieldOf({ id:'E1', customerName:'測試客戶', storeName:'測試門市',
         category:'分離式', brand:'大金', deviceName:'分離式冷氣',
-        specification:'3.5匹', model:'DUP-1', status:'運轉' }),
-      hitachi: levelOf({ id:'E2', customerName:'測試客戶', storeName:'測試門市',
+        specification:'3.5匹', model:'DUP-1', equipmentLevel:'增額設備', status:'運轉' }),
+      legacy: fieldOf({ id:'E4', customerName:'測試客戶', storeName:'測試門市',
         category:'分離式', brand:'日立', deviceName:'分離式冷氣',
-        specification:'3.5匹', model:'DUP-1', status:'運轉' })
+        specification:'2.0匹', model:'LEGACY-1', status:'運轉' })
     };
   })()`);
   assertTrue(eqForm.addNew !== null, '表單有「設備等級」欄位');
-  assertEq(eqForm.addNew.disabled, true, '設備等級欄位為唯讀');
-  assertEq(eqForm.addNew.value, '', '未選型號時為空');
-  assertEq(eqForm.addNew.placeholder, '請先選擇型號', '未選型號時顯示提示文字');
-  assertEq(eqForm.hitachi.value, '基礎設備', '編輯日立設備顯示基礎設備');
-  // KNOWN ISSUE（已知問題，本輪不修）：編輯共用型號的設備時，品牌會被改掉
-  // DeviceCategoryUtils.findBestMatchingRecord 會「只看型號、取第一筆」就短路回傳，
-  // 而 resolveProjectEquip 靠它帶入編輯表單的資料。於是同型號不同品牌的設備，
-  // 一點開編輯就被改成第一筆的品牌，設備等級跟著錯，存檔會寫入錯的品牌。
-  // 修法：拿掉 findBestMatchingRecord 的型號短路，讓它走既有的加權評分。
-  console.log(`  ! KNOWN ISSUE 編輯大金設備應顯示增額設備，實際為 ${JSON.stringify(eqForm.daikin.value)}` +
-    ' — findBestMatchingRecord 型號短路（本輪不修）');
+  assertEq(eqForm.addNew.disabled, false, '設備等級欄位可編輯（不再唯讀）');
+  assertTrue(eqForm.addNew.isCombo, '設備等級為下拉（專案的 searchable-select 元件）');
+  assertEq(eqForm.addNew.value, '一般設備', '新增時預設為一般設備');
+  assertEq(JSON.stringify(eqForm.addNew.options), JSON.stringify(['一般設備', '增額設備']), '下拉選項正確');
+  assertEq(eqForm.addOn.value, '增額設備', '編輯時帶出設備自己存的增額設備');
+  assertEq(eqForm.legacy.value, '一般設備', '編輯舊設備時正規化為一般設備');
 
-  console.log('\n積分 — 端對端（同型號不同品牌）');
+  console.log('\n積分 — 端對端（等級來自案件的設備快照）');
   const perf = await evaluate(`(function(){
     var quarter = { start:'2026-07-01', end:'2026-09-30', label:'x' };
-    function bonus(brand){
+    function bonus(level){
+      var equip = { category:'分離式', brand:'大金', deviceName:'分離式冷氣',
+        specification:'3.5匹', model:'DUP-1' };
+      if (level) equip.equipmentLevel = level;
       return PerformanceUtils.computeAssigneePerformance({
         cases: [{ id:'R1', serviceLevel:'A 保修(一年四次)', isPerformanceIncluded:true,
           completionDate:'2026-08-05', performanceAssignees:['王小明'],
-          equipment: { category:'分離式', brand:brand, deviceName:'分離式冷氣',
-            specification:'3.5匹', model:'DUP-1' },
+          equipment: equip,
           processRecords:[{ processMethodId:'PS1', points:10, qty:1 }] }],
         maintenanceCases: [], assignees: [{ id:'A1', name:'王小明' }],
-        allocations: [], deviceCategories: window.__cats, quarter: quarter
+        allocations: [], quarter: quarter
       })[0].bonusPoints;
     }
-    return { daikin: bonus('大金'), hitachi: bonus('日立') };
+    return { addOn: bonus('增額設備'), base: bonus('一般設備'), legacy: bonus(null) };
   })()`);
-  assertEq(perf.daikin, 10, 'A 服務等級 + 大金(增額) 計入 10 分');
-  assertEq(perf.hitachi, 0, 'A 服務等級 + 日立(基礎) 不計分');
+  assertEq(perf.addOn, 10, 'A 服務等級 + 增額設備 計入 10 分');
+  assertEq(perf.base, 0, 'A 服務等級 + 一般設備 不計分');
+  assertEq(perf.legacy, 0, 'A 服務等級 + 舊資料無等級 不計分');
 
   assertEq(consoleErrors.length, 0, '全程無 JS 錯誤');
 } catch (e) {

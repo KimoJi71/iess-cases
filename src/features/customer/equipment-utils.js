@@ -1,8 +1,20 @@
 /*
- * features/customer/equipment-utils.js — 設備刪除／移除共用邏輯
+ * features/customer/equipment-utils.js — 設備刪除／移除共用邏輯、設備等級讀取
  */
 (function () {
   'use strict';
+
+  // 設備等級的唯一來源是設備紀錄本身（於「設備管理」設定），不再回頭查設備分類。
+  function getLevel(equip) {
+    var level = String((equip && equip.equipmentLevel) || '').trim();
+    return level || DEFAULT_EQUIPMENT_LEVEL;
+  }
+
+  // 顯示用：未選型號的空白設備列回空字串，避免被標成「一般設備」
+  function formatLevel(equip) {
+    if (!equip || !String(equip.model || '').trim()) return '';
+    return getLevel(equip);
+  }
 
   function isEquipmentUsedInRepair(equipmentId, repairCases) {
     if (equipmentId == null || equipmentId === '') return false;
@@ -62,6 +74,8 @@
   }
 
   window.EquipmentUtils = {
+    getLevel: getLevel,
+    formatLevel: formatLevel,
     isEquipmentUsedInRepair: isEquipmentUsedInRepair,
     isEquipmentInProjectCases: isEquipmentInProjectCases,
     getEquipmentDeleteBlockedReason: getEquipmentDeleteBlockedReason,

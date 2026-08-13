@@ -43,6 +43,11 @@
         && targetCase.maintenanceStartMonths !== null)
         ? String(targetCase.maintenanceStartMonths)
         : '',
+      // 逾時時間（小時）。空字串代表未設定，之後判定逾時的地方一律當未設定處理。
+      overtimeHours: (targetCase && targetCase.overtimeHours !== undefined
+        && targetCase.overtimeHours !== null)
+        ? String(targetCase.overtimeHours)
+        : '',
       phone: (targetCase && targetCase.phone) || '',
       fax: (targetCase && targetCase.fax) || '',
       address: (targetCase && targetCase.address) || '',
@@ -181,13 +186,18 @@
         var savedStartMonths = rawStartMonths === '' || !isFinite(Number(rawStartMonths))
           ? ''
           : Math.max(0, Math.floor(Number(rawStartMonths)));
+        var rawOvertimeHours = String(formData.overtimeHours || '').trim();
+        var savedOvertimeHours = rawOvertimeHours === '' || !isFinite(Number(rawOvertimeHours))
+          ? ''
+          : Math.max(0, Math.floor(Number(rawOvertimeHours)));
         if (isEdit) {
           setCases(cases.map(function (c) {
             return c.id === targetCase.id
               ? Object.assign({}, c, formData, {
                   contacts: contacts,
                   periods: savedPeriods,
-                  maintenanceStartMonths: savedStartMonths
+                  maintenanceStartMonths: savedStartMonths,
+                  overtimeHours: savedOvertimeHours
                 })
               : c;
           }));
@@ -197,6 +207,7 @@
             contacts: contacts,
             periods: savedPeriods,
             maintenanceStartMonths: savedStartMonths,
+            overtimeHours: savedOvertimeHours,
             createdDate: todayDate
           });
           setCases([newCustomer].concat(cases));
@@ -277,6 +288,18 @@
                 }),
                 h('span', { className: 'text-sm text-gray-500 whitespace-nowrap' }, '個月後開始保養')
               )
+            ),
+            h('div', null,
+              h('label', { className: 'block text-sm mb-1' }, '逾時時間(時)'),
+              h('input', {
+                type: 'number',
+                name: 'overtimeHours',
+                min: '0',
+                step: '1',
+                value: formData.overtimeHours,
+                onChange: handleChange,
+                className: 'w-full p-2.5 border rounded-md outline-none focus:border-blue-500'
+              })
             ),
             h('div', null,
               h('label', { className: 'block text-sm mb-1' }, '啟用狀態'),

@@ -12,7 +12,6 @@
     { name: 'deviceName', label: '設備名稱', required: true },
     { name: 'specification', label: '設備規格', required: true },
     { name: 'model', label: '型號', required: true },
-    { name: 'equipmentLevel', label: '設備等級', required: true, type: 'select', options: EQUIPMENT_LEVEL_OPTIONS },
     { name: 'refrigerant', label: '冷媒', required: false },
     { name: 'powerSource', label: '電源', required: false }
   ];
@@ -29,7 +28,6 @@
     FIELDS.forEach(function (field) {
       formData[field.name] = (targetCase && targetCase[field.name]) || '';
     });
-    formData.equipmentLevel = DeviceCategoryUtils.getEquipmentLevel(targetCase);
 
     return stateful(function (rerender) {
       function handleChange(e) {

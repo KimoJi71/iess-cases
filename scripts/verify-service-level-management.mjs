@@ -559,32 +559,28 @@ try {
 
   console.log('\nSection 4｜isBonusEligible 改吃 serviceLevels');
   await evaluate(`
-    window.__cats = [
-      { id: 'DC1', category: '室內機', brand: '大金', deviceName: '分離式',
-        specification: '2噸', model: 'ADD-1', equipmentLevel: '增額設備' },
-      { id: 'DC2', category: '室內機', brand: '大金', deviceName: '分離式',
-        specification: '3噸', model: 'BASE-1', equipmentLevel: '基礎設備' }
-    ];
-    window.__case = function (level, model) {
-      return { id: 'X', serviceLevel: level, equipment: model ? { model: model } : null };
+    // 設備等級存在設備紀錄上（設備管理設定），不再反查設備分類
+    window.__case = function (level, equipLevel) {
+      return { id: 'X', serviceLevel: level,
+        equipment: equipLevel ? { model: 'M-1', equipmentLevel: equipLevel } : null };
     };
     'ok'`);
   const SLS = 'INITIAL_SERVICE_LEVELS';
-  assertEq(await evaluate(`PerformanceUtils.isBonusEligible(window.__case('C 保養(一年一次)', 'BASE-1'), window.__cats, ${SLS})`),
-    true, 'C（勾選計分）+ 基礎設備 計分');
-  assertEq(await evaluate(`PerformanceUtils.isBonusEligible(window.__case('D 維修(無簽約客戶)', null), window.__cats, ${SLS})`),
+  assertEq(await evaluate(`PerformanceUtils.isBonusEligible(window.__case('C 保養(一年一次)', '一般設備'), ${SLS})`),
+    true, 'C（勾選計分）+ 一般設備 計分');
+  assertEq(await evaluate(`PerformanceUtils.isBonusEligible(window.__case('D 維修(無簽約客戶)', null), ${SLS})`),
     true, 'D（勾選計分）無設備仍計分');
-  assertEq(await evaluate(`PerformanceUtils.isBonusEligible(window.__case('A 保修(一年四次)', 'BASE-1'), window.__cats, ${SLS})`),
-    false, 'A（未勾選）+ 基礎設備 不計分');
-  assertEq(await evaluate(`PerformanceUtils.isBonusEligible(window.__case('A 保修(一年四次)', 'ADD-1'), window.__cats, ${SLS})`),
+  assertEq(await evaluate(`PerformanceUtils.isBonusEligible(window.__case('A 保修(一年四次)', '一般設備'), ${SLS})`),
+    false, 'A（未勾選）+ 一般設備 不計分');
+  assertEq(await evaluate(`PerformanceUtils.isBonusEligible(window.__case('A 保修(一年四次)', '增額設備'), ${SLS})`),
     true, 'A（未勾選）+ 增額設備 計分');
-  assertEq(await evaluate(`PerformanceUtils.isBonusEligible(window.__case('B 保修(一年兩次)', 'ADD-1'), window.__cats, ${SLS})`),
+  assertEq(await evaluate(`PerformanceUtils.isBonusEligible(window.__case('B 保修(一年兩次)', '增額設備'), ${SLS})`),
     true, 'B（未勾選）+ 增額設備 計分');
-  assertEq(await evaluate(`PerformanceUtils.isBonusEligible(window.__case('查無此等級', 'BASE-1'), window.__cats, ${SLS})`),
-    false, '查無等級 + 基礎設備 不計分');
-  assertEq(await evaluate(`PerformanceUtils.isBonusEligible(window.__case('', 'ADD-1'), window.__cats, ${SLS})`),
+  assertEq(await evaluate(`PerformanceUtils.isBonusEligible(window.__case('查無此等級', '一般設備'), ${SLS})`),
+    false, '查無等級 + 一般設備 不計分');
+  assertEq(await evaluate(`PerformanceUtils.isBonusEligible(window.__case('', '增額設備'), ${SLS})`),
     true, '等級空字串 + 增額設備 計分');
-  assertEq(await evaluate(`PerformanceUtils.isBonusEligible(window.__case('C 保養(一年一次)', 'BASE-1'), window.__cats, [])`),
+  assertEq(await evaluate(`PerformanceUtils.isBonusEligible(window.__case('C 保養(一年一次)', '一般設備'), [])`),
     false, 'serviceLevels 為空陣列時只看設備等級');
   assertEq(await evaluate('typeof PerformanceUtils.isServiceLevelCD'), 'undefined',
     'isServiceLevelCD 已自 export 移除');
@@ -1028,33 +1024,29 @@ try {
   console.log('\nSection 8｜報表的增額積分欄有值');
   const perfStats = await evaluate(`(function(){
     var quarter = PerformanceUtils.getQuarterRange(new Date());
-    var deviceCategories = [
-      { id: 'DC1', category: '室內機', brand: '大金', deviceName: '分離式',
-        specification: '2噸', model: 'ADD-1', equipmentLevel: '增額設備' },
-      { id: 'DC2', category: '室內機', brand: '大金', deviceName: '分離式',
-        specification: '3噸', model: 'BASE-1', equipmentLevel: '基礎設備' }
-    ];
     var assignees = [{ id: 'A1', name: 'A組' }, { id: 'B1', name: 'B組' }];
     var cases = [
       // A組：countsBonusPoints=true 的 D 級，無增額設備仍應計分
       { id: 'PD1', customerName: '甲', storeName: '甲一', serviceLevel: 'D 維修(無簽約客戶)',
         workCategory: '一般叫修', isPerformanceIncluded: true, completionDate: quarter.start,
         performanceAssignee: 'A組', equipment: null, processRecords: [{ points: 8, qty: 1 }] },
-      // B組：countsBonusPoints=false 的 A 級 + 基礎設備，不應計分
+      // B組：countsBonusPoints=false 的 A 級 + 一般設備，不應計分
       { id: 'PA1', customerName: '乙', storeName: '乙一', serviceLevel: 'A 保修(一年四次)',
         workCategory: '一般叫修', isPerformanceIncluded: true, completionDate: quarter.start,
-        performanceAssignee: 'B組', equipment: { model: 'BASE-1' }, processRecords: [{ points: 5, qty: 1 }] },
+        performanceAssignee: 'B組', equipment: { model: 'M-1', equipmentLevel: '一般設備' },
+        processRecords: [{ points: 5, qty: 1 }] },
       // B組：countsBonusPoints=false 的 A 級 + 增額設備，應計分
       { id: 'PA2', customerName: '乙', storeName: '乙一', serviceLevel: 'A 保修(一年四次)',
         workCategory: '一般叫修', isPerformanceIncluded: true, completionDate: quarter.start,
-        performanceAssignee: 'B組', equipment: { model: 'ADD-1' }, processRecords: [{ points: 6, qty: 1 }] }
+        performanceAssignee: 'B組', equipment: { model: 'M-1', equipmentLevel: '增額設備' },
+        processRecords: [{ points: 6, qty: 1 }] }
     ];
     var container = document.createElement('div');
     document.body.appendChild(container);
     container.appendChild(CasePerformanceStats({
       cases: cases, maintenanceCases: [], assignees: assignees,
       maintenanceAllocations: [], stores: [], performanceAreas: [],
-      deviceCategories: deviceCategories, serviceLevels: INITIAL_SERVICE_LEVELS
+      serviceLevels: INITIAL_SERVICE_LEVELS
     }));
     function bonusPointsForCard(name) {
       var cards = container.querySelectorAll('.rounded-xl');
@@ -1074,7 +1066,7 @@ try {
   assertEq(perfStats.a, '8',
     'countsBonusPoints=true 的服務等級（D），無增額設備仍計入增額積分（A組 = 8）');
   assertEq(perfStats.b, '6',
-    'countsBonusPoints=false 的服務等級（A），只有增額設備的案件計分，基礎設備的 5 分被排除（B組 = 6，非 11）');
+    'countsBonusPoints=false 的服務等級（A），只有增額設備的案件計分，一般設備的 5 分被排除（B組 = 6，非 11）');
 
   // === UI sections 由後續 Task 追加 ===
 

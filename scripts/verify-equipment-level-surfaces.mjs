@@ -90,81 +90,81 @@ try {
   console.log('page load');
   assertEq(consoleErrors.length, 0, '載入時無 JS 錯誤');
 
-  // 同一型號 DUP-1，分屬兩筆分類：日立=基礎、大金=增額。
+  // 設備分類不再帶等級；等級一律由設備紀錄自己攜帶（設備管理設定）。
   await evaluate(`
     window.__cats = [
       { id:'T1', category:'分離式', brand:'日立', deviceName:'分離式冷氣',
-        specification:'3.5匹', model:'DUP-1', refrigerant:'R410A', powerSource:'220V',
-        equipmentLevel:'基礎設備' },
+        specification:'3.5匹', model:'DUP-1', refrigerant:'R410A', powerSource:'220V' },
       { id:'T2', category:'分離式', brand:'大金', deviceName:'分離式冷氣',
-        specification:'3.5匹', model:'DUP-1', refrigerant:'R32', powerSource:'220V',
-        equipmentLevel:'增額設備' },
+        specification:'3.5匹', model:'DUP-1', refrigerant:'R32', powerSource:'220V' },
       { id:'T3', category:'箱型', brand:'日立', deviceName:'箱型冷氣',
-        specification:'5.0匹', model:'BASE-1', refrigerant:'R410A', powerSource:'220V',
-        equipmentLevel:'基礎設備' },
+        specification:'5.0匹', model:'BASE-1', refrigerant:'R410A', powerSource:'220V' },
       { id:'T4', category:'吊隱式', brand:'大金', deviceName:'吊隱式冷氣',
-        specification:'2.0匹', model:'ADDON-1', refrigerant:'R32', powerSource:'220V',
-        equipmentLevel:'增額設備' }
+        specification:'2.0匹', model:'ADDON-1', refrigerant:'R32', powerSource:'220V' }
     ];
-    // 共用型號 DUP-1：只有品牌能分辨等級（叫修單直接顯示原始設備，不做正規化）
-    window.__equip = function (brand) {
-      return { id:'EQ-' + brand, category:'分離式', brand:brand, deviceName:'分離式冷氣',
+    // 叫修單直接顯示原始設備，不做正規化；level 傳 null 模擬未存等級的舊資料
+    window.__equip = function (level) {
+      var eq = { id:'EQ-' + level, category:'分離式', brand:'大金', deviceName:'分離式冷氣',
         specification:'3.5匹', model:'DUP-1', area:'頂樓', status:'運轉' };
+      if (level) eq.equipmentLevel = level;
+      return eq;
     };
-    // 唯一型號：供會經過 resolveProjectEquip 正規化的畫面使用，避開共用型號的已知問題
+    // 唯一型號：供會經過 resolveProjectEquip 正規化的畫面使用
     window.__uniq = function (which) {
       return which === 'addon'
         ? { id:'EQ-ADDON', category:'吊隱式', brand:'大金', deviceName:'吊隱式冷氣',
-            specification:'2.0匹', model:'ADDON-1', area:'頂樓', status:'運轉' }
+            specification:'2.0匹', model:'ADDON-1', equipmentLevel:'增額設備',
+            area:'頂樓', status:'運轉' }
         : { id:'EQ-BASE', category:'箱型', brand:'日立', deviceName:'箱型冷氣',
-            specification:'5.0匹', model:'BASE-1', area:'一樓', status:'運轉' };
+            specification:'5.0匹', model:'BASE-1', equipmentLevel:'一般設備',
+            area:'一樓', status:'運轉' };
     }; 'ok'`);
 
-  console.log('\n共用工具 formatEquipmentLevel');
+  console.log('\n共用工具 EquipmentUtils.formatLevel');
   const fmt = await evaluate(`(function(){
-    var f = DeviceCategoryUtils.formatEquipmentLevel;
+    var f = EquipmentUtils.formatLevel;
     return {
-      daikin: f(window.__cats, window.__equip('大金')),
-      hitachi: f(window.__cats, window.__equip('日立')),
-      noModel: f(window.__cats, { category:'分離式', brand:'大金' }),
-      nullEquip: f(window.__cats, null),
-      noCats: f([], window.__equip('大金'))
+      addOn: f(window.__equip('增額設備')),
+      base: f(window.__equip('一般設備')),
+      legacy: f(window.__equip(null)),
+      noModel: f({ category:'分離式', brand:'大金', equipmentLevel:'增額設備' }),
+      nullEquip: f(null)
     };
   })()`);
-  assertEq(fmt.daikin, '增額設備', '大金 DUP-1 為增額設備');
-  assertEq(fmt.hitachi, '基礎設備', '日立 DUP-1 為基礎設備');
-  assertEq(fmt.noModel, '', '未選型號回空字串（不預設成基礎設備）');
+  assertEq(fmt.addOn, '增額設備', '設備存增額設備就回增額設備');
+  assertEq(fmt.base, '一般設備', '設備存一般設備就回一般設備');
+  assertEq(fmt.legacy, '一般設備', '舊資料無等級退回預設');
+  assertEq(fmt.noModel, '', '未選型號回空字串（不預設成一般設備）');
   assertEq(fmt.nullEquip, '', '設備為 null 回空字串');
-  assertEq(fmt.noCats, '基礎設備', '查無分類時退回預設等級');
 
   console.log('\n叫修單 — 設備資料欄位定義');
   const defs = await evaluate(`(function(){
     var labels = RepairCaseEquipment.FIELD_DEFS.map(function(d){ return d.label; });
-    function values(brand, cats){
-      var f = RepairCaseEquipment.getDisplayFields(window.__equip(brand), {}, cats);
+    function values(level){
+      var f = RepairCaseEquipment.getDisplayFields(window.__equip(level), {}, window.__cats);
       var out = {};
       f.forEach(function(x){ out[x.label] = x.value; });
       return out;
     }
     return {
       labels: labels,
-      daikin: values('大金', window.__cats),
-      hitachi: values('日立', window.__cats),
-      noCats: values('大金', undefined)
+      addOn: values('增額設備'),
+      base: values('一般設備'),
+      legacy: values(null)
     };
   })()`);
   assertTrue(defs.labels.includes('設備等級'), '欄位定義含「設備等級」', defs.labels.join(' | '));
   assertEq(defs.labels.indexOf('設備等級'), defs.labels.indexOf('型號') + 1, '設備等級緊接在型號之後');
-  assertEq(defs.daikin['設備等級'], '增額設備', '大金設備顯示增額設備');
-  assertEq(defs.hitachi['設備等級'], '基礎設備', '日立設備顯示基礎設備');
-  assertEq(defs.noCats['設備等級'], '基礎設備', '未傳 deviceCategories 時不炸、退回預設');
+  assertEq(defs.addOn['設備等級'], '增額設備', '增額設備顯示增額設備');
+  assertEq(defs.base['設備等級'], '一般設備', '一般設備顯示一般設備');
+  assertEq(defs.legacy['設備等級'], '一般設備', '舊資料無等級時不炸、退回預設');
 
   console.log('\n叫修單 — 查看案件明細');
   const view = await evaluate(`(function(){
     var node = ViewCaseForm({
       viewingCase: { id:'R1', caseNumber:'R-001', customerName:'測試客戶',
         storeName:'測試門市', workCategory:'維修', serviceLevel:'A 保修(一年四次)',
-        equipment: window.__equip('大金'), processRecords: [] },
+        equipment: window.__equip('增額設備'), processRecords: [] },
       setView: function(){}, backView: 'record-list',
       processMethods: [], deviceCategories: window.__cats
     });
@@ -212,7 +212,7 @@ try {
     const addon = proj.rows.find(r => r.includes('ADDON-1'));
     const base = proj.rows.find(r => r.includes('BASE-1'));
     assertEq(addon[i], '增額設備', 'ADDON-1 那筆為增額設備');
-    assertEq(base[i], '基礎設備', 'BASE-1 那筆為基礎設備');
+    assertEq(base[i], '一般設備', 'BASE-1 那筆為一般設備');
   }
 
   console.log('\n工程立案單 — 加入設備彈窗');
@@ -235,7 +235,7 @@ try {
     return { blank: levelOf(null), addon: levelOf(window.__uniq('addon')) };
   })()`);
   assertTrue(modal.blank !== null, '彈窗有「設備等級」欄位');
-  assertEq(modal.blank.disabled, true, '設備等級欄位為唯讀');
+  assertEq(modal.blank.disabled, true, '設備等級欄位為唯讀（只在設備管理設定）');
   assertEq(modal.blank.value, '', '未選型號時為空');
   assertEq(modal.blank.placeholder, '請先選擇型號', '未選型號時顯示提示文字');
   assertEq(modal.addon.value, '增額設備', '編輯增額設備時帶出增額設備');
@@ -290,7 +290,7 @@ try {
     return out;
   })()`);
   assertTrue(survey && !survey.error, '現勘單設備區塊有「設備等級」欄位', survey && survey.error);
-  assertEq(survey.disabled, true, '設備等級欄位為唯讀');
+  assertEq(survey.disabled, true, '設備等級欄位為唯讀（只在設備管理設定）');
   assertEq(survey.value, '增額設備', '已選型號時帶出正確等級');
 
   console.log('\n現勘單 — PDF 匯出');
@@ -301,13 +301,14 @@ try {
       surveyData: { equipmentList: [window.__uniq('addon'), window.__uniq('base')] }
     }, window.__cats);
     return { hasAddOn: html.indexOf('等級:增額設備') >= 0,
-             hasBase: html.indexOf('等級:基礎設備') >= 0 };
+             hasBase: html.indexOf('等級:一般設備') >= 0 };
   })()`);
   assertTrue(pdf.hasAddOn, 'PDF 內含增額設備的「等級:增額設備」');
-  assertTrue(pdf.hasBase, 'PDF 內含基礎設備的「等級:基礎設備」');
+  assertTrue(pdf.hasBase, 'PDF 內含一般設備的「等級:一般設備」');
 
   assertEq(consoleErrors.length, 0, '全程無 JS 錯誤');
 } catch (e) {
+
   fail('driver', e.message);
 } finally {
   try { ws?.close(); } catch {}

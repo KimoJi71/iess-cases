@@ -90,6 +90,7 @@
           name: formData.deviceName,
           specification: formData.specification,
           model: formData.model,
+          equipmentLevel: formData.equipmentLevel || DEFAULT_EQUIPMENT_LEVEL,
           area: formData.area,
           manufactureDate: formData.manufactureDate,
           installDate: formData.installDate,
@@ -174,16 +175,18 @@
                 emptyHint: '請先選擇設備規格'
               }),
               h('div', null,
-                h('label', { className: 'block text-sm mb-1' }, '設備等級'),
-                h('input', {
-                  type: 'text',
-                  value: formData.model
-                    ? DeviceCategoryUtils.getEquipmentLevelByEquip(deviceCategories, formData)
-                    : '',
-                  placeholder: '請先選擇型號',
-                  disabled: true,
-                  className: disabledCls
-                })
+                h('label', { className: 'block text-sm mb-1' }, '設備等級 ',
+                  h('span', { className: 'text-red-500' }, '*')),
+                h('select', {
+                  name: 'equipmentLevel',
+                  value: formData.equipmentLevel || DEFAULT_EQUIPMENT_LEVEL,
+                  onChange: handleChange,
+                  className: inputCls + ' bg-white'
+                },
+                  EQUIPMENT_LEVEL_OPTIONS.map(function (opt) {
+                    return h('option', { key: opt, value: opt }, opt);
+                  })
+                )
               ),
               field('設備區域', 'area', { placeholder: '例如：天花板上方' }),
               field('出廠日期', 'manufactureDate', { type: 'date' }),

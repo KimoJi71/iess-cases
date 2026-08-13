@@ -3,7 +3,7 @@
  * props: {
  *   cases, maintenanceCases, assignees,
  *   maintenanceAllocations, maintenanceAllocationYears,
- *   stores, performanceAreas, deviceCategories, serviceLevels
+ *   stores, performanceAreas, serviceLevels
  * }
  */
 (function () {
@@ -121,7 +121,6 @@
     var allocations = props.maintenanceAllocations || [];
     var stores = props.stores || [];
     var performanceAreas = props.performanceAreas || [];
-    var deviceCategories = props.deviceCategories || [];
     var serviceLevels = props.serviceLevels || [];
     var allocationYears = props.maintenanceAllocationYears || [];
     var quarter = PerformanceUtils.getQuarterRange(new Date());
@@ -135,7 +134,6 @@
       maintenanceCases: maintenanceCases,
       assignees: assignees,
       allocations: allocations,
-      deviceCategories: deviceCategories,
       serviceLevels: serviceLevels,
       quarter: quarter
     });

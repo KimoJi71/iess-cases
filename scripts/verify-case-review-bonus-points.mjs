@@ -95,12 +95,6 @@ try {
   // 所有 fixture 的 closeDate 都綁在頁面自身的 todayDate，
   // 避免依賴腳本執行當日的系統日期。
   await evaluate(`
-    window.__deviceCategories = [
-      { id: 'DC1', category: '室內機', brand: '大金', deviceName: '分離式',
-        specification: '2噸', model: 'ADD-1', equipmentLevel: '增額設備' },
-      { id: 'DC2', category: '室內機', brand: '大金', deviceName: '分離式',
-        specification: '3噸', model: 'BASE-1', equipmentLevel: '基礎設備' }
-    ];
     window.__fixtureCases = [
       { id: 'R1', caseNumber: 'BP001', customerName: 'C級客戶', storeName: '門市一',
         serviceLevel: 'C 保養(一年一次)', workCategory: '一般叫修', repairItem: '冷氣',
@@ -111,13 +105,13 @@ try {
         serviceLevel: 'A 保修(一年四次)', workCategory: '一般叫修', repairItem: '冷氣',
         repairReason: '異音', actualReason: '軸承', isClosed: true,
         closeDate: '${todayDate} 10:00',
-        equipment: { model: 'ADD-1' },
+        equipment: { model: 'M-1', equipmentLevel: '增額設備' },
         processRecords: [{ points: 4, qty: 1 }] },
       { id: 'R3', caseNumber: 'BP003', customerName: 'B級客戶', storeName: '門市三',
         serviceLevel: 'B 保修(一年兩次)', workCategory: '一般叫修', repairItem: '冷氣',
         repairReason: '漏水', actualReason: '排水管', isClosed: true,
         closeDate: '${todayDate} 10:00',
-        equipment: { model: 'BASE-1' },
+        equipment: { model: 'M-1', equipmentLevel: '一般設備' },
         processRecords: [{ points: 9, qty: 1 }] },
       { id: 'R4', caseNumber: 'BP004', customerName: 'D級客戶', storeName: '門市四',
         serviceLevel: 'D 維修(無簽約客戶)', workCategory: '一般叫修', repairItem: '冷氣',
@@ -143,7 +137,6 @@ try {
         maintenanceCases: maintenanceCases,
         setMaintenanceCases: function () {},
         assignees: [],
-        deviceCategories: window.__deviceCategories,
         serviceLevels: INITIAL_SERVICE_LEVELS,
         setViewingCase: function () {},
         setView: function () {},
@@ -198,11 +191,11 @@ try {
   assertEq(emptyColspan.colspan, '13', '空資料列 colspan 為 13');
   assertEq(emptyColspan.text, '無資料符合目前搜尋區間', '空資料列文字不變');
 
-  console.log('\napp.js 已傳入 deviceCategories');
+  console.log('\napp.js 已傳入 serviceLevels');
   const appSrc = await import('node:fs').then(fs => fs.readFileSync(join(ROOT, 'src/app.js'), 'utf8'));
   const callIdx = appSrc.indexOf('CaseReviewList');
-  assertTrue(appSrc.slice(callIdx, callIdx + 400).includes('deviceCategories'),
-    'app.js 的 CaseReviewList 呼叫含 deviceCategories');
+  assertTrue(!appSrc.slice(callIdx, callIdx + 400).includes('deviceCategories'),
+    'app.js 的 CaseReviewList 呼叫不再需要 deviceCategories（設備等級改存在設備上）');
   const reviewIdx2 = appSrc.indexOf('CaseReviewList');
   assertTrue(appSrc.slice(reviewIdx2, reviewIdx2 + 400).includes('serviceLevels'),
     'app.js 的 CaseReviewList 呼叫含 serviceLevels');

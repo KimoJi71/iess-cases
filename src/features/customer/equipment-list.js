@@ -81,7 +81,7 @@
 
     function equipmentLevelBadge(eq) {
       if (!eq || !eq.model) return '—';
-      var level = DeviceCategoryUtils.getEquipmentLevelByEquip(deviceCategories, eq);
+      var level = EquipmentUtils.getLevel(eq);
       var cls = level === '增額設備'
         ? 'bg-amber-100 text-amber-700'
         : 'bg-gray-100 text-gray-600';

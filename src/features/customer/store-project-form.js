@@ -192,7 +192,7 @@
                             h('td', { className: 'p-3' }, eq.brand || '-'),
                             h('td', { className: 'p-3' }, eq.specification || '-'),
                             h('td', { className: 'p-3 font-medium text-indigo-600' }, eq.model || '-'),
-                            h('td', { className: 'p-3' }, DeviceCategoryUtils.formatEquipmentLevel(deviceCategories, eq) || '-'),
+                            h('td', { className: 'p-3' }, EquipmentUtils.formatLevel(eq) || '-'),
                             h('td', { className: 'p-3' }, eq.area || '-'),
                             h('td', { className: 'p-3 text-center' },
                               h('div', { className: 'flex items-center justify-center gap-1' },

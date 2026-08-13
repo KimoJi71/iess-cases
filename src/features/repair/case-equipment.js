@@ -12,7 +12,7 @@
     { key: 'deviceName', label: '設備名稱', altKey: 'name' },
     { key: 'specification', label: '設備規格' },
     { key: 'model', label: '型號' },
-    // 設備等級不存在案件資料裡，顯示時依設備欄位反查設備分類（同客戶設備管理）
+    // 設備等級由設備管理設定，隨設備快照存進案件資料
     { key: 'equipmentLevel', label: '設備等級', derived: true },
     { key: 'area', label: '設備區域' },
     { key: 'manufactureDate', label: '出廠日期' },
@@ -25,7 +25,7 @@
     equipment = equipment || {};
     caseContext = caseContext || {};
     if (def.derived && def.key === 'equipmentLevel') {
-      return DeviceCategoryUtils.formatEquipmentLevel(deviceCategories || [], equipment);
+      return EquipmentUtils.formatLevel(equipment);
     }
     var val = equipment[def.key];
     if (!val && def.altKey) val = equipment[def.altKey];

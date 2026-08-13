@@ -354,7 +354,7 @@
         return h(CaseReviewList, {
           cases: s.cases, setCases: setCasesData,
           maintenanceCases: s.maintenanceCases, setMaintenanceCases: setMaintenanceCases,
-          assignees: s.assignees, deviceCategories: s.deviceCategories,
+          assignees: s.assignees,
           serviceLevels: s.serviceLevels,
           setViewingCase: setViewingCase, setView: setView, showToast: showToast
         });
@@ -579,7 +579,6 @@
           maintenanceAllocationYears: s.maintenanceAllocationYears,
           stores: s.stores,
           performanceAreas: s.performanceAreas,
-          deviceCategories: s.deviceCategories,
           serviceLevels: s.serviceLevels
         });
       case 'data-retrieval':
