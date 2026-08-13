@@ -378,13 +378,186 @@ try {
     `/findPeriodInRow/.test(String(MaintenanceAllocation))`
   ), '元件改用 findPeriodInRow 查區間');
 
+  // ---- 操作輔助 ----
+  // 注意：src/core/searchable-select.js 全域攔截了 h('select', ...)，頁面上沒有原生 <select>，
+  // 而是 <input role="combobox"> + 掛在 document.body 的 portal 選單。選項是以 mousedown
+  // 觸發 chooseOption()，也就是元件 props.onChange 真正被呼叫的路徑，等同於對原生
+  // <select> 派發 change 事件。另外，整棵畫面被 mount() 換掉時，舊實體的 portal 選單
+  // 不會被移除（既有行為），故每次開選單前先清掉殘留選單，避免點到失效的舊選單。
+  await evaluate(`
+    window.__ma = {
+      clearMenus: function () {
+        var ms = document.querySelectorAll('.searchable-select__menu--portal');
+        Array.prototype.forEach.call(ms, function (m) { m.parentNode.removeChild(m); });
+      },
+      // 收起選單：input 的 mousedown 只會開不會關，唯一同步關閉的入口是
+      // 收合鈕的 click（handleToggleClick → closeMenu）。
+      closeMenus: function () {
+        var roots = document.querySelectorAll('.searchable-select');
+        Array.prototype.forEach.call(roots, function (root) {
+          var input = root.querySelector('.searchable-select__input');
+          var toggle = root.querySelector('.searchable-select__toggle');
+          if (input && toggle && input.getAttribute('aria-expanded') === 'true') toggle.click();
+        });
+        window.__ma.clearMenus();
+        return true;
+      },
+      openMenu: function (input) {
+        window.__ma.closeMenus();
+        input.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
+        input.focus();
+        return document.querySelectorAll('.searchable-select__menu--portal .searchable-select__option');
+      },
+      // 讀完選項後選單仍是開的，呼叫端須自行 closeMenus()
+      options: function (input) {
+        return Array.prototype.map.call(window.__ma.openMenu(input),
+          function (o) { return o.textContent.trim(); });
+      },
+      // 點選項走的是 chooseOption()，元件會自行 closeMenu()，狀態乾淨
+      choose: function (input, label) {
+        var opts = window.__ma.openMenu(input);
+        for (var i = 0; i < opts.length; i++) {
+          if (opts[i].textContent.trim() === label) {
+            opts[i].dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
+            return true;
+          }
+        }
+        window.__ma.closeMenus();
+        return false;
+      },
+      combo: function (root, index) {
+        return (root || document).querySelectorAll('.searchable-select__input')[index];
+      },
+      clickText: function (selector, text) {
+        var els = document.querySelectorAll(selector);
+        for (var i = els.length - 1; i >= 0; i--) {
+          if (els[i].textContent.trim() === text) { els[i].click(); return true; }
+        }
+        return false;
+      },
+      // 有填值的月份格數（區段標頭不算，只算可點擊的格子本身）
+      filledCells: function (root) {
+        return Array.prototype.filter.call(
+          (root || document).querySelectorAll('tbody td div.cursor-pointer'),
+          function (d) { return d.innerText.trim() !== ''; }
+        ).length;
+      },
+      toast: function () {
+        var t = document.querySelector('.fixed.top-20.right-6');
+        return t ? { text: t.innerText.trim(), error: t.className.indexOf('bg-red-600') >= 0 } : null;
+      }
+    };
+    'ok'`);
+
+  console.log('\nSection 4｜實際操作畫面：年度切換與建立年度');
+  const THIS_YEAR = new Date().getFullYear();
+  const NEXT_YEAR = THIS_YEAR + 1;
+  // 讀年度下拉的選項清單（讀完把選單收回去，避免影響後續操作）
+  async function yearOptions() {
+    const out = await evaluate(`__ma.options(__ma.combo(null, 0))`);
+    await evaluate('__ma.closeMenus()');
+    return out;
+  }
+
+  assertTrue(await evaluate(`__ma.clickText('button, a, li, div, span', '系統權限')`),
+    '側邊欄可點開「系統權限」');
+  await sleep(400);
+  assertTrue(await evaluate(`__ma.clickText('button, a, li, div, span', '保養分配')`),
+    '側邊欄可點進「保養分配」');
+  await sleep(800);
+
+  assertEq(await evaluate(`__ma.combo(null, 0).value`), THIS_YEAR + ' 年',
+    '預設選定當年度');
+  assertDeep(await yearOptions(), [THIS_YEAR + ' 年'],
+    '年度下拉一開始只有當年度一個選項');
+
+  assertTrue(await evaluate(`__ma.choose(__ma.combo(null, 1), 'A組')`), '可選取指派人員 A組');
+  await sleep(600);
+  const seedFilled = await evaluate(`INITIAL_MAINTENANCE_ALLOCATIONS.filter(function (a) {
+    return Number(a.year) === ${THIS_YEAR} && a.assigneeId === 'ASG1';
+  }).length`);
+  assertTrue(seedFilled > 0, 'seed 在 A組／當年度有分配格子可供比對', String(seedFilled));
+  assertTrue(await evaluate(`document.querySelectorAll('tbody tr').length`) > 0, 'A組 網格有列');
+  assertEq(await evaluate(`__ma.filledCells(null)`), seedFilled,
+    '當年度網格顯示 seed 的分配格子');
+
+  // 建立下一年度：點＋、填年份、按建立
+  assertTrue(await evaluate(
+    `(function () {
+      var b = document.querySelector('button[aria-label="建立年度分配表"], button[title="建立年度分配表"]');
+      if (!b) return false;
+      b.click();
+      return true;
+    })()`), '可點開「建立年度分配表」的＋鈕');
+  await sleep(400);
+  assertEq(await evaluate(`document.querySelector('.app-modal-overlay input[type=number]').value`),
+    String(NEXT_YEAR), '建立對話框預設帶入下一個年份');
+  assertTrue(await evaluate(`(function () {
+    var i = document.querySelector('.app-modal-overlay input[type=number]');
+    i.value = '${NEXT_YEAR}';
+    i.dispatchEvent(new Event('input', { bubbles: true }));
+    i.dispatchEvent(new Event('change', { bubbles: true }));
+    return __ma.clickText('.app-modal-overlay button', '建立');
+  })()`), '可在對話框輸入年份並按「建立」');
+  await sleep(800);
+
+  assertEq(await evaluate(`(__ma.toast() || {}).text`), '已建立 ' + NEXT_YEAR + ' 年度分配表（12 列）',
+    '建立成功的 toast 內容正確');
+  assertDeep(await yearOptions(),
+    [NEXT_YEAR + ' 年', THIS_YEAR + ' 年'], '年度下拉多出新年度且由大到小');
+  // 迴歸守門：handleCreateYear 必須在呼叫 setMaintenanceAllocationYears（會同步重繪整個
+  // App）之前先寫好 persistedSelectedYear，否則新元件實體會沿用舊年度。
+  assertEq(await evaluate(`__ma.combo(null, 0).value`), NEXT_YEAR + ' 年',
+    '建立後畫面自動切到新年度');
+  assertTrue(await evaluate(`document.querySelectorAll('tbody tr').length`) > 0,
+    '新年度仍有客戶列（骨架已建立）');
+  assertEq(await evaluate(`__ma.filledCells(null)`), 0, '新年度的格子全部是空的');
+
+  // 迴歸守門：年度下拉的 onChange 必須同時更新外層的 selectedYear，
+  // 只寫 persistedSelectedYear 的話 rerender() 不會重跑外層，切年份會完全沒反應。
+  assertTrue(await evaluate(`__ma.choose(__ma.combo(null, 0), '${THIS_YEAR} 年')`),
+    '可從下拉切回當年度');
+  await sleep(600);
+  assertEq(await evaluate(`__ma.combo(null, 0).value`), THIS_YEAR + ' 年', '下拉顯示切回當年度');
+  assertEq(await evaluate(`__ma.filledCells(null)`), seedFilled, '切回當年度後 seed 的格子回來了');
+  assertTrue(await evaluate(`__ma.choose(__ma.combo(null, 0), '${NEXT_YEAR} 年')`),
+    '可再切到新年度');
+  await sleep(600);
+  assertEq(await evaluate(`__ma.filledCells(null)`), 0,
+    '切到新年度後屬於當年度的格子消失');
+
+  // 重複建立同一年度
+  await evaluate(`document.querySelector('button[aria-label="建立年度分配表"], button[title="建立年度分配表"]').click()`);
+  await sleep(400);
+  assertTrue(await evaluate(`(function () {
+    var i = document.querySelector('.app-modal-overlay input[type=number]');
+    i.value = '${NEXT_YEAR}';
+    i.dispatchEvent(new Event('input', { bubbles: true }));
+    i.dispatchEvent(new Event('change', { bubbles: true }));
+    return __ma.clickText('.app-modal-overlay button', '建立');
+  })()`), '再次以同一年份按「建立」');
+  await sleep(500);
+  assertDeep(await evaluate(`__ma.toast()`), { text: '該年度分配表已存在', error: true },
+    '重複年份跳出錯誤 toast');
+  assertDeep(await yearOptions(),
+    [NEXT_YEAR + ' 年', THIS_YEAR + ' 年'], '重複建立不會多出年度');
+  assertTrue(await evaluate(`!!document.querySelector('.app-modal-overlay')`),
+    '建立失敗時對話框保持開啟');
+  assertTrue(await evaluate(`__ma.clickText('.app-modal-overlay button', '取消')`), '可取消對話框');
+  await sleep(400);
+  assertEq(await evaluate(`document.querySelectorAll('.app-modal-overlay').length`), 0,
+    '取消後對話框關閉');
+
   console.log('\nSection 4｜快照凍結：客戶改等級不影響已建立年度');
-  assertDeep(await evaluate(`(function(){
-    var years = INITIAL_MAINTENANCE_ALLOCATION_YEARS;
-    var year = Number(years[0].year);
-    var before = MaintenanceAllocationUtils.getSnapshotRows(years[0], 'ASG1')
-      .map(function (r) { return r.customerName + ':' + r.periods.length + ':' + r.storeCount; });
-    // 模擬客戶改等級與區間（只改副本，不動 seed）
+  // 關鍵手法：快照用「原始」主檔建立，卻把「已改過」的主檔當 props 傳進元件。
+  // 只要網格是從快照長出來的，畫面就必須顯示舊等級與四個區間；
+  // 一旦有人把列來源改回即時計算（getCustomerRows／CustomerUtils.getPeriods），
+  // 畫面會變成 B 保修的兩個區間，下面三條斷言就會紅。
+  const freeze = await evaluate(`(function () {
+    var year = Number(INITIAL_MAINTENANCE_ALLOCATION_YEARS[0].year);
+    var snapshot = MaintenanceAllocationUtils.buildYearSnapshot(
+      year, INITIAL_ASSIGNEES, INITIAL_CUSTOMERS, INITIAL_STORES, INITIAL_SERVICE_LEVELS, '2026-01-01'
+    );
     var customers = INITIAL_CUSTOMERS.map(function (c) {
       if (c.name !== '屈臣氏') return c;
       return Object.assign({}, c, {
@@ -395,18 +568,40 @@ try {
         ]
       });
     });
-    var after = MaintenanceAllocationUtils.getSnapshotRows(years[0], 'ASG1')
-      .map(function (r) { return r.customerName + ':' + r.periods.length + ':' + r.storeCount; });
-    var next = MaintenanceAllocationUtils.buildYearSnapshot(
+    var container = document.createElement('div');
+    document.body.appendChild(container);
+    container.appendChild(MaintenanceAllocation({
+      assignees: INITIAL_ASSIGNEES, customers: customers, stores: INITIAL_STORES,
+      maintenanceCases: [], serviceLevels: INITIAL_SERVICE_LEVELS,
+      maintenanceAllocations: [], setMaintenanceAllocations: function () {},
+      maintenanceAllocationYears: [snapshot], setMaintenanceAllocationYears: function () {},
+      showToast: function () {}
+    }));
+    __ma.choose(__ma.combo(container, 1), 'A組');
+    var row = Array.prototype.filter.call(container.querySelectorAll('tbody tr'), function (r) {
+      return r.querySelector('td').textContent.indexOf('屈臣氏') === 0;
+    })[0];
+    var nextSnap = MaintenanceAllocationUtils.buildYearSnapshot(
       year + 1, INITIAL_ASSIGNEES, customers, INITIAL_STORES, INITIAL_SERVICE_LEVELS, '2027-01-02'
     );
-    var nextRow = MaintenanceAllocationUtils.getSnapshotRows(next, 'ASG1')
+    var nextRow = MaintenanceAllocationUtils.getSnapshotRows(nextSnap, 'ASG1')
       .find(function (r) { return r.customerName === '屈臣氏'; });
-    return [
-      JSON.stringify(before) === JSON.stringify(after),
-      nextRow ? nextRow.periods.length : -1
-    ];
-  })()`), [true, 2], '舊年度快照不受客戶異動影響；新年度只有兩個區間');
+    var result = {
+      level: row ? row.querySelectorAll('td')[0].innerText.replace(/^屈臣氏\\s*/, '').trim() : '(找不到屈臣氏列)',
+      visits: row ? (row.innerText.match(/第\\d次/g) || []).length : -1,
+      nextVisits: nextRow ? nextRow.periods.length : -1
+    };
+    container.parentNode.removeChild(container);
+    __ma.closeMenus();
+    return result;
+  })()`);
+  assertEq(freeze.level, 'A 保修(一年四次)',
+    '畫面顯示快照凍結時的服務等級，而非現行主檔的新等級');
+  assertEq(freeze.visits, 4,
+    '畫面仍照快照畫出四個保養區間，而非新主檔的兩個');
+  assertEq(freeze.nextVisits, 2,
+    '以新主檔建立的下一年度快照才是兩個區間');
+
 } finally {
   try { ws && ws.close(); } catch {}
   chrome.kill();
