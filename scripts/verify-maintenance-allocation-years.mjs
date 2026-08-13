@@ -286,6 +286,58 @@ const LATE_ALLOC = { id: 'A5', year: 2026, assigneeId: 'ASG1', customerName: '�
 assertEq(MAU.isOrphanAllocation(LATE_ALLOC, snap), false, '同步前 11 月在乙客戶第 2 次區間內');
 assertEq(MAU.isOrphanAllocation(LATE_ALLOC, shrunk), true, '同步後 11 月落在所有區間外，成為孤兒');
 
+console.log('\nSection 3｜存活格子的 visitIndex 只是快取，區段才是真相');
+// 甲客戶由 A(4次) 降為 B(2次) 後，原本第 3 次(7-9月)的 8 月落進新的第 2 次(7-12月)。
+// 這格不是孤兒（月份確實在某個區間內），但格子上存的 visitIndex 仍是 3。
+const rowAfter = MAU.getSnapshotRows(resynced, 'ASG1').find(function (r) {
+  return r.customerName === '甲客戶';
+});
+assertEq(rowAfter.periods.length, 2, '同步後甲客戶只剩兩個區間（前置條件）');
+assertEq(MAU.findPeriodInRow(rowAfter, 8).visitIndex, 2, '同步後 8 月屬第 2 次（前置條件）');
+const STALE = { id: 'S1', year: 2026, assigneeId: 'ASG1', customerName: '甲客戶', month: 8, visitIndex: 3, targetCount: 1 };
+const STALE2 = { id: 'S2', year: 2026, assigneeId: 'ASG1', customerName: '甲客戶', month: 9, visitIndex: 3, targetCount: 2 };
+assertEq(MAU.formatCellLabel(STALE), '第3次 1', '不給區段時退回格子上存的 visitIndex');
+assertEq(MAU.formatCellLabel(STALE, MAU.findPeriodInRow(rowAfter, 8).visitIndex), '第2次 1',
+  '給了區段就以區段的次數顯示，不會在第 2 次區段裡標「第3次」');
+const STALE_ALLOCS = [STALE, STALE2];
+assertEq(MAU.sumVisitIndexTotal(STALE_ALLOCS, 2026, 'ASG1', '甲客戶', 2, null), 0,
+  '不給 row 時照格子上過期的 3 分組，第 2 次合計錯算成 0');
+assertEq(MAU.sumVisitIndexTotal(STALE_ALLOCS, 2026, 'ASG1', '甲客戶', 2, null, rowAfter), 3,
+  '給了 row 則以該月所屬區間分組，第 2 次合計為 1 + 2');
+assertEq(MAU.sumVisitIndexTotal([LATE_ALLOC], 2026, 'ASG1', '乙客戶', 2, null,
+  MAU.getSnapshotRows(shrunk, 'ASG1').find(function (r) { return r.customerName === '乙客戶'; })), 0,
+  '落在所有區間外的孤兒格不計入任何區段合計');
+const WARN_PARAMS = {
+  allocations: STALE_ALLOCS, year: 2026, assigneeId: 'ASG1', customerName: '甲客戶',
+  month: 9, visitIndex: 2, targetCount: 2, storeCount: 3
+};
+assertDeep(MAU.buildSaveWarnings(Object.assign({ row: rowAfter }, WARN_PARAMS)), [],
+  '帶 row 時第 2 次合計 1 + 2 = 3 等於門市數，無警示');
+assertEq(MAU.buildSaveWarnings(WARN_PARAMS).length, 1,
+  '不帶 row 會漏算 8 月那格，誤報第 2 次不足');
+
+console.log('\nSection 3｜整列被移除的孤兒格');
+const REMOVED_ALLOCS = [
+  { id: 'R1', year: 2026, assigneeId: 'ASG1', customerName: '甲客戶', month: 2, visitIndex: 1, targetCount: 1 },
+  { id: 'R2', year: 2026, assigneeId: 'ASG1', customerName: '丁客戶', month: 5, visitIndex: 2, targetCount: 2 },
+  { id: 'R3', year: 2026, assigneeId: 'ASG1', customerName: '丁客戶', month: 2, visitIndex: 1, targetCount: 3 },
+  { id: 'R4', year: 2025, assigneeId: 'ASG1', customerName: '丁客戶', month: 2, visitIndex: 1, targetCount: 4 },
+  { id: 'R5', year: 2026, assigneeId: 'ASG2', customerName: '丁客戶', month: 2, visitIndex: 1, targetCount: 5 }
+];
+const removedGroups = MAU.getRemovedRowGroups(REMOVED_ALLOCS, snap, 'ASG1');
+assertEq(removedGroups.length, 1, '只有整列消失的丁客戶被分出來（甲客戶仍在快照裡）');
+assertEq(removedGroups[0].customerName, '丁客戶', '分組帶客戶名稱');
+assertDeep(removedGroups[0].cells.map(function (c) { return c.month; }), [2, 5],
+  '該客戶的格子依月份排序');
+assertDeep(MAU.getRemovedRowGroups(REMOVED_ALLOCS, snap, 'ASG2').map(function (g) {
+  return g.customerName;
+}), ['丁客戶'], '另一位指派人員各自分組');
+assertDeep(MAU.getRemovedRowGroups(REMOVED_ALLOCS, snap, ''), [], '沒選指派人員回空陣列');
+assertDeep(MAU.getRemovedRowGroups(REMOVED_ALLOCS, null, 'ASG1'), [], 'snapshot 為 null 回空陣列');
+assertTrue(MAU.getRemovedRowGroups(REMOVED_ALLOCS, snap, 'ASG1')[0].cells.every(function (c) {
+  return Number(c.year) === 2026;
+}), '不會撈進其他年度的格子');
+
 
 // ---------- headless Chrome 區段 ----------
 const CHROME = process.env.CHROME_PATH
@@ -752,28 +804,33 @@ try {
     return out;
   })()`);
 
-  assertEq(rs.bannerBefore.indexOf('主檔已變動：') === 0
+  assertTrue(rs.bannerBefore.indexOf('主檔已變動：') === 0
     && /列設定變動。本年度骨架維持建立當時的設定，需要時可重新同步。$/.test(rs.bannerBefore),
-    true, '主檔變動後畫面出現黃色提示條', rs.bannerBefore);
+    '主檔變動後畫面出現黃色提示條', rs.bannerBefore);
   assertEq(rs.filledBefore, 3, 'A組 同步前有 3 個已填格子');
   assertEq(rs.orphansBefore, 0, '同步前沒有孤兒格');
   assertTrue(rs.clickedResync, '工具列有「重新同步本年度」按鈕可點');
   assertTrue(/^重新同步本年度 將以現行的客戶、門市與服務等級重拍 \d{4} 年度的骨架：/.test(rs.dialog),
     '確認 Modal 標題與說明正確', rs.dialog);
-  assertTrue(/列設定變動 已填的目標完成數一律保留；同步後將有 5 格落在保養區間外，會標記為異常，需自行確認是否刪除。/
-    .test(rs.dialog), 'Modal 顯示變動摘要與孤兒預估（5 格）', rs.dialog);
+  assertTrue(/列設定變動 已填的目標完成數一律保留；同步後全部指派人員共有 5 格落在保養區間外，會標記為異常，需自行確認是否刪除。/
+    .test(rs.dialog), 'Modal 顯示變動摘要與孤兒預估（全部指派人員共 5 格）', rs.dialog);
   assertTrue(rs.confirmed, 'Modal 可按「確認同步」');
   assertEq(rs.dialogAfter, '', '同步後 Modal 關閉');
   assertEq(rs.bannerAfter, '', '同步後提示條消失');
-  assertTrue(/^已重新同步 \d{4} 年度；.*列設定變動，5 格已不在區間內，請確認$/.test((rs.syncToast || {}).text)
-    && rs.syncToast.error === false, '同步成功 toast 內容正確', JSON.stringify(rs.syncToast));
+  assertTrue(
+    /^已重新同步 \d{4} 年度；.*列設定變動，全部指派人員共 5 格已不在區間內，請確認$/
+      .test((rs.syncToast || {}).text) && rs.syncToast.error === false,
+    '同步成功 toast 內容正確（含跨指派人員的孤兒總數）', JSON.stringify(rs.syncToast)
+  );
   assertEq(rs.createdAt, '2026-01-01', '同步後仍保留原本的 createdAt');
   assertTrue(/^\d{4}-\d{2}-\d{2}$/.test(rs.syncedAt), '同步後寫入 syncedAt', rs.syncedAt);
   assertEq(rs.filledAfter, 3, '同步後已填的格子一格都沒少');
   assertEq(rs.orphanCount, 2, '屈臣氏 7、8 月成為孤兒格（紅色虛線框）');
   assertDeep(rs.orphanTexts, ['⚠ 第1次 1', '⚠ 第1次 3'], '孤兒格文字帶 ⚠ 前綴');
   assertEq(rs.orphanTitle, '此格已不在現行保養區間內', '孤兒格有提示 title');
-  assertDeep(rs.normalTexts, ['第1次 2'], '區間內的格子維持原樣，不帶 ⚠ 與虛線');
+  // 星巴克 7 月：seed 存的 visitIndex 是 1，但 7 月落在星巴克 B 保修的第 2 次(7-12月)區段。
+  // 標籤以區段為準，故顯示「第2次 2」——格子上過期的 visitIndex 不會被畫出來。
+  assertDeep(rs.normalTexts, ['第2次 2'], '區間內的格子不帶 ⚠ 與虛線，且次數與所屬區段一致');
   assertTrue(rs.orphanClickDialog.indexOf('確認刪除') === 0
     && rs.orphanClickDialog.indexOf('編輯保養分配') === -1,
     '點孤兒格開的是刪除確認、不是編輯 Modal', rs.orphanClickDialog);
@@ -828,6 +885,337 @@ try {
     '無變動時按同步只跳「無需同步」的成功 toast');
   assertEq(nodiff.dialog, '', '無變動時不開同步 Modal');
   assertTrue(nodiff.yearsUntouched, '無變動時不會寫回年度快照');
+
+  console.log('\nSection 5｜實際操作畫面：存活格子的次數標籤跟著區段走');
+  // 情境＝同步之後：快照已是屈臣氏 B(2次，1-6／7-12)，但 seed 的格子仍帶著寫入當時的
+  // visitIndex 1。7、8 月都落在新的第 2 次區段內（不是孤兒），畫面若照格子上的值畫，
+  // 就會在「第2次」的區段標頭底下顯示「第1次 3」。
+  const stale = await evaluate(`(function () {
+    var year = Number(INITIAL_MAINTENANCE_ALLOCATION_YEARS[0].year);
+    var customers = INITIAL_CUSTOMERS.map(function (c) {
+      if (c.name !== '屈臣氏') return c;
+      return Object.assign({}, c, {
+        serviceLevel: 'B 保修(一年兩次)',
+        periods: [
+          { visitIndex: 1, startMonth: 1, endMonth: 6 },
+          { visitIndex: 2, startMonth: 7, endMonth: 12 }
+        ]
+      });
+    });
+    var snapshot = MaintenanceAllocationUtils.buildYearSnapshot(
+      year, INITIAL_ASSIGNEES, customers, INITIAL_STORES, INITIAL_SERVICE_LEVELS, '2026-01-01'
+    );
+    var container = document.createElement('div');
+    document.body.appendChild(container);
+    container.appendChild(MaintenanceAllocation({
+      assignees: INITIAL_ASSIGNEES, customers: customers, stores: INITIAL_STORES,
+      maintenanceCases: [], serviceLevels: INITIAL_SERVICE_LEVELS,
+      maintenanceAllocations: INITIAL_MAINTENANCE_ALLOCATIONS.slice(),
+      setMaintenanceAllocations: function () {},
+      maintenanceAllocationYears: [snapshot],
+      setMaintenanceAllocationYears: function () {},
+      showToast: function () {}
+    }));
+    __ma.choose(__ma.combo(container, 1), 'A組');
+    __ma.closeMenus();
+    var row = Array.prototype.filter.call(container.querySelectorAll('tbody tr'), function (r) {
+      return r.querySelector('td').textContent.indexOf('屈臣氏') === 0;
+    })[0];
+    var tds = row.querySelectorAll('td');
+    function cellText(month) {
+      var d = tds[1 + month].querySelector('div.cursor-pointer');
+      return d ? d.innerText.trim() : '(無格子)';
+    }
+    var julHeader = tds[1 + 7].querySelector('div.text-\\\\[11px\\\\]');
+    var out = {
+      jul: cellText(7),
+      aug: cellText(8),
+      julHeader: julHeader ? julHeader.innerText.trim() : '(無區段標頭)',
+      storedVisitIndex: INITIAL_MAINTENANCE_ALLOCATIONS.filter(function (a) {
+        return a.assigneeId === 'ASG1' && a.customerName === '屈臣氏' && Number(a.month) === 7;
+      }).map(function (a) { return a.visitIndex; })[0],
+      orphans: Array.prototype.filter.call(
+        container.querySelectorAll('tbody td div.cursor-pointer'),
+        function (d) { return d.className.indexOf('border-dashed') >= 0; }
+      ).length
+    };
+    container.parentNode.removeChild(container);
+    __ma.closeMenus();
+    return out;
+  })()`);
+  assertEq(stale.storedVisitIndex, 1, '格子上存的 visitIndex 是 1（前置條件）');
+  assertTrue(/^第2次 /.test(stale.julHeader), '7 月是第 2 次區段的起點', stale.julHeader);
+  assertEq(stale.jul, '第2次 3', '7 月的格子標籤跟著區段顯示「第2次」，而非格子上過期的「第1次」');
+  assertEq(stale.aug, '第2次 1', '8 月的格子同樣顯示所屬區段的次數');
+  assertEq(stale.orphans, 0, '這兩格落在區間內，不是孤兒');
+
+  console.log('\nSection 5｜實際操作畫面：整列被移除的孤兒格可見且可刪');
+  // 模擬屈臣氏整列從 A組 的骨架消失（降到 D 級／門市全關／轄區調整都會如此）。
+  // 這些格子在正常的網格列裡沒有位置，若不另外畫出來就永遠看不見也刪不掉。
+  const removedUI = await evaluate(`(function () {
+    var year = Number(INITIAL_MAINTENANCE_ALLOCATION_YEARS[0].year);
+    var full = MaintenanceAllocationUtils.buildYearSnapshot(
+      year, INITIAL_ASSIGNEES, INITIAL_CUSTOMERS, INITIAL_STORES, INITIAL_SERVICE_LEVELS, '2026-01-01'
+    );
+    var trimmed = Object.assign({}, full, {
+      rows: full.rows.filter(function (r) {
+        return !(r.assigneeId === 'ASG1' && r.customerName === '屈臣氏');
+      })
+    });
+    var allocations = INITIAL_MAINTENANCE_ALLOCATIONS.slice();
+    var toasts = [];
+    var container = document.createElement('div');
+    document.body.appendChild(container);
+    function mount() {
+      container.innerHTML = '';
+      container.appendChild(MaintenanceAllocation({
+        assignees: INITIAL_ASSIGNEES, customers: INITIAL_CUSTOMERS, stores: INITIAL_STORES,
+        maintenanceCases: [], serviceLevels: INITIAL_SERVICE_LEVELS,
+        maintenanceAllocations: allocations,
+        setMaintenanceAllocations: function (next) { allocations = next; mount(); },
+        maintenanceAllocationYears: [trimmed],
+        setMaintenanceAllocationYears: function () {},
+        showToast: function (msg, type) { toasts.push({ text: msg, error: type === 'error' }); }
+      }));
+    }
+    function removedRow() {
+      return Array.prototype.filter.call(container.querySelectorAll('tbody tr'), function (r) {
+        return r.querySelector('td').textContent.indexOf('已不在本年度骨架中') >= 0;
+      })[0] || null;
+    }
+    function clickText(sel, text) {
+      var els = container.querySelectorAll(sel);
+      for (var i = 0; i < els.length; i++) {
+        if (els[i].textContent.trim() === text) { els[i].click(); return true; }
+      }
+      return false;
+    }
+    function watsonsCells() {
+      return allocations.filter(function (a) {
+        return Number(a.year) === year && a.assigneeId === 'ASG1' && a.customerName === '屈臣氏';
+      }).length;
+    }
+    mount();
+    __ma.choose(__ma.combo(container, 1), 'A組');
+    __ma.closeMenus();
+
+    var out = { before: watsonsCells() };
+    var row = removedRow();
+    out.hasRow = !!row;
+    out.rowLabel = row ? row.querySelectorAll('td')[0].innerText.replace(/\\s+/g, ' ').trim() : '';
+    out.storeCountCell = row ? row.querySelectorAll('td')[1].innerText.trim() : '';
+    var cells = row ? Array.prototype.filter.call(
+      row.querySelectorAll('td div.cursor-pointer'),
+      function (d) { return d.innerText.trim() !== ''; }
+    ) : [];
+    out.cellTexts = cells.map(function (d) { return d.innerText.trim(); }).sort();
+    out.allDashed = cells.length > 0 && cells.every(function (d) {
+      return d.className.indexOf('border-dashed') >= 0 && d.className.indexOf('border-red-300') >= 0;
+    });
+    // 點格子本身：只能刪除，不可編輯
+    // （唯讀列若沒被畫出來，cells 會是空的——這裡不能直接爆掉，要讓底下的斷言變紅）
+    if (cells.length) cells[0].click();
+    var ov = container.querySelector('.app-modal-overlay');
+    out.clickDialog = ov ? ov.innerText.replace(/\\s+/g, ' ').trim() : '';
+    out.clickToast = toasts.length ? toasts[toasts.length - 1] : null;
+    out.confirmed = clickText('.app-modal-overlay button', '確認刪除');
+    out.afterFirstDelete = watsonsCells();
+    out.rowStillThere = !!removedRow();
+    // 把剩下的也刪掉，整列應該就消失
+    var rest = removedRow()
+      ? Array.prototype.filter.call(removedRow().querySelectorAll('td div.cursor-pointer'),
+          function (d) { return d.innerText.trim() !== ''; })
+      : [];
+    rest.slice().forEach(function () {
+      var r = removedRow();
+      if (!r) return;
+      var d = Array.prototype.filter.call(r.querySelectorAll('td div.cursor-pointer'),
+        function (x) { return x.innerText.trim() !== ''; })[0];
+      if (!d) return;
+      d.click();
+      clickText('.app-modal-overlay button', '確認刪除');
+    });
+    out.afterAllDeleted = watsonsCells();
+    out.rowGone = !removedRow();
+    out.otherCustomerKept = allocations.filter(function (a) {
+      return Number(a.year) === year && a.assigneeId === 'ASG1' && a.customerName === '星巴克';
+    }).length;
+
+    container.parentNode.removeChild(container);
+    __ma.closeMenus();
+    return out;
+  })()`);
+  assertEq(removedUI.before, 2, '屈臣氏在 A組／當年度有 2 格（前置條件）');
+  assertTrue(removedUI.hasRow, '整列被移除的客戶仍以唯讀列出現在網格底部');
+  assertEq(removedUI.rowLabel, '屈臣氏 已不在本年度骨架中', '列首標明該客戶已不在本年度骨架中');
+  assertEq(removedUI.storeCountCell, '—', '負責門市數以「—」表示（骨架裡已無此列）');
+  assertDeep(removedUI.cellTexts, ['⚠ 第1次 1', '⚠ 第1次 3'], '該列的格子帶 ⚠ 顯示原值');
+  assertTrue(removedUI.allDashed, '該列的格子一律是紅色虛線框');
+  assertTrue(removedUI.clickDialog.indexOf('確認刪除') === 0
+    && removedUI.clickDialog.indexOf('編輯保養分配') === -1,
+    '點下去開的是刪除確認、不是編輯 Modal', removedUI.clickDialog);
+  assertDeep(removedUI.clickToast, { text: '此客戶已不在本年度骨架中，僅能刪除', error: true },
+    '點格子跳出僅能刪除的錯誤 toast');
+  assertTrue(removedUI.confirmed, '刪除確認可按下');
+  assertEq(removedUI.afterFirstDelete, 1, '刪掉一格後資料真的少一筆');
+  assertTrue(removedUI.rowStillThere, '還有剩餘格子時該列仍在');
+  assertEq(removedUI.afterAllDeleted, 0, '全部刪完後該客戶在本年度已無格子');
+  assertTrue(removedUI.rowGone, '沒有孤兒格後該唯讀列自動消失');
+  assertEq(removedUI.otherCustomerKept, 1, '刪除不會波及骨架內其他客戶的格子');
+
+  console.log('\nSection 5｜實際操作畫面：提示條與同步鈕只對當年度開放');
+  const yearGate = await evaluate(`(function () {
+    var thisYear = new Date().getFullYear();
+    var customers = INITIAL_CUSTOMERS.map(function (c) {
+      if (c.name !== '屈臣氏') return c;
+      return Object.assign({}, c, {
+        serviceLevel: 'B 保修(一年兩次)',
+        periods: [
+          { visitIndex: 1, startMonth: 1, endMonth: 6 },
+          { visitIndex: 2, startMonth: 7, endMonth: 12 }
+        ]
+      });
+    });
+    // 兩份快照都用「原始主檔」拍，再把改過的主檔當 props 傳進去 → 兩個年度都有 diff
+    var cur = MaintenanceAllocationUtils.buildYearSnapshot(
+      thisYear, INITIAL_ASSIGNEES, INITIAL_CUSTOMERS, INITIAL_STORES, INITIAL_SERVICE_LEVELS, '2026-01-01'
+    );
+    var past = MaintenanceAllocationUtils.buildYearSnapshot(
+      thisYear - 1, INITIAL_ASSIGNEES, INITIAL_CUSTOMERS, INITIAL_STORES, INITIAL_SERVICE_LEVELS, '2019-03-04'
+    );
+    var container = document.createElement('div');
+    document.body.appendChild(container);
+    container.appendChild(MaintenanceAllocation({
+      assignees: INITIAL_ASSIGNEES, customers: customers, stores: INITIAL_STORES,
+      maintenanceCases: [], serviceLevels: INITIAL_SERVICE_LEVELS,
+      maintenanceAllocations: INITIAL_MAINTENANCE_ALLOCATIONS.slice(),
+      setMaintenanceAllocations: function () {},
+      maintenanceAllocationYears: [past, cur],
+      setMaintenanceAllocationYears: function () {},
+      showToast: function () {}
+    }));
+    function banner() {
+      var el = container.querySelector('div.border-amber-200.bg-amber-50');
+      return el ? el.innerText.trim() : '';
+    }
+    function frozen() {
+      var el = container.querySelector('div.rounded-md.border-gray-200.bg-gray-50');
+      return el ? el.innerText.trim() : '';
+    }
+    function resyncBtn() {
+      var btns = container.querySelectorAll('button');
+      for (var i = 0; i < btns.length; i++) {
+        if (btns[i].textContent.trim() === '重新同步本年度') return true;
+      }
+      return false;
+    }
+    var out = { year: container.querySelectorAll('.searchable-select__input')[0].value };
+    out.curBanner = banner();
+    out.curFrozen = frozen();
+    out.curBtn = resyncBtn();
+
+    // 切到過去年度，並側錄 diffSnapshot 是否還被呼叫
+    var orig = MaintenanceAllocationUtils.diffSnapshot;
+    var calls = 0;
+    MaintenanceAllocationUtils.diffSnapshot = function () {
+      calls++;
+      return orig.apply(null, arguments);
+    };
+    __ma.choose(__ma.combo(container, 0), (thisYear - 1) + ' 年');
+    __ma.closeMenus();
+    out.pastYear = container.querySelectorAll('.searchable-select__input')[0].value;
+    out.pastBanner = banner();
+    out.pastFrozen = frozen();
+    out.pastBtn = resyncBtn();
+    out.pastDiffCalls = calls;
+
+    // 切回當年度：提示條與按鈕都要回來，diffSnapshot 也要重新算
+    calls = 0;
+    __ma.choose(__ma.combo(container, 0), thisYear + ' 年');
+    __ma.closeMenus();
+    out.backBanner = banner();
+    out.backFrozen = frozen();
+    out.backBtn = resyncBtn();
+    out.backDiffCalls = calls;
+    MaintenanceAllocationUtils.diffSnapshot = orig;
+
+    container.parentNode.removeChild(container);
+    __ma.closeMenus();
+    return out;
+  })()`);
+  assertEq(yearGate.year, THIS_YEAR + ' 年', '預設停在當年度（前置條件）');
+  assertTrue(yearGate.curBanner.indexOf('主檔已變動：') === 0,
+    '當年度：主檔變動時顯示提示條', yearGate.curBanner);
+  assertEq(yearGate.curFrozen, '', '當年度：不顯示凍結說明');
+  assertTrue(yearGate.curBtn, '當年度：有「重新同步本年度」按鈕');
+  assertEq(yearGate.pastYear, (THIS_YEAR - 1) + ' 年', '可切到過去年度');
+  assertEq(yearGate.pastBanner, '', '過去年度：不顯示「主檔已變動」提示條');
+  assertEq(yearGate.pastFrozen, (THIS_YEAR - 1) + ' 年度骨架已凍結（建立於 2019-03-04）',
+    '過去年度：改顯示中性的灰字凍結說明');
+  assertTrue(!yearGate.pastBtn, '過去年度：不提供「重新同步本年度」按鈕');
+  assertEq(yearGate.pastDiffCalls, 0, '過去年度完全不呼叫 diffSnapshot');
+  assertTrue(yearGate.backBanner.indexOf('主檔已變動：') === 0,
+    '切回當年度後提示條回來', yearGate.backBanner);
+  assertEq(yearGate.backFrozen, '', '切回當年度後凍結說明消失');
+  assertTrue(yearGate.backBtn, '切回當年度後同步按鈕回來');
+  assertTrue(yearGate.backDiffCalls > 0, '切回當年度確實重算 diffSnapshot（證明上一條不是空轉）',
+    String(yearGate.backDiffCalls));
+
+  console.log('\nSection 5｜編輯 Modal 的每次按鍵不重算 diffSnapshot');
+  const hotPath = await evaluate(`(function () {
+    var year = Number(INITIAL_MAINTENANCE_ALLOCATION_YEARS[0].year);
+    var customers = INITIAL_CUSTOMERS.map(function (c) {
+      if (c.name !== '屈臣氏') return c;
+      return Object.assign({}, c, { serviceLevel: 'B 保修(一年兩次)' });
+    });
+    var snapshot = MaintenanceAllocationUtils.buildYearSnapshot(
+      year, INITIAL_ASSIGNEES, INITIAL_CUSTOMERS, INITIAL_STORES, INITIAL_SERVICE_LEVELS, '2026-01-01'
+    );
+    var container = document.createElement('div');
+    document.body.appendChild(container);
+    var orig = MaintenanceAllocationUtils.diffSnapshot;
+    var calls = 0;
+    MaintenanceAllocationUtils.diffSnapshot = function () {
+      calls++;
+      return orig.apply(null, arguments);
+    };
+    container.appendChild(MaintenanceAllocation({
+      assignees: INITIAL_ASSIGNEES, customers: customers, stores: INITIAL_STORES,
+      maintenanceCases: [], serviceLevels: INITIAL_SERVICE_LEVELS,
+      maintenanceAllocations: INITIAL_MAINTENANCE_ALLOCATIONS.slice(),
+      setMaintenanceAllocations: function () {},
+      maintenanceAllocationYears: [snapshot],
+      setMaintenanceAllocationYears: function () {},
+      showToast: function () {}
+    }));
+    __ma.choose(__ma.combo(container, 1), 'A組');
+    __ma.closeMenus();
+    var out = { mountCalls: calls };
+    var cell = Array.prototype.filter.call(
+      container.querySelectorAll('tbody td div.cursor-pointer'),
+      function (d) { return d.innerText.trim() !== ''; }
+    )[0];
+    cell.click();
+    out.modalOpen = !!container.querySelector('.app-modal-overlay');
+    var before = calls;
+    var input = container.querySelector('.app-modal-overlay input[type=number]');
+    ['1', '12', '123'].forEach(function (v) {
+      input.value = v;
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+      input = container.querySelector('.app-modal-overlay input[type=number]');
+    });
+    out.typingCalls = calls - before;
+    out.value = input.value;
+    MaintenanceAllocationUtils.diffSnapshot = orig;
+    container.parentNode.removeChild(container);
+    __ma.closeMenus();
+    return out;
+  })()`);
+  assertTrue(hotPath.mountCalls > 0, '掛載時算過 diffSnapshot（證明側錄有效）', String(hotPath.mountCalls));
+  assertTrue(hotPath.modalOpen, '點格子可開啟編輯 Modal');
+  assertEq(hotPath.value, '123', '輸入框確實吃到三次輸入');
+  assertEq(hotPath.typingCalls, 0, '輸入過程完全不重算 diffSnapshot');
 
   console.log('\nSection 6｜統計頁的年份過濾');
   assertDeep(await evaluate(`(function(){
@@ -950,9 +1338,13 @@ try {
   assertEq(uiTargets, await evaluate(`__perf.expected(INITIAL_MAINTENANCE_ALLOCATIONS)`),
     '畫面上的目標店數與 computeAssigneePerformance 算出的一致');
 
-  // app store 的 maintenanceAllocations 就是 INITIAL_MAINTENANCE_ALLOCATIONS 這個陣列本身
-  // （store 只在 setMaintenanceAllocations 時才換成新陣列，本腳本沒動過），
+  // 假設（成立才有意義）：app store 的 maintenanceAllocations 就是
+  // INITIAL_MAINTENANCE_ALLOCATIONS 這個陣列本身——store 以它初始化，且只在
+  // setMaintenanceAllocations 時才換成新陣列，本腳本沒有觸發過那條路徑。
   // 故就地 push 即可把「他年度的格子」混進統計頁真正讀到的資料。
+  // 若哪天 store 改成初始化時複製陣列，這個注入會變成無效（畫面根本讀不到），
+  // 底下「數字完全不變」的斷言就會變成恆真——下一條 assertTrue(polluted > 0)
+  // 只擋得住 push 失敗，擋不住別名假設失效，改動 store 初始化時請一併檢查這裡。
   const polluted = await evaluate(`(function(){
     var year = new Date().getFullYear();
     window.__perfBaseLen = INITIAL_MAINTENANCE_ALLOCATIONS.length;
@@ -979,8 +1371,43 @@ try {
     INITIAL_MAINTENANCE_ALLOCATIONS.length = window.__perfBaseLen;
     return true;
   })()`);
-  assertEq(await evaluate(`INITIAL_MAINTENANCE_ALLOCATIONS.length`), await evaluate(`window.__perfBaseLen`),
-    '測試後已還原 allocations');
+
+  console.log('\nSection 6｜統計頁：年度分配表尚未建立時的說明');
+  // 每年 1 月 1 日到有人手動建立該年度分配表之前，目標一律 0；沒有說明的話畫面看起來
+  // 只是「所有組達成率都掛 0%」，分不出是沒建表還是真的沒填。
+  const notice = await evaluate(`(function () {
+    function noticeText(years) {
+      var container = document.createElement('div');
+      document.body.appendChild(container);
+      container.appendChild(CasePerformanceStats({
+        cases: [], maintenanceCases: [], assignees: INITIAL_ASSIGNEES,
+        maintenanceAllocations: INITIAL_MAINTENANCE_ALLOCATIONS,
+        maintenanceAllocationYears: years,
+        stores: INITIAL_STORES, performanceAreas: INITIAL_PERFORMANCE_AREAS,
+        deviceCategories: INITIAL_DEVICE_CATEGORIES, serviceLevels: INITIAL_SERVICE_LEVELS
+      }));
+      var el = container.querySelector('div.border-amber-200.bg-amber-50');
+      var text = el ? el.innerText.trim() : '';
+      container.parentNode.removeChild(container);
+      return text;
+    }
+    var quarterYear = Number(String(PerformanceUtils.getQuarterRange(new Date()).start).slice(0, 4));
+    return {
+      quarterYear: quarterYear,
+      none: noticeText([]),
+      otherYearOnly: noticeText([{ year: quarterYear - 1, createdAt: '2019-01-01', syncedAt: '', rows: [] }]),
+      present: noticeText(INITIAL_MAINTENANCE_ALLOCATION_YEARS)
+    };
+  })()`);
+  assertEq(notice.none, notice.quarterYear + ' 年度分配表尚未建立，目標店數與達成率暫以 0 計',
+    '沒有任何年度快照時，統計頁說明本季所屬年度尚未建表');
+  assertEq(notice.otherYearOnly, notice.quarterYear + ' 年度分配表尚未建立，目標店數與達成率暫以 0 計',
+    '只有他年度的快照時同樣顯示說明');
+  assertEq(notice.present, '', '本季所屬年度已建表時不顯示說明');
+  assertEq(await evaluate(`(function () {
+    var el = document.querySelector('div.border-amber-200.bg-amber-50');
+    return el ? el.innerText.trim() : '';
+  })()`), '', '真正的統計頁（store 已有本年度快照）不顯示說明');
 
   assertEq(consoleErrors.length, 0, '全程無 JS 錯誤');
 

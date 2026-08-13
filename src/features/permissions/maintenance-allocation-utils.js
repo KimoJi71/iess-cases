@@ -8,9 +8,15 @@
     return ServiceLevelUtils.isAllocatable(serviceLevels, level);
   }
 
-  function formatCellLabel(allocation) {
+  /**
+   * 區段是唯一真相：格子上存的 visitIndex 只是寫入當下的快取，重新同步後可能過期
+   * （例：A(4次) 降為 B(2次) 後，原本第 3 次的 8 月落進新的第 2 次區段）。
+   * 呼叫端若知道該月所屬區段，請傳入 effectiveVisitIndex，畫面才會與區段一致。
+   */
+  function formatCellLabel(allocation, effectiveVisitIndex) {
     if (!allocation) return '';
-    return '第' + allocation.visitIndex + '次 ' + allocation.targetCount;
+    var visitIndex = effectiveVisitIndex != null ? effectiveVisitIndex : allocation.visitIndex;
+    return '第' + visitIndex + '次 ' + allocation.targetCount;
   }
 
   function getCoveredStoresForAssignee(stores, assignee, customerName, serviceLevels) {
@@ -236,6 +242,37 @@
     return !findPeriodInRow(row, allocation.month);
   }
 
+  /**
+   * 該年度、該指派人員底下「整列已從快照消失」（客戶降級、門市全關、指派人員轄區變動）
+   * 的孤兒格，依客戶分組。這些格子在正常的網格列裡找不到位置，必須另外以唯讀列渲染，
+   * 否則使用者看不見也刪不掉，卻仍留在資料裡。
+   * @returns {Array<{ customerName, cells: Array }>} 客戶依 zh-Hant 排序、格子依月份排序
+   */
+  function getRemovedRowGroups(allocations, snapshot, assigneeId) {
+    if (!snapshot || !assigneeId) return [];
+    var groups = {};
+    (allocations || []).forEach(function (a) {
+      if (Number(a.year) !== Number(snapshot.year)) return;
+      if (a.assigneeId !== assigneeId) return;
+      var row = (snapshot.rows || []).find(function (r) {
+        return r.assigneeId === a.assigneeId && r.customerName === a.customerName;
+      });
+      if (row) return;
+      if (!groups[a.customerName]) groups[a.customerName] = [];
+      groups[a.customerName].push(a);
+    });
+    return Object.keys(groups).sort(function (a, b) {
+      return String(a).localeCompare(String(b), 'zh-Hant');
+    }).map(function (name) {
+      return {
+        customerName: name,
+        cells: groups[name].slice().sort(function (x, y) {
+          return Number(x.month) - Number(y.month);
+        })
+      };
+    });
+  }
+
   function countOrphans(allocations, snapshot) {
     if (!snapshot) return 0;
     var n = 0;
@@ -254,13 +291,25 @@
     }) || null;
   }
 
-  function sumVisitIndexTotal(allocations, year, assigneeId, customerName, visitIndex, excludeMonth) {
+  /**
+   * 加總同一區段（第 N 次）已填的目標完成數。
+   * 傳入 row 時以「該月在 row 裡所屬區間的 visitIndex」分組（區段為唯一真相，
+   * 格子上過期的 visitIndex 不算數，落在所有區間外的孤兒格一律不計入任何區段）；
+   * 未傳 row 則退回格子上存的 visitIndex。
+   */
+  function sumVisitIndexTotal(allocations, year, assigneeId, customerName, visitIndex, excludeMonth, row) {
     var sum = 0;
     (allocations || []).forEach(function (a) {
       if (Number(a.year) !== Number(year)) return;
       if (a.assigneeId !== assigneeId) return;
       if (a.customerName !== customerName) return;
-      if (Number(a.visitIndex) !== Number(visitIndex)) return;
+      var effective = a.visitIndex;
+      if (row) {
+        var period = findPeriodInRow(row, a.month);
+        if (!period) return;
+        effective = period.visitIndex;
+      }
+      if (Number(effective) !== Number(visitIndex)) return;
       if (excludeMonth != null && Number(a.month) === Number(excludeMonth)) return;
       sum += Number(a.targetCount) || 0;
     });
@@ -282,7 +331,8 @@
     }
 
     var otherSum = sumVisitIndexTotal(
-      params.allocations, params.year, params.assigneeId, params.customerName, visitIndex, month
+      params.allocations, params.year, params.assigneeId, params.customerName,
+      visitIndex, month, params.row
     );
     var total = otherSum + targetCount;
     if (total !== storeCount) {
@@ -347,6 +397,7 @@
     formatDiffSummary: formatDiffSummary,
     resyncYear: resyncYear,
     isOrphanAllocation: isOrphanAllocation,
+    getRemovedRowGroups: getRemovedRowGroups,
     countOrphans: countOrphans,
     findAllocation: findAllocation,
     sumVisitIndexTotal: sumVisitIndexTotal,

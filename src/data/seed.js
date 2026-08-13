@@ -2182,7 +2182,9 @@ INITIAL_CASES.forEach(function (c) {
 });
 
 // 年度快照由現行主檔計算產生，確保 demo 資料與畫面一致。
-// maintenance-allocation-utils.js 於 index.html 中先於 seed.js 載入，故此處可直接呼叫。
+// 載入順序依賴：本行在模組載入時就會執行，故 index.html 裡的
+// src/features/permissions/maintenance-allocation-utils.js 必須排在 src/data/seed.js 之前
+// （目前分別在第 39、44 行）。順序一旦對調，開機時就是一個裸的 ReferenceError。
 const INITIAL_MAINTENANCE_ALLOCATION_YEARS = [
   MaintenanceAllocationUtils.buildYearSnapshot(
     SEED_YEAR,

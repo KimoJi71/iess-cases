@@ -576,6 +576,7 @@
           maintenanceCases: s.maintenanceCases,
           assignees: s.assignees,
           maintenanceAllocations: s.maintenanceAllocations,
+          maintenanceAllocationYears: s.maintenanceAllocationYears,
           stores: s.stores,
           performanceAreas: s.performanceAreas,
           deviceCategories: s.deviceCategories,

@@ -43,6 +43,8 @@
 
     var createModal = null;
     var resyncModal = null;
+    // 上一次算出的 diffSnapshot；只在 Modal 開著時沿用（見 stateful 內的說明）
+    var lastSnapshotDiff = null;
 
     var selectedAssigneeId = persistedSelectedAssigneeId;
     var editModal = null;
@@ -95,6 +97,7 @@
         month: month,
         visitIndex: period.visitIndex,
         period: period,
+        row: row,
         targetCount: existing ? existing.targetCount : '',
         storeCount: row.storeCount,
         serviceLevel: row.serviceLevel
@@ -113,11 +116,26 @@
       var rows = (assignee && snapshot)
         ? MaintenanceAllocationUtils.getSnapshotRows(snapshot, selectedAssigneeId)
         : [];
-      var snapshotDiff = snapshot
-        ? MaintenanceAllocationUtils.diffSnapshot(
-            snapshot, assignees, customers, stores, serviceLevels
+      var removedGroups = (assignee && snapshot)
+        ? MaintenanceAllocationUtils.getRemovedRowGroups(
+            maintenanceAllocations, snapshot, selectedAssigneeId
           )
-        : null;
+        : [];
+      // 過去年度的骨架已凍結，主檔必然 drift：既不比對也不提供同步（見 renderFrozenNote）
+      var isCurrentYear = Number(selectedYear) === Number(thisYear);
+      var snapshotDiff = null;
+      if (snapshot && isCurrentYear) {
+        // Modal 開著時沿用上一次的結果：在「目標完成數」輸入框裡每按一鍵都會 rerender()，
+        // 沒必要為此重跑一次全指派人員 × 全門市的 buildYearSnapshot。
+        snapshotDiff = (editModal && lastSnapshotDiff)
+          ? lastSnapshotDiff
+          : MaintenanceAllocationUtils.diffSnapshot(
+              snapshot, assignees, customers, stores, serviceLevels
+            );
+        lastSnapshotDiff = snapshotDiff;
+      } else {
+        lastSnapshotDiff = null;
+      }
       var hasDiff = MaintenanceAllocationUtils.hasSnapshotDiff(snapshotDiff);
 
       if (selectedAssigneeId && !assignee) {
@@ -149,7 +167,9 @@
           month: editModal.month,
           visitIndex: visitIndex,
           targetCount: targetCount,
-          storeCount: editModal.storeCount
+          storeCount: editModal.storeCount,
+          // 帶上快照的列，合計才會依「該月所屬區間」分組，而非格子上可能過期的 visitIndex
+          row: editModal.row
         });
 
         setMaintenanceAllocations(MaintenanceAllocationUtils.upsertAllocation(maintenanceAllocations, {
@@ -210,8 +230,22 @@
         );
       }
 
+      /**
+       * 過去年度改顯示中性說明：骨架凍結是刻意的，提示條掛在那裡只會變成永久噪音
+       * （服務等級一改名，所有舊年度都會永遠顯示「N 列設定變動」），
+       * 而提示條旁的同步鈕按下去等於用今天的主檔重寫歷史骨架。
+       */
+      function renderFrozenNote() {
+        if (!snapshot || isCurrentYear) return null;
+        return h(
+          'div',
+          { className: 'mb-4 rounded-md border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-500' },
+          selectedYear + ' 年度骨架已凍結（建立於 ' + (snapshot.createdAt || '—') + '）'
+        );
+      }
+
       function renderDiffBanner() {
-        if (!hasDiff) return null;
+        if (!isCurrentYear || !hasDiff) return null;
         return h(
           'div',
           {
@@ -232,7 +266,11 @@
           row.customerName,
           month
         );
-        var label = MaintenanceAllocationUtils.formatCellLabel(cell);
+        // 標籤的次數以「該月所屬區段」為準：格子上存的 visitIndex 只是寫入當下的快取，
+        // 重新同步後可能落在別的區段裡，照著畫會在第 2 次的區段中顯示「第3次」。
+        var label = MaintenanceAllocationUtils.formatCellLabel(
+          cell, segment ? segment.period.visitIndex : null
+        );
         var isOrphan = cell && MaintenanceAllocationUtils.isOrphanAllocation(cell, snapshot);
 
         var tdClass = 'p-2 align-top';
@@ -316,6 +354,85 @@
         );
       }
 
+      function openRemovedDelete(customerName, month, label) {
+        syncScrollFromEl();
+        deleteModal = {
+          customerName: customerName,
+          month: month,
+          label: customerName + ' ' + month + '月（' + label + '）'
+        };
+        rerender();
+      }
+
+      /**
+       * 整列已從快照消失的孤兒格：以唯讀列補在網格底部，只提供刪除。
+       * 不畫這一列的話，這些格子看不見也刪不掉，卻仍留在資料裡。
+       */
+      function renderRemovedRow(group) {
+        var byMonth = {};
+        group.cells.forEach(function (c) { byMonth[Number(c.month)] = c; });
+        return h(
+          'tr',
+          { key: '__removed__' + group.customerName, className: 'bg-red-50/30' },
+          h(
+            'td',
+            { className: 'p-3' },
+            h('div', { className: 'font-medium text-gray-800' }, group.customerName),
+            h(
+              'span',
+              {
+                className: 'inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-xs font-medium border border-red-200 bg-red-50 text-red-600'
+              },
+              '已不在本年度骨架中'
+            )
+          ),
+          h('td', { className: 'p-3 text-center text-gray-400' }, '—'),
+          MONTHS.map(function (month) {
+            var cell = byMonth[month] || null;
+            if (!cell) return h('td', { key: month, className: 'p-2 align-top' });
+            var label = MaintenanceAllocationUtils.formatCellLabel(cell);
+            return h(
+              'td',
+              { key: month, className: 'p-2 align-top' },
+              h(
+                'div',
+                {
+                  onClick: function () {
+                    showToast('此客戶已不在本年度骨架中，僅能刪除', 'error');
+                    openRemovedDelete(group.customerName, month, label);
+                  },
+                  className: 'min-h-[68px] rounded-md border border-red-300 border-dashed bg-red-50/50 '
+                    + 'hover:bg-red-100/50 px-2 py-2 cursor-pointer transition-colors',
+                  title: '此客戶已不在本年度骨架中'
+                },
+                h(
+                  'div',
+                  { className: 'flex items-start justify-between gap-2' },
+                  h(
+                    'div',
+                    { className: 'flex-1 min-w-0 text-xs leading-5 text-gray-700 break-words' },
+                    '⚠ ' + label
+                  ),
+                  h(
+                    'button',
+                    {
+                      type: 'button',
+                      title: '刪除',
+                      onClick: function (e) {
+                        e.stopPropagation();
+                        openRemovedDelete(group.customerName, month, label);
+                      },
+                      className: 'p-1 text-red-500 hover:text-red-700 hover:bg-red-100 rounded transition-colors shrink-0'
+                    },
+                    Icons.Trash2({ className: 'h-3.5 w-3.5' })
+                  )
+                )
+              )
+            );
+          })
+        );
+      }
+
       function renderGrid() {
         return h(
           'div',
@@ -341,7 +458,7 @@
             h(
               'tbody',
               { className: 'divide-y divide-gray-100' },
-              rows.length === 0
+              (rows.length === 0 && removedGroups.length === 0)
                 ? h(
                     'tr',
                     null,
@@ -369,7 +486,8 @@
                         return renderMonthCell(row, month, segments[month] || null);
                       })
                     );
-                  })
+                  }),
+              removedGroups.map(renderRemovedRow)
             )
           )
         );
@@ -531,12 +649,13 @@
           return Number(y.year) === Number(selectedYear) ? next : y;
         }));
         var orphans = MaintenanceAllocationUtils.countOrphans(maintenanceAllocations, next);
+        // 孤兒數是全指派人員的總數，不是目前這位的；不講清楚會讓使用者在畫面上數不到那麼多格
         showToast('已重新同步 ' + selectedYear + ' 年度；' + summary
-          + (orphans ? '，' + orphans + ' 格已不在區間內，請確認' : ''));
+          + (orphans ? '，全部指派人員共 ' + orphans + ' 格已不在區間內，請確認' : ''));
       }
 
       function openResyncModal() {
-        if (!snapshot) return;
+        if (!snapshot || !isCurrentYear) return;
         if (!hasDiff) {
           showToast('本年度骨架與現行主檔一致，無需同步');
           return;
@@ -571,7 +690,7 @@
             h('p', { className: 'text-gray-800 font-medium mb-4' }, resyncModal.summary),
             h('p', { className: 'text-sm text-gray-500 mb-6' },
               resyncModal.orphanCount
-                ? ('已填的目標完成數一律保留；同步後將有 ' + resyncModal.orphanCount
+                ? ('已填的目標完成數一律保留；同步後全部指派人員共有 ' + resyncModal.orphanCount
                     + ' 格落在保養區間外，會標記為異常，需自行確認是否刪除。')
                 : '已填的目標完成數一律保留。'),
             h(
@@ -748,7 +867,7 @@
                   ' 位客戶'
                 )
               : null,
-            snapshot
+            (snapshot && isCurrentYear)
               ? h(
                   'button',
                   {
@@ -762,6 +881,7 @@
           )
         ),
         renderDiffBanner(),
+        renderFrozenNote(),
         !snapshot
           ? renderEmptyYearPrompt()
           : (selectedAssigneeId ? renderGrid() : renderSelectionPrompt()),
