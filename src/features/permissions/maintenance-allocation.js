@@ -42,6 +42,7 @@
     }
 
     var createModal = null;
+    var resyncModal = null;
 
     var selectedAssigneeId = persistedSelectedAssigneeId;
     var editModal = null;
@@ -112,6 +113,12 @@
       var rows = (assignee && snapshot)
         ? MaintenanceAllocationUtils.getSnapshotRows(snapshot, selectedAssigneeId)
         : [];
+      var snapshotDiff = snapshot
+        ? MaintenanceAllocationUtils.diffSnapshot(
+            snapshot, assignees, customers, stores, serviceLevels
+          )
+        : null;
+      var hasDiff = MaintenanceAllocationUtils.hasSnapshotDiff(snapshotDiff);
 
       if (selectedAssigneeId && !assignee) {
         selectedAssigneeId = '';
@@ -203,6 +210,20 @@
         );
       }
 
+      function renderDiffBanner() {
+        if (!hasDiff) return null;
+        return h(
+          'div',
+          {
+            className: 'mb-4 flex flex-wrap items-center gap-3 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800'
+          },
+          Icons.AlertCircle({ className: 'h-4 w-4 shrink-0' }),
+          h('span', { className: 'flex-1 min-w-0' },
+            '主檔已變動：' + MaintenanceAllocationUtils.formatDiffSummary(snapshotDiff)
+              + '。本年度骨架維持建立當時的設定，需要時可重新同步。')
+        );
+      }
+
       function renderMonthCell(row, month, segment) {
         var cell = MaintenanceAllocationUtils.findAllocation(
           maintenanceAllocations,
@@ -212,6 +233,7 @@
           month
         );
         var label = MaintenanceAllocationUtils.formatCellLabel(cell);
+        var isOrphan = cell && MaintenanceAllocationUtils.isOrphanAllocation(cell, snapshot);
 
         var tdClass = 'p-2 align-top';
         var header = null;
@@ -238,14 +260,27 @@
             {
               onClick: function () {
                 syncScrollFromEl();
+                if (isOrphan) {
+                  deleteModal = {
+                    customerName: row.customerName,
+                    month: month,
+                    label: row.customerName + ' ' + month + '月（' + label + '）'
+                  };
+                  showToast('此格已不在保養區間內，僅能刪除', 'error');
+                  rerender();
+                  return;
+                }
                 openEditModal(row, month);
                 rerender();
               },
               className: 'min-h-[68px] rounded-md border ' +
-                (label
-                  ? 'border-blue-200 bg-blue-50/70 hover:bg-blue-100/70'
-                  : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50/40') +
-                ' px-2 py-2 cursor-pointer transition-colors'
+                (isOrphan
+                  ? 'border-red-300 border-dashed bg-red-50/50 hover:bg-red-100/50'
+                  : (label
+                      ? 'border-blue-200 bg-blue-50/70 hover:bg-blue-100/70'
+                      : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50/40')) +
+                ' px-2 py-2 cursor-pointer transition-colors',
+              title: isOrphan ? '此格已不在現行保養區間內' : ''
             },
             h(
               'div',
@@ -253,7 +288,7 @@
               h(
                 'div',
                 { className: 'flex-1 min-w-0 text-xs leading-5 text-gray-700 break-words' },
-                label || h('span', { className: 'text-gray-300' }, '')
+                (isOrphan && label) ? ('⚠ ' + label) : (label || h('span', { className: 'text-gray-300' }, ''))
               ),
               cell
                 ? h(
@@ -482,6 +517,89 @@
         showToast('已建立 ' + year + ' 年度分配表（' + snap.rows.length + ' 列）');
       }
 
+      function handleResync() {
+        if (!snapshot) return;
+        syncScrollFromEl();
+        var next = MaintenanceAllocationUtils.resyncYear(
+          snapshot, assignees, customers, stores, serviceLevels, todayString()
+        );
+        // 先取摘要再清 modal：setMaintenanceAllocationYears 會同步重繪整個畫面，
+        // 這裡讀的是舊實體的閉包變數，順序寫反就會讀到 null。
+        var summary = MaintenanceAllocationUtils.formatDiffSummary(resyncModal && resyncModal.diff);
+        resyncModal = null;
+        setMaintenanceAllocationYears(maintenanceAllocationYears.map(function (y) {
+          return Number(y.year) === Number(selectedYear) ? next : y;
+        }));
+        var orphans = MaintenanceAllocationUtils.countOrphans(maintenanceAllocations, next);
+        showToast('已重新同步 ' + selectedYear + ' 年度；' + summary
+          + (orphans ? '，' + orphans + ' 格已不在區間內，請確認' : ''));
+      }
+
+      function openResyncModal() {
+        if (!snapshot) return;
+        if (!hasDiff) {
+          showToast('本年度骨架與現行主檔一致，無需同步');
+          return;
+        }
+        var preview = MaintenanceAllocationUtils.resyncYear(
+          snapshot, assignees, customers, stores, serviceLevels, todayString()
+        );
+        resyncModal = {
+          diff: snapshotDiff,
+          summary: MaintenanceAllocationUtils.formatDiffSummary(snapshotDiff),
+          orphanCount: MaintenanceAllocationUtils.countOrphans(maintenanceAllocations, preview)
+        };
+        rerender();
+      }
+
+      function renderResyncDialog() {
+        if (!resyncModal) return null;
+        return h(
+          'div',
+          { className: 'app-modal-overlay' },
+          h(
+            'div',
+            { className: 'bg-white rounded-lg shadow-xl p-6 w-[28rem] max-w-full m-4' },
+            h(
+              'div',
+              { className: 'flex items-center space-x-3 text-amber-600 mb-4' },
+              Icons.AlertCircle({ className: 'h-6 w-6' }),
+              h('h3', { className: 'text-lg font-bold text-gray-800' }, '重新同步本年度')
+            ),
+            h('p', { className: 'text-gray-600 mb-2' },
+              '將以現行的客戶、門市與服務等級重拍 ' + selectedYear + ' 年度的骨架：'),
+            h('p', { className: 'text-gray-800 font-medium mb-4' }, resyncModal.summary),
+            h('p', { className: 'text-sm text-gray-500 mb-6' },
+              resyncModal.orphanCount
+                ? ('已填的目標完成數一律保留；同步後將有 ' + resyncModal.orphanCount
+                    + ' 格落在保養區間外，會標記為異常，需自行確認是否刪除。')
+                : '已填的目標完成數一律保留。'),
+            h(
+              'div',
+              { className: 'flex justify-end space-x-3' },
+              h(
+                'button',
+                {
+                  type: 'button',
+                  onClick: function () { resyncModal = null; rerender(); },
+                  className: 'px-4 py-2 border rounded-md text-gray-600 hover:bg-gray-50 transition-colors'
+                },
+                '取消'
+              ),
+              h(
+                'button',
+                {
+                  type: 'button',
+                  onClick: function () { handleResync(); rerender(); },
+                  className: 'px-4 py-2 bg-amber-600 text-white rounded-md hover:bg-amber-700 transition-colors'
+                },
+                '確認同步'
+              )
+            )
+          )
+        );
+      }
+
       function renderCreateDialog() {
         if (!createModal) return null;
         return h(
@@ -618,22 +736,39 @@
               )
             )
           ),
-          assignee && snapshot
-            ? h(
-                'div',
-                { className: 'text-sm text-gray-500' },
-                '共 ',
-                h('span', { className: 'font-semibold text-gray-700' }, String(rows.length)),
-                ' 位客戶'
-              )
-            : null
+          h(
+            'div',
+            { className: 'flex items-center gap-4' },
+            assignee && snapshot
+              ? h(
+                  'div',
+                  { className: 'text-sm text-gray-500' },
+                  '共 ',
+                  h('span', { className: 'font-semibold text-gray-700' }, String(rows.length)),
+                  ' 位客戶'
+                )
+              : null,
+            snapshot
+              ? h(
+                  'button',
+                  {
+                    type: 'button',
+                    onClick: openResyncModal,
+                    className: 'px-3 py-2 border rounded-md text-sm text-gray-600 hover:bg-gray-50 transition-colors whitespace-nowrap'
+                  },
+                  '重新同步本年度'
+                )
+              : null
+          )
         ),
+        renderDiffBanner(),
         !snapshot
           ? renderEmptyYearPrompt()
           : (selectedAssigneeId ? renderGrid() : renderSelectionPrompt()),
         renderEditDialog(),
         renderDeleteDialog(),
-        renderCreateDialog()
+        renderCreateDialog(),
+        renderResyncDialog()
       );
     });
   }

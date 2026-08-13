@@ -602,6 +602,184 @@ try {
   assertEq(freeze.nextVisits, 2,
     '以新主檔建立的下一年度快照才是兩個區間');
 
+  console.log('\nSection 5｜孤兒格子與重新同步');
+  assertTrue(await evaluate(
+    `/isOrphanAllocation/.test(String(MaintenanceAllocation))`
+  ), '元件會判定孤兒格子');
+  assertTrue(await evaluate(
+    `/formatDiffSummary/.test(String(MaintenanceAllocation))`
+  ), '元件會顯示主檔變動摘要');
+  assertTrue(await evaluate(
+    `/resyncYear/.test(String(MaintenanceAllocation))`
+  ), '元件提供重新同步');
+
+  assertDeep(await evaluate(`(function(){
+    var snap = INITIAL_MAINTENANCE_ALLOCATION_YEARS[0];
+    // 把屈臣氏的區間縮成只有上半年，模擬服務等級由 A(4次) 降為 B(2次) 但月份也縮短
+    var customers = INITIAL_CUSTOMERS.map(function (c) {
+      if (c.name !== '屈臣氏') return c;
+      return Object.assign({}, c, {
+        serviceLevel: 'B 保修(一年兩次)',
+        periods: [
+          { visitIndex: 1, startMonth: 1, endMonth: 3 },
+          { visitIndex: 2, startMonth: 4, endMonth: 6 }
+        ]
+      });
+    });
+    var diff = MaintenanceAllocationUtils.diffSnapshot(
+      snap, INITIAL_ASSIGNEES, customers, INITIAL_STORES, INITIAL_SERVICE_LEVELS
+    );
+    var next = MaintenanceAllocationUtils.resyncYear(
+      snap, INITIAL_ASSIGNEES, customers, INITIAL_STORES, INITIAL_SERVICE_LEVELS, '2026-06-01'
+    );
+    var before = MaintenanceAllocationUtils.countOrphans(INITIAL_MAINTENANCE_ALLOCATIONS, snap);
+    var after = MaintenanceAllocationUtils.countOrphans(INITIAL_MAINTENANCE_ALLOCATIONS, next);
+    return [
+      MaintenanceAllocationUtils.hasSnapshotDiff(diff),
+      before,
+      after > before,
+      next.rows.length === snap.rows.length
+    ];
+  })()`), [true, 0, true, true],
+    '縮短區間後有變動、同步前無孤兒、同步後出現孤兒、列數不變');
+
+  assertTrue(await evaluate(`(function(){
+    var snap = INITIAL_MAINTENANCE_ALLOCATION_YEARS[0];
+    var next = MaintenanceAllocationUtils.resyncYear(
+      snap, INITIAL_ASSIGNEES, INITIAL_CUSTOMERS, INITIAL_STORES, INITIAL_SERVICE_LEVELS, '2026-06-01'
+    );
+    return next.createdAt === snap.createdAt && next.syncedAt === '2026-06-01';
+  })()`), '同步保留 createdAt、更新 syncedAt');
+
+  console.log('\nSection 5｜實際操作畫面：提示條 → 同步 → 孤兒格');
+  // 手法：以「原始主檔」建立快照，再把「已縮短區間的主檔」當 props 傳進元件，
+  // 並用會重新掛載元件的 setMaintenanceAllocationYears 模擬 app store 的同步重繪。
+  const rs = await evaluate(`(function () {
+    var year = Number(INITIAL_MAINTENANCE_ALLOCATION_YEARS[0].year);
+    var snapshot = MaintenanceAllocationUtils.buildYearSnapshot(
+      year, INITIAL_ASSIGNEES, INITIAL_CUSTOMERS, INITIAL_STORES, INITIAL_SERVICE_LEVELS, '2026-01-01'
+    );
+    var customers = INITIAL_CUSTOMERS.map(function (c) {
+      if (c.name !== '屈臣氏') return c;
+      return Object.assign({}, c, {
+        serviceLevel: 'B 保修(一年兩次)',
+        periods: [
+          { visitIndex: 1, startMonth: 1, endMonth: 3 },
+          { visitIndex: 2, startMonth: 4, endMonth: 6 }
+        ]
+      });
+    });
+    var years = [snapshot];
+    var allocations = INITIAL_MAINTENANCE_ALLOCATIONS.slice();
+    var toasts = [];
+    var container = document.createElement('div');
+    document.body.appendChild(container);
+    function mount() {
+      // 模擬 store.set()：同步換掉整個元件實體
+      container.innerHTML = '';
+      container.appendChild(MaintenanceAllocation({
+        assignees: INITIAL_ASSIGNEES, customers: customers, stores: INITIAL_STORES,
+        maintenanceCases: [], serviceLevels: INITIAL_SERVICE_LEVELS,
+        maintenanceAllocations: allocations,
+        setMaintenanceAllocations: function (next) { allocations = next; mount(); },
+        maintenanceAllocationYears: years,
+        setMaintenanceAllocationYears: function (next) { years = next; mount(); },
+        showToast: function (msg, type) { toasts.push({ text: msg, error: type === 'error' }); }
+      }));
+    }
+    function banner() {
+      var el = container.querySelector('div.border-amber-200.bg-amber-50');
+      return el ? el.innerText.trim() : '';
+    }
+    function overlay() {
+      var el = container.querySelector('.app-modal-overlay');
+      return el ? el.innerText.replace(/\\s+/g, ' ').trim() : '';
+    }
+    function cells() {
+      return Array.prototype.filter.call(
+        container.querySelectorAll('tbody td div.cursor-pointer'),
+        function (d) { return d.innerText.trim() !== ''; }
+      );
+    }
+    function orphanCells() {
+      return cells().filter(function (d) {
+        return d.className.indexOf('border-dashed') >= 0
+          && d.className.indexOf('border-red-300') >= 0;
+      });
+    }
+    function clickText(sel, text) {
+      var els = container.querySelectorAll(sel);
+      for (var i = 0; i < els.length; i++) {
+        if (els[i].textContent.trim() === text) { els[i].click(); return true; }
+      }
+      return false;
+    }
+    function lastToast() { return toasts.length ? toasts[toasts.length - 1] : null; }
+
+    mount();
+    __ma.choose(__ma.combo(container, 1), 'A組');
+    __ma.closeMenus();
+
+    var out = {};
+    out.bannerBefore = banner();
+    out.filledBefore = cells().length;
+    out.orphansBefore = orphanCells().length;
+
+    out.clickedResync = clickText('button', '重新同步本年度');
+    out.dialog = overlay();
+    out.confirmed = clickText('.app-modal-overlay button', '確認同步');
+
+    out.dialogAfter = overlay();
+    out.bannerAfter = banner();
+    out.syncToast = lastToast();
+    out.syncedAt = years[0].syncedAt;
+    out.createdAt = years[0].createdAt;
+    out.filledAfter = cells().length;
+    var orphans = orphanCells();
+    out.orphanCount = orphans.length;
+    out.orphanTexts = orphans.map(function (d) { return d.innerText.trim(); }).sort();
+    out.orphanTitle = orphans.length ? orphans[0].title : '';
+    out.normalTexts = cells().filter(function (d) {
+      return orphans.indexOf(d) === -1;
+    }).map(function (d) { return d.innerText.trim(); });
+
+    if (orphans.length) orphans[0].click();
+    out.orphanClickDialog = overlay();
+    out.orphanClickToast = lastToast();
+
+    container.parentNode.removeChild(container);
+    __ma.closeMenus();
+    return out;
+  })()`);
+
+  assertEq(rs.bannerBefore.indexOf('主檔已變動：') === 0
+    && /列設定變動。本年度骨架維持建立當時的設定，需要時可重新同步。$/.test(rs.bannerBefore),
+    true, '主檔變動後畫面出現黃色提示條', rs.bannerBefore);
+  assertEq(rs.filledBefore, 3, 'A組 同步前有 3 個已填格子');
+  assertEq(rs.orphansBefore, 0, '同步前沒有孤兒格');
+  assertTrue(rs.clickedResync, '工具列有「重新同步本年度」按鈕可點');
+  assertTrue(/^重新同步本年度 將以現行的客戶、門市與服務等級重拍 \d{4} 年度的骨架：/.test(rs.dialog),
+    '確認 Modal 標題與說明正確', rs.dialog);
+  assertTrue(/列設定變動 已填的目標完成數一律保留；同步後將有 5 格落在保養區間外，會標記為異常，需自行確認是否刪除。/
+    .test(rs.dialog), 'Modal 顯示變動摘要與孤兒預估（5 格）', rs.dialog);
+  assertTrue(rs.confirmed, 'Modal 可按「確認同步」');
+  assertEq(rs.dialogAfter, '', '同步後 Modal 關閉');
+  assertEq(rs.bannerAfter, '', '同步後提示條消失');
+  assertTrue(/^已重新同步 \d{4} 年度；.*列設定變動，5 格已不在區間內，請確認$/.test((rs.syncToast || {}).text)
+    && rs.syncToast.error === false, '同步成功 toast 內容正確', JSON.stringify(rs.syncToast));
+  assertEq(rs.createdAt, '2026-01-01', '同步後仍保留原本的 createdAt');
+  assertTrue(/^\d{4}-\d{2}-\d{2}$/.test(rs.syncedAt), '同步後寫入 syncedAt', rs.syncedAt);
+  assertEq(rs.filledAfter, 3, '同步後已填的格子一格都沒少');
+  assertEq(rs.orphanCount, 2, '屈臣氏 7、8 月成為孤兒格（紅色虛線框）');
+  assertDeep(rs.orphanTexts, ['⚠ 第1次 1', '⚠ 第1次 3'], '孤兒格文字帶 ⚠ 前綴');
+  assertEq(rs.orphanTitle, '此格已不在現行保養區間內', '孤兒格有提示 title');
+  assertDeep(rs.normalTexts, ['第1次 2'], '區間內的格子維持原樣，不帶 ⚠ 與虛線');
+  assertTrue(rs.orphanClickDialog.indexOf('確認刪除') === 0
+    && rs.orphanClickDialog.indexOf('編輯保養分配') === -1,
+    '點孤兒格開的是刪除確認、不是編輯 Modal', rs.orphanClickDialog);
+  assertDeep(rs.orphanClickToast, { text: '此格已不在保養區間內，僅能刪除', error: true },
+    '點孤兒格跳出僅能刪除的錯誤 toast');
+
 } finally {
   try { ws && ws.close(); } catch {}
   chrome.kill();
