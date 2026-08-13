@@ -143,6 +143,108 @@
     }) || null;
   }
 
+  function snapshotRowKey(row) {
+    return row.assigneeId + '|' + row.customerName;
+  }
+
+  function periodsEqual(a, b) {
+    var x = a || [], y = b || [];
+    if (x.length !== y.length) return false;
+    for (var i = 0; i < x.length; i++) {
+      if (Number(x[i].visitIndex) !== Number(y[i].visitIndex)) return false;
+      if (Number(x[i].startMonth) !== Number(y[i].startMonth)) return false;
+      if (Number(x[i].endMonth) !== Number(y[i].endMonth)) return false;
+    }
+    return true;
+  }
+
+  /**
+   * 比對快照與現行主檔，供「主檔已變動」提示與同步前摘要使用。
+   * 只比對列的存在與 storeCount／serviceLevel／periods，不比對格子。
+   */
+  function diffSnapshot(snapshot, assignees, customers, stores, serviceLevels) {
+    var currentRows = buildYearSnapshot(
+      snapshot ? snapshot.year : 0, assignees, customers, stores, serviceLevels, ''
+    ).rows;
+    var oldRows = (snapshot && snapshot.rows) || [];
+    var oldMap = {}, newMap = {};
+    oldRows.forEach(function (r) { oldMap[snapshotRowKey(r)] = r; });
+    currentRows.forEach(function (r) { newMap[snapshotRowKey(r)] = r; });
+
+    var added = [], removed = [], changed = [];
+    currentRows.forEach(function (r) {
+      if (!oldMap[snapshotRowKey(r)]) {
+        added.push({ assigneeId: r.assigneeId, customerName: r.customerName });
+      }
+    });
+    oldRows.forEach(function (r) {
+      var next = newMap[snapshotRowKey(r)];
+      if (!next) {
+        removed.push({ assigneeId: r.assigneeId, customerName: r.customerName });
+        return;
+      }
+      if (Number(r.storeCount) !== Number(next.storeCount)
+        || r.serviceLevel !== next.serviceLevel
+        || !periodsEqual(r.periods, next.periods)) {
+        changed.push({
+          assigneeId: r.assigneeId,
+          customerName: r.customerName,
+          from: { storeCount: Number(r.storeCount), serviceLevel: r.serviceLevel, periods: r.periods },
+          to: { storeCount: Number(next.storeCount), serviceLevel: next.serviceLevel, periods: next.periods }
+        });
+      }
+    });
+    return { added: added, removed: removed, changed: changed };
+  }
+
+  function hasSnapshotDiff(diff) {
+    if (!diff) return false;
+    return !!(diff.added.length || diff.removed.length || diff.changed.length);
+  }
+
+  function formatDiffSummary(diff) {
+    if (!hasSnapshotDiff(diff)) return '';
+    var parts = [];
+    if (diff.added.length) parts.push('新增 ' + diff.added.length + ' 列');
+    if (diff.removed.length) parts.push('移除 ' + diff.removed.length + ' 列');
+    if (diff.changed.length) parts.push(diff.changed.length + ' 列設定變動');
+    return parts.join('、');
+  }
+
+  /**
+   * 以現行主檔重拍該年度的骨架。格子不動，故同步後可能出現孤兒格（見 isOrphanAllocation）。
+   */
+  function resyncYear(snapshot, assignees, customers, stores, serviceLevels, today) {
+    if (!snapshot) return null;
+    var next = buildYearSnapshot(snapshot.year, assignees, customers, stores, serviceLevels, today);
+    return {
+      year: Number(snapshot.year),
+      createdAt: snapshot.createdAt || '',
+      syncedAt: today || '',
+      rows: next.rows
+    };
+  }
+
+  /** 該格所屬的列已不在快照中，或月份不落在該列任一區間內 */
+  function isOrphanAllocation(allocation, snapshot) {
+    if (!allocation || !snapshot) return false;
+    if (Number(allocation.year) !== Number(snapshot.year)) return false;
+    var row = (snapshot.rows || []).find(function (r) {
+      return r.assigneeId === allocation.assigneeId && r.customerName === allocation.customerName;
+    });
+    if (!row) return true;
+    return !findPeriodInRow(row, allocation.month);
+  }
+
+  function countOrphans(allocations, snapshot) {
+    if (!snapshot) return 0;
+    var n = 0;
+    (allocations || []).forEach(function (a) {
+      if (isOrphanAllocation(a, snapshot)) n += 1;
+    });
+    return n;
+  }
+
   function findAllocation(allocations, year, assigneeId, customerName, month) {
     return (allocations || []).find(function (a) {
       return Number(a.year) === Number(year) &&
@@ -240,6 +342,12 @@
     getSnapshotRows: getSnapshotRows,
     buildSegmentMap: buildSegmentMap,
     findPeriodInRow: findPeriodInRow,
+    diffSnapshot: diffSnapshot,
+    hasSnapshotDiff: hasSnapshotDiff,
+    formatDiffSummary: formatDiffSummary,
+    resyncYear: resyncYear,
+    isOrphanAllocation: isOrphanAllocation,
+    countOrphans: countOrphans,
     findAllocation: findAllocation,
     sumVisitIndexTotal: sumVisitIndexTotal,
     buildSaveWarnings: buildSaveWarnings,
