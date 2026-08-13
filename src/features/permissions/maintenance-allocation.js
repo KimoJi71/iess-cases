@@ -63,6 +63,7 @@
       }
       var existing = MaintenanceAllocationUtils.findAllocation(
         maintenanceAllocations,
+        CURRENT_YEAR,
         selectedAssigneeId,
         row.customerName,
         month
@@ -111,6 +112,7 @@
         var targetCount = Number(editModal.targetCount);
         var warnings = MaintenanceAllocationUtils.buildSaveWarnings({
           allocations: maintenanceAllocations,
+          year: CURRENT_YEAR,
           assigneeId: selectedAssigneeId,
           customerName: editModal.customerName,
           month: editModal.month,
@@ -120,6 +122,7 @@
         });
 
         setMaintenanceAllocations(MaintenanceAllocationUtils.upsertAllocation(maintenanceAllocations, {
+          year: CURRENT_YEAR,
           assigneeId: selectedAssigneeId,
           customerName: editModal.customerName,
           month: editModal.month,
@@ -142,6 +145,7 @@
 
         setMaintenanceAllocations(MaintenanceAllocationUtils.removeAllocation(
           maintenanceAllocations,
+          CURRENT_YEAR,
           selectedAssigneeId,
           deleteModal.customerName,
           deleteModal.month
@@ -172,6 +176,7 @@
       function renderMonthCell(row, month, segment) {
         var cell = MaintenanceAllocationUtils.findAllocation(
           maintenanceAllocations,
+          CURRENT_YEAR,
           selectedAssigneeId,
           row.customerName,
           month

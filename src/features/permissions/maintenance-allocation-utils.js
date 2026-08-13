@@ -78,17 +78,19 @@
     return Object.keys(seen).length;
   }
 
-  function findAllocation(allocations, assigneeId, customerName, month) {
+  function findAllocation(allocations, year, assigneeId, customerName, month) {
     return (allocations || []).find(function (a) {
-      return a.assigneeId === assigneeId &&
+      return Number(a.year) === Number(year) &&
+        a.assigneeId === assigneeId &&
         a.customerName === customerName &&
         Number(a.month) === Number(month);
     }) || null;
   }
 
-  function sumVisitIndexTotal(allocations, assigneeId, customerName, visitIndex, excludeMonth) {
+  function sumVisitIndexTotal(allocations, year, assigneeId, customerName, visitIndex, excludeMonth) {
     var sum = 0;
     (allocations || []).forEach(function (a) {
+      if (Number(a.year) !== Number(year)) return;
       if (a.assigneeId !== assigneeId) return;
       if (a.customerName !== customerName) return;
       if (Number(a.visitIndex) !== Number(visitIndex)) return;
@@ -113,7 +115,7 @@
     }
 
     var otherSum = sumVisitIndexTotal(
-      params.allocations, params.assigneeId, params.customerName, visitIndex, month
+      params.allocations, params.year, params.assigneeId, params.customerName, visitIndex, month
     );
     var total = otherSum + targetCount;
     if (total !== storeCount) {
@@ -128,7 +130,8 @@
   function upsertAllocation(allocations, record) {
     var list = (allocations || []).slice();
     var idx = list.findIndex(function (a) {
-      return a.assigneeId === record.assigneeId &&
+      return Number(a.year) === Number(record.year) &&
+        a.assigneeId === record.assigneeId &&
         a.customerName === record.customerName &&
         Number(a.month) === Number(record.month);
     });
@@ -140,6 +143,7 @@
     } else {
       list.push({
         id: record.id || ('MA' + Date.now()),
+        year: Number(record.year),
         assigneeId: record.assigneeId,
         customerName: record.customerName,
         month: Number(record.month),
@@ -150,9 +154,10 @@
     return list;
   }
 
-  function removeAllocation(allocations, assigneeId, customerName, month) {
+  function removeAllocation(allocations, year, assigneeId, customerName, month) {
     return (allocations || []).filter(function (a) {
-      return !(a.assigneeId === assigneeId &&
+      return !(Number(a.year) === Number(year) &&
+        a.assigneeId === assigneeId &&
         a.customerName === customerName &&
         Number(a.month) === Number(month));
     });

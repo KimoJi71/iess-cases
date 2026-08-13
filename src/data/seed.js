@@ -2057,20 +2057,22 @@ const INITIAL_DEVICE_CATEGORIES = [{
 }];
 
 
+const SEED_YEAR = new Date().getFullYear();
+
 const INITIAL_MAINTENANCE_ALLOCATIONS = [
-  { id: 'MA1', assigneeId: 'ASG1', customerName: '屈臣氏', month: 7, visitIndex: 1, targetCount: 3 },
-  { id: 'MA2', assigneeId: 'ASG1', customerName: '星巴克', month: 7, visitIndex: 1, targetCount: 2 },
-  { id: 'MA3', assigneeId: 'ASG1', customerName: '屈臣氏', month: 8, visitIndex: 1, targetCount: 1 },
-  { id: 'MA4', assigneeId: 'ASG2', customerName: '星巴克', month: 7, visitIndex: 1, targetCount: 2 },
-  { id: 'MA5', assigneeId: 'ASG2', customerName: '屈臣氏', month: 7, visitIndex: 1, targetCount: 2 },
-  { id: 'MA6', assigneeId: 'ASG2', customerName: '星巴克', month: 8, visitIndex: 1, targetCount: 1 },
-  { id: 'MA7', assigneeId: 'ASG3', customerName: '萊爾富', month: 7, visitIndex: 1, targetCount: 2 },
-  { id: 'MA8', assigneeId: 'ASG4', customerName: '屈臣氏', month: 7, visitIndex: 1, targetCount: 2 },
-  { id: 'MA9', assigneeId: 'ASG5', customerName: '星巴克', month: 7, visitIndex: 1, targetCount: 2 },
-  { id: 'MA10', assigneeId: 'ASG5', customerName: '萊爾富', month: 8, visitIndex: 1, targetCount: 1 },
-  { id: 'MA11', assigneeId: 'ASG6', customerName: '萊爾富', month: 7, visitIndex: 1, targetCount: 2 },
-  { id: 'MA12', assigneeId: 'ASG6', customerName: '屈臣氏', month: 7, visitIndex: 1, targetCount: 1 },
-  { id: 'MA13', assigneeId: 'ASG6', customerName: '星巴克', month: 9, visitIndex: 1, targetCount: 1 }
+  { id: 'MA1', year: SEED_YEAR, assigneeId: 'ASG1', customerName: '屈臣氏', month: 7, visitIndex: 1, targetCount: 3 },
+  { id: 'MA2', year: SEED_YEAR, assigneeId: 'ASG1', customerName: '星巴克', month: 7, visitIndex: 1, targetCount: 2 },
+  { id: 'MA3', year: SEED_YEAR, assigneeId: 'ASG1', customerName: '屈臣氏', month: 8, visitIndex: 1, targetCount: 1 },
+  { id: 'MA4', year: SEED_YEAR, assigneeId: 'ASG2', customerName: '星巴克', month: 7, visitIndex: 1, targetCount: 2 },
+  { id: 'MA5', year: SEED_YEAR, assigneeId: 'ASG2', customerName: '屈臣氏', month: 7, visitIndex: 1, targetCount: 2 },
+  { id: 'MA6', year: SEED_YEAR, assigneeId: 'ASG2', customerName: '星巴克', month: 8, visitIndex: 1, targetCount: 1 },
+  { id: 'MA7', year: SEED_YEAR, assigneeId: 'ASG3', customerName: '萊爾富', month: 7, visitIndex: 1, targetCount: 2 },
+  { id: 'MA8', year: SEED_YEAR, assigneeId: 'ASG4', customerName: '屈臣氏', month: 7, visitIndex: 1, targetCount: 2 },
+  { id: 'MA9', year: SEED_YEAR, assigneeId: 'ASG5', customerName: '星巴克', month: 7, visitIndex: 1, targetCount: 2 },
+  { id: 'MA10', year: SEED_YEAR, assigneeId: 'ASG5', customerName: '萊爾富', month: 8, visitIndex: 1, targetCount: 1 },
+  { id: 'MA11', year: SEED_YEAR, assigneeId: 'ASG6', customerName: '萊爾富', month: 7, visitIndex: 1, targetCount: 2 },
+  { id: 'MA12', year: SEED_YEAR, assigneeId: 'ASG6', customerName: '屈臣氏', month: 7, visitIndex: 1, targetCount: 1 },
+  { id: 'MA13', year: SEED_YEAR, assigneeId: 'ASG6', customerName: '星巴克', month: 9, visitIndex: 1, targetCount: 1 }
 ];
 
 const INITIAL_PERFORMANCE_AREAS = [
