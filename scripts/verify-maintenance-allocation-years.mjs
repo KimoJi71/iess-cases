@@ -829,6 +829,161 @@ try {
   assertEq(nodiff.dialog, '', '無變動時不開同步 Modal');
   assertTrue(nodiff.yearsUntouched, '無變動時不會寫回年度快照');
 
+  console.log('\nSection 6｜統計頁的年份過濾');
+  assertDeep(await evaluate(`(function(){
+    var allocs = [
+      { id: 'X1', year: 2025, assigneeId: 'ASG1', customerName: '甲客戶', month: 2, visitIndex: 1, targetCount: 10 },
+      { id: 'X2', year: 2026, assigneeId: 'ASG1', customerName: '甲客戶', month: 2, visitIndex: 1, targetCount: 3 }
+    ];
+    return [
+      PerformanceUtils.sumAllocationTargets(allocs, { months: [1, 2, 3], assigneeId: 'ASG1' }),
+      PerformanceUtils.sumAllocationTargets(allocs, { months: [1, 2, 3], assigneeId: 'ASG1', year: 2026 }),
+      PerformanceUtils.sumAllocationTargets(allocs, { months: [1, 2, 3], assigneeId: 'ASG1', year: 2025 }),
+      PerformanceUtils.sumAllocationTargets(allocs, { months: [1, 2, 3], customerName: '甲客戶', year: 2026 })
+    ];
+  })()`), [13, 3, 10, 3],
+    '未給 year 不過濾；給了 year 只計該年度');
+
+  // 註：不用 /quarter\.start/ 這種原始碼字串比對——computeAssigneePerformance／
+  // computeRegionPerformance 本來就為了日期範圍而讀 quarter.start，那樣的斷言在
+  // 年份過濾寫進去之前就已經是綠的，守不到任何東西。改為直接驗行為：
+  // 同一份 allocations 混進他年度的格子，算出來的 target 必須一模一樣。
+  const regionPair = await evaluate(`(function(){
+    var year = Number(INITIAL_MAINTENANCE_ALLOCATION_YEARS[0].year);
+    var quarter = PerformanceUtils.getQuarterRange(new Date(year, 6, 15));
+    var withOther = INITIAL_MAINTENANCE_ALLOCATIONS.concat(
+      INITIAL_MAINTENANCE_ALLOCATIONS.map(function (a, i) {
+        return Object.assign({}, a, { id: 'RX' + i, year: year - 1, targetCount: 88 });
+      })
+    );
+    function run(allocations) {
+      return PerformanceUtils.computeRegionPerformance({
+        maintenanceCases: INITIAL_MAINTENANCE_CASES, stores: INITIAL_STORES,
+        performanceAreas: INITIAL_PERFORMANCE_AREAS, allocations: allocations,
+        quarter: quarter
+      }).map(function (r) { return r.name + ':' + r.target; }).join(',');
+    }
+    return [run(INITIAL_MAINTENANCE_ALLOCATIONS), run(withOther)];
+  })()`);
+  assertTrue(/:[1-9]/.test(regionPair[0]),
+    '區域績效本季至少有一區目標不為 0（否則下一條會空轉）', regionPair[0]);
+  assertEq(regionPair[1], regionPair[0],
+    'computeRegionPerformance 的區域目標也只計本季所屬年度');
+
+  const targetPair = await evaluate(`(function(){
+    var year = Number(INITIAL_MAINTENANCE_ALLOCATION_YEARS[0].year);
+    var quarter = PerformanceUtils.getQuarterRange(new Date(year, 6, 15));
+    var withOther = INITIAL_MAINTENANCE_ALLOCATIONS.concat([
+      { id: 'X9', year: year - 1, assigneeId: 'ASG1', customerName: '屈臣氏', month: 7, visitIndex: 1, targetCount: 99 }
+    ]);
+    var base = PerformanceUtils.computeAssigneePerformance({
+      cases: INITIAL_CASES, maintenanceCases: INITIAL_MAINTENANCE_CASES,
+      assignees: INITIAL_ASSIGNEES, allocations: INITIAL_MAINTENANCE_ALLOCATIONS,
+      deviceCategories: INITIAL_DEVICE_CATEGORIES, serviceLevels: INITIAL_SERVICE_LEVELS,
+      quarter: quarter
+    });
+    var polluted = PerformanceUtils.computeAssigneePerformance({
+      cases: INITIAL_CASES, maintenanceCases: INITIAL_MAINTENANCE_CASES,
+      assignees: INITIAL_ASSIGNEES, allocations: withOther,
+      deviceCategories: INITIAL_DEVICE_CATEGORIES, serviceLevels: INITIAL_SERVICE_LEVELS,
+      quarter: quarter
+    });
+    return [
+      base.map(function (r) { return r.target; }).join(','),
+      polluted.map(function (r) { return r.target; }).join(',')
+    ];
+  })()`);
+  assertTrue(/[1-9]/.test(targetPair[0]),
+    '各組本季至少有一組目標不為 0（否則下一條會空轉）', targetPair[0]);
+  assertEq(targetPair[0], targetPair[1], '他年度的格子不計入本季目標');
+
+  console.log('\nSection 6｜統計頁畫面：目標數字只吃本季所屬年度');
+  // 上面幾條都是直接呼叫 utils；這一段改由真正的畫面驅動：走側邊欄進到
+  // 報表統計 → 案件績效統計，讀「各組達成率與積分」每張卡的『目標店數』，
+  // 先確認與 computeAssigneePerformance 算出來的一致（畫面沒有另一套算法），
+  // 再把他年度的分配格子混進 app store 的 allocations 陣列、重繪，
+  // 確認畫面數字一格都沒動。
+  await evaluate(`
+    window.__perf = {
+      // 「各組達成率與積分」是第一個 section，區域達成率在後面的 section
+      cards: function () {
+        var sec = document.querySelectorAll('section')[0];
+        if (!sec) return '(找不到各組達成率區塊)';
+        return Array.prototype.map.call(sec.querySelectorAll('div.rounded-xl'), function (card) {
+          var title = card.querySelector('span[title]');
+          var target = '';
+          Array.prototype.forEach.call(card.querySelectorAll('div.grid > div'), function (cell) {
+            var kids = cell.children;
+            if (kids.length === 2 && kids[0].textContent.trim() === '目標店數') {
+              target = kids[1].textContent.trim();
+            }
+          });
+          return (title ? title.textContent.trim() : '(無標題)') + ':' + target;
+        }).join(',');
+      },
+      // 統計頁的目標只由 allocations 決定，maintenanceCases 只影響完成數，
+      // 故這裡不需重現 app store 的 generateDueMaintenanceCases 結果。
+      expected: function (allocations) {
+        return PerformanceUtils.computeAssigneePerformance({
+          cases: INITIAL_CASES, maintenanceCases: [],
+          assignees: INITIAL_ASSIGNEES.filter(function (a) {
+            return PERFORMANCE_ASSIGNEES.indexOf(a.name) !== -1;
+          }),
+          allocations: allocations,
+          deviceCategories: INITIAL_DEVICE_CATEGORIES, serviceLevels: INITIAL_SERVICE_LEVELS,
+          quarter: PerformanceUtils.getQuarterRange(new Date())
+        }).map(function (r) { return r.name + ':' + r.target; }).join(',');
+      }
+    };
+    'ok'`);
+
+  assertTrue(await evaluate(`__ma.clickText('button, a, li, div, span', '報表統計')`),
+    '側邊欄可點開「報表統計」');
+  await sleep(400);
+  assertTrue(await evaluate(`__ma.clickText('button, a, li, div, span', '案件績效統計')`),
+    '側邊欄可點進「案件績效統計」');
+  await sleep(800);
+
+  const uiTargets = await evaluate(`__perf.cards()`);
+  assertTrue(/A組:\d/.test(uiTargets), '統計頁已渲染各組的目標店數', uiTargets);
+  assertTrue(/:[1-9]/.test(uiTargets), '本季（seed 的分配格子落在 7–9 月）至少有一組目標不為 0', uiTargets);
+  assertEq(uiTargets, await evaluate(`__perf.expected(INITIAL_MAINTENANCE_ALLOCATIONS)`),
+    '畫面上的目標店數與 computeAssigneePerformance 算出的一致');
+
+  // app store 的 maintenanceAllocations 就是 INITIAL_MAINTENANCE_ALLOCATIONS 這個陣列本身
+  // （store 只在 setMaintenanceAllocations 時才換成新陣列，本腳本沒動過），
+  // 故就地 push 即可把「他年度的格子」混進統計頁真正讀到的資料。
+  const polluted = await evaluate(`(function(){
+    var year = new Date().getFullYear();
+    window.__perfBaseLen = INITIAL_MAINTENANCE_ALLOCATIONS.length;
+    [7, 8, 9].forEach(function (month) {
+      INITIAL_ASSIGNEES.forEach(function (a, i) {
+        INITIAL_MAINTENANCE_ALLOCATIONS.push({
+          id: 'XY' + month + i, year: year - 1, assigneeId: a.id,
+          customerName: '屈臣氏', month: month, visitIndex: 1, targetCount: 50
+        });
+      });
+    });
+    return INITIAL_MAINTENANCE_ALLOCATIONS.length - window.__perfBaseLen;
+  })()`);
+  assertTrue(polluted > 0, '已把他年度的分配格子混入 store 的 allocations', String(polluted));
+  assertTrue(await evaluate(`__ma.clickText('button, a, li, div, span', '資料調閱')`),
+    '可切到「資料調閱」再切回來以觸發重繪');
+  await sleep(500);
+  assertTrue(await evaluate(`__ma.clickText('button, a, li, div, span', '案件績效統計')`),
+    '可切回「案件績效統計」');
+  await sleep(800);
+  assertEq(await evaluate(`__perf.cards()`), uiTargets,
+    '混入他年度的格子後，統計頁的目標店數完全不變');
+  await evaluate(`(function(){
+    INITIAL_MAINTENANCE_ALLOCATIONS.length = window.__perfBaseLen;
+    return true;
+  })()`);
+  assertEq(await evaluate(`INITIAL_MAINTENANCE_ALLOCATIONS.length`), await evaluate(`window.__perfBaseLen`),
+    '測試後已還原 allocations');
+
+  assertEq(consoleErrors.length, 0, '全程無 JS 錯誤');
+
 } finally {
   try { ws && ws.close(); } catch {}
   chrome.kill();
