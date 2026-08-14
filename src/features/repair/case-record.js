@@ -6,6 +6,19 @@
   'use strict';
   var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful;
 
+  function matchKeyword(c, kw) {
+    if (!kw) return true;
+    return [
+      c.caseNumber, c.customerName, c.storeName, c.workCategory,
+      c.repairItem, c.repairReason, c.faultDesc, c.actualReason,
+      StoreUtils.getRecordArea(c),
+      CaseAssigneeUtils.formatAssignees(c),
+      CaseAssigneeUtils.formatAssigneeMembers(c)
+    ].filter(Boolean).some(function (v) {
+      return String(v).toLowerCase().includes(kw);
+    });
+  }
+
   function CaseRecordList(props) {
     var cases = props.cases;
     var setViewingCase = props.setViewingCase;
@@ -14,26 +27,33 @@
     var startDate = todayDate;
     var endDate = todayDate;
     var appliedDateRange = { start: todayDate, end: todayDate };
+    var keyword = '';
+    var appliedKeyword = '';
     var listPagination = IESS.createListPagination();
 
     return stateful(function (rerender) {
       function handleSearch() {
         appliedDateRange = { start: startDate, end: endDate };
+        appliedKeyword = keyword;
         listPagination.resetPage();
         rerender();
       }
 
+      function handleKeyDown(e) { if (e.key === 'Enter') handleSearch(); }
+
+      var kw = appliedKeyword.trim().toLowerCase();
       var filteredCases = cases.filter(function (c) {
         if (!c.isClosed) return false;
         var date = (c.repairDate || '').slice(0, 10);
-        return date >= appliedDateRange.start && date <= appliedDateRange.end;
+        if (date < appliedDateRange.start || date > appliedDateRange.end) return false;
+        return matchKeyword(c, kw);
       }).sort(function (a, b) { return new Date(b.repairDate) - new Date(a.repairDate); });
       var pageResult = listPagination.slice(filteredCases);
 
       return h('div', {
         className: 'bg-white p-6 rounded-lg shadow-sm border border-gray-100'
       },
-        h('div', { className: 'flex items-center gap-3 mb-6 pb-6 border-b' },
+        h('div', { className: 'flex flex-wrap items-center gap-3 mb-6 pb-6 border-b' },
           Icons.Calendar({ className: 'h-5 w-5 text-gray-500' }),
           h('span', { className: 'font-medium text-gray-700' }, '查詢區間：'),
           h('input', {
@@ -49,10 +69,27 @@
             onChange: function (e) { endDate = e.target.value; rerender(); },
             className: 'p-2 border rounded-md outline-none'
           }),
+          h('input', {
+            type: 'text',
+            value: keyword,
+            onChange: function (e) { keyword = e.target.value; rerender(); },
+            onKeyDown: handleKeyDown,
+            placeholder: '請輸入關鍵字',
+            className: 'w-80 max-w-full p-2 border rounded-md outline-none focus:border-blue-500'
+          }),
           h('button', {
             onClick: handleSearch,
             className: 'bg-blue-600 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors hover:bg-blue-700'
-          }, Icons.Search({ className: 'h-4 w-4' }), ' 搜尋')
+          }, Icons.Search({ className: 'h-4 w-4' }), ' 搜尋'),
+          !!appliedKeyword && h('button', {
+            onClick: function () {
+              keyword = '';
+              appliedKeyword = '';
+              listPagination.resetPage();
+              rerender();
+            },
+            className: 'px-4 py-2 border rounded-md text-gray-600 hover:bg-gray-50 transition-colors'
+          }, '清除')
         ),
         h('div', {
           className: 'overflow-x-auto border rounded-lg'
@@ -77,7 +114,7 @@
             ),
             h('tbody', { className: 'divide-y divide-gray-100' },
               filteredCases.length === 0 ? h('tr', null,
-                h('td', { colspan: '13', className: 'text-center p-8 text-gray-400' }, '無資料符合目前搜尋區間')
+                h('td', { colspan: '13', className: 'text-center p-8 text-gray-400' }, '無資料符合目前搜尋條件')
               ) : pageResult.items.map(function (c) {
                 return h('tr', { key: c.id, className: 'hover:bg-gray-50 transition-colors' },
                   h('td', { className: 'p-3 text-center' },

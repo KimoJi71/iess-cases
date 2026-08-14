@@ -66,13 +66,12 @@
         h('div', { className: 'flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4' },
           h('div', { className: 'flex flex-wrap items-end gap-3' },
             h('div', null,
-              h('label', { className: 'block text-xs text-gray-500 mb-1' }, '關鍵字'),
               h('input', {
                 type: 'text',
                 value: keyword,
                 onChange: function (e) { keyword = e.target.value; rerender(); },
                 onKeyDown: handleKeyDown,
-                placeholder: '姓名 / 帳號 / Email / 職務',
+                placeholder: '請輸入關鍵字',
                 className: 'w-72 p-2.5 border rounded-md outline-none focus:border-blue-500'
               })
             ),

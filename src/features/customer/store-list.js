@@ -83,13 +83,12 @@
               )
             ),
             h('div', null,
-              h('label', { className: 'block text-xs text-gray-500 mb-1' }, '關鍵字'),
               h('input', {
                 type: 'text',
                 value: keyword,
                 onChange: function (e) { keyword = e.target.value; rerender(); },
                 onKeyDown: handleKeyDown,
-                placeholder: '門市店編 / 門市名稱 / 電話',
+                placeholder: '請輸入關鍵字',
                 disabled: !storeCustomer,
                 className: 'w-60 p-2.5 border rounded-md outline-none focus:border-blue-500 disabled:bg-gray-100'
               })

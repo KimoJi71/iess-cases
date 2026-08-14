@@ -168,13 +168,12 @@
               })
             ),
             h('div', null,
-              h('label', { className: 'block text-xs text-gray-500 mb-1' }, '關鍵字'),
               h('input', {
                 type: 'text',
                 value: keyword,
                 onChange: function (e) { keyword = e.target.value; rerender(); },
                 onKeyDown: handleKeyDown,
-                placeholder: isProject ? '案件編號 / 工項 / 負責人員' : '案件編號 / 設備 / 叫修項目 / 維修人員',
+                placeholder: '請輸入關鍵字',
                 className: 'w-64 p-2.5 border rounded-md outline-none focus:border-blue-500 bg-white'
               })
             ),
