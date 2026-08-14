@@ -42,6 +42,39 @@
       delete ASSIGNEE_MEMBER_LABELS[k];
     });
     (accounts || []).forEach(function (a) { ASSIGNEE_MEMBER_LABELS[a.id] = a.name; });
+    Object.keys(ASSIGNEE_GROUP_HINTS).forEach(function (k) {
+      delete ASSIGNEE_GROUP_HINTS[k];
+    });
+    (assignees || []).forEach(function (assignee) {
+      if (!assignee || !assignee.name) return;
+      ASSIGNEE_GROUP_HINTS[assignee.name] = formatMemberHint(assignee, accountById);
+    });
+  }
+
+  function formatMemberHint(assignee, accountById) {
+    return getMemberIds(assignee).map(function (id) {
+      return accountById[id];
+    }).filter(Boolean).sort(function (a, b) {
+      return a.name.localeCompare(b.name, 'zh-Hant');
+    }).map(function (account) {
+      return account.name;
+    }).join('、');
+  }
+
+  function getGroupHint(name) {
+    return (name && ASSIGNEE_GROUP_HINTS[name]) || '';
+  }
+
+  // 組別下拉：value／chip 仍是組別名稱；hint 是成員名單，給選單當次要說明。
+  function getSelectOptions(names) {
+    return (names || ASSIGNEES).map(function (name) {
+      return {
+        value: name,
+        label: name,
+        hint: getGroupHint(name),
+        chipLabel: name
+      };
+    });
   }
 
   // 只留下屬於 groupNames 這些組別的成員；組別被取消選取時，其成員要一併移除。
@@ -290,6 +323,8 @@
   window.AssigneeUtils = {
     syncAssigneeOptions: syncAssigneeOptions,
     syncAssigneeMemberGroups: syncAssigneeMemberGroups,
+    getGroupHint: getGroupHint,
+    getSelectOptions: getSelectOptions,
     filterMemberIdsByGroups: filterMemberIdsByGroups,
     getMemberGroupsForGroupNames: getMemberGroupsForGroupNames,
     formatMemberIds: formatMemberIds,

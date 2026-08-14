@@ -146,7 +146,7 @@
                   h('label', { className: 'block text-sm font-medium text-gray-700 mb-1' }, '施作單位'),
                   h('select', { name: 'suggestedContractor', value: formData.suggestedContractor, onChange: handleChange, className: inputCls },
                     h('option', { value: '' }, '請選擇單位'),
-                    contractors.map(function (c) { return h('option', { key: c, value: c }, c); }))
+                    contractors.map(function (c) { return CaseAssigneeFields.renderGroupOption(c); }))
                 ),
                 h('div', null,
                   h('label', { className: 'block text-sm font-medium text-gray-700 mb-1' }, '進場日期'),

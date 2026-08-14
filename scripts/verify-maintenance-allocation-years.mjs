@@ -469,7 +469,9 @@ try {
       choose: function (input, label) {
         var opts = window.__ma.openMenu(input);
         for (var i = 0; i < opts.length; i++) {
-          if (opts[i].textContent.trim() === label) {
+          var labelEl = opts[i].querySelector('.searchable-select__option-label');
+          var text = labelEl ? labelEl.textContent.trim() : opts[i].textContent.trim();
+          if (text === label) {
             opts[i].dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
             return true;
           }

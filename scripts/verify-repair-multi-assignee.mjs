@@ -67,6 +67,9 @@ function createSandbox() {
     ASSIGNEES: [],
     ACCOUNT_ASSIGNEE_OPTIONS: [],
     SCHEDULE_ASSIGNEE_OPTIONS: [],
+    ASSIGNEE_MEMBER_GROUPS: [],
+    ASSIGNEE_MEMBER_LABELS: {},
+    ASSIGNEE_GROUP_HINTS: {},
     StoreUtils: {
       matchesStoreRecord: () => false,
       getStoreArea: () => '',
@@ -216,6 +219,33 @@ function testPerformanceReport(PU) {
   assertApprox(byName['C組'], 0, 'report C組 bonusPoints (not assigned)');
 }
 
+function testGroupSelectOptions(AU) {
+  console.log('\n8. Group select options include member-list hint');
+  AU.syncAssigneeOptions([
+    { name: 'B組' },
+    { name: 'A組' }
+  ]);
+  AU.syncAssigneeMemberGroups([
+    { name: 'A組', memberIds: ['ACC_A2', 'ACC_A1'] },
+    { name: 'B組', memberIds: ['ACC_B1'] },
+    { name: 'C組', memberIds: [] }
+  ], [
+    { id: 'ACC_A1', name: '甲二', enabled: true },
+    { id: 'ACC_A2', name: '甲一', enabled: true },
+    { id: 'ACC_B1', name: '乙一', enabled: false }
+  ]);
+  const opts = AU.getSelectOptions();
+  assertEq(JSON.stringify(opts.map(function (o) { return o.value; })), JSON.stringify(['A組', 'B組']),
+    'select options follow ASSIGNEES order');
+  assertEq(opts[0].hint, '甲一、甲二', 'A組 hint is member names sorted');
+  assertEq(opts[0].chipLabel, 'A組', 'chip stays group name');
+  assertEq(opts[1].hint, '乙一', 'disabled members still appear in 組別 hint');
+  assertEq(AU.getGroupHint('C組'), '', 'empty group has no hint');
+  const extra = AU.getSelectOptions(['A組', '舊廠商X']);
+  assertEq(extra[1].value, '舊廠商X', 'extra names remain selectable');
+  assertEq(extra[1].hint, '', 'unknown names have no hint');
+}
+
 function main() {
   console.log('Repair multi-assignee verification');
   console.log(`Root: ${ROOT}`);
@@ -236,6 +266,7 @@ function main() {
   testRenameReferences(AU);
   testIncludesAssignee(CAU, DRU);
   testPerformanceReport(PU);
+  testGroupSelectOptions(AU);
 
   console.log(`\n${'='.repeat(50)}`);
   console.log(`Results: ${passed} passed, ${failed} failed`);

@@ -5,8 +5,9 @@
  *   id       全域唯一字串；父層 rerender 重建元件後仍能維持展開狀態
  *   options  可選項目，支援兩種形態：
  *              A. string[]（既有呼叫端）
- *              B. [{ group, options: [{ value, label, chipLabel }] }]
- *                 依上層分組顯示（如客戶→門市），同名選項可用不同 value 區分
+ *              B. [{ group, options: [{ value, label, chipLabel, hint }] }]
+ *                 依上層分組顯示（如客戶→門市），同名選項可用不同 value 區分；
+ *                 hint 為選項次要說明（如組別的成員名單），只出現在展開的選單裡
  *   value    string[] 已選項目（受控，元件不保存資料），內容為 option 的 value
  *   onChange function (nextValues)
  *   showEmptyGroups
@@ -37,14 +38,15 @@
   // 內部一律轉成形態 B 的結構處理，形態 A 視為單一個 group 為 null 的群組。
   function normalizeOption(opt) {
     if (typeof opt === 'string') {
-      return { value: opt, label: opt, chipLabel: opt };
+      return { value: opt, label: opt, chipLabel: opt, hint: '' };
     }
     var value = String(opt.value);
     var label = opt.label != null ? opt.label : value;
     return {
       value: value,
       label: label,
-      chipLabel: opt.chipLabel != null ? opt.chipLabel : label
+      chipLabel: opt.chipLabel != null ? opt.chipLabel : label,
+      hint: opt.hint != null ? String(opt.hint) : ''
     };
   }
 
@@ -213,10 +215,25 @@
             box.className = 'multi-select__checkbox' + (checked ? ' multi-select__checkbox--checked' : '');
             box.textContent = checked ? '✓' : '';
             btn.appendChild(box);
-            btn.appendChild(document.createTextNode(opt.label));
+            var body = document.createElement('span');
+            body.className = 'multi-select__option-body';
+            var labelEl = document.createElement('span');
+            labelEl.className = 'multi-select__option-label';
+            labelEl.textContent = opt.label;
+            body.appendChild(labelEl);
+            if (opt.hint) {
+              var hintEl = document.createElement('span');
+              hintEl.className = 'multi-select__option-hint';
+              hintEl.textContent = opt.hint;
+              body.appendChild(hintEl);
+              btn.title = opt.label + '（' + opt.hint + '）';
+            }
+            btn.appendChild(body);
             // 群組標題是 role="presentation"，螢幕閱讀器讀不到；跨群組同名選項（不同客戶的同名門市）
             // 必須靠 chipLabel 才分得出彼此，否則聽起來是兩個一模一樣的「甲一店」。
-            if (opt.chipLabel && opt.chipLabel !== opt.label) btn.setAttribute('aria-label', opt.chipLabel);
+            var ariaLabel = opt.chipLabel && opt.chipLabel !== opt.label ? opt.chipLabel : opt.label;
+            if (opt.hint) ariaLabel += '（' + opt.hint + '）';
+            if (ariaLabel !== opt.label) btn.setAttribute('aria-label', ariaLabel);
 
             // 用 click 而非 mousedown：click 才會被鍵盤 Enter/Space 觸發（button 原生行為），
             // 讓鍵盤使用者也能選取選項。改用 click 不會被 outside 監聽器誤判成「點外面」而先關閉選單，

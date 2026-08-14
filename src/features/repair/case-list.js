@@ -221,42 +221,44 @@
       function handleKeyDown(e) { if (e.key === 'Enter') handleSearch(); }
 
       return h('div', { className: 'bg-white p-6 rounded-lg shadow-sm border border-gray-100' },
-        h('div', { className: 'flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4' },
-          h('div', { className: 'flex flex-wrap items-end gap-3' },
-            h('div', null,
-              h('input', {
-                type: 'text',
-                value: keyword,
-                onChange: function (e) { keyword = e.target.value; rerender(); },
-                onKeyDown: handleKeyDown,
-                placeholder: '請輸入關鍵字',
-                className: 'w-80 max-w-full p-2.5 border rounded-md outline-none focus:border-blue-500'
+        h('div', { className: 'flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4' },
+          h('div', { className: 'flex flex-col gap-3' },
+            h('div', { className: 'flex flex-wrap gap-2' },
+              [ALL_STATUS].concat(CASE_LIST_STATUS_FILTERS).map(function (status) {
+                return statusFilterBtn(status, status);
               })
             ),
-            h('button', {
-              onClick: handleSearch,
-              className: 'flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-md shadow-sm transition-colors'
-            }, Icons.Search({ className: 'h-4 w-4' }), ' 搜尋'),
-            !!appliedKeyword && h('button', {
-              onClick: function () {
-                keyword = '';
-                appliedKeyword = '';
-                listPagination.resetPage();
-                rerender();
-              },
-              className: 'px-4 py-2.5 border rounded-md text-gray-600 hover:bg-gray-50 transition-colors'
-            }, '清除')
+            h('div', { className: 'flex flex-wrap items-end gap-3' },
+              h('div', null,
+                h('input', {
+                  type: 'text',
+                  value: keyword,
+                  onChange: function (e) { keyword = e.target.value; rerender(); },
+                  onKeyDown: handleKeyDown,
+                  placeholder: '請輸入關鍵字',
+                  className: 'w-80 max-w-full p-2.5 border rounded-md outline-none focus:border-blue-500'
+                })
+              ),
+              h('button', {
+                onClick: handleSearch,
+                className: 'flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-md shadow-sm transition-colors'
+              }, Icons.Search({ className: 'h-4 w-4' }), ' 搜尋'),
+              !!appliedKeyword && h('button', {
+                onClick: function () {
+                  keyword = '';
+                  appliedKeyword = '';
+                  listPagination.resetPage();
+                  rerender();
+                },
+                className: 'px-4 py-2.5 border rounded-md text-gray-600 hover:bg-gray-50 transition-colors'
+              }, '清除')
+            )
           ),
           iconActionBtn({
             label: '新增叫修案件',
             className: 'flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white p-2.5 rounded-full shadow-sm transition-colors shrink-0',
             onClick: function () { setView('add'); },
             icon: Icons.Plus({ className: 'h-5 w-5' })
-          })
-        ),
-        h('div', { className: 'flex flex-wrap gap-2 mb-6' },
-          [ALL_STATUS].concat(CASE_LIST_STATUS_FILTERS).map(function (status) {
-            return statusFilterBtn(status, status);
           })
         ),
         h('div', {

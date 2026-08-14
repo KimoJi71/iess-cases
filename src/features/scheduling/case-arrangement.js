@@ -542,7 +542,7 @@
               ),
               IESS.MultiSelect({
                 id: 'schedule-modal-assignees',
-                options: ASSIGNEES,
+                options: AssigneeUtils.getSelectOptions(),
                 value: selected,
                 onChange: setScheduleModalAssignees,
                 placeholder: '請選擇組別'
@@ -559,7 +559,7 @@
           },
             h('option', { value: '' }, '請選擇'),
             ASSIGNEES.map(function (opt) {
-              return h('option', { key: opt, value: opt }, opt);
+              return CaseAssigneeFields.renderGroupOption(opt);
             })
           )
         );
@@ -939,7 +939,7 @@
               },
                 h('option', { value: '全部' }, '全部'),
                 SCHEDULE_ASSIGNEE_OPTIONS.map(function (a) {
-                  return h('option', { key: a, value: a }, a);
+                  return CaseAssigneeFields.renderGroupOption(a);
                 })
               )
             ),
@@ -992,7 +992,7 @@
                   },
                     h('option', { value: '' }, '請選擇'),
                     pendingAssigneeOptions.map(function (a) {
-                      return h('option', { key: a, value: a }, a);
+                      return CaseAssigneeFields.renderGroupOption(a);
                     })
                   )
                 ),

@@ -124,7 +124,7 @@
             },
               h('option', { value: '全部' }, '全部'),
               SCHEDULE_ASSIGNEE_OPTIONS.map(function (a) {
-                return h('option', { key: a, value: a }, a);
+                return CaseAssigneeFields.renderGroupOption(a);
               })
             )
           ),

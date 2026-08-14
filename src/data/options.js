@@ -17,6 +17,8 @@ const ASSIGNEE_MEMBER_GROUPS = [];
 // 帳號 id → 姓名的對照表，含停用與已離組的帳號，
 // 讓舊案件上已存的指派人員仍顯示得出姓名而不是裸 id。
 const ASSIGNEE_MEMBER_LABELS = {};
+// 組別名稱 → 成員名單（頓號分隔），供組別下拉以 hint 顯示。
+const ASSIGNEE_GROUP_HINTS = {};
 const ACCOUNT_ROLE_OPTIONS = ['課長', '副課長', '課員', '實習生'];
 const CUSTOMER_OPTIONS = ['屈臣氏', '星巴克', '萊爾富', '統一超商', '全家便利商店'];
 const STORE_OPTIONS = ['台北信義店', '台中旗艦店', '高雄左營店', '站前店', '中山店'];

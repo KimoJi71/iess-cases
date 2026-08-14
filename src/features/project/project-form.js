@@ -626,7 +626,7 @@
       }, h('option', {
         value: ''
       }, '請選擇單位'), contractors.map(function (c) {
-        return h('option', { key: c, value: c }, c);
+        return CaseAssigneeFields.renderGroupOption(c);
       }))), h('div', null, h('label', {
         className: 'block text-sm font-medium text-gray-700 mb-1'
       }, '進場日期'), h('input', {
@@ -938,7 +938,7 @@
       }, h('option', {
         value: ''
       }, '請選擇單位'), contractors.map(function (c) {
-        return h('option', { key: c, value: c }, c);
+        return CaseAssigneeFields.renderGroupOption(c);
       }))), h('div', null, h('label', {
         className: 'block text-sm font-medium text-gray-700 mb-1'
       }, '進場日期'), h('input', {

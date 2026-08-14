@@ -101,7 +101,9 @@ body {
 }
 
 .searchable-select__option {
-  display: block;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
   width: 100%;
   padding: 0.5rem 0.75rem;
   border: 0;
@@ -110,6 +112,15 @@ body {
   text-align: left;
   font: inherit;
   cursor: pointer;
+}
+
+.searchable-select__option-hint {
+  display: block;
+  margin-top: 0.125rem;
+  font-size: 0.75rem;
+  font-weight: 400;
+  line-height: 1.25;
+  color: #9ca3af;
 }
 
 .searchable-select__option:hover,
@@ -763,7 +774,7 @@ body {
 
 .multi-select__option {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.5rem;
   width: 100%;
   padding: 0.5rem 0.75rem;
@@ -773,6 +784,22 @@ body {
   text-align: left;
   font: inherit;
   cursor: pointer;
+}
+
+.multi-select__option-body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.multi-select__option-hint {
+  display: block;
+  margin-top: 0.125rem;
+  font-size: 0.75rem;
+  font-weight: 400;
+  line-height: 1.25;
+  color: #9ca3af;
 }
 
 .multi-select__option:hover {
@@ -791,6 +818,7 @@ body {
   justify-content: center;
   width: 1rem;
   height: 1rem;
+  margin-top: 0.125rem;
   border: 1px solid #9ca3af;
   border-radius: 0.1875rem;
   font-size: 0.75rem;

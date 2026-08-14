@@ -104,11 +104,18 @@ try {
         if (labels[i].textContent.trim().indexOf('施作單位') !== -1) { label = labels[i].textContent.trim(); break; }
       }
       var options = null;
+      var hints = {};
       if (sel) {
         var toggle = sel.parentNode.querySelector('.searchable-select__toggle');
         toggle.click();
         options = Array.prototype.slice.call(document.querySelectorAll('.searchable-select__option'))
-          .map(function (o) { return o.textContent.trim(); })
+          .map(function (o) {
+            var labelEl = o.querySelector('.searchable-select__option-label');
+            var hintEl = o.querySelector('.searchable-select__option-hint');
+            var text = (labelEl ? labelEl.textContent : o.textContent).trim();
+            if (text !== '請選擇單位') hints[text] = hintEl ? hintEl.textContent.trim() : '';
+            return text;
+          })
           .filter(function (t) { return t !== '請選擇單位'; });
         toggle.click();
       }
@@ -117,6 +124,7 @@ try {
         hasOldLabel: node.textContent.indexOf('建議施作單位') !== -1,
         hasSelect: !!sel,
         options: options,
+        hints: hints,
         hasAddButton: !!node.querySelector('[aria-label="新增單位選項"], [title="新增單位選項"]'),
         hasAddText: node.textContent.indexOf('新增施作單位') !== -1
       };
@@ -134,6 +142,8 @@ try {
   assertEq(add.hasOldLabel, false, '不再出現「建議施作單位」');
   assertTrue(add.hasSelect, '有施作單位下拉選單');
   assertEq(add.options, groups, '選項等同組別管理清單');
+  assertTrue(add.hints['A組'] && add.hints['A組'].indexOf('、') !== -1,
+    'A組選項以 hint 顯示成員名單', add.hints && add.hints['A組']);
   assertEq(add.hasAddButton, false, '沒有新增單位按鈕');
   assertEq(add.hasAddText, false, '沒有新增施作單位彈窗');
 

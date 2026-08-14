@@ -125,7 +125,7 @@
       var storeOptions = DataRetrievalUtils.getStoreGroupsForCustomers(stores, filterCustomer);
       var districtOptions = DataRetrievalUtils.getDistrictGroupsForCities(filterCity);
       var repairWorkCategories = WORK_CATEGORY_OPTIONS.filter(function (w) { return w !== '保養'; });
-      var assigneeOptions = ASSIGNEES.slice();
+      var assigneeOptions = AssigneeUtils.getSelectOptions();
 
       function handleSearch() {
         if (startDate > endDate) {

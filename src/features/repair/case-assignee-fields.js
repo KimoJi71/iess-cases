@@ -1,7 +1,7 @@
 /*
  * features/repair/case-assignee-fields.js — 叫修／保養表單共用欄位
  *
- * 組別：下拉複選（IESS.MultiSelect），值為組別名稱
+ * 組別：下拉複選（IESS.MultiSelect），值為組別名稱；選單以 hint 顯示該組成員名單。
  * 指派人員：下拉複選，只列出「已選組別」底下的成員帳號，並依組別分群顯示；
  *           值為帳號 id。組別被取消選取時，其成員必須一併移除 —— 呼叫端在組別的
  *           onChange 裡用 syncMemberIds() 過濾即可。
@@ -12,11 +12,19 @@
 (function () {
   'use strict';
 
+  function renderGroupOption(name, value) {
+    var optionValue = value != null ? value : name;
+    var attrs = { key: optionValue, value: optionValue };
+    var hint = AssigneeUtils.getGroupHint(name);
+    if (hint) attrs['data-hint'] = hint;
+    return IESS.h('option', attrs, name);
+  }
+
   function renderAssigneeMultiSelect(formData, onChange, options) {
     var opts = options || {};
     return IESS.MultiSelect({
       id: opts.id,
-      options: ASSIGNEES,
+      options: AssigneeUtils.getSelectOptions(),
       value: CaseAssigneeUtils.getAssignees(formData),
       onChange: onChange,
       placeholder: '請選擇組別',
@@ -50,6 +58,7 @@
   }
 
   window.CaseAssigneeFields = {
+    renderGroupOption: renderGroupOption,
     renderAssigneeMultiSelect: renderAssigneeMultiSelect,
     renderMemberMultiSelect: renderMemberMultiSelect,
     syncMemberIds: syncMemberIds

@@ -123,6 +123,42 @@ const FIXTURE = `
   window.__openMenu = function () {
     document.querySelector('#member-host .multi-select__control').click();
   };
+  window.__mountGroups = function (formData) {
+    IESS.MultiSelect.closeAll();
+    var host = document.getElementById('group-host');
+    if (host) host.remove();
+    host = document.createElement('div');
+    host.id = 'group-host';
+    document.body.appendChild(host);
+    window.__groupForm = formData || { assignees: [] };
+    host.appendChild(CaseAssigneeFields.renderAssigneeMultiSelect(window.__groupForm, function (next) {
+      window.__groupForm = { assignees: next };
+      window.__mountGroups(window.__groupForm);
+    }, { id: 'group-test' }));
+    return host;
+  };
+  window.__openGroupMenu = function () {
+    document.querySelector('#group-host .multi-select__control').click();
+  };
+  window.__readGroupMenu = function () {
+    var menuEl = document.querySelector('.multi-select__menu');
+    var host = document.getElementById('group-host');
+    return {
+      labels: menuEl
+        ? Array.prototype.map.call(menuEl.querySelectorAll('.multi-select__option-label'),
+          function (o) { return o.textContent.trim(); })
+        : [],
+      hints: menuEl
+        ? Array.prototype.map.call(menuEl.querySelectorAll('.multi-select__option'),
+          function (o) {
+            var hint = o.querySelector('.multi-select__option-hint');
+            return hint ? hint.textContent.trim() : '';
+          })
+        : [],
+      chips: Array.prototype.map.call((host || document).querySelectorAll('#group-host .multi-select__chip'),
+        function (c) { return c.textContent.replace('×', '').trim(); })
+    };
+  };
   window.__readMenu = function () {
     var menuEl = document.querySelector('.multi-select__menu');
     return {
@@ -166,6 +202,30 @@ try {
 
   assertEq(consoleErrors.length, 0, '載入時無 JS 錯誤');
   await evaluate(FIXTURE + "'ok'");
+
+  console.log('\nSection 0｜組別選單以 hint 顯示成員名單');
+  const groupMenu = await evaluateAsync(`(function () {
+    window.__mountGroups({ assignees: [] });
+    window.__openGroupMenu();
+    return new Promise(function (resolve) {
+      setTimeout(function () { resolve(window.__readGroupMenu()); }, 50);
+    });
+  })()`);
+  assertJson(groupMenu.labels, ['A組', 'B組', 'C組', 'D組'], '選項主標是組別名稱');
+  assertJson(groupMenu.hints, ['甲一、甲二', '乙一、乙二', '丙一', ''],
+    'hint 為成員名單（含停用；無成員則空白）');
+
+  const groupChip = await evaluateAsync(`(function () {
+    window.__mountGroups({ assignees: [] });
+    window.__openGroupMenu();
+    return new Promise(function (resolve) {
+      setTimeout(function () {
+        document.querySelector('.multi-select__menu .multi-select__option').click();
+        setTimeout(function () { resolve(window.__readGroupMenu()); }, 50);
+      }, 50);
+    });
+  })()`);
+  assertJson(groupChip.chips, ['A組'], '已選 chip 只顯示組別名稱，不含成員名單');
 
   console.log('\nSection 1｜指派人員選單依組別分群，且只列已選組別的成員');
   const noGroup = await evaluate(`(function () {

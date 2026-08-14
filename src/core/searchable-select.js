@@ -34,6 +34,7 @@
         options.push({
           value: child.getAttribute('value') != null ? child.getAttribute('value') : child.textContent,
           label: child.textContent,
+          hint: child.getAttribute('data-hint') || '',
           disabled: child.disabled
         });
       }
@@ -49,7 +50,8 @@
   function optionMatchesQuery(option, query) {
     if (!query) return true;
     return normalizeQuery(option.label).indexOf(query) >= 0 ||
-      normalizeQuery(option.value).indexOf(query) >= 0;
+      normalizeQuery(option.value).indexOf(query) >= 0 ||
+      normalizeQuery(option.hint).indexOf(query) >= 0;
   }
 
   function SearchableSelect(props) {
@@ -204,7 +206,18 @@
           var btn = document.createElement('button');
           btn.type = 'button';
           btn.setAttribute('role', 'option');
-          btn.textContent = opt.label;
+          var labelEl = document.createElement('span');
+          labelEl.className = 'searchable-select__option-label';
+          labelEl.textContent = opt.label;
+          btn.appendChild(labelEl);
+          if (opt.hint) {
+            var hintEl = document.createElement('span');
+            hintEl.className = 'searchable-select__option-hint';
+            hintEl.textContent = opt.hint;
+            btn.appendChild(hintEl);
+            btn.title = opt.label + '（' + opt.hint + '）';
+            btn.setAttribute('aria-label', opt.label + '（' + opt.hint + '）');
+          }
           btn.className = 'searchable-select__option';
           if (idx === activeIndex) btn.className += ' searchable-select__option--active';
           if (String(opt.value) === currentValue) btn.className += ' searchable-select__option--selected';

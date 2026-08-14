@@ -844,7 +844,7 @@
                 },
                 h('option', { value: '' }, '請選擇組別'),
                 sortedAssignees.map(function (item) {
-                  return h('option', { key: item.id, value: item.id }, item.name);
+                  return CaseAssigneeFields.renderGroupOption(item.name, item.id);
                 })
               )
             ),
