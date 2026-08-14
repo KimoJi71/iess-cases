@@ -94,6 +94,7 @@ const INITIAL_CUSTOMERS = [{
   taxId: '34567890',
   principal: '吳建宏',
   serviceLevel: 'C 保養(一年一次)',
+  overtimeHours: 8,
   periods: [{ visitIndex: 1, startMonth: 1, endMonth: 12 }],
   phone: '03-322-8888',
   fax: '03-322-8889',
@@ -790,6 +791,13 @@ const INITIAL_EQUIPMENTS = [{
 }];
 
 // --- 初始模擬案件列表 (維修) ---
+function hoursAgoStamp(hours) {
+  var d = new Date(Date.now() - hours * 3600000);
+  function pad(n) { return String(n).padStart(2, '0'); }
+  return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + ' ' +
+    pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+}
+
 function caseProcessRecordFromPm(pmId, qty, lineId) {
   var pm = INITIAL_PROCESS_METHODS.find(function (m) { return m.id === pmId; });
   if (!pm) return null;
@@ -1283,6 +1291,64 @@ const INITIAL_CASES = [{
   planTimeStart: '',
   planTimeEnd: '',
   isPerformanceIncluded: true
+}, {
+  id: 'C20260814015',
+  indicator: 'overdue',
+  createdAt: hoursAgoStamp(16),
+  repairDate: todayDate,
+  caseNumber: todayDate.replace(/-/g, '') + '015',
+  customerName: '萊爾富',
+  storeName: '高雄左營店',
+  workCategory: '一般叫修',
+  repairItem: '室內機',
+  repairReason: '漏水',
+  faultDesc: '天花板持續滴水，已超過處理時限',
+  actualReason: '',
+  assignee: 'A組',
+  processStatus: '',
+  isClosed: false,
+  serviceLevel: 'C 保養(一年一次)',
+  storeAddress: '高雄市左營區博愛路X號',
+  reporter: '張小姐',
+  equipment: null,
+  processRecords: [],
+  reRepairDate: '',
+  secondRepairDate: '',
+  completionDate: '',
+  expectedDate: '',
+  planDate: '',
+  planTimeStart: '',
+  planTimeEnd: '',
+  isPerformanceIncluded: false
+}, {
+  id: 'C20260814016',
+  indicator: 'warning',
+  createdAt: hoursAgoStamp(5),
+  repairDate: todayDate,
+  caseNumber: todayDate.replace(/-/g, '') + '016',
+  customerName: '萊爾富',
+  storeName: '高雄左營店',
+  workCategory: '一般叫修',
+  repairItem: '室內機',
+  repairReason: '不冷',
+  faultDesc: '冷氣不冷，距逾時不到 6 小時',
+  actualReason: '',
+  assignee: '',
+  processStatus: '',
+  isClosed: false,
+  serviceLevel: 'C 保養(一年一次)',
+  storeAddress: '高雄市左營區博愛路X號',
+  reporter: '張小姐',
+  equipment: null,
+  processRecords: [],
+  reRepairDate: '',
+  secondRepairDate: '',
+  completionDate: '',
+  expectedDate: '',
+  planDate: '',
+  planTimeStart: '',
+  planTimeEnd: '',
+  isPerformanceIncluded: false
 }];
 
 function caseHasProcessData(c) {

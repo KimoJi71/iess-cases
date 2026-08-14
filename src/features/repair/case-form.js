@@ -55,6 +55,42 @@
     );
   }
 
+  function CaseReadOnlyField(p) {
+    return h('div', { className: p.fullWidth ? 'col-span-full' : '' },
+      h('span', { className: p.labelClassName || 'text-gray-500 block mb-1' }, p.label),
+      h('div', {
+        className: 'font-medium bg-gray-50 p-2.5 rounded-md border border-gray-100 min-h-[42px] flex items-center text-gray-700'
+      }, p.value || '—')
+    );
+  }
+
+  function ExpectedTimeRangeFields(p) {
+    var labelTag = p.labelTag || 'label';
+    return h('div', { className: p.wrapClass || 'col-span-full sm:col-span-2' },
+      h(labelTag, { className: p.labelClassName || 'block text-sm mb-1' }, '預計時間'),
+      h('div', { className: 'grid grid-cols-2 gap-4' },
+        h('div', { className: 'flex items-center gap-2 min-h-[42px]' },
+          h('span', { className: 'text-xs text-gray-500 shrink-0' }, '開始'),
+          h(TimeInput24, {
+            name: p.startName || 'expectedTimeStart',
+            value: p.startValue || '',
+            onChange: p.onChange,
+            className: 'w-full h-[42px]'
+          })
+        ),
+        h('div', { className: 'flex items-center gap-2 min-h-[42px]' },
+          h('span', { className: 'text-xs text-gray-500 shrink-0' }, '結束'),
+          h(TimeInput24, {
+            name: p.endName || 'expectedTimeEnd',
+            value: p.endValue || '',
+            onChange: p.onChange,
+            className: 'w-full h-[42px]'
+          })
+        )
+      )
+    );
+  }
+
   var renderAssigneeMultiSelect = CaseAssigneeFields.renderAssigneeMultiSelect;
   var renderMemberMultiSelect = CaseAssigneeFields.renderMemberMultiSelect;
 
@@ -335,8 +371,6 @@
     var editingCase = props.editingCase;
     var cases = props.cases;
     var setCases = props.setCases;
-    var stores = props.stores;
-    var customers = props.customers;
     var vehicles = props.vehicles || [];
     var vendors = props.vendors || [];
     var equipments = props.equipments || [];
@@ -355,6 +389,7 @@
     var savedProcessStatus = editingCase.processStatus || null;
     var newRecord = ProcessMethodUtils.normalizeProcessMethodSelection(processMethods, null);
     var pmColumns = ProcessMethodUtils.CASE_DISPLAY_COLUMNS;
+    var pickerOpen = false;
 
     return stateful(function (rerender) {
       var cat1Options = ProcessMethodUtils.getCat1OptionsFromMethods(processMethods);
@@ -367,8 +402,7 @@
       );
       var selectedPm = ProcessMethodUtils.findProcessMethodForSelection(processMethods, newRecord);
       var selectedUnit = selectedPm ? selectedPm.unit : '';
-      var storeOptions = ScheduleUtils.getStoreNamesForCustomer(stores, formData.customerName, formData.storeName);
-      var customerOptions = CustomerUtils.getCustomerNameOptions(customers, formData.customerName);
+      var storeEquipments = RepairCaseEquipment.listForCase(equipments, formData);
 
       function handleCat1Change(e) {
         newRecord = ProcessMethodUtils.normalizeProcessMethodSelection(processMethods, Object.assign({}, newRecord, {
@@ -411,25 +445,20 @@
           formData.processStatus = value || null;
           caseStatus.applyProcessStatusChange(formData, value || null, savedProcessStatus, caseDT.now());
         }
-        if (name === 'customerName') {
-          formData.serviceLevel = CustomerUtils.getServiceLevelByCustomerName(customers, value);
-          formData.storeName = '';
-          formData.companyCity = '';
-          formData.companyDistrict = '';
-          formData.storeAddress = '';
-        }
-        if (name === 'storeName') {
-          syncFormStoreFields(formData, stores);
-        }
+        rerender();
+      }
+      function assignEquipment(eq) {
+        formData.equipment = Object.assign({}, eq);
+        pickerOpen = false;
         rerender();
       }
       function handleSimulateScan(e) {
         if (e) e.preventDefault();
         var scanned = RepairCaseEquipment.findEquipmentForScan(equipments, formData);
         if (scanned) {
-          formData.equipment = scanned;
+          assignEquipment(scanned);
         } else {
-          formData.equipment = {
+          assignEquipment({
             id: 'E' + Date.now(),
             customerName: formData.customerName || '測試客戶',
             storeName: formData.storeName || '測試門市',
@@ -443,11 +472,15 @@
             manufactureDate: '',
             installDate: '',
             assetNumber: '',
+            serialNumber: '',
             status: EQUIP_STATUS_OPTIONS[0]
-          };
+          });
         }
         showToast('成功掃描設備並帶入資料');
-        rerender();
+      }
+      function handleSelectEquipment(eq) {
+        assignEquipment(eq);
+        showToast('已帶入設備資料');
       }
       function formatRecordPoints(r) {
         var pts = ProcessMethodUtils.resolveCaseRecordPoints(r, processMethods, formData.isClosed);
@@ -470,7 +503,7 @@
       }
       function handleSubmit() {
         if (caseStatus.hasProcessData(formData) && !formData.equipment) {
-          showToast('有服務項目時必須先掃描設備', 'error');
+          showToast('有服務項目時必須先加入設備', 'error');
           return;
         }
         formData.planDate = formData.expectedDate || formData.planDate || '';
@@ -494,174 +527,111 @@
         wrapperClass: 'page-header-sticky flex justify-between items-center p-4 sm:p-6 border-b border-gray-200 sticky top-0 z-10 bg-white rounded-t-lg'
       }), h("div", {
         className: "p-4 sm:p-6 space-y-6 sm:space-y-8 bg-gray-50"
-      }, h("section", {
-        className: "bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-100"
-      }, h("h3", {
-        className: "text-lg font-bold text-blue-800 border-b pb-2 mb-4"
-      }, "1. 案件資料"), h("div", {
-        className: "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-sm items-start"
-      }, h("div", null, h("span", {
-        className: "text-gray-500 block mb-1"
-      }, "客戶名稱"), h("select", {
-        name: "customerName",
-        value: formData.customerName,
-        onChange: handleChange,
-        className: "w-full p-2 border rounded-md outline-none"
-      }, h("option", {
-        value: "",
-        disabled: true
-      }, "請選擇"), customerOptions.map(function (opt) { return h("option", {
-        key: opt,
-        value: opt
-      }, opt); }))), h("div", null, h("span", {
-        className: "text-gray-500 block mb-1"
-      }, "門市名稱"), h("select", {
-        name: "storeName",
-        value: formData.storeName,
-        onChange: handleChange,
-        className: "w-full p-2 border rounded-md outline-none"
-      }, h("option", {
-        value: "",
-        disabled: true
-      }, "請選擇"), storeOptions.map(function (opt) { return h("option", {
-        key: opt,
-        value: opt
-      }, opt); }))), ReporterField({
-        labelTag: 'span',
-        labelClassName: 'text-gray-500 block mb-1',
-        inputClassName: 'w-full p-2 border rounded-md bg-gray-50 text-gray-500 cursor-not-allowed',
-        value: formData.reporter
-      }), h("div", null, h("span", {
-        className: "text-gray-500 block mb-1"
-      }, "服務等級"), h("input", {
-        type: "text",
-        disabled: true,
-        value: formData.serviceLevel || "—",
-        className: "w-full p-2 border rounded-md bg-gray-50 text-gray-500 cursor-not-allowed"
-      })), h("div", {
-        className: "col-span-full md:col-span-4"
-      }, h("span", {
-        className: "text-gray-500 block mb-1"
-      }, "門市地址"), h("input", {
-        type: "text",
-        disabled: true,
-        value: formData.storeAddress,
-        placeholder: "請先選擇客戶與門市",
-        className: "w-full p-2 border rounded-md bg-gray-50 text-gray-500 cursor-not-allowed"
-      })), h("div", null, h("span", {
-        className: "text-gray-500 block mb-1"
-      }, "工項分類"), h("select", {
-        name: "workCategory",
-        value: formData.workCategory,
-        onChange: handleChange,
-        className: "w-full p-2 border rounded-md outline-none"
-      }, WORK_CATEGORY_OPTIONS.map(function (opt) { return h("option", {
-        key: opt,
-        value: opt
-      }, opt); }))), !isOther && h("div", null, h("span", {
-        className: "text-gray-500 block mb-1"
-      }, "叫修項目"), h("select", {
-        name: "repairItem",
-        value: formData.repairItem,
-        onChange: handleChange,
-        className: "w-full p-2 border rounded-md outline-none"
-      }, REPAIR_ITEMS.map(function (opt) { return h("option", {
-        key: opt,
-        value: opt
-      }, opt); }))), !isOther && h("div", null, h("span", {
-        className: "text-gray-500 block mb-1"
-      }, "叫修原因"), h("select", {
-        name: "repairReason",
-        value: formData.repairReason,
-        onChange: handleChange,
-        className: "w-full p-2 border rounded-md outline-none"
-      }, REPAIR_REASONS.map(function (opt) { return h("option", {
-        key: opt,
-        value: opt
-      }, opt); }))), h("div", {
-        className: "col-span-full md:col-span-2"
-      }, h("span", {
-        className: "text-gray-500 block mb-1"
-      }, "組別"), renderAssigneeMultiSelect(formData, function (next) {
-        formData.assignees = next;
-        formData.assigneeMemberIds = CaseAssigneeFields.syncMemberIds(next, formData.assigneeMemberIds);
-        rerender();
-      }, { id: 'edit-case-assignees' })), h("div", {
-        className: "col-span-full md:col-span-2"
-      }, h("span", {
-        className: "text-gray-500 block mb-1"
-      }, "指派人員"), renderMemberMultiSelect(formData, function (next) {
-        formData.assigneeMemberIds = next;
-        rerender();
-      }, { id: 'edit-case-assignee-members' })), h("div", null, h("span", {
-        className: "text-gray-500 block mb-1"
-      }, "使用車輛"), renderVehicleSelect(
-        formData, vehicles, handleChange, "w-full p-2 border rounded-md outline-none"
-      )), h("div", {
-        className: "col-span-full md:col-span-2"
-      }, h("span", {
-        className: "text-gray-500 block mb-1"
-      }, "協力廠商"), renderPartnerVendorMultiSelect(formData, vendors, function (next) {
-        formData.partnerVendorIds = next;
-        rerender();
-      }, 'edit-case-partner-vendors')), h("div", null, h("span", {
-        className: "text-gray-500 block mb-1"
-      }, "預計日期"), h("input", {
-        type: "date",
-        name: "expectedDate",
-        value: formData.expectedDate,
-        onChange: handleChange,
-        className: "w-full p-2 border rounded-md outline-none"
-      })), h("div", null, h("span", {
-        className: "text-gray-500 block mb-1"
-      }, "預計開始時間"), h(TimeInput24, {
-        name: "expectedTimeStart",
-        value: formData.expectedTimeStart || '',
-        onChange: handleChange,
-        className: "w-full"
-      })), h("div", null, h("span", {
-        className: "text-gray-500 block mb-1"
-      }, "預計結束時間"), h(TimeInput24, {
-        name: "expectedTimeEnd",
-        value: formData.expectedTimeEnd || '',
-        onChange: handleChange,
-        className: "w-full"
-      }))), h("div", {
-        className: "col-span-full"
-      }, h("span", {
-        className: "text-gray-500 block mb-1"
-      }, isOther ? "工作描述" : "故障描述"), h("textarea", {
-        name: "faultDesc",
-        value: formData.faultDesc,
-        onChange: handleChange,
-        rows: "2",
-        className: "w-full p-2 border rounded-md outline-none"
-      })))), h("section", {
-        className: "bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-100"
-      }, h("div", {
-        className: "flex justify-between items-center border-b pb-2 mb-4"
-      }, h("h3", {
-        className: "text-lg font-bold text-blue-800"
-      }, "2. 設備資料"), h("button", {
-        type: "button",
-        onClick: handleSimulateScan,
-        className: "flex items-center gap-2 bg-indigo-50 text-indigo-700 px-4 py-2 rounded-md"
-      }, Icons.QrCode({
-        className: "h-4 w-4"
-      }), " 掃描設備")),
-      h(RepairCaseEquipment.Panel, {
-        h: h,
-        equipment: formData.equipment,
-        caseContext: formData,
-        deviceCategories: deviceCategories,
-        emptyText: '請點擊上方按鈕掃描',
-        emptyClass: 'text-center py-8 text-gray-400 bg-gray-50 rounded-md border border-dashed'
-      })
-    ), h("section", {
+      },
+        h("section", { className: "bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-100" },
+          h("h3", { className: "text-lg font-bold text-blue-800 border-b pb-2 mb-4" }, "1. 排程資料"),
+          h("div", { className: "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-sm items-start" },
+            h("div", null,
+              h("span", { className: "text-gray-500 block mb-1" }, "預計日期"),
+              h("input", {
+                type: "date",
+                name: "expectedDate",
+                value: formData.expectedDate,
+                onChange: handleChange,
+                className: "w-full h-[42px] px-2.5 border rounded-md outline-none"
+              })
+            ),
+            ExpectedTimeRangeFields({
+              labelTag: 'span',
+              labelClassName: 'text-gray-500 block mb-1',
+              startValue: formData.expectedTimeStart,
+              endValue: formData.expectedTimeEnd,
+              onChange: handleChange
+            }),
+            h("div", { className: "col-span-full md:col-span-2" },
+              h("span", { className: "text-gray-500 block mb-1" }, "組別"),
+              renderAssigneeMultiSelect(formData, function (next) {
+                formData.assignees = next;
+                formData.assigneeMemberIds = CaseAssigneeFields.syncMemberIds(next, formData.assigneeMemberIds);
+                rerender();
+              }, { id: 'edit-case-assignees' })
+            ),
+            h("div", { className: "col-span-full md:col-span-2" },
+              h("span", { className: "text-gray-500 block mb-1" }, "指派人員"),
+              renderMemberMultiSelect(formData, function (next) {
+                formData.assigneeMemberIds = next;
+                rerender();
+              }, { id: 'edit-case-assignee-members' })
+            ),
+            h("div", null,
+              h("span", { className: "text-gray-500 block mb-1" }, "使用車輛"),
+              renderVehicleSelect(formData, vehicles, handleChange, "w-full p-2 border rounded-md outline-none")
+            ),
+            h("div", { className: "col-span-full md:col-span-2" },
+              h("span", { className: "text-gray-500 block mb-1" }, "協力廠商"),
+              renderPartnerVendorMultiSelect(formData, vendors, function (next) {
+                formData.partnerVendorIds = next;
+                rerender();
+              }, 'edit-case-partner-vendors')
+            )
+          )
+        ),
+        h("section", { className: "bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-100" },
+          h("h3", { className: "text-lg font-bold text-blue-800 border-b pb-2 mb-4" }, "2. 案件資料"),
+          h("div", { className: "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-sm items-start" },
+            CaseReadOnlyField({ label: '案件編號', value: formData.caseNumber }),
+            CaseReadOnlyField({ label: '工項分類', value: formData.workCategory }),
+            CaseReadOnlyField({ label: '叫修人員', value: formData.reporter }),
+            CaseReadOnlyField({ label: '客戶名稱', value: formData.customerName }),
+            CaseReadOnlyField({ label: '門市名稱', value: formData.storeName }),
+            CaseReadOnlyField({ label: '服務等級', value: formData.serviceLevel }),
+            CaseReadOnlyField({ label: '門市地址', value: formData.storeAddress, fullWidth: true }),
+            !isOther && CaseReadOnlyField({ label: '叫修項目', value: formData.repairItem }),
+            !isOther && CaseReadOnlyField({ label: '叫修原因', value: formData.repairReason }),
+            CaseReadOnlyField({
+              label: isOther ? '工作描述' : '故障描述',
+              value: formData.faultDesc,
+              fullWidth: true
+            })
+          )
+        ),
+        h("section", { className: "bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-100" },
+          h("div", { className: "flex flex-wrap justify-between items-center gap-3 border-b pb-2 mb-4" },
+            h("h3", { className: "text-lg font-bold text-blue-800" }, "3. 設備資料"),
+            h("div", { className: "flex flex-wrap items-center gap-2" },
+              h("span", { className: "text-sm text-gray-600" }, "加入設備"),
+              h("button", {
+                type: "button",
+                onClick: function () { pickerOpen = true; rerender(); },
+                className: "flex items-center gap-2 bg-white text-indigo-700 border border-indigo-200 px-4 py-2 rounded-md"
+              }, "手動選擇"),
+              h("button", {
+                type: "button",
+                onClick: handleSimulateScan,
+                className: "flex items-center gap-2 bg-indigo-50 text-indigo-700 px-4 py-2 rounded-md"
+              }, Icons.QrCode({ className: "h-4 w-4" }), " 掃描 QR Code")
+            )
+          ),
+          h(RepairCaseEquipment.Panel, {
+            h: h,
+            equipment: formData.equipment,
+            caseContext: formData,
+            deviceCategories: deviceCategories,
+            emptyText: '請點擊「加入設備」手動選擇或掃描 QR Code',
+            emptyClass: 'text-center py-8 text-gray-400 bg-gray-50 rounded-md border border-dashed'
+          }),
+          pickerOpen && h(RepairCaseEquipment.PickerModal, {
+            h: h,
+            items: storeEquipments,
+            onSelect: handleSelectEquipment,
+            onClose: function () { pickerOpen = false; rerender(); }
+          })
+        ),
+        h("section", {
         className: "bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-100 relative overflow-hidden"
       }, h("h3", {
         className: "text-lg font-bold text-blue-800 border-b pb-2 mb-4"
-      }, "3. 服務項目"), h("div", {
+      }, "4. 服務項目"), h("div", {
         className: "space-y-6 " + (!formData.equipment ? 'opacity-30 pointer-events-none' : '')
       }, !isOther && h("div", null, h("label", {
         className: "block text-sm mb-1"
@@ -801,12 +771,12 @@
         disabled: !formData.equipment,
         rows: "4",
         className: "w-full p-2 border rounded-md outline-none disabled:bg-gray-100 disabled:cursor-not-allowed",
-        placeholder: formData.equipment ? "請輸入備註..." : "請先掃描設備"
+        placeholder: formData.equipment ? "請輸入備註..." : "請先加入設備"
       })))), h("section", {
         className: "bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-100 relative overflow-hidden"
       }, h("h3", {
         className: "text-lg font-bold text-blue-800 border-b pb-2 mb-4"
-      }, "4. 維修結果"), h("div", {
+      }, "5. 維修結果"), h("div", {
         className: "space-y-6 " + (!formData.equipment ? 'opacity-30 pointer-events-none' : '')
       }, h("div", {
         className: "grid grid-cols-1 md:grid-cols-2 gap-6"
@@ -821,7 +791,7 @@
       }, h("option", {
         value: "",
         disabled: true
-      }, formData.equipment ? "請選擇" : "請先掃描設備"), PROCESS_STATUS_OPTIONS.map(function (opt) { return h("option", {
+      }, formData.equipment ? "請選擇" : "請先加入設備"), PROCESS_STATUS_OPTIONS.map(function (opt) { return h("option", {
         key: opt,
         value: opt
       }, opt); })))), h("div", {
@@ -861,10 +831,11 @@
         className: "px-8 py-2.5 bg-blue-600 text-white rounded-md flex items-center gap-2"
       }, Icons.Save({
         className: "h-5 w-5"
-      }), " 儲存"))));
+      }), " 儲存")))));
     });
   }
 
   window.AddCaseForm = AddCaseForm;
   window.EditCaseForm = EditCaseForm;
+  window.ExpectedTimeRangeFields = ExpectedTimeRangeFields;
 })();

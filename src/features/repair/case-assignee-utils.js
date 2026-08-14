@@ -85,6 +85,12 @@
     return [];
   }
 
+  function normalizeProcessStatus(status) {
+    if (!status || status === '其他') return null;
+    if (status === '待汰換') return '轉汰換';
+    return status;
+  }
+
   function normalizeRepairCase(record) {
     if (!record) return record;
     var assignees = getAssignees(record);
@@ -99,7 +105,10 @@
       assigneeMemberIds: getAssigneeMemberIds(record),
       performanceAssignees: performanceAssignees,
       vehicleId: record.vehicleId || '',
-      partnerVendorIds: asStringArray(record.partnerVendorIds)
+      partnerVendorIds: asStringArray(record.partnerVendorIds),
+      processStatus: Object.prototype.hasOwnProperty.call(record, 'processStatus')
+        ? normalizeProcessStatus(record.processStatus)
+        : record.processStatus
     });
     delete next.assignee;
     delete next.collaborators;
@@ -153,6 +162,7 @@
     formatAssignees: formatAssignees,
     includesAssignee: includesAssignee,
     getPerformanceAssignees: getPerformanceAssignees,
+    normalizeProcessStatus: normalizeProcessStatus,
     normalizeRepairCase: normalizeRepairCase,
     normalizeMaintenanceCase: normalizeMaintenanceCase,
     formatMaintenanceAssignees: formatMaintenanceAssignees,

@@ -4,8 +4,8 @@
  * 以頂層 const 宣告（classic script 的全域語彙作用域，後續所有 script 皆可存取）。
  * 純資料，無邏輯。
  */
-const PROCESS_STATUS_OPTIONS = ['待料件', '待報價', '待汰換', '轉原廠', '尚未處理完成', '案件完成', '其他'];
-const CASE_LIST_STATUS_FILTERS = ['未處理', '待料件', '待報價', '待汰換', '轉原廠', '尚未處理完成', '案件完成'];
+const PROCESS_STATUS_OPTIONS = ['待料件', '待報價', '轉汰換', '轉原廠', '尚未處理完成', '案件完成'];
+const CASE_LIST_STATUS_FILTERS = ['未處理', '待料件', '待報價', '轉汰換', '轉原廠', '尚未處理完成', '案件完成'];
 const WORK_CATEGORY_OPTIONS = ['一般叫修', '緊急叫修', '保養清潔', '其他'];
 const REPAIR_ITEMS = ['室內機', '室外機', '風管', '出風口', '控制面板', '跳代碼', '空氣門'];
 const REPAIR_REASONS = ['不冷', '異音', '溫控故障', '跳機', '異味', '漏水', '代碼', '其他'];

@@ -33,6 +33,12 @@
     return null;
   }
 
+  function formatLabel(vehicles, vehicleId) {
+    if (!vehicleId) return '';
+    var match = (vehicles || []).find(function (v) { return v && v.id === vehicleId; });
+    return (match && (match.plateNo || match.id)) || String(vehicleId);
+  }
+
   function getSelectOptions(vehicles, currentId) {
     var seen = {};
     var options = [];
@@ -98,6 +104,7 @@
     normalizePlate: normalizePlate,
     matchesKeyword: matchesKeyword,
     findDuplicatePlate: findDuplicatePlate,
+    formatLabel: formatLabel,
     getSelectOptions: getSelectOptions,
     getPersonInChargeOptions: getPersonInChargeOptions,
     hasOpenCasesForVehicle: hasOpenCasesForVehicle

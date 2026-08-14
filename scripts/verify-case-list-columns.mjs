@@ -59,7 +59,7 @@ async function evaluate(expression) {
 }
 
 const EXPECTED_HEADERS = [
-  '操作', '燈號', '案件狀態', '客戶名稱', '門市名稱', '工項分類', '案件編號', '建立日期',
+  '操作', '燈號', '案件狀態', '客戶名稱', '門市名稱', '工項分類', '案件編號', '叫修日期',
   '行政區域', '叫修項目', '叫修原因', '故障描述', '實際原因', '組別', '指派人員', '預計日期', '預計時間',
   '退回原因'
 ];
@@ -172,8 +172,12 @@ try {
     document.body.appendChild(node);
     var text = node.textContent;
     var result = {
-      hasServiceSection: text.indexOf('3. 服務項目') !== -1,
+      hasServiceSection: text.indexOf('4. 服務項目') !== -1,
       hasRemarkOnlySection: text.indexOf('3. 備註') !== -1,
+      hasScheduleSection: text.indexOf('1. 排程資料') !== -1,
+      hasCaseSection: text.indexOf('2. 案件資料') !== -1,
+      hasEquipmentSection: text.indexOf('3. 設備資料') !== -1,
+      hasResultSection: text.indexOf('5. 維修結果') !== -1,
       hasActualReason: text.indexOf('實際維修原因') !== -1,
       hasProcessMethods: text.indexOf('處理方式') !== -1,
       hasProcessStatus: text.indexOf('處理狀態') !== -1,
@@ -184,8 +188,12 @@ try {
     node.remove();
     return result;
   })()`);
-  assertTrue(otherView.hasServiceSection, '其他案件顯示「3. 服務項目」區塊');
+  assertTrue(otherView.hasServiceSection, '其他案件顯示「4. 服務項目」區塊');
   assertEq(otherView.hasRemarkOnlySection, false, '不再是只有「3. 備註」的區塊');
+  assertTrue(otherView.hasScheduleSection, '顯示「1. 排程資料」');
+  assertTrue(otherView.hasCaseSection, '顯示「2. 案件資料」');
+  assertTrue(otherView.hasEquipmentSection, '顯示「3. 設備資料」');
+  assertTrue(otherView.hasResultSection, '顯示「5. 維修結果」');
   assertEq(otherView.hasActualReason, false, '其他案件不顯示實際維修原因');
   assertTrue(otherView.hasProcessMethods, '顯示處理方式');
   assertTrue(otherView.hasProcessStatus, '顯示處理狀態');
@@ -208,7 +216,12 @@ try {
       // 原生 <select> 會被 searchable-select 攔截成 input[role=combobox]
       hasProcessStatus: !!node.querySelector('[name="processStatus"]'),
       hasProcessMethodTable: node.textContent.indexOf('處理方式') !== -1,
-      hasTimeRecords: node.textContent.indexOf('時間紀錄') !== -1
+      hasTimeRecords: node.textContent.indexOf('時間紀錄') !== -1,
+      hasScheduleSection: node.textContent.indexOf('1. 排程資料') !== -1,
+      hasManualPick: node.textContent.indexOf('手動選擇') !== -1,
+      hasScanQr: node.textContent.indexOf('掃描 QR Code') !== -1,
+      hasCustomerSelect: !!node.querySelector('select[name="customerName"]'),
+      processStatusOptions: PROCESS_STATUS_OPTIONS.slice()
     };
     node.remove();
     return result;
@@ -218,6 +231,17 @@ try {
   assertTrue(otherEdit.hasRemarks, '編輯表單保留備註欄');
   assertTrue(otherEdit.hasProcessStatus, '編輯表單有處理狀態');
   assertTrue(otherEdit.hasTimeRecords, '編輯表單有時間紀錄');
+  assertTrue(otherEdit.hasScheduleSection, '編輯表單有排程資料區塊');
+  assertTrue(otherEdit.hasManualPick, '編輯表單有手動選擇設備');
+  assertTrue(otherEdit.hasScanQr, '編輯表單有掃描 QR Code');
+  assertEq(otherEdit.hasCustomerSelect, false, '編輯表單案件資料為唯讀（無客戶下拉）');
+  assertEq(
+    otherEdit.processStatusOptions.indexOf('其他') === -1,
+    true,
+    '處理狀態不含「其他」'
+  );
+  assertTrue(otherEdit.processStatusOptions.indexOf('轉汰換') !== -1, '處理狀態含「轉汰換」');
+  assertEq(otherEdit.processStatusOptions.indexOf('待汰換') === -1, true, '處理狀態不含「待汰換」');
 
   console.log('\n一般叫修 — 實際維修原因仍保留');
   const normalDetail = await evaluate(`(function(){

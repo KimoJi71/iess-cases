@@ -8,9 +8,10 @@
   var caseStatus = IESS.caseStatus;
   var ALL_STATUS = '全部';
 
-  // 關鍵字置於模組層，避免上層（狀態篩選）重繪時被清空
+  // 關鍵字／燈號排序置於模組層，避免上層（狀態篩選）重繪時被清空
   var keyword = '';
   var appliedKeyword = '';
+  var indicatorSortDir = 0;
 
   function matchKeyword(c, kw) {
     if (!kw) return true;
@@ -77,6 +78,11 @@
         if (!matchStatus(c)) return false;
         return matchKeyword(c, kw);
       }).sort(function (a, b) {
+        if (indicatorSortDir) {
+          var diff = (caseStatus.getCaseListIndicatorRank(a, customers)
+            - caseStatus.getCaseListIndicatorRank(b, customers)) * indicatorSortDir;
+          if (diff) return diff;
+        }
         return new Date(b.createdAt || b.repairDate) - new Date(a.createdAt || a.repairDate);
       });
     }
@@ -268,7 +274,26 @@
             h('thead', { className: 'bg-gray-50 text-gray-700 border-b' },
               h('tr', null,
                 h('th', { className: 'p-3 font-semibold text-center min-w-[140px]' }, '操作'),
-                h('th', { className: 'p-3 font-semibold text-center' }, '燈號'),
+                h('th', {
+                  className: 'p-3 font-semibold text-center cursor-pointer select-none hover:bg-gray-100',
+                  title: '依燈號排序',
+                  'aria-sort': indicatorSortDir === 1 ? 'ascending'
+                    : indicatorSortDir === -1 ? 'descending' : 'none',
+                  onClick: function () {
+                    indicatorSortDir = indicatorSortDir === 1 ? -1 : 1;
+                    listPagination.resetPage();
+                    rerender();
+                  }
+                },
+                  h('span', { className: 'inline-flex items-center justify-center gap-0.5' },
+                    '燈號',
+                    Icons.ChevronDown({
+                      className: 'h-3.5 w-3.5' +
+                        (indicatorSortDir === -1 ? ' rotate-180' : '') +
+                        (indicatorSortDir === 0 ? ' opacity-40' : '')
+                    })
+                  )
+                ),
                 h('th', { className: 'p-3 font-semibold' }, '案件狀態'),
                 h('th', { className: 'p-3 font-semibold' }, '客戶名稱'),
                 h('th', { className: 'p-3 font-semibold' }, '門市名稱'),

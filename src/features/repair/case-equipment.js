@@ -18,6 +18,7 @@
     { key: 'manufactureDate', label: '出廠日期' },
     { key: 'installDate', label: '安裝日期' },
     { key: 'assetNumber', label: '資產編號' },
+    { key: 'serialNumber', label: '流水序號' },
     { key: 'status', label: '設備狀態' }
   ];
 
@@ -42,15 +43,89 @@
     });
   }
 
+  function listForCase(equipments, formData) {
+    var customerName = String((formData && formData.customerName) || '').trim();
+    var storeName = String((formData && formData.storeName) || '').trim();
+    if (!customerName || !storeName) return [];
+    return (equipments || []).filter(function (eq) {
+      return String(eq.customerName || '').trim() === customerName
+        && String(eq.storeName || '').trim() === storeName;
+    });
+  }
+
   function findEquipmentForScan(equipments, formData) {
     if (!equipments || !equipments.length) return null;
-    var customerName = String(formData.customerName || '').trim();
-    var storeName = String(formData.storeName || '').trim();
-    var matched = equipments.filter(function (eq) {
-      return eq.customerName === customerName && eq.storeName === storeName;
-    });
+    var matched = listForCase(equipments, formData);
     var source = matched.length ? matched[0] : equipments[0];
     return Object.assign({}, source);
+  }
+
+  function PickerModal(props) {
+    var h = props.h || IESS.h;
+    var Icons = IESS.Icons;
+    var items = props.items || [];
+    var onSelect = props.onSelect;
+    var onClose = props.onClose;
+
+    return h('div', { className: 'app-modal-overlay p-4' },
+      h('div', {
+        className: 'bg-white rounded-lg shadow-xl p-6 w-full max-w-4xl m-4 max-h-[80vh] overflow-hidden flex flex-col'
+      },
+        h('div', { className: 'flex justify-between items-center mb-4' },
+          h('h3', { className: 'text-lg font-bold text-gray-800' }, '選擇設備'),
+          h('button', {
+            type: 'button',
+            onClick: onClose,
+            className: 'text-gray-400 hover:text-gray-600'
+          }, Icons.X({ className: 'h-5 w-5' }))
+        ),
+        items.length === 0
+          ? h('div', {
+              className: 'p-8 text-center text-gray-400 border border-dashed rounded-md'
+            }, '此門市尚無設備資料')
+          : h('div', { className: 'overflow-x-auto border rounded-md' },
+              h('table', { className: 'w-full text-left text-sm whitespace-nowrap' },
+                h('thead', { className: 'bg-gray-50' },
+                  h('tr', null,
+                    h('th', { className: 'p-3 font-semibold' }, '設備名稱'),
+                    h('th', { className: 'p-3 font-semibold' }, '型號'),
+                    h('th', { className: 'p-3 font-semibold' }, '設備區域'),
+                    h('th', { className: 'p-3 font-semibold' }, '資產編號'),
+                    h('th', { className: 'p-3 font-semibold' }, '流水序號'),
+                    h('th', { className: 'p-3 font-semibold' }, '設備狀態'),
+                    h('th', { className: 'p-3 font-semibold text-right' }, '操作')
+                  )
+                ),
+                h('tbody', { className: 'divide-y' },
+                  items.map(function (eq) {
+                    return h('tr', { key: eq.id, className: 'hover:bg-blue-50/50' },
+                      h('td', { className: 'p-3' }, eq.deviceName || eq.name || '—'),
+                      h('td', { className: 'p-3' }, eq.model || '—'),
+                      h('td', { className: 'p-3' }, eq.area || '—'),
+                      h('td', { className: 'p-3' }, eq.assetNumber || '—'),
+                      h('td', { className: 'p-3' }, eq.serialNumber || '—'),
+                      h('td', { className: 'p-3' }, eq.status || '—'),
+                      h('td', { className: 'p-3 text-right' },
+                        h('button', {
+                          type: 'button',
+                          onClick: function () { onSelect(eq); },
+                          className: 'px-3 py-1.5 bg-blue-600 text-white rounded-md text-sm'
+                        }, '選擇')
+                      )
+                    );
+                  })
+                )
+              )
+            ),
+        h('div', { className: 'mt-4 flex justify-end' },
+          h('button', {
+            type: 'button',
+            onClick: onClose,
+            className: 'px-4 py-2 border rounded-md'
+          }, '取消')
+        )
+      )
+    );
   }
 
   function Panel(props) {
@@ -86,7 +161,9 @@
     FIELD_DEFS: FIELD_DEFS,
     getFieldValue: getFieldValue,
     getDisplayFields: getDisplayFields,
+    listForCase: listForCase,
     findEquipmentForScan: findEquipmentForScan,
+    PickerModal: PickerModal,
     Panel: Panel
   };
 })();

@@ -359,7 +359,8 @@
       case 'record-view':
         return h(ViewCaseForm, {
           viewingCase: s.viewingCase, setView: setView, backView: 'record-list',
-          processMethods: s.processMethods, deviceCategories: s.deviceCategories
+          processMethods: s.processMethods, deviceCategories: s.deviceCategories,
+          vehicles: s.vehicles, vendors: s.vendors
         });
       case 'review-list':
         return h(CaseReviewList, {
@@ -372,7 +373,8 @@
       case 'review-view':
         return h(ViewCaseForm, {
           viewingCase: s.viewingCase, setView: setView, backView: 'review-list',
-          processMethods: s.processMethods, deviceCategories: s.deviceCategories
+          processMethods: s.processMethods, deviceCategories: s.deviceCategories,
+          vehicles: s.vehicles, vendors: s.vendors
         });
       case 'maintenance-list':
         return h(MaintenanceList, {
@@ -472,7 +474,8 @@
         return h(ViewCaseForm, {
           viewingCase: StoreUtils.withStoreHistoryContext(s.viewingCase, s.historyStore),
           setView: setView, backView: 'store-history',
-          processMethods: s.processMethods, deviceCategories: s.deviceCategories
+          processMethods: s.processMethods, deviceCategories: s.deviceCategories,
+          vehicles: s.vehicles, vendors: s.vendors
         });
       case 'store-history-maintenance-view':
         return h(MaintenanceViewEditForm, {

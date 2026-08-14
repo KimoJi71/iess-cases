@@ -10,8 +10,8 @@
   'use strict';
 
   var RE_REPAIR_STATUSES = ['待料件', '待報價', '尚未處理完成'];
-  var CLOSE_BUTTON_STATUSES = ['待汰換', '轉原廠', '案件完成'];
-  var TRANSFER_STATUSES = ['待汰換', '轉原廠'];
+  var CLOSE_BUTTON_STATUSES = ['轉汰換', '轉原廠', '案件完成'];
+  var TRANSFER_STATUSES = ['轉汰換', '轉原廠'];
 
   var UNASSIGNED_ASSIGNEES = ['', '案件待辦', '尚未指派'];
 
@@ -70,15 +70,27 @@
     return 'none';
   }
 
+  var INDICATOR_RANK = { overdue: 0, warning: 1, none: 2, complete: 3 };
+
+  function getCaseListIndicatorKey(c, customers, now) {
+    if (c && c.processStatus === '案件完成') return 'complete';
+    return getOvertimeState(c, customers, now);
+  }
+
+  function getCaseListIndicatorRank(c, customers, now) {
+    var key = getCaseListIndicatorKey(c, customers, now);
+    return INDICATOR_RANK.hasOwnProperty(key) ? INDICATOR_RANK[key] : 2;
+  }
+
   function getCaseListIndicatorClass(c, customers) {
-    if (c && c.processStatus === '案件完成') {
+    var key = getCaseListIndicatorKey(c, customers);
+    if (key === 'complete') {
       return 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]';
     }
-    var state = getOvertimeState(c, customers);
-    if (state === 'overdue') {
+    if (key === 'overdue') {
       return 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]';
     }
-    if (state === 'warning') {
+    if (key === 'warning') {
       return 'bg-yellow-400 shadow-[0_0_8px_rgba(250,204,21,0.6)]';
     }
     return 'bg-gray-300';
@@ -118,7 +130,7 @@
   }
 
   function getInterimCompleteLabel(status) {
-    if (status === '待汰換') return '汰換完成';
+    if (status === '轉汰換') return '汰換完成';
     if (status === '轉原廠') return '轉原廠完成';
     return '';
   }
@@ -194,6 +206,7 @@
     getCaseListDispatchStatus: getCaseListDispatchStatus,
     getCaseListDispatchBadgeClass: getCaseListDispatchBadgeClass,
     getCaseListIndicatorClass: getCaseListIndicatorClass,
+    getCaseListIndicatorRank: getCaseListIndicatorRank,
     getOvertimeDeadline: getOvertimeDeadline,
     getOvertimeState: getOvertimeState,
     OVERTIME_WARNING_HOURS: OVERTIME_WARNING_HOURS,

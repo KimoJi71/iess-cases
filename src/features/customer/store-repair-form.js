@@ -7,7 +7,7 @@
  */
 (function () {
   'use strict';
-  var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful, TimeInput24 = IESS.TimeInput24;
+  var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful;
 
   var renderAssigneeMultiSelect = CaseAssigneeFields.renderAssigneeMultiSelect;
   var renderMemberMultiSelect = CaseAssigneeFields.renderMemberMultiSelect;
@@ -32,7 +32,8 @@
       expectedDate: '',
       assignees: [],
       assigneeMemberIds: [],
-      expectedTime: ''
+      expectedTimeStart: '',
+      expectedTimeEnd: ''
     };
 
     var inputCls = 'w-full p-2.5 border rounded-md outline-none focus:border-blue-500';
@@ -45,10 +46,7 @@
       }
       function handleSubmit(e) {
         e.preventDefault();
-        var payload = CaseAssigneeUtils.normalizeRepairCase(Object.assign({}, formData, {
-          expectedTimeStart: formData.expectedTime,
-          expectedTimeEnd: ''
-        }));
+        var payload = CaseAssigneeUtils.normalizeRepairCase(formData);
         var newCase = Object.assign({
           id: 'C' + Date.now(),
           caseNumber: todayDate.replace(/-/g, '') + String(Math.floor(Math.random() * 1000)).padStart(3, '0'),
@@ -63,7 +61,7 @@
           faultDesc: payload.faultDesc,
           expectedDate: payload.expectedDate,
           expectedTimeStart: payload.expectedTimeStart,
-          expectedTimeEnd: '',
+          expectedTimeEnd: payload.expectedTimeEnd,
           reporter: payload.reporter,
           serviceLevel: store.serviceLevel || '',
           companyCity: store.companyCity || '',
@@ -80,7 +78,7 @@
           completionDate: '',
           planDate: payload.expectedDate || '',
           planTimeStart: payload.expectedTimeStart || '',
-          planTimeEnd: '',
+          planTimeEnd: payload.expectedTimeEnd || '',
           isPerformanceIncluded: false,
           performanceAssignees: [],
           performanceAssignee: '',
@@ -174,6 +172,15 @@
 
               h('div', { className: 'col-span-full font-semibold text-lg text-blue-800 border-b pb-2 mt-4 mb-2' }, '排程'),
               h('div', null,
+                h('label', { className: 'block text-sm mb-1' }, '預計日期'),
+                h('input', { type: 'date', name: 'expectedDate', value: formData.expectedDate, onChange: handleChange, className: inputCls + ' h-[42px] box-border' })
+              ),
+              ExpectedTimeRangeFields({
+                startValue: formData.expectedTimeStart,
+                endValue: formData.expectedTimeEnd,
+                onChange: handleChange
+              }),
+              h('div', null,
                 h('label', { className: 'block text-sm mb-1' }, '組別'),
                 renderAssigneeMultiSelect(formData, function (next) {
                   formData.assignees = next;
@@ -187,14 +194,6 @@
                   formData.assigneeMemberIds = next;
                   rerender();
                 }, { id: 'store-repair-assignee-members' })
-              ),
-              h('div', null,
-                h('label', { className: 'block text-sm mb-1' }, '預計日期'),
-                h('input', { type: 'date', name: 'expectedDate', value: formData.expectedDate, onChange: handleChange, className: inputCls })
-              ),
-              h('div', null,
-                h('label', { className: 'block text-sm mb-1' }, '預計時間'),
-                h(TimeInput24, { name: 'expectedTime', value: formData.expectedTime, onChange: handleChange, className: 'w-full' })
               )
             )
           ),

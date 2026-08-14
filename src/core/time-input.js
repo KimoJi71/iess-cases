@@ -42,7 +42,7 @@
       onChange({ target: { name: name, value: hour + ':' + (minute || '00') } });
     }
 
-    var selectCls = 'p-2 border rounded-md outline-none focus:border-blue-500 bg-white min-w-0 flex-1';
+    var selectCls = 'h-[42px] px-2 border rounded-md outline-none focus:border-blue-500 bg-white min-w-0 flex-1';
     if (readOnly || disabled) selectCls += ' bg-gray-50 cursor-not-allowed';
 
     if (readOnly) {

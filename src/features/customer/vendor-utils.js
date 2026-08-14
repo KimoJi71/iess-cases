@@ -33,8 +33,17 @@
     });
   }
 
+  function formatCooperatorLabels(vendors, ids) {
+    var options = getCooperatorSelectOptions(vendors, ids);
+    return (ids || []).map(function (id) {
+      var opt = options.find(function (o) { return o.value === id; });
+      return (opt && opt.label) || id;
+    }).filter(Boolean).join('、');
+  }
+
   window.VendorUtils = {
     matchesKeyword: matchesKeyword,
-    getCooperatorSelectOptions: getCooperatorSelectOptions
+    getCooperatorSelectOptions: getCooperatorSelectOptions,
+    formatCooperatorLabels: formatCooperatorLabels
   };
 })();
