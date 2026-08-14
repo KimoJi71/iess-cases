@@ -325,6 +325,7 @@
       case 'list':
         return h(CaseList, {
           cases: s.cases, setCases: setCasesData, stores: s.stores, setStores: setStores,
+          customers: s.customers,
           setEditingCase: setEditingCase, setView: setView, showToast: showToast,
           statusFilter: s.statusFilter, setStatusFilter: setStatusFilter
         });

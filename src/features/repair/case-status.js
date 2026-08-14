@@ -25,38 +25,49 @@
     return !!((c && c.expectedDate) || (c && c.planDate));
   }
 
-  function getExpectedScheduleDate(c) {
-    return (c && (c.expectedDate || c.planDate)) || '';
+  var OVERTIME_WARNING_HOURS = 6;
+  var MS_PER_HOUR = 3600000;
+
+  /**
+   * 案件的逾時期限＝建立時間＋客戶設定的「逾時時間(時)」。
+   * 客戶未設定（或非正數）、案件無建立時間時回 null，代表不做逾時管控。
+   */
+  function getOvertimeDeadline(c, customers) {
+    if (!c) return null;
+    var hours = global.CustomerUtils
+      ? global.CustomerUtils.getOvertimeHours(customers, c.customerName)
+      : 0;
+    if (!hours) return null;
+    var start = global.IESS.caseDateTime.parse(c.createdAt || c.repairDate);
+    if (!start) return null;
+    return new Date(start.getTime() + hours * MS_PER_HOUR);
   }
 
-  function getExpectedScheduleTimeStart(c) {
-    return (c && (c.expectedTimeStart || c.planTimeStart)) || '';
+  /**
+   * 逾時燈號狀態：
+   * - 'overdue'：已過期限
+   * - 'warning'：距期限 6 小時內
+   * - 'none'：尚未接近期限，或未設定逾時管控
+   */
+  function getOvertimeState(c, customers, now) {
+    var deadline = getOvertimeDeadline(c, customers);
+    if (!deadline) return 'none';
+    var current = now || new Date();
+    var remainMs = deadline.getTime() - current.getTime();
+    if (remainMs <= 0) return 'overdue';
+    if (remainMs <= OVERTIME_WARNING_HOURS * MS_PER_HOUR) return 'warning';
+    return 'none';
   }
 
-  function isExpectedScheduleOverdue(c) {
-    var date = getExpectedScheduleDate(c);
-    if (!date) return false;
-    if (date < todayDate) return true;
-    if (date > todayDate) return false;
-
-    var timeStart = getExpectedScheduleTimeStart(c);
-    if (!timeStart) return false;
-
-    var parts = timeStart.split(':');
-    var now = new Date();
-    var scheduled = new Date(now);
-    scheduled.setHours(parseInt(parts[0], 10), parseInt(parts[1] || '0', 10), 0, 0);
-    return now > scheduled;
-  }
-
-  function getCaseListIndicatorClass(c) {
+  function getCaseListIndicatorClass(c, customers) {
     if (c && c.processStatus === '案件完成') {
       return 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]';
     }
-    if (c && c.workCategory === '緊急叫修') {
+    var state = getOvertimeState(c, customers);
+    if (state === 'overdue') {
       return 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]';
     }
-    if (isExpectedScheduleOverdue(c)) {
+    if (state === 'warning') {
       return 'bg-yellow-400 shadow-[0_0_8px_rgba(250,204,21,0.6)]';
     }
     return 'bg-gray-300';
@@ -172,7 +183,9 @@
     getCaseListDispatchStatus: getCaseListDispatchStatus,
     getCaseListDispatchBadgeClass: getCaseListDispatchBadgeClass,
     getCaseListIndicatorClass: getCaseListIndicatorClass,
-    isExpectedScheduleOverdue: isExpectedScheduleOverdue,
+    getOvertimeDeadline: getOvertimeDeadline,
+    getOvertimeState: getOvertimeState,
+    OVERTIME_WARNING_HOURS: OVERTIME_WARNING_HOURS,
     RE_REPAIR_STATUSES: RE_REPAIR_STATUSES,
     CLOSE_BUTTON_STATUSES: CLOSE_BUTTON_STATUSES
   };

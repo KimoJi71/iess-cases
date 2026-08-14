@@ -115,6 +115,17 @@
     return Math.max(0, Math.floor(n));
   }
 
+  /**
+   * 客戶的「逾時時間(時)」：叫修案件自建立時間起，多久算逾時。
+   * 未設定／空白／非正數一律回 0，呼叫端據此視為不做逾時管控。
+   */
+  function getOvertimeHours(customers, customerName) {
+    var cust = findCustomerByName(customers, customerName);
+    var n = Number(cust && cust.overtimeHours);
+    if (!isFinite(n) || n <= 0) return 0;
+    return n;
+  }
+
   function getMaintenanceStartMonths(customers, customerName) {
     var cust = findCustomerByName(customers, customerName);
     return normalizeStartMonths(cust && cust.maintenanceStartMonths);
@@ -198,6 +209,7 @@
     getPeriods: getPeriods,
     findPeriodForMonth: findPeriodForMonth,
     formatPeriodsLabel: formatPeriodsLabel,
+    getOvertimeHours: getOvertimeHours,
     getMaintenanceStartMonths: getMaintenanceStartMonths,
     getMaintenanceStartMonth: getMaintenanceStartMonth,
     isMaintenanceStartedForMonth: isMaintenanceStartedForMonth,

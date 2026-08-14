@@ -1,6 +1,6 @@
 /*
  * features/repair/case-list.js — 案件處理：案件列表（未結案）
- * props: { cases, setCases, stores, setStores, setEditingCase, setView, showToast, statusFilter, setStatusFilter }
+ * props: { cases, setCases, stores, setStores, customers, setEditingCase, setView, showToast, statusFilter, setStatusFilter }
  */
 (function () {
   'use strict';
@@ -31,6 +31,7 @@
     var setCases = props.setCases;
     var stores = props.stores;
     var setStores = props.setStores;
+    var customers = props.customers;
     var setEditingCase = props.setEditingCase;
     var setView = props.setView;
     var showToast = props.showToast;
@@ -118,7 +119,7 @@
     }
 
     function getIndicatorColor(c) {
-      return caseStatus.getCaseListIndicatorClass(c);
+      return caseStatus.getCaseListIndicatorClass(c, customers);
     }
 
     function renderRowActions(c, rerender) {
