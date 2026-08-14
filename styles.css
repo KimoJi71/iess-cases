@@ -21,37 +21,44 @@ body {
 /* ===== Searchable Select ===== */
 .searchable-select {
   position: relative;
-  width: 100%;
 }
 
 .searchable-select__input {
+  flex: 1 1 auto;
+  min-width: 0;
   width: 100%;
-  padding-right: 2.5rem;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 0.75rem center;
-  background-size: 1rem;
+  height: auto;
+  min-height: 0;
+  margin: 0;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  outline: none !important;
+  box-shadow: none !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  height: auto !important;
 }
 
-.searchable-select__input:disabled {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23d1d5db' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+.searchable-select__input::placeholder {
+  color: #9ca3af;
+  font-size: 0.875rem;
 }
 
 .searchable-select__toggle {
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 1;
+  position: static;
+  z-index: auto;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 2.5rem;
+  flex: 0 0 auto;
+  width: 1rem;
+  height: 1rem;
   margin: 0;
   padding: 0;
   border: 0;
   background: transparent;
-  color: transparent;
+  color: #6b7280;
   cursor: pointer;
 }
 
@@ -63,6 +70,7 @@ body {
 .searchable-select__chevron {
   width: 1rem;
   height: 1rem;
+  color: inherit;
   transition: transform 0.15s ease;
 }
 
@@ -689,7 +697,8 @@ body {
   width: 100%;
 }
 
-.multi-select__control {
+.multi-select__control,
+.searchable-select {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -699,17 +708,65 @@ body {
   border: 1px solid #d1d5db;
   border-radius: 0.375rem;
   background: #fff;
+  box-sizing: border-box;
+}
+
+.multi-select__control {
   cursor: pointer;
 }
 
-.multi-select__control:focus {
+.multi-select__control:focus,
+.searchable-select:focus-within {
   outline: none;
   border-color: #3b82f6;
 }
 
-.multi-select__control--disabled {
+.multi-select__control--disabled,
+.searchable-select--disabled,
+.searchable-select--readonly {
   background: #f9fafb;
   cursor: not-allowed;
+}
+
+.searchable-select--compact {
+  min-height: 0;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  gap: 0;
+}
+
+.searchable-select--compact.searchable-select:focus-within {
+  border-color: transparent;
+}
+
+.searchable-select--compact .searchable-select__input {
+  height: 2.625rem !important;
+  min-height: 2.625rem;
+  padding: 0.5rem 2.5rem 0.5rem 0.5rem !important;
+  border: 1px solid #d1d5db !important;
+  border-radius: 0.375rem !important;
+  background-color: #fff !important;
+}
+
+.searchable-select--compact.searchable-select--disabled .searchable-select__input,
+.searchable-select--compact.searchable-select--readonly .searchable-select__input {
+  background-color: #f9fafb !important;
+}
+
+.searchable-select--compact:focus-within .searchable-select__input {
+  border-color: #3b82f6 !important;
+}
+
+.searchable-select--compact .searchable-select__toggle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 2.5rem;
+  height: auto;
 }
 
 .multi-select__chips {

@@ -67,29 +67,6 @@
       }, status || '—');
     }
 
-    function equipmentStatusBadge(status) {
-      var map = {
-        運轉: 'bg-green-100 text-green-700',
-        轉汰換: 'bg-amber-100 text-amber-700',
-        已汰換: 'bg-gray-200 text-gray-600'
-      };
-      var label = status || EQUIP_STATUS_OPTIONS[0];
-      return h('span', {
-        className: 'px-2 py-0.5 rounded-full text-xs font-medium ' + (map[label] || 'bg-gray-100 text-gray-600')
-      }, label);
-    }
-
-    function equipmentLevelBadge(eq) {
-      if (!eq || !eq.model) return '—';
-      var level = EquipmentUtils.getLevel(eq);
-      var cls = level === '增額設備'
-        ? 'bg-amber-100 text-amber-700'
-        : 'bg-gray-100 text-gray-600';
-      return h('span', {
-        className: 'px-2 py-0.5 rounded-full text-xs font-medium ' + cls
-      }, level);
-    }
-
     return stateful(function (rerender) {
       var filtered = getFilteredEquipments();
       var pageResult = listPagination.slice(filtered);
@@ -236,24 +213,13 @@
               h('thead', { className: 'bg-gray-50 text-gray-700 border-b' },
                 h('tr', null,
                   h('th', { className: 'p-3 font-semibold text-center w-24' }, '操作'),
-                  h('th', { className: 'p-3 font-semibold' }, '設備分類'),
-                  h('th', { className: 'p-3 font-semibold' }, '品牌'),
-                  h('th', { className: 'p-3 font-semibold' }, '設備名稱'),
-                  h('th', { className: 'p-3 font-semibold' }, '設備規格'),
-                  h('th', { className: 'p-3 font-semibold' }, '型號'),
-                  h('th', { className: 'p-3 font-semibold' }, '設備等級'),
-                  h('th', { className: 'p-3 font-semibold' }, '設備區域'),
-                  h('th', { className: 'p-3 font-semibold' }, '出廠日期'),
-                  h('th', { className: 'p-3 font-semibold' }, '安裝日期'),
-                  h('th', { className: 'p-3 font-semibold' }, '資產編號'),
-                  h('th', { className: 'p-3 font-semibold' }, '流水序號'),
-                  h('th', { className: 'p-3 font-semibold' }, '設備狀態')
+                  EquipmentUtils.renderListHeaderCells(h)
                 )
               ),
               h('tbody', { className: 'divide-y divide-gray-100' },
                 filtered.length === 0
                   ? h('tr', null, h('td', {
-                      colspan: 13,
+                      colspan: 1 + EquipmentUtils.LIST_COLUMNS.length,
                       className: 'p-10 text-center text-gray-400 text-base'
                     }, '無資料'))
                   : pageResult.items.map(function (eq) {
@@ -269,18 +235,7 @@
                               className: 'p-1.5 text-red-600 hover:bg-red-100 rounded', icon: Icons.Trash2({ className: 'h-4 w-4' }) })
                           )
                         ),
-                        h('td', { className: 'p-3' }, eq.category || '—'),
-                        h('td', { className: 'p-3' }, eq.brand || '—'),
-                        h('td', { className: 'p-3 font-medium text-gray-800' }, eq.deviceName || eq.name || '—'),
-                        h('td', { className: 'p-3' }, eq.specification || '—'),
-                        h('td', { className: 'p-3' }, eq.model || '—'),
-                        h('td', { className: 'p-3' }, equipmentLevelBadge(eq)),
-                        h('td', { className: 'p-3' }, eq.area || '—'),
-                        h('td', { className: 'p-3' }, eq.manufactureDate || '—'),
-                        h('td', { className: 'p-3' }, eq.installDate || '—'),
-                        h('td', { className: 'p-3' }, eq.assetNumber || '—'),
-                        h('td', { className: 'p-3' }, eq.serialNumber || '—'),
-                        h('td', { className: 'p-3' }, equipmentStatusBadge(eq.status))
+                        EquipmentUtils.renderListDataCells(h, eq)
                       );
                     })
               )

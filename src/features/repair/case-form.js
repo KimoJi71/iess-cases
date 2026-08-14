@@ -390,6 +390,7 @@
     var newRecord = ProcessMethodUtils.normalizeProcessMethodSelection(processMethods, null);
     var pmColumns = ProcessMethodUtils.CASE_DISPLAY_COLUMNS;
     var pickerOpen = false;
+    var addEquipMenuOpen = false;
 
     return stateful(function (rerender) {
       var cat1Options = ProcessMethodUtils.getCat1OptionsFromMethods(processMethods);
@@ -450,6 +451,7 @@
       function assignEquipment(eq) {
         formData.equipment = Object.assign({}, eq);
         pickerOpen = false;
+        addEquipMenuOpen = false;
         rerender();
       }
       function handleSimulateScan(e) {
@@ -598,18 +600,41 @@
         h("section", { className: "bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-100" },
           h("div", { className: "flex flex-wrap justify-between items-center gap-3 border-b pb-2 mb-4" },
             h("h3", { className: "text-lg font-bold text-blue-800" }, "3. 設備資料"),
-            h("div", { className: "flex flex-wrap items-center gap-2" },
-              h("span", { className: "text-sm text-gray-600" }, "加入設備"),
+            h("div", { className: "relative" },
+              addEquipMenuOpen && h("div", {
+                className: "fixed inset-0 z-10",
+                onClick: function () { addEquipMenuOpen = false; rerender(); }
+              }),
               h("button", {
                 type: "button",
-                onClick: function () { pickerOpen = true; rerender(); },
-                className: "flex items-center gap-2 bg-white text-indigo-700 border border-indigo-200 px-4 py-2 rounded-md"
-              }, "手動選擇"),
-              h("button", {
-                type: "button",
-                onClick: handleSimulateScan,
-                className: "flex items-center gap-2 bg-indigo-50 text-indigo-700 px-4 py-2 rounded-md"
-              }, Icons.QrCode({ className: "h-4 w-4" }), " 掃描 QR Code")
+                onClick: function (e) {
+                  e.stopPropagation();
+                  addEquipMenuOpen = !addEquipMenuOpen;
+                  rerender();
+                },
+                className: "bg-indigo-50 text-indigo-700 hover:bg-indigo-100 px-4 py-2 rounded-md flex items-center gap-2 font-medium transition-colors border border-indigo-200"
+              }, Icons.Plus({ className: "h-4 w-4" }), " 加入設備", Icons.ChevronDown({ className: "h-4 w-4" })),
+              addEquipMenuOpen && h("div", {
+                className: "absolute right-0 mt-1 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-20 py-1"
+              },
+                h("button", {
+                  type: "button",
+                  className: "w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50",
+                  onClick: function () {
+                    addEquipMenuOpen = false;
+                    pickerOpen = true;
+                    rerender();
+                  }
+                }, "手動選擇"),
+                h("button", {
+                  type: "button",
+                  className: "w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2",
+                  onClick: function () {
+                    addEquipMenuOpen = false;
+                    handleSimulateScan();
+                  }
+                }, Icons.QrCode({ className: "h-4 w-4" }), " 掃描 QR Code")
+              )
             )
           ),
           h(RepairCaseEquipment.Panel, {

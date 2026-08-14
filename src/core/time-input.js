@@ -57,7 +57,8 @@
         disabled: disabled,
         onChange: function (e) { emit(e.target.value, parsed.minute); },
         className: selectCls,
-        'aria-label': '小時'
+        'aria-label': '小時',
+        'data-compact': true
       },
         h('option', { key: '', value: '' }, '—'),
         HOURS.map(function (hr) {
@@ -70,7 +71,8 @@
         disabled: disabled || !parsed.hour,
         onChange: function (e) { emit(parsed.hour, e.target.value); },
         className: selectCls,
-        'aria-label': '分鐘'
+        'aria-label': '分鐘',
+        'data-compact': true
       },
         h('option', { key: '', value: '' }, '—'),
         MINUTES.map(function (mn) {

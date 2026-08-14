@@ -203,13 +203,22 @@ try {
 
   console.log('\n編輯案件 — 工項分類「其他」');
   const otherEdit = await evaluate(`(function(){
-    var node = EditCaseForm({
+    var wrap = document.createElement('div');
+    document.body.appendChild(wrap);
+    wrap.appendChild(EditCaseForm({
       editingCase: window.__mkCase({ workCategory: '其他', equipment: { id: 'E1' } }),
       cases: [], setCases: function () {}, stores: [], customers: [], equipments: [],
       deviceCategories: [], processMethods: [],
       setView: function () {}, showToast: function () {}
+    }));
+    var addBtn = Array.prototype.find.call(wrap.querySelectorAll('button'), function (b) {
+      return b.textContent.indexOf('加入設備') !== -1;
     });
-    document.body.appendChild(node);
+    if (addBtn) addBtn.click();
+    var node = wrap.firstChild;
+    var btnLabels = Array.prototype.map.call(node.querySelectorAll('button'), function (b) {
+      return b.textContent.replace(/\\s+/g, ' ').trim();
+    });
     var result = {
       hasActualReason: !!node.querySelector('textarea[name="actualReason"]'),
       hasRemarks: !!node.querySelector('textarea[name="remarks"]'),
@@ -218,12 +227,12 @@ try {
       hasProcessMethodTable: node.textContent.indexOf('處理方式') !== -1,
       hasTimeRecords: node.textContent.indexOf('時間紀錄') !== -1,
       hasScheduleSection: node.textContent.indexOf('1. 排程資料') !== -1,
-      hasManualPick: node.textContent.indexOf('手動選擇') !== -1,
-      hasScanQr: node.textContent.indexOf('掃描 QR Code') !== -1,
+      hasManualPick: btnLabels.indexOf('手動選擇') !== -1,
+      hasScanQr: btnLabels.some(function (l) { return l.indexOf('掃描 QR Code') !== -1; }),
       hasCustomerSelect: !!node.querySelector('select[name="customerName"]'),
       processStatusOptions: PROCESS_STATUS_OPTIONS.slice()
     };
-    node.remove();
+    wrap.remove();
     return result;
   })()`);
   assertEq(otherEdit.hasActualReason, false, '編輯表單不顯示實際維修原因欄');

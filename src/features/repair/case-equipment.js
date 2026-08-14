@@ -63,13 +63,14 @@
   function PickerModal(props) {
     var h = props.h || IESS.h;
     var Icons = IESS.Icons;
-    var items = props.items || [];
+    var items = (props.items || []).slice().sort(function (a, b) {
+      return new Date(b.createdDate) - new Date(a.createdDate);
+    });
     var onSelect = props.onSelect;
     var onClose = props.onClose;
-
     return h('div', { className: 'app-modal-overlay p-4' },
       h('div', {
-        className: 'bg-white rounded-lg shadow-xl p-6 w-full max-w-4xl m-4 max-h-[80vh] overflow-hidden flex flex-col'
+        className: 'bg-white rounded-lg shadow-xl p-6 w-full max-w-7xl m-4 max-h-[80vh] overflow-hidden flex flex-col'
       },
         h('div', { className: 'flex justify-between items-center mb-4' },
           h('h3', { className: 'text-lg font-bold text-gray-800' }, '選擇設備'),
@@ -83,35 +84,25 @@
           ? h('div', {
               className: 'p-8 text-center text-gray-400 border border-dashed rounded-md'
             }, '此門市尚無設備資料')
-          : h('div', { className: 'overflow-x-auto border rounded-md' },
-              h('table', { className: 'w-full text-left text-sm whitespace-nowrap' },
-                h('thead', { className: 'bg-gray-50' },
+          : h('div', { className: 'overflow-x-auto border rounded-lg' },
+              h('table', { className: 'w-full text-left text-sm text-gray-600 whitespace-nowrap' },
+                h('thead', { className: 'bg-gray-50 text-gray-700 border-b' },
                   h('tr', null,
-                    h('th', { className: 'p-3 font-semibold' }, '設備名稱'),
-                    h('th', { className: 'p-3 font-semibold' }, '型號'),
-                    h('th', { className: 'p-3 font-semibold' }, '設備區域'),
-                    h('th', { className: 'p-3 font-semibold' }, '資產編號'),
-                    h('th', { className: 'p-3 font-semibold' }, '流水序號'),
-                    h('th', { className: 'p-3 font-semibold' }, '設備狀態'),
-                    h('th', { className: 'p-3 font-semibold text-right' }, '操作')
+                    h('th', { className: 'p-3 font-semibold text-center w-24' }, '操作'),
+                    EquipmentUtils.renderListHeaderCells(h)
                   )
                 ),
-                h('tbody', { className: 'divide-y' },
+                h('tbody', { className: 'divide-y divide-gray-100' },
                   items.map(function (eq) {
-                    return h('tr', { key: eq.id, className: 'hover:bg-blue-50/50' },
-                      h('td', { className: 'p-3' }, eq.deviceName || eq.name || '—'),
-                      h('td', { className: 'p-3' }, eq.model || '—'),
-                      h('td', { className: 'p-3' }, eq.area || '—'),
-                      h('td', { className: 'p-3' }, eq.assetNumber || '—'),
-                      h('td', { className: 'p-3' }, eq.serialNumber || '—'),
-                      h('td', { className: 'p-3' }, eq.status || '—'),
-                      h('td', { className: 'p-3 text-right' },
+                    return h('tr', { key: eq.id, className: 'hover:bg-blue-50/50 transition-colors' },
+                      h('td', { className: 'p-3 text-center' },
                         h('button', {
                           type: 'button',
                           onClick: function () { onSelect(eq); },
                           className: 'px-3 py-1.5 bg-blue-600 text-white rounded-md text-sm'
                         }, '選擇')
-                      )
+                      ),
+                      EquipmentUtils.renderListDataCells(h, eq)
                     );
                   })
                 )

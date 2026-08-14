@@ -387,8 +387,15 @@
       else if (readOnly) inputCls += ' bg-gray-50 cursor-default';
       else if (!isOpen) inputCls += ' cursor-pointer';
 
+      var wrapCls = 'searchable-select';
+      if (disabled) wrapCls += ' searchable-select--disabled';
+      else if (readOnly) wrapCls += ' searchable-select--readonly';
+      if (props.compact === true || props['data-compact'] === true || props['data-compact'] === 'true') {
+        wrapCls += ' searchable-select--compact';
+      }
+
       return h('div', {
-        className: 'searchable-select',
+        className: wrapCls,
         ref: function (node) {
           if (rootEl && rootEl !== node) removeMenu();
           rootEl = node;
