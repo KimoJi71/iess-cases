@@ -136,7 +136,12 @@
                 )
               )
             ),
-            h(ReadOnlyField, { label: '備註', value: viewingCase && viewingCase.remarks, fullWidth: true }),
+            h(ReadOnlyField, { label: '備註', value: viewingCase && viewingCase.remarks, fullWidth: true })
+          )
+        ),
+        h('section', { className: 'bg-white p-6 rounded-lg shadow-sm border border-gray-100' },
+          h('h3', { className: 'text-lg font-bold text-blue-800 border-b pb-2 mb-4' }, '4. 維修結果'),
+          h('div', { className: 'space-y-6' },
             h('div', { className: 'grid grid-cols-1 md:grid-cols-2 gap-6' },
               h(ReadOnlyField, { label: '處理狀態', value: (viewingCase && viewingCase.processStatus) || '—' })
             ),
@@ -151,7 +156,7 @@
                   label: '叫修時間',
                   value: caseDT.format(viewingCase && (viewingCase.createdAt || viewingCase.repairDate))
                 }),
-                h(ReadOnlyField, { label: '維修時間', value: caseDT.format(viewingCase && viewingCase.reRepairDate) }),
+                h(ReadOnlyField, { label: '到店時間', value: caseDT.format(viewingCase && viewingCase.reRepairDate) }),
                 showSecondRepairDate ? h(ReadOnlyField, { label: '再次維修時間', value: caseDT.format(viewingCase && viewingCase.secondRepairDate) }) : null,
                 h(ReadOnlyField, { label: '完成時間', value: caseDT.format(viewingCase && viewingCase.completionDate) })
               )

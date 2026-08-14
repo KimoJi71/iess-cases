@@ -6,6 +6,24 @@
   'use strict';
   var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful;
   var caseStatus = IESS.caseStatus;
+  var ALL_STATUS = '全部';
+
+  // 關鍵字置於模組層，避免上層（狀態篩選）重繪時被清空
+  var keyword = '';
+  var appliedKeyword = '';
+
+  function matchKeyword(c, kw) {
+    if (!kw) return true;
+    return [
+      c.caseNumber, c.customerName, c.storeName, c.workCategory,
+      c.repairItem, c.repairReason, c.faultDesc, c.actualReason,
+      StoreUtils.getRecordArea(c),
+      CaseAssigneeUtils.formatAssignees(c),
+      CaseAssigneeUtils.formatAssigneeMembers(c)
+    ].filter(Boolean).some(function (v) {
+      return String(v).toLowerCase().includes(kw);
+    });
+  }
 
   function formatCreatedAt(c) {
     return IESS.caseDateTime.format(c.createdAt || c.repairDate);
@@ -46,20 +64,31 @@
       return caseStatus.isTransferStatus(c.processStatus) && c.isListClosed;
     }
 
+    function matchStatus(c) {
+      if (statusFilter === ALL_STATUS) return true;
+      if (statusFilter === '未處理') return !c.processStatus;
+      return c.processStatus === statusFilter;
+    }
+
     function getFiltered() {
+      var kw = appliedKeyword.trim().toLowerCase();
       return cases.filter(function (c) {
         if (!isActiveInList(c)) return false;
-        if (statusFilter === '未處理') return !c.processStatus;
-        return c.processStatus === statusFilter;
+        if (!matchStatus(c)) return false;
+        return matchKeyword(c, kw);
       }).sort(function (a, b) {
         return new Date(b.createdAt || b.repairDate) - new Date(a.createdAt || a.repairDate);
       });
     }
 
     function getStatusCounts() {
-      return cases.filter(isActiveInList).reduce(function (acc, c) {
+      var kw = appliedKeyword.trim().toLowerCase();
+      return cases.filter(function (c) {
+        return isActiveInList(c) && matchKeyword(c, kw);
+      }).reduce(function (acc, c) {
         var key = c.processStatus || '未處理';
         acc[key] = (acc[key] || 0) + 1;
+        acc[ALL_STATUS] = (acc[ALL_STATUS] || 0) + 1;
         return acc;
       }, {});
     }
@@ -177,7 +206,7 @@
 
       function statusFilterBtn(status, label) {
         return h('button', {
-          onClick: function () { setStatusFilter(status); },
+          onClick: function () { listPagination.resetPage(); setStatusFilter(status); },
           className: 'px-4 py-2 rounded-full text-sm font-medium transition-all ' +
             (statusFilter === status
               ? 'bg-blue-100 text-blue-800 border-2 border-blue-500'
@@ -188,16 +217,47 @@
           }, statusCounts[status]));
       }
 
+      function handleSearch() { appliedKeyword = keyword; listPagination.resetPage(); rerender(); }
+      function handleKeyDown(e) { if (e.key === 'Enter') handleSearch(); }
+
       return h('div', { className: 'bg-white p-6 rounded-lg shadow-sm border border-gray-100' },
-        h('div', { className: 'flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4' },
-          h('div', { className: 'flex flex-wrap gap-2' },
-            CASE_LIST_STATUS_FILTERS.map(function (status) { return statusFilterBtn(status, status); })
+        h('div', { className: 'flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4' },
+          h('div', { className: 'flex flex-wrap items-end gap-3' },
+            h('div', null,
+              h('label', { className: 'block text-xs text-gray-500 mb-1' }, '關鍵字'),
+              h('input', {
+                type: 'text',
+                value: keyword,
+                onChange: function (e) { keyword = e.target.value; rerender(); },
+                onKeyDown: handleKeyDown,
+                placeholder: '案件編號 / 客戶 / 門市 / 叫修項目 / 故障描述 / 人員',
+                className: 'w-80 max-w-full p-2.5 border rounded-md outline-none focus:border-blue-500'
+              })
+            ),
+            h('button', {
+              onClick: handleSearch,
+              className: 'flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-md shadow-sm transition-colors'
+            }, Icons.Search({ className: 'h-4 w-4' }), ' 搜尋'),
+            !!appliedKeyword && h('button', {
+              onClick: function () {
+                keyword = '';
+                appliedKeyword = '';
+                listPagination.resetPage();
+                rerender();
+              },
+              className: 'px-4 py-2.5 border rounded-md text-gray-600 hover:bg-gray-50 transition-colors'
+            }, '清除')
           ),
           iconActionBtn({
             label: '新增叫修案件',
-            className: 'flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white p-2.5 rounded-full shadow-sm transition-colors',
+            className: 'flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white p-2.5 rounded-full shadow-sm transition-colors shrink-0',
             onClick: function () { setView('add'); },
             icon: Icons.Plus({ className: 'h-5 w-5' })
+          })
+        ),
+        h('div', { className: 'flex flex-wrap gap-2 mb-6' },
+          [ALL_STATUS].concat(CASE_LIST_STATUS_FILTERS).map(function (status) {
+            return statusFilterBtn(status, status);
           })
         ),
         h('div', {

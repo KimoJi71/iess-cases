@@ -106,7 +106,7 @@
     viewingCase: null,
     historyStore: null,
     customerBackView: '',
-    statusFilter: '未處理',
+    statusFilter: '全部',
     currentAccountId: 'ACC1'
   });
 

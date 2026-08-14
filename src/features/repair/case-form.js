@@ -753,7 +753,13 @@
         rows: "4",
         className: "w-full p-2 border rounded-md outline-none disabled:bg-gray-100 disabled:cursor-not-allowed",
         placeholder: formData.equipment ? "請輸入備註..." : "請先掃描設備"
-      })), h("div", {
+      })))), h("section", {
+        className: "bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-100 relative overflow-hidden"
+      }, h("h3", {
+        className: "text-lg font-bold text-blue-800 border-b pb-2 mb-4"
+      }, "4. 維修結果"), h("div", {
+        className: "space-y-6 " + (!formData.equipment ? 'opacity-30 pointer-events-none' : '')
+      }, h("div", {
         className: "grid grid-cols-1 md:grid-cols-2 gap-6"
       }, h("div", null, h("label", {
         className: "block text-sm mb-1"
@@ -769,7 +775,7 @@
       }, formData.equipment ? "請選擇" : "請先掃描設備"), PROCESS_STATUS_OPTIONS.map(function (opt) { return h("option", {
         key: opt,
         value: opt
-      }, opt); }))), h("div", {
+      }, opt); })))), h("div", {
         className: "pt-4 border-t border-gray-100"
       }, h("h4", {
         className: "text-sm font-semibold text-gray-800 mb-4"
@@ -796,7 +802,7 @@
         name: 'completionDate',
         value: formData.completionDate,
         onChange: handleChange
-      }))))), h("div", {
+      })))), h("div", {
         className: "mt-8 pt-6 border-t flex justify-end gap-4"
       }, h("button", {
         onClick: function () { setView('list'); },
