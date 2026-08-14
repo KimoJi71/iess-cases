@@ -187,6 +187,24 @@ const INITIAL_VENDORS = [{
   remarks: '',
   createdDate: twoDaysAgoDate,
   contacts: []
+}, {
+  id: 'VEND4',
+  name: '東陽機電工程',
+  type: '協力商',
+  taxId: '44556677',
+  principal: '黃建國',
+  phone: '07-311-7788',
+  fax: '',
+  address: '高雄市前鎮區中山二路100號',
+  remarks: '南部配管與吊裝協力。',
+  createdDate: twoDaysAgoDate,
+  contacts: [{
+    id: 501,
+    title: '現場領班',
+    name: '吳志偉',
+    phone: '0912-555-666',
+    email: 'wu@dongyang.example.com'
+  }]
 }];
 
 // --- 初始模擬門市列表 (客戶建檔 - 門市管理) ---
@@ -804,6 +822,7 @@ const INITIAL_CASES = [{
   processStatus: '待料件',
   isClosed: false,
   vehicleId: 'VEH1',
+  partnerVendorIds: ['VEND2'],
   serviceLevel: 'A 保修(一年四次)',
   storeAddress: '台北市信義區松智路X號',
   reporter: '林店長',

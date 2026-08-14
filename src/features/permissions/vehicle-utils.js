@@ -33,6 +33,22 @@
     return null;
   }
 
+  function getSelectOptions(vehicles, currentId) {
+    var seen = {};
+    var options = [];
+    (vehicles || []).forEach(function (v) {
+      if (!v || !v.id || seen[v.id]) return;
+      seen[v.id] = true;
+      options.push({ value: v.id, label: v.plateNo || v.id });
+    });
+    if (currentId && !seen[currentId]) {
+      options.push({ value: currentId, label: currentId });
+    }
+    return options.sort(function (a, b) {
+      return String(a.label).localeCompare(String(b.label), 'zh-Hant');
+    });
+  }
+
   function getPersonInChargeOptions(accounts, currentValue) {
     var names = (accounts || []).filter(function (a) {
       return a && a.enabled;
@@ -82,6 +98,7 @@
     normalizePlate: normalizePlate,
     matchesKeyword: matchesKeyword,
     findDuplicatePlate: findDuplicatePlate,
+    getSelectOptions: getSelectOptions,
     getPersonInChargeOptions: getPersonInChargeOptions,
     hasOpenCasesForVehicle: hasOpenCasesForVehicle
   };

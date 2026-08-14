@@ -89,7 +89,9 @@
     var next = Object.assign({}, record, {
       assignees: assignees,
       assigneeMemberIds: getAssigneeMemberIds(record),
-      performanceAssignees: performanceAssignees
+      performanceAssignees: performanceAssignees,
+      vehicleId: record.vehicleId || '',
+      partnerVendorIds: asStringArray(record.partnerVendorIds)
     });
     delete next.assignee;
     delete next.collaborators;

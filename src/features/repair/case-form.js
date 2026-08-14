@@ -1,8 +1,9 @@
 /*
  * features/repair/case-form.js — 案件處理：新增案件表單 / 編輯案件表單
  * props:
- *   AddCaseForm  { cases, setCases, setView, showToast }
- *   EditCaseForm { editingCase, cases, setCases, processMethods, setView, showToast }
+ *   AddCaseForm  { cases, setCases, stores, customers, vehicles, vendors, setView, showToast }
+ *   EditCaseForm { editingCase, cases, setCases, stores, customers, vehicles, vendors,
+ *                  processMethods, setView, showToast }
  */
 (function () {
   'use strict';
@@ -57,11 +58,35 @@
   var renderAssigneeMultiSelect = CaseAssigneeFields.renderAssigneeMultiSelect;
   var renderMemberMultiSelect = CaseAssigneeFields.renderMemberMultiSelect;
 
+  function renderVehicleSelect(formData, vehicles, handleChange, className) {
+    var options = VehicleUtils.getSelectOptions(vehicles, formData.vehicleId);
+    return h('select', {
+      name: 'vehicleId',
+      value: formData.vehicleId || '',
+      onChange: handleChange,
+      className: className
+    }, h('option', { value: '' }, '請選擇'), options.map(function (opt) {
+      return h('option', { key: opt.value, value: opt.value }, opt.label);
+    }));
+  }
+
+  function renderPartnerVendorMultiSelect(formData, vendors, onChange, id) {
+    return IESS.MultiSelect({
+      id: id,
+      options: VendorUtils.getCooperatorSelectOptions(vendors, formData.partnerVendorIds),
+      value: formData.partnerVendorIds || [],
+      onChange: onChange,
+      placeholder: '請選擇協力廠商'
+    });
+  }
+
   function AddCaseForm(props) {
     var cases = props.cases;
     var setCases = props.setCases;
     var stores = props.stores;
     var customers = props.customers;
+    var vehicles = props.vehicles || [];
+    var vendors = props.vendors || [];
     var setView = props.setView;
     var showToast = props.showToast;
     var currentOperatorName = props.currentOperatorName || '';
@@ -78,6 +103,8 @@
       faultDesc: '',
       assignees: [],
       assigneeMemberIds: [],
+      vehicleId: '',
+      partnerVendorIds: [],
       expectedDate: '',
       expectedTimeStart: '',
       expectedTimeEnd: '',
@@ -260,6 +287,15 @@
         rerender();
       }, { id: 'add-case-assignee-members' })), h("div", null, h("label", {
         className: "block text-sm mb-1"
+      }, "使用車輛"), renderVehicleSelect(
+        formData, vehicles, handleChange, "w-full p-2.5 border rounded-md outline-none"
+      )), h("div", null, h("label", {
+        className: "block text-sm mb-1"
+      }, "協力廠商"), renderPartnerVendorMultiSelect(formData, vendors, function (next) {
+        formData.partnerVendorIds = next;
+        rerender();
+      }, 'add-case-partner-vendors')), h("div", null, h("label", {
+        className: "block text-sm mb-1"
       }, "預計日期"), h("input", {
         type: "date",
         name: "expectedDate",
@@ -301,6 +337,8 @@
     var setCases = props.setCases;
     var stores = props.stores;
     var customers = props.customers;
+    var vehicles = props.vehicles || [];
+    var vendors = props.vendors || [];
     var equipments = props.equipments || [];
     var deviceCategories = props.deviceCategories || [];
     var processMethods = props.processMethods || [];
@@ -556,6 +594,17 @@
         formData.assigneeMemberIds = next;
         rerender();
       }, { id: 'edit-case-assignee-members' })), h("div", null, h("span", {
+        className: "text-gray-500 block mb-1"
+      }, "使用車輛"), renderVehicleSelect(
+        formData, vehicles, handleChange, "w-full p-2 border rounded-md outline-none"
+      )), h("div", {
+        className: "col-span-full md:col-span-2"
+      }, h("span", {
+        className: "text-gray-500 block mb-1"
+      }, "協力廠商"), renderPartnerVendorMultiSelect(formData, vendors, function (next) {
+        formData.partnerVendorIds = next;
+        rerender();
+      }, 'edit-case-partner-vendors')), h("div", null, h("span", {
         className: "text-gray-500 block mb-1"
       }, "預計日期"), h("input", {
         type: "date",

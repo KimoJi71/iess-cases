@@ -338,6 +338,7 @@
       case 'add':
         return h(AddCaseForm, {
           cases: s.cases, setCases: setCasesData, stores: s.stores, customers: s.customers,
+          vehicles: s.vehicles, vendors: s.vendors,
           setView: setView, showToast: showToast,
           currentOperatorName: getCurrentOperatorName(s.accounts, s.currentAccountId)
         });
@@ -345,6 +346,7 @@
         return h(EditCaseForm, {
           editingCase: s.editingCase, cases: s.cases, setCases: setCasesData,
           stores: s.stores, customers: s.customers, equipments: s.equipments,
+          vehicles: s.vehicles, vendors: s.vendors,
           deviceCategories: s.deviceCategories,
           processMethods: s.processMethods,
           setView: setView, showToast: showToast,
