@@ -10,6 +10,7 @@
   var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful, TimeInput24 = IESS.TimeInput24;
 
   var renderAssigneeMultiSelect = CaseAssigneeFields.renderAssigneeMultiSelect;
+  var renderMemberMultiSelect = CaseAssigneeFields.renderMemberMultiSelect;
 
   function StoreRepairForm(props) {
     var store = props.store || {};
@@ -30,6 +31,7 @@
       faultDesc: '',
       expectedDate: '',
       assignees: [],
+      assigneeMemberIds: [],
       expectedTime: ''
     };
 
@@ -175,8 +177,16 @@
                 h('label', { className: 'block text-sm mb-1' }, '組別'),
                 renderAssigneeMultiSelect(formData, function (next) {
                   formData.assignees = next;
+                  formData.assigneeMemberIds = CaseAssigneeFields.syncMemberIds(next, formData.assigneeMemberIds);
                   rerender();
                 }, { id: 'store-repair-assignees' })
+              ),
+              h('div', null,
+                h('label', { className: 'block text-sm mb-1' }, '指派人員'),
+                renderMemberMultiSelect(formData, function (next) {
+                  formData.assigneeMemberIds = next;
+                  rerender();
+                }, { id: 'store-repair-assignee-members' })
               ),
               h('div', null,
                 h('label', { className: 'block text-sm mb-1' }, '預計日期'),

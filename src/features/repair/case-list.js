@@ -219,6 +219,7 @@
                 h('th', { className: 'p-3 font-semibold min-w-[200px]' }, '故障描述'),
                 h('th', { className: 'p-3 font-semibold min-w-[150px]' }, '實際原因'),
                 h('th', { className: 'p-3 font-semibold' }, '組別'),
+                h('th', { className: 'p-3 font-semibold' }, '指派人員'),
                 h('th', { className: 'p-3 font-semibold' }, '預計日期'),
                 h('th', { className: 'p-3 font-semibold' }, '預計時間'),
                 h('th', { className: 'p-3 font-semibold' }, '退回原因')
@@ -226,7 +227,7 @@
             ),
             h('tbody', { className: 'divide-y divide-gray-100' },
               pageResult.items.length === 0
-                ? h('tr', null, h('td', { colspan: 17, className: 'p-10 text-center text-gray-400 text-base' }, '無資料'))
+                ? h('tr', null, h('td', { colspan: 18, className: 'p-10 text-center text-gray-400 text-base' }, '無資料'))
                 : pageResult.items.map(function (c) {
                 var isOther = c.workCategory === '其他';
                 return h('tr', { key: c.id, className: 'hover:bg-blue-50/50 transition-colors' },
@@ -266,6 +267,7 @@
                     title: c.actualReason || ''
                   }, c.actualReason || '—'),
                   h('td', { className: 'p-3' }, CaseAssigneeUtils.formatAssignees(c)),
+                  h('td', { className: 'p-3' }, CaseAssigneeUtils.formatAssigneeMembers(c) || '—'),
                   h('td', { className: 'p-3' }, formatExpectedDate(c)),
                   h('td', { className: 'p-3' }, formatExpectedTime(c)),
                   h('td', {

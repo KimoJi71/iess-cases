@@ -1971,6 +1971,13 @@ INITIAL_MAINTENANCE_CASES.forEach(function (c) {
   if (c.completionDate) c.completionDate = IESS.caseDateTime.format(c.completionDate);
   if (c.closeDate) c.closeDate = IESS.caseDateTime.format(c.closeDate);
 });
+
+// 保養單的組別改為多選：把種子資料的單值 assignee 轉成 assignees[]，全站只讀一種形態。
+INITIAL_MAINTENANCE_CASES.forEach(function (c) {
+  var normalized = CaseAssigneeUtils.normalizeMaintenanceCase(c);
+  Object.keys(c).forEach(function (k) { delete c[k]; });
+  Object.assign(c, normalized);
+});
 INITIAL_PROJECT_CASES.forEach(function (c) {
   syncProjectStoreFields(c, INITIAL_STORES);
   if (c.closeDate) c.closeDate = IESS.caseDateTime.format(c.closeDate);
@@ -2096,11 +2103,13 @@ const INITIAL_PERFORMANCE_AREAS = [
 ];
 
 // 一個行政區只能歸屬一組，四組的 districts 必須互斥（見 AssigneeUtils.findConflictingDistricts）
+// B組的李美華（ACC3）是停用帳號，刻意保留：指派人員選單只列啟用中的組員，
+// 這組資料同時示範「組別有成員，但其中一位已停用」的情況。
 const INITIAL_ASSIGNEES = [
-  { id: 'ASG1', name: 'A組', leaderId: 'ACC2', districts: ['台北市信義區', '台北市中山區'], memberIds: ['ACC2'], createdDate: todayDate },
-  { id: 'ASG2', name: 'B組', leaderId: 'ACC3', districts: ['台中市中區', '台中市西屯區'], memberIds: ['ACC3'], createdDate: todayDate },
-  { id: 'ASG3', name: 'C組', districts: ['高雄市左營區'], memberIds: [], createdDate: todayDate },
-  { id: 'ASG4', name: 'D組', districts: ['台北市大安區', '台中市北屯區'], memberIds: [], createdDate: todayDate }
+  { id: 'ASG1', name: 'A組', leaderId: 'ACC2', districts: ['台北市信義區', '台北市中山區'], memberIds: ['ACC2', 'ACC4'], createdDate: todayDate },
+  { id: 'ASG2', name: 'B組', leaderId: 'ACC5', districts: ['台中市中區', '台中市西屯區'], memberIds: ['ACC3', 'ACC5'], createdDate: todayDate },
+  { id: 'ASG3', name: 'C組', leaderId: 'ACC6', districts: ['高雄市左營區'], memberIds: ['ACC6'], createdDate: todayDate },
+  { id: 'ASG4', name: 'D組', leaderId: 'ACC7', districts: ['台北市大安區', '台中市北屯區'], memberIds: ['ACC7'], createdDate: todayDate }
 ];
 
 const INITIAL_ACCOUNTS = [{
@@ -2134,6 +2143,50 @@ const INITIAL_ACCOUNTS = [{
   role: '課員',
   enabled: false,
   level: 1,
+  permissions: _buildLimitedPermissions(),
+  createdDate: twoDaysAgoDate
+}, {
+  id: 'ACC4',
+  name: '陳志豪',
+  username: 'chenzh',
+  passwordHash: AccountUtils.hashPassword('Pass1234'),
+  email: 'chenzh@jinchuan.example.com',
+  role: '課員',
+  enabled: true,
+  level: 1,
+  permissions: _buildLimitedPermissions(),
+  createdDate: twoDaysAgoDate
+}, {
+  id: 'ACC5',
+  name: '林雅婷',
+  username: 'linyt',
+  passwordHash: AccountUtils.hashPassword('Pass1234'),
+  email: 'linyt@jinchuan.example.com',
+  role: '課員',
+  enabled: true,
+  level: 1,
+  permissions: _buildLimitedPermissions(),
+  createdDate: twoDaysAgoDate
+}, {
+  id: 'ACC6',
+  name: '張建國',
+  username: 'zhangjg',
+  passwordHash: AccountUtils.hashPassword('Pass1234'),
+  email: 'zhangjg@jinchuan.example.com',
+  role: '課員',
+  enabled: true,
+  level: 1,
+  permissions: _buildLimitedPermissions(),
+  createdDate: twoDaysAgoDate
+}, {
+  id: 'ACC7',
+  name: '黃淑芬',
+  username: 'huangsf',
+  passwordHash: AccountUtils.hashPassword('Pass1234'),
+  email: 'huangsf@jinchuan.example.com',
+  role: '實習生',
+  enabled: true,
+  level: 2,
   permissions: _buildLimitedPermissions(),
   createdDate: twoDaysAgoDate
 }];

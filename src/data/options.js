@@ -10,6 +10,13 @@ const WORK_CATEGORY_OPTIONS = ['一般叫修', '緊急叫修', '保養清潔', '
 const REPAIR_ITEMS = ['室內機', '室外機', '風管', '出風口', '控制面板', '跳代碼', '空氣門'];
 const REPAIR_REASONS = ['不冷', '異音', '溫控故障', '跳機', '異味', '漏水', '代碼', '其他'];
 const ASSIGNEES = ['A組', 'B組', 'C組', 'D組'];
+// 指派人員選單資料：依組別分群的成員帳號。
+// 形態同 IESS.MultiSelect 的分組 options：[{ group, options: [{ value: 帳號 id, label: 姓名 }] }]
+// 內容由 AssigneeUtils.syncAssigneeMemberGroups() 依「組別主檔 × 帳號主檔」重建。
+const ASSIGNEE_MEMBER_GROUPS = [];
+// 帳號 id → 姓名的對照表，含停用與已離組的帳號，
+// 讓舊案件上已存的指派人員仍顯示得出姓名而不是裸 id。
+const ASSIGNEE_MEMBER_LABELS = {};
 const ACCOUNT_ROLE_OPTIONS = ['課長', '副課長', '課員', '實習生'];
 const CUSTOMER_OPTIONS = ['屈臣氏', '星巴克', '萊爾富', '統一超商', '全家便利商店'];
 const STORE_OPTIONS = ['台北信義店', '台中旗艦店', '高雄左營店', '站前店', '中山店'];

@@ -74,7 +74,7 @@
     (maintenanceCases || []).forEach(function (c) {
       if (!c || !c.isClosed) return;
       if (c.customerName !== customerName) return;
-      if (AssigneeUtils.getPerformanceAssignee(c) !== assignee) return;
+      if (AssigneeUtils.getPerformanceAssigneeNames(c).indexOf(assignee) === -1) return;
       var dateStr = String(c.completionDate || c.planDate || '');
       if (dateStr.slice(0, 4) !== yearPrefix) return;
       var month = Number(dateStr.slice(5, 7));

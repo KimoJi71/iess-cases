@@ -9,6 +9,13 @@
  *                 依上層分組顯示（如客戶→門市），同名選項可用不同 value 區分
  *   value    string[] 已選項目（受控，元件不保存資料），內容為 option 的 value
  *   onChange function (nextValues)
+ *   showEmptyGroups
+ *            預設 false：沒有選項的群組整個略過不畫（多數呼叫端的群組只是分類，
+ *            空群組畫出來只是雜訊）。設為 true 時改為畫出群組標題並在其下標註
+ *            emptyGroupText——用在「群組本身就是使用者剛選的東西」的情境（例如
+ *            指派人員：使用者選了 B組卻什麼都沒出現，會誤以為是壞掉）。
+ *   emptyGroupText
+ *            showEmptyGroups 時，空群組底下顯示的說明文字，預設「無可選項目」
  *
  * 選單以 portal 掛在 document.body 並 fixed 定位，避免被外層 overflow 裁切
  * （與 core/searchable-select.js 相同策略）。同一時間只會有一個選單展開。
@@ -93,6 +100,8 @@
       var value = (props.value || []).map(String);
       var disabled = !!props.disabled;
       var placeholder = props.placeholder || '請選擇';
+      var showEmptyGroups = !!props.showEmptyGroups;
+      var emptyGroupText = props.emptyGroupText || '無可選項目';
       var className = props.className || '';
       var onChange = props.onChange;
 
@@ -167,7 +176,7 @@
 
         positionMenu();
 
-        if (!flatOptions.length) {
+        if (!flatOptions.length && !showEmptyGroups) {
           var empty = document.createElement('li');
           empty.className = 'multi-select__empty';
           empty.textContent = '無可選項目';
@@ -176,13 +185,20 @@
         }
 
         groups.forEach(function (group) {
-          if (!group.options.length) return;
+          if (!group.options.length && !(showEmptyGroups && group.group != null)) return;
           if (group.group != null) {
             var head = document.createElement('li');
             head.className = 'multi-select__group';
             head.setAttribute('role', 'presentation');
             head.textContent = group.group;
             menuEl.appendChild(head);
+          }
+          if (!group.options.length) {
+            var groupEmpty = document.createElement('li');
+            groupEmpty.className = 'multi-select__empty';
+            groupEmpty.textContent = emptyGroupText;
+            menuEl.appendChild(groupEmpty);
+            return;
           }
           group.options.forEach(function (opt) {
             var checked = value.indexOf(opt.value) !== -1;

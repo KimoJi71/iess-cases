@@ -219,12 +219,14 @@
         className: "p-3 font-semibold"
       }, "完成時間"), h("th", {
         className: "p-3 font-semibold"
-      }, "保養人員"), h("th", {
+      }, "組別"), h("th", {
+        className: "p-3 font-semibold"
+      }, "指派人員"), h("th", {
         className: "p-3 font-semibold"
       }, "退回原因"))), h("tbody", {
         className: "divide-y divide-gray-100"
       }, filteredCases.length === 0 ? h("tr", null, h("td", {
-        colspan: "14",
+        colspan: "15",
         className: "text-center p-8 text-gray-400"
       }, "無符合條件之保養資料")) : pageResult.items.map(function (c) {
         var canClose = canCloseMaintenanceCase(c);
@@ -287,7 +289,9 @@
           className: "p-3"
         }, IESS.caseDateTime.format(c.completionDate)), h("td", {
           className: "p-3"
-        }, c.assignee), h("td", {
+        }, CaseAssigneeUtils.formatMaintenanceAssignees(c)), h("td", {
+          className: "p-3"
+        }, CaseAssigneeUtils.formatAssigneeMembers(c) || '—'), h("td", {
           className: "p-3 max-w-[150px] truncate",
           title: c.returnReason ? ((c.returnedAt ? c.returnedAt + ' ' : '') + c.returnReason) : ''
         }, c.returnReason || '—'));
@@ -336,7 +340,7 @@
     var backView = props.backView === undefined ? 'maintenance-list' : props.backView;
 
     var customers = props.customers;
-    var formData = targetCase;
+    var formData = CaseAssigneeUtils.normalizeMaintenanceCase(targetCase);
     var isEdit = mode === 'edit';
 
     function getStoreForCase(c) {
@@ -448,16 +452,21 @@
         value: formData.planDate
       })), h("div", null, h("span", {
         className: "text-gray-500 block mb-1 text-xs"
-      }, "保養人員"), isEdit ? h("select", {
-        value: formData.assignee,
-        onChange: function (e) { formData = Object.assign({}, formData, { assignee: e.target.value }); rerender(); },
-        className: "w-full p-2.5 border rounded outline-none"
-      }, h("option", {
-        value: "尚未指派"
-      }, "尚未指派"), ASSIGNEES.map(function (opt) {
-        return h("option", { key: opt, value: opt }, opt);
-      })) : h(ReadOnlyField, {
-        value: formData.assignee
+      }, "組別"), isEdit ? CaseAssigneeFields.renderAssigneeMultiSelect(formData, function (next) {
+        formData = Object.assign({}, formData, {
+          assignees: next,
+          assigneeMemberIds: CaseAssigneeFields.syncMemberIds(next, formData.assigneeMemberIds)
+        });
+        rerender();
+      }, { id: 'maintenance-assignees' }) : h(ReadOnlyField, {
+        value: CaseAssigneeUtils.formatMaintenanceAssignees(formData)
+      })), h("div", null, h("span", {
+        className: "text-gray-500 block mb-1 text-xs"
+      }, "指派人員"), isEdit ? CaseAssigneeFields.renderMemberMultiSelect(formData, function (next) {
+        formData = Object.assign({}, formData, { assigneeMemberIds: next });
+        rerender();
+      }, { id: 'maintenance-assignee-members' }) : h(ReadOnlyField, {
+        value: CaseAssigneeUtils.formatAssigneeMembers(formData)
       })), h("div", null, h("span", {
         className: "text-gray-500 block mb-1 text-xs"
       }, "保養開始時間"), isEdit ? h(TimeInput24, {

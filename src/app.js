@@ -186,6 +186,7 @@
     store.set(function (s) {
       var next = typeof v === 'function' ? v(s.accounts) : v;
       AccountUtils.syncProjectPersonOptions(next);
+      AssigneeUtils.syncAssigneeMemberGroups(s.assignees, next);
       return { accounts: next };
     });
   }
@@ -210,6 +211,7 @@
     store.set(function (s) {
       var next = typeof v === 'function' ? v(s.assignees) : v;
       AssigneeUtils.syncAssigneeOptions(next);
+      AssigneeUtils.syncAssigneeMemberGroups(next, s.accounts);
       return { assignees: next };
     });
   }
@@ -906,6 +908,7 @@
   ProcessMethodUtils.syncProcessMethodOptions(INITIAL_PROCESS_METHODS);
   AssigneeUtils.syncAssigneeOptions(INITIAL_ASSIGNEES);
   AccountUtils.syncProjectPersonOptions(INITIAL_ACCOUNTS);
+  AssigneeUtils.syncAssigneeMemberGroups(INITIAL_ASSIGNEES, INITIAL_ACCOUNTS);
 
   var root = document.getElementById('root');
   function draw() {

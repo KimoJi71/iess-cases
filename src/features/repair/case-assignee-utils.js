@@ -29,6 +29,19 @@
     return asStringArray(record.assignee);
   }
 
+  // 指派人員：存組別成員的帳號 id（與 assignees[].memberIds、performanceMemberIds 同一套 id）。
+  function getAssigneeMemberIds(record) {
+    if (!record) return [];
+    return asStringArray(record.assigneeMemberIds);
+  }
+
+  function formatAssigneeMembers(record) {
+    var ids = getAssigneeMemberIds(record);
+    if (!ids.length) return '';
+    var names = window.AssigneeUtils ? AssigneeUtils.formatMemberIds(ids) : ids;
+    return names.join('、');
+  }
+
   function getFormalAssignees(record) {
     return getAssignees(record).filter(function (n) { return !isUnassignedValue(n); });
   }
@@ -75,11 +88,28 @@
     }
     var next = Object.assign({}, record, {
       assignees: assignees,
+      assigneeMemberIds: getAssigneeMemberIds(record),
       performanceAssignees: performanceAssignees
     });
     delete next.assignee;
     delete next.collaborators;
     return next;
+  }
+
+  // 保養計劃的組別原本是單選字串（含 '尚未指派' 這個佔位值），改多選後一律以 assignees[] 為準。
+  // '尚未指派' 不是真的組別，正規化時濾掉：空陣列就代表未指派。
+  function normalizeMaintenanceCase(record) {
+    if (!record) return record;
+    var next = Object.assign({}, record, {
+      assignees: getFormalAssignees(record),
+      assigneeMemberIds: getAssigneeMemberIds(record)
+    });
+    delete next.assignee;
+    return next;
+  }
+
+  function formatMaintenanceAssignees(record) {
+    return formatAssignees(record) || '尚未指派';
   }
 
   function sumProcessPoints(record) {
@@ -104,12 +134,16 @@
     UNASSIGNED_VALUES: UNASSIGNED_VALUES,
     isUnassignedValue: isUnassignedValue,
     getAssignees: getAssignees,
+    getAssigneeMemberIds: getAssigneeMemberIds,
+    formatAssigneeMembers: formatAssigneeMembers,
     getFormalAssignees: getFormalAssignees,
     hasFormalAssignee: hasFormalAssignee,
     formatAssignees: formatAssignees,
     includesAssignee: includesAssignee,
     getPerformanceAssignees: getPerformanceAssignees,
     normalizeRepairCase: normalizeRepairCase,
+    normalizeMaintenanceCase: normalizeMaintenanceCase,
+    formatMaintenanceAssignees: formatMaintenanceAssignees,
     sumProcessPoints: sumProcessPoints,
     computeBonusPointsForAssignee: computeBonusPointsForAssignee
   };

@@ -17,6 +17,56 @@
     names.forEach(function (n) { SCHEDULE_ASSIGNEE_OPTIONS.push(n); });
   }
 
+  // 指派人員選單：依組別分群的成員帳號。組別主檔或帳號主檔異動時都要重跑。
+  // 停用帳號不列入（與 syncProjectPersonOptions 一致），但已存檔的舊資料仍會保留 id。
+  function syncAssigneeMemberGroups(assignees, accounts) {
+    var accountById = {};
+    (accounts || []).forEach(function (a) { accountById[a.id] = a; });
+    var groups = (assignees || []).slice().sort(function (a, b) {
+      return a.name.localeCompare(b.name, 'zh-Hant');
+    }).map(function (assignee) {
+      var options = getMemberIds(assignee).map(function (id) {
+        return accountById[id];
+      }).filter(function (account) {
+        return account && account.enabled;
+      }).sort(function (a, b) {
+        return a.name.localeCompare(b.name, 'zh-Hant');
+      }).map(function (account) {
+        return { value: account.id, label: account.name };
+      });
+      return { group: assignee.name, options: options };
+    });
+    ASSIGNEE_MEMBER_GROUPS.length = 0;
+    groups.forEach(function (g) { ASSIGNEE_MEMBER_GROUPS.push(g); });
+    Object.keys(ASSIGNEE_MEMBER_LABELS).forEach(function (k) {
+      delete ASSIGNEE_MEMBER_LABELS[k];
+    });
+    (accounts || []).forEach(function (a) { ASSIGNEE_MEMBER_LABELS[a.id] = a.name; });
+  }
+
+  // 只留下屬於 groupNames 這些組別的成員；組別被取消選取時，其成員要一併移除。
+  function filterMemberIdsByGroups(memberIds, groupNames) {
+    var allowed = {};
+    ASSIGNEE_MEMBER_GROUPS.forEach(function (g) {
+      if ((groupNames || []).indexOf(g.group) === -1) return;
+      g.options.forEach(function (o) { allowed[o.value] = true; });
+    });
+    return (memberIds || []).filter(function (id) { return allowed[id]; });
+  }
+
+  function getMemberGroupsForGroupNames(groupNames) {
+    return ASSIGNEE_MEMBER_GROUPS.filter(function (g) {
+      return (groupNames || []).indexOf(g.group) !== -1;
+    });
+  }
+
+  // 對照不到（帳號已刪除）時回傳原 id，避免顯示成空白而看不出資料還在。
+  function formatMemberIds(memberIds) {
+    return (memberIds || []).map(function (id) {
+      return ASSIGNEE_MEMBER_LABELS[id] != null ? ASSIGNEE_MEMBER_LABELS[id] : String(id);
+    });
+  }
+
   function getAssigneeNames(assignees) {
     return assignees.map(function (a) { return a.name; });
   }
@@ -63,7 +113,9 @@
       return c.assignee === name;
     })) return true;
     if ((maintenanceCases || []).some(function (c) {
-      return !c.isClosed && c.assignee === name;
+      if (c.isClosed) return false;
+      if (window.CaseAssigneeUtils) return CaseAssigneeUtils.includesAssignee(c, name);
+      return c.assignee === name;
     })) return true;
     if ((projectCases || []).some(function (c) {
       return !c.isClosed && projectReferencesAssignee(c, name);
@@ -93,7 +145,18 @@
   function getPerformanceAssignee(record) {
     if (!record) return '';
     if (record.performanceAssignee) return record.performanceAssignee;
-    return record.assignee || '';
+    return getPerformanceAssigneeNames(record)[0] || '';
+  }
+
+  // 保養單的組別改為多選後，績效歸屬也可能對應多組。
+  function getPerformanceAssigneeNames(record) {
+    if (!record) return [];
+    if (Array.isArray(record.performanceAssignees) && record.performanceAssignees.length) {
+      return record.performanceAssignees.slice();
+    }
+    if (record.performanceAssignee) return [record.performanceAssignee];
+    if (window.CaseAssigneeUtils) return CaseAssigneeUtils.getFormalAssignees(record);
+    return record.assignee ? [record.assignee] : [];
   }
 
   function findDuplicateName(assignees, name, excludeId) {
@@ -190,8 +253,17 @@
       return changed ? next : c;
     });
     var nextMaintenance = maintenanceCases.map(function (c) {
-      if (c.assignee !== oldName) return c;
-      return Object.assign({}, c, { assignee: newName });
+      if (!window.CaseAssigneeUtils) {
+        if (c.assignee !== oldName) return c;
+        return Object.assign({}, c, { assignee: newName });
+      }
+      var names = CaseAssigneeUtils.getAssignees(c);
+      if (names.indexOf(oldName) === -1) return c;
+      var next = Object.assign({}, c, {
+        assignees: names.map(function (n) { return n === oldName ? newName : n; })
+      });
+      delete next.assignee;
+      return next;
     });
     var nextProjects = projectCases.map(function (c) {
       var changed = false;
@@ -217,6 +289,10 @@
 
   window.AssigneeUtils = {
     syncAssigneeOptions: syncAssigneeOptions,
+    syncAssigneeMemberGroups: syncAssigneeMemberGroups,
+    filterMemberIdsByGroups: filterMemberIdsByGroups,
+    getMemberGroupsForGroupNames: getMemberGroupsForGroupNames,
+    formatMemberIds: formatMemberIds,
     getAssigneeNames: getAssigneeNames,
     getMemberIds: getMemberIds,
     formatMembers: formatMembers,
@@ -224,6 +300,7 @@
     hasOpenCasesForAssignee: hasOpenCasesForAssignee,
     buildPerformanceSnapshot: buildPerformanceSnapshot,
     getPerformanceAssignee: getPerformanceAssignee,
+    getPerformanceAssigneeNames: getPerformanceAssigneeNames,
     findDuplicateName: findDuplicateName,
     getOccupiedDistricts: getOccupiedDistricts,
     findConflictingDistricts: findConflictingDistricts,

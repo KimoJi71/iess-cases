@@ -60,7 +60,7 @@ async function evaluate(expression) {
 
 const EXPECTED_HEADERS = [
   '操作', '燈號', '案件狀態', '客戶名稱', '門市名稱', '工項分類', '案件編號', '建立日期',
-  '行政區域', '叫修項目', '叫修原因', '故障描述', '實際原因', '組別', '預計日期', '預計時間',
+  '行政區域', '叫修項目', '叫修原因', '故障描述', '實際原因', '組別', '指派人員', '預計日期', '預計時間',
   '退回原因'
 ];
 
@@ -148,8 +148,8 @@ try {
   assertEq(normalRow[9], '室內機', '叫修項目欄');
   assertEq(normalRow[10], '不冷', '叫修原因欄');
   assertEq(normalRow[12], '冷媒不足', '實際原因欄');
-  assertEq(normalRow[14], todayDate, '預計日期欄');
-  assertEq(normalRow[15], '09:00 ~ 11:00', '預計時間欄');
+  assertEq(normalRow[15], todayDate, '預計日期欄');
+  assertEq(normalRow[16], '09:00 ~ 11:00', '預計時間欄');
 
   console.log('\n案件處理列表 — 工項分類「其他」');
   const otherRow = await evaluate(`(function(){

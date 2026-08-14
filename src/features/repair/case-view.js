@@ -70,6 +70,10 @@
               label: '組別',
               value: viewingCase && CaseAssigneeUtils.formatAssignees(viewingCase)
             }),
+            h(ReadOnlyField, {
+              label: '指派人員',
+              value: viewingCase && CaseAssigneeUtils.formatAssigneeMembers(viewingCase)
+            }),
             h(ReadOnlyField, { label: '預計日期', value: viewingCase && (viewingCase.expectedDate || viewingCase.planDate) }),
             h(ReadOnlyField, {
               label: '預計時間',

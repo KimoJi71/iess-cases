@@ -253,7 +253,8 @@
         periodYear: refYear,
         periodVisitIndex: period.visitIndex,
         workCategory: '保養',
-        assignee: '尚未指派',
+        assignees: [],
+        assigneeMemberIds: [],
         isClosed: false,
         storeAddress: StoreUtils.buildFullAddress(store)
       });
@@ -460,7 +461,9 @@
         storeName: c.storeName,
         storeArea: StoreUtils.getRecordArea(c),
         workCategory: getMaintenanceWorkCategory(c),
-        assignee: c.assignee || '尚未指派'
+        assignee: window.CaseAssigneeUtils
+          ? CaseAssigneeUtils.formatMaintenanceAssignees(c)
+          : (c.assignee || '尚未指派')
       });
     });
     cases.forEach(function (c) {
@@ -548,7 +551,8 @@
         planDate: c.planDate,
         planTimeStart: c.planTimeStart,
         planTimeEnd: c.planTimeEnd,
-        assignee: c.assignee,
+        assignee: window.CaseAssigneeUtils ? CaseAssigneeUtils.formatAssignees(c) : (c.assignee || ''),
+        assignees: window.CaseAssigneeUtils ? CaseAssigneeUtils.getAssignees(c) : (c.assignee ? [c.assignee] : []),
         workCategory: getMaintenanceWorkCategory(c)
       }, c.customerName, c.storeName, c.storeAddress || '');
     });
@@ -674,13 +678,16 @@
         customerName = c.customerName;
         storeName = c.storeName;
         workCategory = getMaintenanceWorkCategory(c);
-        return Object.assign({}, c, {
+        // 排程面板的組別是單選，保養單則以 assignees[] 為準：包成一元素陣列並丟掉舊的單值欄位。
+        var nextMaintenance = Object.assign({}, c, {
           planDate: planDate,
           planTimeStart: planTimeStart,
           planTimeEnd: planTimeEnd,
-          assignee: assignee,
+          assignees: assignee ? [assignee] : [],
           status: resolveMaintenanceStatus(c.status, planDate)
         });
+        delete nextMaintenance.assignee;
+        return nextMaintenance;
       }));
     } else if (sourceType === 'repair') {
       setters.setCases(store.cases.map(function (c) {

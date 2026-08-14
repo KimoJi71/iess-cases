@@ -171,6 +171,10 @@
         merged.expectedDate = payload.planDate;
         merged.expectedTimeStart = payload.planTimeStart;
         merged.expectedTimeEnd = payload.planTimeEnd;
+      } else if (sourceType === 'maintenance') {
+        // 保養單的組別同樣是多選：排程面板只能挑一組，包成一元素陣列存回去。
+        merged.assignees = payload.assignee ? [payload.assignee] : [];
+        delete merged.assignee;
       } else {
         merged.assignee = payload.assignee;
       }
@@ -809,7 +813,7 @@
                   })
                 )
               ),
-              renderScheduleReadOnly('保養人員', scheduleModal.assignee),
+              renderScheduleReadOnly('組別', scheduleModal.assignee),
               renderScheduleReadOnly('完成時間', IESS.caseDateTime.format(formData.completionDate))
             )
           )

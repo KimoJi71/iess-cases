@@ -109,7 +109,15 @@
       if (!matches(filters.city, loc.city)) return false;
       if (!matches(filters.district, makeKey(loc.city, loc.district))) return false;
       if (!matches(filters.customer, c.customerName)) return false;
-      if (!matches(filters.assignee, c.assignee)) return false;
+      // 保養單的組別改多選後，任一已選組別命中即通過
+      if (!isAny(filters.assignee)) {
+        var hit = filters.assignee.some(function (name) {
+          return window.CaseAssigneeUtils
+            ? CaseAssigneeUtils.includesAssignee(c, name)
+            : c.assignee === name;
+        });
+        if (!hit) return false;
+      }
       if (!matches(filters.serviceLevel, c.serviceLevel)) return false;
       var date = getMaintenanceDate(c);
       if (!inDateRange(date, filters.startDate, filters.endDate)) return false;
@@ -243,7 +251,7 @@
       '行政區': loc.district || '—',
       '客戶分級': c.serviceLevel || '—',
       '保養狀態': c.status || '—',
-      '維修人員': c.assignee || '—',
+      '維修人員': formatAssignees(c),
       '預約日期': c.planDate || '—',
       '完成日期': c.completionDate ? IESS.caseDateTime.format(c.completionDate) : '—',
       '結案狀態': c.isClosed ? '已結案' : '進行中'

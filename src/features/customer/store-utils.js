@@ -199,7 +199,9 @@
         equipmentArea: '—',
         repairItem: '',
         repairReason: '',
-        assignee: c.assignee || '—',
+        assignee: (window.CaseAssigneeUtils
+          ? CaseAssigneeUtils.formatAssignees(c)
+          : c.assignee) || '—',
         filingTime: filingTime,
         finishTime: finishTime
       });

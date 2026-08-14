@@ -55,6 +55,7 @@
   }
 
   var renderAssigneeMultiSelect = CaseAssigneeFields.renderAssigneeMultiSelect;
+  var renderMemberMultiSelect = CaseAssigneeFields.renderMemberMultiSelect;
 
   function AddCaseForm(props) {
     var cases = props.cases;
@@ -76,6 +77,7 @@
       repairReason: '不冷',
       faultDesc: '',
       assignees: [],
+      assigneeMemberIds: [],
       expectedDate: '',
       expectedTimeStart: '',
       expectedTimeEnd: '',
@@ -249,8 +251,14 @@
         className: "block text-sm mb-1"
       }, "組別"), renderAssigneeMultiSelect(formData, function (next) {
         formData.assignees = next;
+        formData.assigneeMemberIds = CaseAssigneeFields.syncMemberIds(next, formData.assigneeMemberIds);
         rerender();
       }, { id: 'add-case-assignees' })), h("div", null, h("label", {
+        className: "block text-sm mb-1"
+      }, "指派人員"), renderMemberMultiSelect(formData, function (next) {
+        formData.assigneeMemberIds = next;
+        rerender();
+      }, { id: 'add-case-assignee-members' })), h("div", null, h("label", {
         className: "block text-sm mb-1"
       }, "預計日期"), h("input", {
         type: "date",
@@ -538,8 +546,16 @@
         className: "text-gray-500 block mb-1"
       }, "組別"), renderAssigneeMultiSelect(formData, function (next) {
         formData.assignees = next;
+        formData.assigneeMemberIds = CaseAssigneeFields.syncMemberIds(next, formData.assigneeMemberIds);
         rerender();
-      }, { id: 'edit-case-assignees' })), h("div", null, h("span", {
+      }, { id: 'edit-case-assignees' })), h("div", {
+        className: "col-span-full md:col-span-2"
+      }, h("span", {
+        className: "text-gray-500 block mb-1"
+      }, "指派人員"), renderMemberMultiSelect(formData, function (next) {
+        formData.assigneeMemberIds = next;
+        rerender();
+      }, { id: 'edit-case-assignee-members' })), h("div", null, h("span", {
         className: "text-gray-500 block mb-1"
       }, "預計日期"), h("input", {
         type: "date",
