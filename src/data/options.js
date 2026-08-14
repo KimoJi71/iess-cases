@@ -195,6 +195,7 @@ const PERMISSION_FUNCTIONS = [
   '資料調閱',
   '帳號管理',
   '組別管理',
+  '車輛管理',
   '服務等級管理',
   '處理方式與積分管理',
   '設備分類管理',
@@ -232,7 +233,7 @@ const PERMISSION_TREE = [
     children: [
       {
         id: '人員與權限',
-        children: ['帳號管理', '組別管理']
+        children: ['帳號管理', '組別管理', '車輛管理']
       },
       {
         id: '基礎資料設定',

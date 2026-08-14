@@ -44,6 +44,7 @@
   var PERMISSIONS_SUBMENU_DEFAULT_VIEW = {
     '帳號管理': 'account-list',
     '組別管理': 'assignee-list',
+    '車輛管理': 'vehicle-list',
     '設備分類管理': 'device-category-list',
     '服務等級管理': 'service-level-list',
     '處理方式與積分管理': 'process-method-list',
@@ -101,6 +102,7 @@
     serviceLevels: INITIAL_SERVICE_LEVELS,
     processMethods: INITIAL_PROCESS_METHODS,
     assignees: INITIAL_ASSIGNEES,
+    vehicles: INITIAL_VEHICLES,
     maintenanceAllocations: INITIAL_MAINTENANCE_ALLOCATIONS,
     maintenanceAllocationYears: INITIAL_MAINTENANCE_ALLOCATION_YEARS,
     performanceAreas: INITIAL_PERFORMANCE_AREAS,
@@ -182,6 +184,7 @@
   var setEquipmentCustomer = makeSetter('equipmentCustomer');
   var setEquipmentStore = makeSetter('equipmentStore');
   var setPersonnelStatus = makeSetter('personnelStatus');
+  var setVehicles = makeSetter('vehicles');
   var setMaintenanceAllocations = makeSetter('maintenanceAllocations');
   var setMaintenanceAllocationYears = makeSetter('maintenanceAllocationYears');
   var setPerformanceAreas = makeSetter('performanceAreas');
@@ -682,6 +685,34 @@
           setMaintenanceCases: setMaintenanceCases,
           projectCases: s.projectCases,
           setProjectCases: setProjectCases,
+          targetCase: s.editingCase,
+          setView: setView,
+          showToast: showToast
+        });
+      case 'vehicle-list':
+        return h(VehicleList, {
+          vehicles: s.vehicles,
+          setVehicles: setVehicles,
+          cases: s.cases,
+          maintenanceCases: s.maintenanceCases,
+          projectCases: s.projectCases,
+          setEditingCase: setEditingCase,
+          setView: setView,
+          showToast: showToast
+        });
+      case 'vehicle-add':
+        return h(VehicleForm, {
+          vehicles: s.vehicles,
+          setVehicles: setVehicles,
+          accounts: s.accounts,
+          setView: setView,
+          showToast: showToast
+        });
+      case 'vehicle-edit':
+        return h(VehicleForm, {
+          vehicles: s.vehicles,
+          setVehicles: setVehicles,
+          accounts: s.accounts,
           targetCase: s.editingCase,
           setView: setView,
           showToast: showToast

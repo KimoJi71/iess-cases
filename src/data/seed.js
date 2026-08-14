@@ -803,6 +803,7 @@ const INITIAL_CASES = [{
   assignee: 'A組',
   processStatus: '待料件',
   isClosed: false,
+  vehicleId: 'VEH1',
   serviceLevel: 'A 保修(一年四次)',
   storeAddress: '台北市信義區松智路X號',
   reporter: '林店長',
@@ -2168,6 +2169,29 @@ const INITIAL_ASSIGNEES = [
   { id: 'ASG3', name: 'C組', leaderId: 'ACC6', districts: ['高雄市左營區'], memberIds: ['ACC6'], createdDate: todayDate },
   { id: 'ASG4', name: 'D組', leaderId: 'ACC7', districts: ['台北市大安區', '台中市北屯區'], memberIds: ['ACC7'], createdDate: todayDate }
 ];
+
+const INITIAL_VEHICLES = [{
+  id: 'VEH1',
+  plateNo: 'ABC-1234',
+  personInCharge: '王小明',
+  owner: '金川工程股份有限公司',
+  company: '金川工程股份有限公司',
+  createdDate: todayDate
+}, {
+  id: 'VEH2',
+  plateNo: 'KAA-5678',
+  personInCharge: '陳志豪',
+  owner: '陳志豪',
+  company: '金川工程股份有限公司',
+  createdDate: yesterdayDate
+}, {
+  id: 'VEH3',
+  plateNo: 'NCA-9012',
+  personInCharge: '林雅婷',
+  owner: '金川工程股份有限公司',
+  company: '金川工程股份有限公司',
+  createdDate: twoDaysAgoDate
+}];
 
 const INITIAL_ACCOUNTS = [{
   id: 'ACC1',
