@@ -347,9 +347,9 @@
       return ScheduleUtils.resolveStore(stores, c && c.customerName, c && c.storeName);
     }
 
-    // 與列表的「保養區間」及案件排程同源，避免各處對不上
+    // 與列表的「保養區間」欄同源同格式，避免兩處對不上
     function getMaintenancePeriodLabel(c) {
-      return ScheduleUtils.formatCasePeriodLabel(c, customers);
+      return ScheduleUtils.formatPeriodRange(ScheduleUtils.resolveCasePeriod(c, customers));
     }
 
     function ReadOnlyField(p) {
@@ -419,7 +419,7 @@
         label: "服務等級",
         value: formData.serviceLevel
       }), h(ReadOnlyField, {
-        label: "目前保養季度",
+        label: "保養區間",
         value: getMaintenancePeriodLabel(formData)
       }), h(ReadOnlyField, {
         label: "室內機高度",

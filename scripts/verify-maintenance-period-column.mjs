@@ -108,17 +108,19 @@ assertTrue(!SU.casePeriodMatchesMonthRange(
   { customerName: '乙客戶', planDate: '2026-08-15' }, CUSTOMERS, '2026-08', '2026-08'),
   '客戶未設定區間時排除');
 
-console.log('\nSection 1｜ScheduleUtils.formatCasePeriodLabel');
-assertEq(SU.formatCasePeriodLabel(inCurrent, CUSTOMERS), '2026 第3次（7-9月）',
-  '格式為「YYYY 第N次（X-Y月）」');
-// FINAL-1：案件排程與保養明細必須同源，否則同一筆案件兩處顯示的次數會不一致。
+console.log('\nSection 1｜ScheduleUtils.resolveCasePeriod 的區間身分');
+// FINAL-1：列表、保養明細與案件排程必須同源，否則同一筆案件各處顯示的次數會不一致。
+assertEq(SU.formatPeriodRange(SU.resolveCasePeriod(inCurrent, CUSTOMERS)), '第3次 7-9月',
+  '三處共用 formatPeriodRange，格式為「第N次 X-Y月」');
 const drifted = {
   customerName: '甲客戶', periodYear: 2026, periodVisitIndex: 4, planDate: '2026-08-15'
 };
-assertEq(SU.formatCasePeriodLabel(drifted, CUSTOMERS), '2026 第4次（10-12月）',
+assertEq(SU.formatPeriodRange(SU.resolveCasePeriod(drifted, CUSTOMERS)), '第4次 10-12月',
   '有區間身分時以區間身分為準，不用 planDate 月份回推');
-assertEq(SU.formatCasePeriodLabel({ customerName: '乙客戶' }, CUSTOMERS), '',
-  '解析不到區間時回空字串');
+assertEq(SU.formatPeriodRange(SU.resolveCasePeriod({ customerName: '乙客戶' }, CUSTOMERS)), '—',
+  '解析不到區間時顯示破折號');
+assertEq(typeof SU.formatCasePeriodLabel, 'undefined',
+  'formatCasePeriodLabel 已移除（各處統一用 formatPeriodRange）');
 
 console.log('\nSection 1｜ScheduleUtils.formatPeriodRange');
 assertEq(SU.formatPeriodRange({ year: 2026, visitIndex: 3, startMonth: 7, endMonth: 9 }),
@@ -386,7 +388,7 @@ try {
   assertTrue(hidden.every(label => !rows.some(r => r.period === label)),
     '其他區間的案件不出現在當月清單', JSON.stringify(hidden));
 
-  console.log('\nSection 3｜明細頁目前保養季度');
+  console.log('\nSection 3｜明細頁保養區間');
   await evaluate(`(function () {
     // 框架的 title prop 會轉成 aria-label（並加上 data-no-tooltip），故以 aria-label 選取
     var btn = document.querySelector('table tbody tr button[aria-label="編輯"]');
@@ -397,14 +399,14 @@ try {
   const detail = await evaluate(`(function () {
     var labels = Array.prototype.slice.call(document.querySelectorAll('span'));
     var label = labels.filter(function (el) {
-      return el.textContent.trim() === '目前保養季度';
+      return el.textContent.trim() === '保養區間';
     })[0];
     if (!label) return null;
     return label.parentNode.querySelector('div').textContent.trim();
   })()`);
-  assertTrue(detail !== null, '明細頁有「目前保養季度」欄位');
-  assertTrue(/^\d{4} 第\d+次（\d{1,2}-\d{1,2}月）$/.test(detail),
-    '格式為「2026 第3次（7-9月）」', detail);
+  assertTrue(detail !== null, '明細頁有「保養區間」欄位');
+  assertTrue(/^第\d+次 \d{1,2}-\d{1,2}月$/.test(detail),
+    '格式為「第3次 7-9月」，與列表同格式', detail);
 
   assertEq(consoleErrors.length, 0, '操作後仍無 JS 錯誤');
 } catch (err) {

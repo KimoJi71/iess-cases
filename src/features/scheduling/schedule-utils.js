@@ -429,17 +429,6 @@
     return CustomerUtils.isMaintenanceStartedForMonth(customers, store, refMonth);
   }
 
-  /**
-   * 「YYYY 第N次（X-Y月）」——案件排程與保養明細共用，
-   * 避免同一筆案件在兩處顯示的次數不一致。
-   */
-  function formatCasePeriodLabel(maintenanceCase, customers) {
-    var period = resolveCasePeriod(maintenanceCase, customers);
-    if (!period) return '';
-    return period.year + ' 第' + period.visitIndex + '次（'
-      + period.startMonth + '-' + period.endMonth + '月）';
-  }
-
   function resolveMaintenanceStatus(currentStatus, planDate) {
     if (currentStatus === '已完成') return '已完成';
     if (planDate) return '已預約';
@@ -788,7 +777,6 @@
     formatPeriodRange: formatPeriodRange,
     casePeriodMatchesMonthRange: casePeriodMatchesMonthRange,
     caseMaintenanceStarted: caseMaintenanceStarted,
-    formatCasePeriodLabel: formatCasePeriodLabel,
     periodMonthRange: periodMonthRange,
     resolveStore: resolveStore,
     applyStoreSnapshot: applyStoreSnapshot,

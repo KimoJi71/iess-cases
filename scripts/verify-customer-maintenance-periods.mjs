@@ -395,24 +395,25 @@ try {
     { id: 'C2', name: '丙客戶', periods: [] }
   ];`);
   assertEq(await evaluate(
-    `ScheduleUtils.formatCasePeriodLabel(
-      { customerName: '甲客戶', planDate: '2026-05-10' }, window.__PERIOD_CUSTOMERS)`),
-    '2026 第2次（4-6月）', '5 月為甲客戶的第 2 次');
+    `ScheduleUtils.formatPeriodRange(ScheduleUtils.resolveCasePeriod(
+      { customerName: '甲客戶', planDate: '2026-05-10' }, window.__PERIOD_CUSTOMERS))`),
+    '第2次 4-6月', '5 月為甲客戶的第 2 次');
   assertEq(await evaluate(
-    `ScheduleUtils.formatCasePeriodLabel(
-      { customerName: '甲客戶', planDate: '2026-11-01' }, window.__PERIOD_CUSTOMERS)`),
-    '2026 第4次（10-12月）', '11 月為甲客戶的第 4 次');
+    `ScheduleUtils.formatPeriodRange(ScheduleUtils.resolveCasePeriod(
+      { customerName: '甲客戶', planDate: '2026-11-01' }, window.__PERIOD_CUSTOMERS))`),
+    '第4次 10-12月', '11 月為甲客戶的第 4 次');
   assertEq(await evaluate(
-    `ScheduleUtils.formatCasePeriodLabel(
-      { customerName: '丙客戶', planDate: '2026-08-01' }, window.__PERIOD_CUSTOMERS)`),
-    '', '無區間客戶回空字串');
+    `ScheduleUtils.formatPeriodRange(ScheduleUtils.resolveCasePeriod(
+      { customerName: '丙客戶', planDate: '2026-08-01' }, window.__PERIOD_CUSTOMERS))`),
+    '—', '無區間客戶回破折號');
   assertEq(await evaluate(
-    `ScheduleUtils.formatCasePeriodLabel(
-      { customerName: '查無此客戶', planDate: '2026-05-10' }, window.__PERIOD_CUSTOMERS)`),
-    '', '查無客戶回空字串');
+    `ScheduleUtils.formatPeriodRange(ScheduleUtils.resolveCasePeriod(
+      { customerName: '查無此客戶', planDate: '2026-05-10' }, window.__PERIOD_CUSTOMERS))`),
+    '—', '查無客戶回破折號');
   assertEq(await evaluate(
-    `ScheduleUtils.formatCasePeriodLabel({ customerName: '甲客戶' }, window.__PERIOD_CUSTOMERS)`),
-    '', '無日期也無區間身分時回空字串');
+    `ScheduleUtils.formatPeriodRange(ScheduleUtils.resolveCasePeriod(
+      { customerName: '甲客戶' }, window.__PERIOD_CUSTOMERS))`),
+    '—', '無日期也無區間身分時回破折號');
   assertTrue(await evaluate(
     `/CustomerUtils\\.findPeriodForMonth/.test(String(ScheduleUtils.resolveCasePeriod))`
   ), 'resolveCasePeriod 用 CustomerUtils.findPeriodForMonth');

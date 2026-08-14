@@ -748,7 +748,8 @@
 
       function renderMaintenanceScheduleDetails(formData) {
         var store = ScheduleUtils.resolveStore(stores, formData.customerName, formData.storeName);
-        var periodLabel = ScheduleUtils.formatCasePeriodLabel(formData, customers);
+        // 與保養列表／保養明細的「保養區間」同源同格式，避免各處對不上
+        var periodLabel = ScheduleUtils.formatPeriodRange(ScheduleUtils.resolveCasePeriod(formData, customers));
         var inputCls = 'w-full p-2 border rounded-md outline-none focus:border-blue-500 text-sm';
 
         return h('div', { className: 'space-y-4' },
@@ -793,7 +794,7 @@
                   className: inputCls
                 })
               ),
-              renderScheduleReadOnly('目前保養季度', periodLabel),
+              renderScheduleReadOnly('保養區間', periodLabel),
               renderScheduleReadOnly('室內機高度', (store && store.indoorHeight) || '—'),
               renderScheduleReadOnly('室外機高度', (store && store.outdoorHeight) || '—')
             )
