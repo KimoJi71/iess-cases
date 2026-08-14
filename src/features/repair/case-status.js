@@ -25,6 +25,17 @@
     return !!((c && c.expectedDate) || (c && c.planDate));
   }
 
+  function hasPartnerVendor(c) {
+    if (window.CaseAssigneeUtils && CaseAssigneeUtils.hasPartnerVendor) {
+      return CaseAssigneeUtils.hasPartnerVendor(c);
+    }
+    var ids = c && c.partnerVendorIds;
+    if (Array.isArray(ids)) {
+      return ids.some(function (id) { return !!id; });
+    }
+    return !!ids;
+  }
+
   var OVERTIME_WARNING_HOURS = 6;
   var MS_PER_HOUR = 3600000;
 
@@ -73,9 +84,9 @@
     return 'bg-gray-300';
   }
 
-  // 只填日期沒填時間＝整天案件，日曆會排進當天的整天列，同樣視為已派工。
+  // 已派工＝有組別或協力廠商，且有預計日期（只填日期沒填時間＝整天，同樣算已派工）。
   function isDispatched(c) {
-    return hasValidAssignee(c) && hasExpectedDate(c);
+    return (hasValidAssignee(c) || hasPartnerVendor(c)) && hasExpectedDate(c);
   }
 
   function getCaseListDispatchStatus(c) {

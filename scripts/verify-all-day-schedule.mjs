@@ -94,21 +94,29 @@ assertEq(SU.formatScheduleTimeRange('', ''), '整天', 'formatScheduleTimeRange 
 assertEq(SU.formatScheduleTimeRange('09:00', '09:00'), '09:00', '起訖相同只顯示一個時間');
 assertEq(SU.formatTimeRange('', ''), '', 'formatTimeRange 維持原本語意（空字串）');
 
-console.log('\n[6] 案件列表派工狀態：整天案件視為已派工');
+console.log('\n[6] 案件列表派工狀態：組別或協力廠商＋預計日期＝已派工');
 load('src/features/repair/case-assignee-utils.js');
 load('src/features/repair/case-status.js');
 const CS = sandbox.IESS.caseStatus;
 const dispatchOf = (c) => CS.getCaseListDispatchStatus(c);
 assertEq(dispatchOf({ assignee: '張三', expectedDate: '2026-08-12', expectedTimeStart: '14:00' }),
-  '已派工', '有人員＋日期＋時間 → 已派工');
+  '已派工', '有組別＋日期＋時間 → 已派工');
 assertEq(dispatchOf({ assignee: '張三', expectedDate: '2026-08-12', expectedTimeStart: '' }),
-  '已派工', '有人員＋只有日期（整天）→ 已派工');
+  '已派工', '有組別＋只有日期（整天）→ 已派工');
+assertEq(dispatchOf({ partnerVendorIds: ['VEND2'], expectedDate: '2026-08-12' }),
+  '已派工', '有協力廠商＋預計日期、沒有組別 → 已派工');
+assertEq(dispatchOf({ assignees: ['A組'], partnerVendorIds: ['VEND2'], expectedDate: '2026-08-12' }),
+  '已派工', '組別與協力廠商都有＋預計日期 → 已派工');
 assertEq(dispatchOf({ assignee: '張三', expectedDate: '', expectedTimeStart: '' }),
-  '未派工', '有人員但沒日期 → 未派工');
+  '未派工', '有組別但沒預計日期 → 未派工');
+assertEq(dispatchOf({ partnerVendorIds: ['VEND2'], expectedDate: '' }),
+  '未派工', '有協力廠商但沒預計日期 → 未派工');
 assertEq(dispatchOf({ assignee: '案件待辦', expectedDate: '2026-08-12', expectedTimeStart: '' }),
-  '未派工', '沒有正式組別 → 未派工');
+  '未派工', '沒有正式組別也沒協力廠商 → 未派工');
+assertEq(dispatchOf({ assignees: [], partnerVendorIds: [], expectedDate: '' }),
+  '未派工', '沒有組別、協力廠商、預計日期 → 未派工');
 assertEq(dispatchOf({ assignee: '張三', expectedDate: '2026-08-12', processStatus: '案件完成' }),
-  '已完成', '已完成的案件優先顯示已完成');
+  '已完成', '處理狀態為案件完成 → 已完成');
 
 console.log('\n[7] 日曆設定與畫面串接');
 const bridgeSrc = readFileSync(join(ROOT, 'src/features/scheduling/calendar-bridge.js'), 'utf8');

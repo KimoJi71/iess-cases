@@ -50,6 +50,14 @@
     return getFormalAssignees(record).length > 0;
   }
 
+  function getPartnerVendorIds(record) {
+    return asStringArray(record && record.partnerVendorIds);
+  }
+
+  function hasPartnerVendor(record) {
+    return getPartnerVendorIds(record).length > 0;
+  }
+
   function formatAssignees(record) {
     var list = getAssignees(record);
     if (!list.length) return '';
@@ -140,6 +148,8 @@
     formatAssigneeMembers: formatAssigneeMembers,
     getFormalAssignees: getFormalAssignees,
     hasFormalAssignee: hasFormalAssignee,
+    getPartnerVendorIds: getPartnerVendorIds,
+    hasPartnerVendor: hasPartnerVendor,
     formatAssignees: formatAssignees,
     includesAssignee: includesAssignee,
     getPerformanceAssignees: getPerformanceAssignees,
