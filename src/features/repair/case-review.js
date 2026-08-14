@@ -23,6 +23,22 @@
     return points === null ? '' : String(points);
   }
 
+  function matchKeyword(c, kw) {
+    if (!kw) return true;
+    var isMaintenance = isMaintenancePlanCase(c);
+    return [
+      c.caseNumber, c.customerName, c.storeName,
+      StoreUtils.getRecordArea(c), c.serviceLevel,
+      isMaintenance ? '例行保養' : c.workCategory,
+      isMaintenance ? '' : c.repairItem,
+      isMaintenance ? '' : c.repairReason,
+      c.actualReason,
+      CaseAssigneeUtils.formatAssignees(c)
+    ].filter(Boolean).some(function (v) {
+      return String(v).toLowerCase().includes(kw);
+    });
+  }
+
   function getReviewCaseDate(c) {
     if (!c) return '';
     if (c.closeDate) return String(c.closeDate).slice(0, 10);
@@ -50,27 +66,31 @@
 
     var startDate = todayDate;
     var endDate = todayDate;
-    var appliedDateRange = { start: todayDate, end: todayDate };
+    var keyword = '';
+    var appliedFilter = { start: todayDate, end: todayDate, keyword: '' };
     var includeConfirmModal = { show: false, caseId: null, sourceType: 'repair' };
     var returnModal = { show: false, caseId: null, sourceType: 'repair', reason: '' };
     var listPagination = IESS.createListPagination();
 
     return stateful(function (rerender) {
       function handleSearch() {
-        appliedDateRange = { start: startDate, end: endDate };
+        appliedFilter = { start: startDate, end: endDate, keyword: keyword };
         listPagination.resetPage();
         rerender();
       }
+      function handleKeyDown(e) { if (e.key === 'Enter') handleSearch(); }
 
       var allReviewCases = cases.concat(maintenanceCases.map(function (c) {
         return Object.assign({}, c, { sourceType: 'maintenance' });
       }));
 
+      var appliedKw = appliedFilter.keyword.trim().toLowerCase();
       var filteredCases = allReviewCases.filter(function (c) {
         var reviewDate = getReviewCaseDate(c).slice(0, 10);
         return c.isClosed && !c.isPerformanceIncluded &&
-          reviewDate >= appliedDateRange.start &&
-          reviewDate <= appliedDateRange.end;
+          reviewDate >= appliedFilter.start &&
+          reviewDate <= appliedFilter.end &&
+          matchKeyword(c, appliedKw);
       }).sort(function (a, b) {
         return new Date(getReviewCaseDate(b)) - new Date(getReviewCaseDate(a));
       });
@@ -135,7 +155,7 @@
       return h('div', {
         className: 'bg-white p-6 rounded-lg shadow-sm border border-gray-100'
       },
-        h('div', { className: 'flex items-center gap-3 mb-6 pb-6 border-b' },
+        h('div', { className: 'flex flex-wrap items-center gap-3 mb-6 pb-6 border-b' },
           Icons.Calendar({ className: 'h-5 w-5 text-gray-500' }),
           h('span', { className: 'font-medium text-gray-700' }, '查詢區間：'),
           h('input', {
@@ -150,6 +170,14 @@
             value: endDate,
             onChange: function (e) { endDate = e.target.value; rerender(); },
             className: 'p-2 border rounded-md outline-none'
+          }),
+          h('input', {
+            type: 'text',
+            value: keyword,
+            onChange: function (e) { keyword = e.target.value; rerender(); },
+            onKeyDown: handleKeyDown,
+            placeholder: '請輸入關鍵字',
+            className: 'w-64 p-2 border rounded-md outline-none focus:border-blue-500'
           }),
           h('button', {
             onClick: handleSearch,
