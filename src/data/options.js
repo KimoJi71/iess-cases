@@ -63,6 +63,7 @@ const STORE_AREA_OPTIONS = (function () {
 // 保留常數本身，因為 customer-form.js 與 data-retrieval.js 直接引用此參考。
 const SERVICE_LEVEL_OPTIONS = [];
 const CUSTOMER_ENABLED_FILTERS = ['全部', '啟用', '停用'];
+const VENDOR_TYPE_OPTIONS = ['供貨商', '協力商', '其他'];
 const STORE_STATUS_OPTIONS = ['正常營業', '整裝', '撤店'];
 const WORK_ORDER_APPLY_OPTIONS = ['是', '否'];
 
@@ -186,6 +187,7 @@ const PERMISSION_FUNCTIONS = [
   '客戶管理',
   '門市管理',
   '設備管理',
+  '廠商管理',
   '案件安排',
   '人員動向',
   'GPS',
@@ -213,7 +215,7 @@ const PERMISSION_TREE = [
       },
       {
         id: '客戶建檔',
-        children: ['客戶管理', '門市管理', '設備管理']
+        children: ['客戶管理', '門市管理', '設備管理', '廠商管理']
       }
     ]
   },

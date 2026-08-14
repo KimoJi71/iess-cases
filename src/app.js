@@ -26,7 +26,8 @@
     '現勘表收集': 'survey-list',
     '客戶管理': 'customer-list',
     '門市管理': 'store-list',
-    '設備管理': 'equipment-list'
+    '設備管理': 'equipment-list',
+    '廠商管理': 'vendor-list'
   };
 
   var SCHEDULING_SUBMENU_DEFAULT_VIEW = {
@@ -88,6 +89,7 @@
     projectCases: INITIAL_PROJECT_CASES,
     surveyCases: INITIAL_SURVEY_CASES,
     customers: INITIAL_CUSTOMERS,
+    vendors: INITIAL_VENDORS,
     stores: INITIAL_STORES,
     storeCustomer: '',
     equipments: INITIAL_EQUIPMENTS,
@@ -174,6 +176,7 @@
   var setProjectCases = makeSetter('projectCases');
   var setSurveyCases = makeSetter('surveyCases');
   var setCustomers = makeSetter('customers');
+  var setVendors = makeSetter('vendors');
   var setStores = makeSetter('stores');
   var setEquipments = makeSetter('equipments');
   var setEquipmentCustomer = makeSetter('equipmentCustomer');
@@ -532,6 +535,21 @@
           targetCase: s.editingCase,
           equipmentCustomer: s.equipmentCustomer, equipmentStore: s.equipmentStore,
           setView: setView, showToast: showToast
+        });
+      case 'vendor-list':
+        return h(VendorList, {
+          vendors: s.vendors, setVendors: setVendors,
+          setEditingCase: setEditingCase, setView: setView, showToast: showToast
+        });
+      case 'vendor-add':
+        return h(VendorForm, {
+          vendors: s.vendors, setVendors: setVendors,
+          setView: setView, showToast: showToast
+        });
+      case 'vendor-edit':
+        return h(VendorForm, {
+          vendors: s.vendors, setVendors: setVendors,
+          targetCase: s.editingCase, setView: setView, showToast: showToast
         });
       default:
         return null;

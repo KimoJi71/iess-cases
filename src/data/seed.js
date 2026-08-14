@@ -132,6 +132,63 @@ const INITIAL_CUSTOMERS = [{
   contacts: []
 }];
 
+// --- 初始模擬廠商列表 (客戶建檔 - 廠商管理) ---
+const INITIAL_VENDORS = [{
+  id: 'VEND1',
+  name: '台灣大金空調',
+  type: '供貨商',
+  taxId: '11223344',
+  principal: '高志遠',
+  phone: '02-2655-8888',
+  fax: '02-2655-8800',
+  address: '台北市內湖區瑞光路500號',
+  remarks: '室內外機主要供貨來源。',
+  createdDate: todayDate,
+  contacts: [{
+    id: 301,
+    title: '業務經理',
+    name: '周佳穎',
+    phone: '0918-222-333',
+    email: 'chou@daikin.example.com'
+  }]
+}, {
+  id: 'VEND2',
+  name: '協成工程行',
+  type: '協力商',
+  taxId: '22334455',
+  principal: '許建成',
+  phone: '04-2320-5678',
+  fax: '',
+  address: '台中市西屯區台灣大道三段200號',
+  remarks: '中部風管與安裝協力。',
+  createdDate: yesterdayDate,
+  contacts: [{
+    id: 401,
+    title: '工地主任',
+    name: '蔡明宏',
+    phone: '0921-888-999',
+    email: 'tsai@xiecheng.example.com'
+  }, {
+    id: 402,
+    title: '會計',
+    name: '林淑芬',
+    phone: '04-2320-5679',
+    email: 'lin@xiecheng.example.com'
+  }]
+}, {
+  id: 'VEND3',
+  name: '南區冷凍材料行',
+  type: '其他',
+  taxId: '33445566',
+  principal: '鄭文傑',
+  phone: '07-333-2211',
+  fax: '07-333-2212',
+  address: '高雄市三民區建國三路88號',
+  remarks: '',
+  createdDate: twoDaysAgoDate,
+  contacts: []
+}];
+
 // --- 初始模擬門市列表 (客戶建檔 - 門市管理) ---
 const INITIAL_STORES = [{
   id: 'STORE1',
