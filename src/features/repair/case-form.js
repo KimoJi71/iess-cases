@@ -488,19 +488,28 @@
         var pts = ProcessMethodUtils.resolveCaseRecordPoints(r, processMethods, formData.isClosed);
         return pts === null ? "—" : String(pts);
       }
-      function handleAddRecord() {
+      function handleAddRecord(status) {
         var pm = ProcessMethodUtils.findProcessMethodForSelection(processMethods, newRecord);
         if (!pm) {
           showToast('請選擇處理方式', 'error');
           return;
         }
         formData.processRecords = (formData.processRecords || []).concat([
-          ProcessMethodUtils.toCaseProcessRecord(pm, newRecord.qty)
+          ProcessMethodUtils.toCaseProcessRecord(pm, newRecord.qty, null, status)
         ]);
         rerender();
       }
       function handleRemoveRecord(id) {
         formData.processRecords = formData.processRecords.filter(function (r) { return r.id !== id; });
+        rerender();
+      }
+      function handleToggleRecordStatus(id) {
+        formData.processRecords = (formData.processRecords || []).map(function (r) {
+          if (r.id !== id) return r;
+          return Object.assign({}, r, {
+            status: ProcessMethodUtils.toggleCaseRecordStatus(ProcessMethodUtils.getCaseRecordStatus(r))
+          });
+        });
         rerender();
       }
       function handleSubmit() {
@@ -743,11 +752,17 @@
         className: "w-full p-2 border rounded outline-none text-sm text-center"
       })), h("span", {
         className: "text-sm text-gray-600 pb-2 min-w-[2rem]"
-      }, selectedUnit || "—")), h("button", {
+      }, selectedUnit || "—")), h("div", {
+        className: "flex items-end gap-2"
+      }, h("button", {
         type: "button",
-        onClick: handleAddRecord,
+        onClick: function () { handleAddRecord(ProcessMethodUtils.PROCESS_RECORD_STATUS.PENDING); },
+        className: "bg-white text-amber-700 border border-amber-400 px-4 py-2 rounded text-sm hover:bg-amber-50 h-[38px]"
+      }, "待處理"), h("button", {
+        type: "button",
+        onClick: function () { handleAddRecord(ProcessMethodUtils.PROCESS_RECORD_STATUS.DONE); },
         className: "bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700 h-[38px]"
-      }, "新增")), h("div", {
+      }, "已處理"))), h("div", {
         className: "border rounded-md overflow-x-auto table-scroll-hint"
       }, h("table", {
         className: "w-full text-left text-sm whitespace-nowrap"
@@ -758,6 +773,8 @@
         className: "p-2 pl-4 first:pl-4"
       }, col.label); }), h("th", {
         className: "p-2"
+      }, "狀態"), h("th", {
+        className: "p-2"
       }, "積分數"), h("th", {
         className: "p-2"
       }, "數量"), h("th", {
@@ -765,29 +782,46 @@
       }, "操作"))), h("tbody", {
         className: "divide-y"
       }, !formData.processRecords || formData.processRecords.length === 0 ? h("tr", null, h("td", {
-        colspan: String(pmColumns.length + 3),
+        colspan: String(pmColumns.length + 4),
         className: "p-4 text-center text-gray-400"
-      }, processMethods.length ? "尚未加入處理項目" : "請至系統權限建立處理方式")) : formData.processRecords.map(function (r, idx) { return h("tr", {
+      }, processMethods.length ? "尚未加入處理項目" : "請至系統權限建立處理方式")) : ProcessMethodUtils.sortCaseProcessRecords(formData.processRecords).map(function (r, idx) {
+        var isDone = ProcessMethodUtils.isCaseRecordDone(r);
+        return h("tr", {
         key: r.id || idx
       }, pmColumns.map(function (col) { return h("td", {
         key: col.key,
         className: "p-2 pl-4 first:pl-4"
       }, r[col.key] || "—"); }), h("td", {
         className: "p-2"
-      }, formatRecordPoints(r)), h("td", {
+      }, h("span", {
+        className: ProcessMethodUtils.getCaseRecordStatusBadgeClass(r)
+      }, ProcessMethodUtils.getCaseRecordStatus(r))), h("td", {
+        className: "p-2 " + (isDone ? "" : "text-gray-400")
+      }, formatRecordPoints(r), isDone ? null : h("span", {
+        className: "text-xs text-gray-400 ml-1"
+      }, "不計分")), h("td", {
         className: "p-2"
       }, r.qty, r.unit ? h("span", {
         className: "text-gray-500 ml-1"
       }, r.unit) : null), h("td", {
         className: "p-2 text-right pr-4"
+      }, h("div", {
+        className: "flex items-center justify-end gap-2"
       }, h("button", {
+        type: "button",
+        onClick: function () { handleToggleRecordStatus(r.id); },
+        title: isDone ? "轉為待處理" : "轉為已處理",
+        className: "px-2 py-1 rounded border text-xs " + (isDone
+          ? "border-amber-400 text-amber-700 hover:bg-amber-50"
+          : "border-blue-500 text-blue-600 hover:bg-blue-50")
+      }, isDone ? "轉待處理" : "轉已處理"), h("button", {
         type: "button",
         onClick: function () { handleRemoveRecord(r.id); },
         title: "移除此處理方式",
         className: "text-red-500"
       }, Icons.X({
         className: "h-4 w-4"
-      })))); }))))), h("div", null, h("label", {
+      }))))); }))))), h("div", null, h("label", {
         className: "block text-sm mb-1"
       }, "備註"), h("textarea", {
         name: "remarks",

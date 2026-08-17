@@ -798,10 +798,11 @@ function hoursAgoStamp(hours) {
     pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
 }
 
-function caseProcessRecordFromPm(pmId, qty, lineId) {
+function caseProcessRecordFromPm(pmId, qty, lineId, status) {
   var pm = INITIAL_PROCESS_METHODS.find(function (m) { return m.id === pmId; });
   if (!pm) return null;
   return {
+    status: status || '已處理',
     id: lineId,
     processMethodId: pm.id,
     category1: pm.category1,
@@ -905,7 +906,10 @@ const INITIAL_CASES = [{
     type: '內',
     model: 'FXYP100'
   },
-  processRecords: [caseProcessRecordFromPm('MS0001', 1, 1)],
+  processRecords: [
+    caseProcessRecordFromPm('MS0001', 1, 1),
+    caseProcessRecordFromPm('MC0012', 1, 2, '待處理')
+  ],
   reRepairDate: yesterdayDate,
   secondRepairDate: '',
   completionDate: todayDate,

@@ -36,6 +36,7 @@ function assertEq(actual, expected, name) {
 
 const sandbox = {
   console,
+  PROCESS_METHOD_CATEGORIES: {},
   SERVICE_LEVEL_OPTIONS: [],
   // 必須與 src/data/options.js 的 EQUIPMENT_LEVEL_OPTIONS 一致
   EQUIPMENT_LEVEL_OPTIONS: ['一般設備', '增額設備'],
@@ -69,6 +70,7 @@ sandbox.AssigneeUtils = {
 load('src/features/customer/equipment-utils.js');
 load('src/features/permissions/device-category-utils.js');
 load('src/features/permissions/service-level-utils.js');
+load('src/features/permissions/process-method-utils.js');
 load('src/features/repair/case-assignee-utils.js');
 load('src/features/reports/performance-utils.js');
 

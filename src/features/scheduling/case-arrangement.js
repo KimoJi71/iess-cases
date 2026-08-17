@@ -716,6 +716,7 @@
                             pmColumns.map(function (col) {
                               return h('th', { key: col.key, className: 'p-2 pl-4' }, col.label);
                             }),
+                            h('th', { className: 'p-2' }, '狀態'),
                             h('th', { className: 'p-2' }, '積分數'),
                             h('th', { className: 'p-2' }, '數量')
                           )
@@ -723,14 +724,22 @@
                         h('tbody', { className: 'divide-y' },
                           (!formData.processRecords || !formData.processRecords.length)
                             ? h('tr', null,
-                                h('td', { colspan: String(pmColumns.length + 2), className: 'p-4 text-center text-gray-400' }, '無處理方式紀錄')
+                                h('td', { colspan: String(pmColumns.length + 3), className: 'p-4 text-center text-gray-400' }, '無處理方式紀錄')
                               )
-                            : formData.processRecords.map(function (r, idx) {
+                            : ProcessMethodUtils.sortCaseProcessRecords(formData.processRecords).map(function (r, idx) {
+                              var isDone = ProcessMethodUtils.isCaseRecordDone(r);
                               return h('tr', { key: r.id || idx },
                                 pmColumns.map(function (col) {
                                   return h('td', { key: col.key, className: 'p-2 pl-4' }, r[col.key] || '—');
                                 }),
-                                h('td', { className: 'p-2' }, formatRecordPoints(r)),
+                                h('td', { className: 'p-2' },
+                                  h('span', { className: ProcessMethodUtils.getCaseRecordStatusBadgeClass(r) },
+                                    ProcessMethodUtils.getCaseRecordStatus(r))
+                                ),
+                                h('td', { className: 'p-2 ' + (isDone ? '' : 'text-gray-400') },
+                                  formatRecordPoints(r),
+                                  isDone ? null : h('span', { className: 'text-xs text-gray-400 ml-1' }, '不計分')
+                                ),
                                 h('td', { className: 'p-2' },
                                   r.qty,
                                   r.unit ? h('span', { className: 'text-gray-500 ml-1' }, r.unit) : null

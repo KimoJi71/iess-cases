@@ -131,7 +131,43 @@
     { key: 'specification', label: '規格' }
   ];
 
-  function toCaseProcessRecord(processMethod, qty, lineId) {
+  // 案件處理方式的處理狀態：只有「已處理」計入積分，舊資料（無 status）視為已處理。
+  var PROCESS_RECORD_STATUS = { DONE: '已處理', PENDING: '待處理' };
+
+  function getCaseRecordStatus(record) {
+    var status = String((record && record.status) || '').trim();
+    return status === PROCESS_RECORD_STATUS.PENDING
+      ? PROCESS_RECORD_STATUS.PENDING
+      : PROCESS_RECORD_STATUS.DONE;
+  }
+
+  function isCaseRecordDone(record) {
+    return getCaseRecordStatus(record) === PROCESS_RECORD_STATUS.DONE;
+  }
+
+  function getCaseRecordStatusBadgeClass(record) {
+    return isCaseRecordDone(record)
+      ? 'inline-block px-2 py-0.5 rounded text-xs bg-green-100 text-green-700'
+      : 'inline-block px-2 py-0.5 rounded text-xs bg-amber-100 text-amber-700';
+  }
+
+  function toggleCaseRecordStatus(status) {
+    return status === PROCESS_RECORD_STATUS.DONE
+      ? PROCESS_RECORD_STATUS.PENDING
+      : PROCESS_RECORD_STATUS.DONE;
+  }
+
+  // 已處理在前、待處理在後；同組維持原本加入順序（穩定排序）。
+  function sortCaseProcessRecords(records) {
+    var done = [];
+    var pending = [];
+    (records || []).forEach(function (r) {
+      (isCaseRecordDone(r) ? done : pending).push(r);
+    });
+    return done.concat(pending);
+  }
+
+  function toCaseProcessRecord(processMethod, qty, lineId, status) {
     var pm = normalizeRecord(processMethod);
     return {
       id: lineId != null ? lineId : Date.now(),
@@ -142,7 +178,8 @@
       specification: pm.specification,
       unit: pm.unit,
       points: pm.points,
-      qty: Number(qty) > 0 ? Number(qty) : 1
+      qty: Number(qty) > 0 ? Number(qty) : 1,
+      status: getCaseRecordStatus({ status: status })
     };
   }
 
@@ -309,6 +346,12 @@
     findProcessMethodById: findProcessMethodById,
     findProcessMethodForSelection: findProcessMethodForSelection,
     CASE_DISPLAY_COLUMNS: CASE_DISPLAY_COLUMNS,
+    PROCESS_RECORD_STATUS: PROCESS_RECORD_STATUS,
+    getCaseRecordStatus: getCaseRecordStatus,
+    isCaseRecordDone: isCaseRecordDone,
+    getCaseRecordStatusBadgeClass: getCaseRecordStatusBadgeClass,
+    toggleCaseRecordStatus: toggleCaseRecordStatus,
+    sortCaseProcessRecords: sortCaseProcessRecords,
     toCaseProcessRecord: toCaseProcessRecord,
     formatCaseProcessRecordLabel: formatCaseProcessRecordLabel,
     resolveCaseRecordPoints: resolveCaseRecordPoints,
