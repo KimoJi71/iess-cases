@@ -2,7 +2,6 @@
  * features/customer/equipment-list.js — 客戶建檔（設備管理）：設備列表
  * props: {
  *   equipments, setEquipments, customers, stores, deviceCategories,
- *   repairCases, projectCases, setProjectCases,
  *   equipmentCustomer, setEquipmentCustomer, equipmentStore, setEquipmentStore,
  *   openStoreEdit, openStoreHistory, setEditingCase, setView, showToast
  * }
@@ -18,9 +17,6 @@
     var customers = props.customers;
     var stores = props.stores;
     var deviceCategories = props.deviceCategories || [];
-    var repairCases = props.repairCases || [];
-    var projectCases = props.projectCases || [];
-    var setProjectCases = props.setProjectCases;
     var equipmentCustomer = props.equipmentCustomer;
     var setEquipmentCustomer = props.setEquipmentCustomer;
     var equipmentStore = props.equipmentStore;
@@ -31,7 +27,6 @@
     var setView = props.setView;
     var showToast = props.showToast;
 
-    var deleteModal = { show: false, id: null };
     var importMenuOpen = false;
     var listPagination = IESS.createListPagination();
 
@@ -92,16 +87,6 @@
         openStoreHistory(currentStore, 'equipment-list');
       }
 
-      function tryOpenDeleteModal(id) {
-        var blockedReason = EquipmentUtils.getEquipmentDeleteBlockedReason(id, repairCases);
-        if (blockedReason) {
-          showToast(blockedReason, 'error');
-          return;
-        }
-        deleteModal = { show: true, id: id };
-        rerender();
-      }
-
       function handleDownloadTemplate() {
         importMenuOpen = false;
         showToast('匯入範例檔案下載成功（demo）');
@@ -154,23 +139,6 @@
           return;
         }
         showToast('已匯出 ' + filtered.length + ' 筆設備（demo）');
-      }
-
-      function handleDelete(id) {
-        var blockedReason = EquipmentUtils.getEquipmentDeleteBlockedReason(id, repairCases);
-        if (blockedReason) {
-          showToast(blockedReason, 'error');
-          deleteModal = { show: false, id: null };
-          rerender();
-          return;
-        }
-        setEquipments(equipments.filter(function (e) { return e.id !== id; }));
-        if (setProjectCases) {
-          setProjectCases(EquipmentUtils.removeEquipmentFromProjectCases(id, projectCases));
-        }
-        deleteModal = { show: false, id: null };
-        showToast('設備已刪除');
-        rerender();
       }
 
       return h('div', { className: 'bg-white p-6 rounded-lg shadow-sm border border-gray-100' },
@@ -333,9 +301,7 @@
                               onClick: function () { setEditingCase(eq); setView('equipment-edit'); },
                               className: 'p-1.5 text-blue-600 hover:bg-blue-100 rounded',
                               title: '編輯'
-                            }, Icons.Edit({ className: 'h-4 w-4' })),
-                            iconActionBtn({ label: '刪除', onClick: function () { tryOpenDeleteModal(eq.id); },
-                              className: 'p-1.5 text-red-600 hover:bg-red-100 rounded', icon: Icons.Trash2({ className: 'h-4 w-4' }) })
+                            }, Icons.Edit({ className: 'h-4 w-4' }))
                           )
                         ),
                         EquipmentUtils.renderListDataCells(h, eq)
@@ -344,29 +310,7 @@
               )
             )
           ),
-        listPagination.renderBar(pageResult, rerender),
-        deleteModal.show && h('div', {
-          className: 'app-modal-overlay'
-        },
-          h('div', { className: 'bg-white rounded-lg shadow-xl p-6 w-96 max-w-full m-4' },
-            h('div', { className: 'flex items-center space-x-3 text-red-600 mb-4' },
-              Icons.AlertCircle({ className: 'h-6 w-6' }),
-              h('h3', { className: 'text-lg font-bold text-gray-800' }, '確認刪除')
-            ),
-            h('p', { className: 'text-gray-600 mb-6' },
-              '確定要刪除此設備嗎？已有叫修紀錄的設備無法刪除；刪除後無法復原。'),
-            h('div', { className: 'flex justify-end space-x-3' },
-              h('button', {
-                onClick: function () { deleteModal = { show: false, id: null }; rerender(); },
-                className: 'px-4 py-2 border rounded-md text-gray-600 hover:bg-gray-50 transition-colors'
-              }, '取消'),
-              h('button', {
-                onClick: function () { handleDelete(deleteModal.id); },
-                className: 'px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors'
-              }, '確認刪除')
-            )
-          )
-        )
+        listPagination.renderBar(pageResult, rerender)
       );
     });
   }

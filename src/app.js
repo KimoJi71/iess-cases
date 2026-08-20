@@ -529,7 +529,6 @@
           equipments: s.equipments, setEquipments: setEquipments,
           customers: s.customers, stores: s.stores,
           deviceCategories: s.deviceCategories,
-          repairCases: s.cases, projectCases: s.projectCases, setProjectCases: setProjectCases,
           equipmentCustomer: s.equipmentCustomer, setEquipmentCustomer: setEquipmentCustomer,
           equipmentStore: s.equipmentStore, setEquipmentStore: setEquipmentStore,
           openStoreEdit: openStoreEdit, openStoreHistory: openStoreHistory,

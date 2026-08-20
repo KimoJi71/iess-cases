@@ -1,5 +1,5 @@
 /*
- * features/customer/equipment-utils.js — 設備刪除／移除共用邏輯、設備等級讀取
+ * features/customer/equipment-utils.js — 設備移除（工程立案）共用邏輯、設備等級讀取
  */
 (function () {
   'use strict';
@@ -32,17 +32,6 @@
         return eq && String(eq.id) === target;
       });
     });
-  }
-
-  function getEquipmentDeleteBlockedReason(equipmentId, repairCases) {
-    if (isEquipmentUsedInRepair(equipmentId, repairCases)) {
-      return '此設備已有叫修紀錄，無法刪除';
-    }
-    return '';
-  }
-
-  function canDeleteEquipment(equipmentId, repairCases) {
-    return !getEquipmentDeleteBlockedReason(equipmentId, repairCases);
   }
 
   function canRemoveProjectEquipment(equipmentId, repairCases) {
@@ -231,20 +220,6 @@
     return result;
   }
 
-  function removeEquipmentFromProjectCases(equipmentId, projectCases) {
-    var target = String(equipmentId);
-    return (projectCases || []).map(function (project) {
-      var equipment = (project.details && project.details.equipment) || [];
-      var nextEquipment = equipment.filter(function (eq) {
-        return !eq || String(eq.id) !== target;
-      });
-      if (nextEquipment.length === equipment.length) return project;
-      return Object.assign({}, project, {
-        details: Object.assign({}, project.details, { equipment: nextEquipment })
-      });
-    });
-  }
-
   window.EquipmentUtils = {
     LIST_COLUMNS: LIST_COLUMNS,
     defaultStatus: defaultStatus,
@@ -259,12 +234,9 @@
     renderListDataCells: renderListDataCells,
     isEquipmentUsedInRepair: isEquipmentUsedInRepair,
     isEquipmentInProjectCases: isEquipmentInProjectCases,
-    getEquipmentDeleteBlockedReason: getEquipmentDeleteBlockedReason,
-    canDeleteEquipment: canDeleteEquipment,
     canRemoveProjectEquipment: canRemoveProjectEquipment,
     getProjectEquipmentRemoveBlockedReason: getProjectEquipmentRemoveBlockedReason,
     getCustomerAcceptanceDate: getCustomerAcceptanceDate,
-    applyProjectCloseToEquipments: applyProjectCloseToEquipments,
-    removeEquipmentFromProjectCases: removeEquipmentFromProjectCases
+    applyProjectCloseToEquipments: applyProjectCloseToEquipments
   };
 })();
