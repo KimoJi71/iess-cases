@@ -126,6 +126,17 @@
     return n;
   }
 
+  /**
+   * 客戶的「汰換年限(年)」：設備自驗收起算，多久建議汰換。
+   * 未設定／空白／非正數一律回 0，呼叫端據此視為不做汰換管控。
+   */
+  function getReplacementYears(customers, customerName) {
+    var cust = findCustomerByName(customers, customerName);
+    var n = Number(cust && cust.replacementYears);
+    if (!isFinite(n) || n <= 0) return 0;
+    return n;
+  }
+
   function getMaintenanceStartMonths(customers, customerName) {
     var cust = findCustomerByName(customers, customerName);
     return normalizeStartMonths(cust && cust.maintenanceStartMonths);
@@ -210,6 +221,7 @@
     findPeriodForMonth: findPeriodForMonth,
     formatPeriodsLabel: formatPeriodsLabel,
     getOvertimeHours: getOvertimeHours,
+    getReplacementYears: getReplacementYears,
     getMaintenanceStartMonths: getMaintenanceStartMonths,
     getMaintenanceStartMonth: getMaintenanceStartMonth,
     isMaintenanceStartedForMonth: isMaintenanceStartedForMonth,

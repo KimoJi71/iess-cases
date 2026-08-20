@@ -48,6 +48,11 @@
         && targetCase.overtimeHours !== null)
         ? String(targetCase.overtimeHours)
         : '',
+      // 汰換年限（年）。空字串代表未設定，讀取端一律當未設定（不做汰換提醒）處理。
+      replacementYears: (targetCase && targetCase.replacementYears !== undefined
+        && targetCase.replacementYears !== null)
+        ? String(targetCase.replacementYears)
+        : '',
       phone: (targetCase && targetCase.phone) || '',
       fax: (targetCase && targetCase.fax) || '',
       address: (targetCase && targetCase.address) || '',
@@ -83,6 +88,13 @@
         var name = e.target.name;
         var value = e.target.value;
         formData[name] = value;
+        rerender();
+      }
+      // 數字欄位（開始保養時間／逾時時間／汰換年限）：只吃 0-9。
+      // type=number 仍可打進 e、+、-、小數點，這裡直接濾掉，欄位一律維持整數字串。
+      function handleNumberChange(e) {
+        var name = e.target.name;
+        formData[name] = String(e.target.value).replace(/[^0-9]/g, '');
         rerender();
       }
       function handleServiceLevelChange(e) {
@@ -190,6 +202,10 @@
         var savedOvertimeHours = rawOvertimeHours === '' || !isFinite(Number(rawOvertimeHours))
           ? ''
           : Math.max(0, Math.floor(Number(rawOvertimeHours)));
+        var rawReplacementYears = String(formData.replacementYears || '').trim();
+        var savedReplacementYears = rawReplacementYears === '' || !isFinite(Number(rawReplacementYears))
+          ? ''
+          : Math.max(0, Math.floor(Number(rawReplacementYears)));
         if (isEdit) {
           setCases(cases.map(function (c) {
             return c.id === targetCase.id
@@ -197,7 +213,8 @@
                   contacts: contacts,
                   periods: savedPeriods,
                   maintenanceStartMonths: savedStartMonths,
-                  overtimeHours: savedOvertimeHours
+                  overtimeHours: savedOvertimeHours,
+                  replacementYears: savedReplacementYears
                 })
               : c;
           }));
@@ -208,6 +225,7 @@
             periods: savedPeriods,
             maintenanceStartMonths: savedStartMonths,
             overtimeHours: savedOvertimeHours,
+            replacementYears: savedReplacementYears,
             createdDate: todayDate
           });
           setCases([newCustomer].concat(cases));
@@ -280,10 +298,11 @@
                 h('input', {
                   type: 'number',
                   name: 'maintenanceStartMonths',
+                  inputMode: 'numeric',
                   min: '0',
                   step: '1',
                   value: formData.maintenanceStartMonths,
-                  onChange: handleChange,
+                  onChange: handleNumberChange,
                   className: 'w-24 p-2.5 border rounded-md outline-none'
                 }),
                 h('span', { className: 'text-sm text-gray-500 whitespace-nowrap' }, '個月後開始保養')
@@ -294,10 +313,24 @@
               h('input', {
                 type: 'number',
                 name: 'overtimeHours',
+                inputMode: 'numeric',
                 min: '0',
                 step: '1',
                 value: formData.overtimeHours,
-                onChange: handleChange,
+                onChange: handleNumberChange,
+                className: 'w-full p-2.5 border rounded-md outline-none'
+              })
+            ),
+            h('div', null,
+              h('label', { className: 'block text-sm mb-1' }, '汰換年限(年)'),
+              h('input', {
+                type: 'number',
+                name: 'replacementYears',
+                inputMode: 'numeric',
+                min: '0',
+                step: '1',
+                value: formData.replacementYears,
+                onChange: handleNumberChange,
                 className: 'w-full p-2.5 border rounded-md outline-none'
               })
             ),

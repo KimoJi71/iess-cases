@@ -195,15 +195,16 @@ input.pr-10.border.rounded-md {
   padding-right: 2.5rem;
 }
 
-input[type="number"].border.rounded-md::-webkit-outer-spin-button,
-input[type="number"].border.rounded-md::-webkit-inner-spin-button {
-  -webkit-appearance: none;
+/* 數字欄位一律顯示 +/- 上下鈕 */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: auto;
   margin: 0;
 }
 
-input[type="number"].border.rounded-md {
-  -moz-appearance: textfield;
-  appearance: textfield;
+input[type="number"] {
+  -moz-appearance: auto;
+  appearance: auto;
 }
 
 /* ===== FullCalendar schedule events ===== */

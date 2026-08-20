@@ -95,6 +95,7 @@ const INITIAL_CUSTOMERS = [{
   principal: '吳建宏',
   serviceLevel: 'C 保養(一年一次)',
   overtimeHours: 8,
+  replacementYears: 8,
   periods: [{ visitIndex: 1, startMonth: 1, endMonth: 12 }],
   phone: '03-322-8888',
   fax: '03-322-8889',
