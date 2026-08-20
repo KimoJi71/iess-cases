@@ -24,6 +24,7 @@
     '案件銷案審核': 'review-list',
     '工程立案': 'project-list',
     '現勘表收集': 'survey-list',
+    '工作安排': 'job-schedule-list',
     '客戶管理': 'customer-list',
     '門市管理': 'store-list',
     '設備管理': 'equipment-list',
@@ -94,6 +95,7 @@
     ),
     projectCases: INITIAL_PROJECT_CASES,
     surveyCases: INITIAL_SURVEY_CASES,
+    jobSchedules: INITIAL_JOB_SCHEDULES,
     customers: INITIAL_CUSTOMERS,
     vendors: INITIAL_VENDORS,
     stores: INITIAL_STORES,
@@ -182,6 +184,7 @@
   var setMaintenanceCases = makeSetter('maintenanceCases');
   var setProjectCases = makeSetter('projectCases');
   var setSurveyCases = makeSetter('surveyCases');
+  var setJobSchedules = makeSetter('jobSchedules');
   var setCustomers = makeSetter('customers');
   var setVendors = makeSetter('vendors');
   var setStores = makeSetter('stores');
@@ -446,6 +449,11 @@
           cases: s.surveyCases, setCases: setSurveyCases, stores: s.stores,
           customers: s.customers, deviceCategories: s.deviceCategories,
           targetCase: s.editingCase, setView: setView, showToast: showToast
+        });
+      case 'job-schedule-list':
+        return h(JobScheduleList, {
+          jobSchedules: s.jobSchedules, setJobSchedules: setJobSchedules,
+          setEditingCase: setEditingCase, setView: setView, showToast: showToast
         });
       case 'customer-list':
         return h(CustomerList, {

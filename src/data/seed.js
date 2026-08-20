@@ -2090,6 +2090,36 @@ const INITIAL_SURVEY_CASES = [{
   fileName: '星巴克_站前店'
 }];
 
+// --- 初始模擬工作安排列表 ---
+const INITIAL_JOB_SCHEDULES = [{
+  id: 'JS1',
+  name: '現場複測',
+  description: '複測風管尺寸',
+  remarks: '',
+  estimatedDate: todayDate,
+  estimatedTime: '09:30',
+  assigneeName: '系統管理員',
+  createdDate: todayDate
+}, {
+  id: 'JS2',
+  name: '設備清點',
+  description: '',
+  remarks: '倉庫盤點',
+  estimatedDate: yesterdayDate,
+  estimatedTime: '',
+  assigneeName: '系統管理員',
+  createdDate: yesterdayDate
+}, {
+  id: 'JS3',
+  name: '內部會議',
+  description: '工程進度同步',
+  remarks: '',
+  estimatedDate: '',
+  estimatedTime: '',
+  assigneeName: '系統管理員',
+  createdDate: twoDaysAgoDate
+}];
+
 function syncRecordStoreFields(record, stores) {
   if (!record || !stores) return;
   var store = stores.find(function (s) {
