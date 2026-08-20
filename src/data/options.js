@@ -196,7 +196,6 @@ const PERMISSION_FUNCTIONS = [
   '廠商管理',
   '案件安排',
   '人員動向',
-  'GPS',
   '案件績效統計',
   '資料調閱',
   '帳號管理',
@@ -228,7 +227,7 @@ const PERMISSION_TREE = [
   },
   {
     id: '案件排程',
-    children: ['案件安排', '人員動向', 'GPS']
+    children: ['案件安排', '人員動向']
   },
   {
     id: '報表統計',

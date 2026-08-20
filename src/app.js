@@ -32,8 +32,7 @@
 
   var SCHEDULING_SUBMENU_DEFAULT_VIEW = {
     '案件安排': 'arrangement',
-    '人員動向': 'personnel-movement',
-    'GPS': 'gps'
+    '人員動向': 'personnel-movement'
   };
 
   var REPORTS_SUBMENU_DEFAULT_VIEW = {
@@ -60,6 +59,10 @@
   var initialTopMenu = readLS('iess:currentTopMenu', '戰情室');
   var initialSubMenu = readLS('iess:currentSubMenu', '案件處理');
   var initialSchedulingSubMenu = readLS('iess:schedulingSubMenu', '案件安排');
+  if (initialSchedulingSubMenu === 'GPS') {
+    initialSchedulingSubMenu = '案件安排';
+    writeLS('iess:schedulingSubMenu', initialSchedulingSubMenu);
+  }
   var initialReportsSubMenu = readLS('iess:reportsSubMenu', '案件績效統計');
   var initialPermissionsSubMenu = readLS('iess:permissionsSubMenu', '帳號管理');
   if (initialPermissionsSubMenu === '行政區域管理') {
@@ -595,8 +598,6 @@
           projectCases: s.projectCases,
           showToast: showToast
         });
-      case 'gps':
-        return h(GpsTracking);
       default:
         return null;
     }

@@ -7,7 +7,7 @@
  */
 (function () {
   'use strict';
-  var h = IESS.h, Icons = IESS.Icons, iconActionBtn = IESS.iconActionBtn;
+  var h = IESS.h, Icons = IESS.Icons;
 
   function renderQuickAction(action) {
     var Icon = Icons[action.icon];
@@ -70,7 +70,6 @@
           ),
           quickActions.length > 0 && h('div', { className: 'app-header__divider', 'aria-hidden': 'true' }),
           h('div', { className: 'app-header__utilities' },
-            iconActionBtn({ label: '通知', className: 'app-header__utility-btn', icon: Icons.Bell({ className: 'h-5 w-5' }) }),
             h('div', { className: 'app-header__user' },
               h('div', { className: 'app-header__user-avatar' },
                 Icons.User({ className: 'h-4 w-4' })

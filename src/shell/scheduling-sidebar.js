@@ -6,7 +6,7 @@
   'use strict';
   var h = IESS.h, Icons = IESS.Icons;
 
-  var MENU_ITEMS = ['案件安排', '人員動向', 'GPS'];
+  var MENU_ITEMS = ['案件安排', '人員動向'];
 
   function SchedulingSidebar(props) {
     var currentSubMenu = props.currentSubMenu;
