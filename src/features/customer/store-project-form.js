@@ -210,7 +210,9 @@
               // 設備欄位與「設備管理」一致，與工程立案的設備表格共用
               ProjectEquipmentShared.equipmentTable(equipmentList, {
                 deviceCategories: deviceCategories,
-                onEdit: openEquipModal,
+                // 汰換／撤店的設備是既有資料，只可移除
+                onEdit: ProjectEquipmentShared.usesEquipmentPicker(formData.workCategory)
+                  ? null : openEquipModal,
                 onDelete: handleDeleteEquipment
               })
             )

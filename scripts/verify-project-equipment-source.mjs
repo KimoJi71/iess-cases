@@ -458,6 +458,44 @@ try {
   assertEq(editForm.rows, 1, '加入 1 筆既有設備');
   assertEq(editForm.actionBtns, 1, '既有設備只有移除鈕');
 
+  console.log('\n未結案立案單的設備操作鈕');
+  const actions = await evaluate(`(function () {
+    function mount(workCategory, mode) {
+      var wrap = document.createElement('div');
+      wrap.id = 'probe';
+      document.body.appendChild(wrap);
+      wrap.appendChild(EditProjectForm({
+        editingCase: {
+          id: 'P1', projectNumber: '20260101001', creationDate: '2026-01-01',
+          customerName: '測試客戶', storeName: '測試門市', workCategory: workCategory,
+          currentStage: '立案時間', stageDate: '2026-01-01', isClosed: mode === 'view',
+          history: [{ stage: '立案時間', date: '2026-01-01', assignee: '' }], comments: [],
+          details: { workCategory: workCategory, customerName: '測試客戶', storeName: '測試門市',
+            storeAddress: '台北市中山區一號', serviceLevel: 'A', contactPerson: '',
+            suggestedContractor: '', entryDate: '', remarks: '',
+            equipment: [Object.assign(window.__eq('E1'), { id: 1 })] }
+        },
+        cases: [], setCases: function () {},
+        stores: [{ id: 'S1', customerName: '測試客戶', storeName: '測試門市',
+          city: '台北市', district: '中山區', address: '一號', serviceLevel: 'A' }],
+        customers: [{ id: 'C1', name: '測試客戶', serviceLevel: 'A 全包(有簽約客戶)', status: '啟用' }],
+        accounts: [], equipments: [], deviceCategories: [], repairCases: [],
+        mode: mode,
+        setView: function () {}, showToast: function () {}
+      }));
+      var row = window.__probe().querySelector('table tbody tr');
+      var titles = Array.prototype.map.call(row.querySelectorAll('td:last-child button'), function (b) {
+        return b.getAttribute('title') || b.getAttribute('aria-label') || b.textContent.trim();
+      });
+      window.__unmount();
+      return titles;
+    }
+    return { add: mount('新開', 'edit'), retire: mount('汰換', 'edit'), view: mount('新開', 'view') };
+  })()`);
+  assertEq(actions.add, ['編輯設備', '移除此設備'], '新開：未結案可編輯可移除');
+  assertEq(actions.retire, ['移除此設備'], '汰換：未結案只可移除');
+  assertEq(actions.view, [], '唯讀檢視不提供編輯／移除');
+
   console.log('\n整體');
   assertEq(consoleErrors.length, 0, '操作過程無 JS 錯誤');
 } catch (err) {

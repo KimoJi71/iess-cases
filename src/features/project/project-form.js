@@ -727,7 +727,8 @@
       }, '尚未加入任何設備資料')) : equipmentList.map(function (eq) {
         return renderEquipmentTableRow(eq, {
           deviceCategories: deviceCategories,
-          onEdit: openEquipModal,
+          // 汰換／撤店的設備是既有資料，只可移除
+          onEdit: usesEquipmentPicker(formData.workCategory) ? null : openEquipModal,
           onDelete: handleDeleteEquipment
         });
       })))))), h('div', {
@@ -1107,7 +1108,8 @@
         className: 'h-4 w-4'
       }), ' 加入設備')), projectEquipmentTable(equipmentList, {
         deviceCategories: deviceCategories,
-        onEdit: isEdit ? openEquipModal : null,
+        // 未結案時設備都可移除；編輯僅限新開／整裝／加裝（汰換／撤店的設備是既有資料）
+        onEdit: (isEdit && !usesEquipmentPicker(currentWorkCategory())) ? openEquipModal : null,
         onDelete: isEdit ? handleDeleteEquipment : null
       })), h('section', {
         className: 'bg-white p-6 rounded-lg shadow-sm border border-indigo-100 ring-1 ring-indigo-50'
