@@ -327,6 +327,15 @@
     });
   }
 
+  /* 保養狀態的自動判斷（「已完成」只能手動指定）：
+   * 已預約＝有組別或協力廠商，且有保養日期；其餘皆為未保養。 */
+  function resolveMaintenanceProgressStatus(formData) {
+    if (formData.status === '已完成') return '已完成';
+    var dispatched = CaseAssigneeUtils.hasFormalAssignee(formData)
+      || CaseAssigneeUtils.hasPartnerVendor(formData);
+    return (dispatched && formData.planDate) ? '已預約' : '未保養';
+  }
+
   function MaintenanceViewEditForm(props) {
     var targetCase = props.targetCase;
     var cases = props.cases;
@@ -340,8 +349,14 @@
 
     var customers = props.customers;
     var vendors = props.vendors || [];
+    var equipments = props.equipments || [];
     var formData = CaseAssigneeUtils.normalizeMaintenanceCase(targetCase);
+    // 進頁時先依排程資料校正一次保養狀態，避免顯示與判斷規則對不上
+    formData.status = resolveMaintenanceProgressStatus(formData);
+    var equipmentList = (formData.equipmentList || []).slice();
     var isEdit = mode === 'edit';
+    var equipPicker = { show: false };
+    var signaturePad = { show: false };
 
     function getStoreForCase(c) {
       return ScheduleUtils.resolveStore(stores, c && c.customerName, c && c.storeName);
@@ -355,19 +370,67 @@
     function ReadOnlyField(p) {
       var label = p.label;
       var value = p.value;
-      return h("div", null, h("span", {
+      return h("div", null, label && h("span", {
         className: "text-gray-500 block mb-1 text-xs"
       }, label), h("div", {
         className: "font-medium bg-gray-50 p-2.5 rounded-md border border-gray-100 min-h-[42px]"
       }, value || '-'));
     }
 
+    function sectionCard(title, extraHeader, body) {
+      return h("section", {
+        className: "bg-white p-6 rounded-lg shadow-sm border border-gray-100"
+      }, h("div", {
+        className: "flex justify-between items-center border-b pb-2 mb-4"
+      }, h("h3", {
+        className: "text-lg font-bold text-blue-800"
+      }, title), extraHeader), body);
+    }
+
+    function fieldLabel(text) {
+      return h("span", { className: "text-gray-500 block mb-1 text-xs" }, text);
+    }
+
     return stateful(function (rerender) {
+      function applyChange(patch) {
+        formData = Object.assign({}, formData, patch);
+        // 排程資料一有異動就重算保養狀態（「已完成」維持手動）
+        formData.status = resolveMaintenanceProgressStatus(formData);
+        rerender();
+      }
+
+      function handleStatusChange(value) {
+        var next = Object.assign({}, formData, { status: value });
+        if (value === '已完成') {
+          // 手動改為已完成時就押上完成時間
+          if (!next.completionDate) next.completionDate = IESS.caseDateTime.now();
+        } else {
+          next.completionDate = '';
+          next.status = resolveMaintenanceProgressStatus(next);
+        }
+        formData = next;
+        rerender();
+      }
+
+      function handlePickerConfirm(picked) {
+        var stamp = Date.now();
+        equipmentList = equipmentList.concat(picked.map(function (eq, idx) {
+          return Object.assign({}, eq, { id: stamp + idx });
+        }));
+        equipPicker = { show: false };
+        showToast('已加入 ' + picked.length + ' 筆設備');
+        rerender();
+      }
+
+      function handleRemoveEquipment(id) {
+        equipmentList = equipmentList.filter(function (eq) { return eq.id !== id; });
+        rerender();
+      }
+
       function handleSubmit() {
-        var updatedData = Object.assign({}, formData);
-        if (updatedData.status !== '已完成') {
-          updatedData.status = ScheduleUtils.resolveMaintenanceStatus(updatedData.status, updatedData.planDate);
-        } else if (!updatedData.completionDate) {
+        var updatedData = Object.assign({}, formData, { equipmentList: equipmentList });
+        updatedData.status = resolveMaintenanceProgressStatus(updatedData);
+        if (updatedData.status === '已完成' && !updatedData.completionDate) {
           updatedData.completionDate = IESS.caseDateTime.now();
         }
 
@@ -376,6 +439,7 @@
           updatedData.caseNumber = updatedData.planDate.replace(/-/g, '') + String(Math.floor(Math.random() * 1000)).padStart(3, '0');
         }
         showToast('保養狀態已更新');
+        // 保養完成同時押上門市的「上次保養日期」
         if (updatedData.status === '已完成') {
           updateStoreLastMaintenanceDate(stores, setStores, updatedData);
         }
@@ -385,128 +449,193 @@
         setView(backView);
       }
 
+      var addedSourceIds = equipmentList.map(function (eq) {
+        return eq.sourceEquipmentId;
+      }).filter(Boolean);
+
       return h("div", {
-        className: "max-w-5xl mx-auto bg-white rounded-lg shadow-sm border border-gray-100"
+        className: "max-w-6xl mx-auto space-y-6"
       }, PageHeader({
         title: isEdit ? '編輯保養明細' : '查看保養明細',
         onClose: function () { setView(backView); },
-        wrapperClass: 'flex justify-between items-center p-6 border-b border-gray-200 sticky top-0 z-10 bg-white rounded-t-lg'
-      }), h("div", {
-        className: "p-6 space-y-8"
-      }, h("section", null, h("h3", {
-        className: "text-lg font-bold text-blue-800 border-b pb-2 mb-4"
-      }, "案件與門市資訊"), h("div", {
-        className: "grid grid-cols-2 md:grid-cols-3 gap-4"
-      }, h(ReadOnlyField, {
-        label: "客戶名稱",
-        value: formData.customerName
-      }), h(ReadOnlyField, {
-        label: "門市名稱",
-        value: formData.storeName
-      }), h(ReadOnlyField, {
-        label: "公司區域",
-        value: StoreUtils.getRecordArea(formData) || '—'
-      }), h(ReadOnlyField, {
-        label: "門市地址",
-        value: (getStoreForCase(formData) && StoreUtils.buildFullAddress(getStoreForCase(formData))) || formData.storeAddress
-      }), h(ReadOnlyField, {
-        label: "服務等級",
-        value: formData.serviceLevel
-      }), h(ReadOnlyField, {
-        label: "保養區間",
-        value: getMaintenancePeriodLabel(formData)
-      }), h(ReadOnlyField, {
-        label: "室內機高度",
-        value: (getStoreForCase(formData) || {}).indoorHeight
-      }), h(ReadOnlyField, {
-        label: "室外機高度",
-        value: (getStoreForCase(formData) || {}).outdoorHeight
-      }))), h("section", null, h("h3", {
-        className: "text-lg font-bold text-blue-800 border-b pb-2 mb-4"
-      }, "保養作業狀態"), h("div", {
-        className: "grid grid-cols-1 md:grid-cols-3 gap-6"
-      }, h("div", null, h("span", {
-        className: "text-gray-500 block mb-1 text-xs"
-      }, "保養狀態"), isEdit ? h("select", {
-        value: formData.status,
-        onChange: function (e) { formData = Object.assign({}, formData, { status: e.target.value }); rerender(); },
-        className: "w-full p-2.5 border rounded outline-none"
-      }, MAINTENANCE_STATUS_OPTIONS.map(function (opt) {
-        return h("option", { key: opt, value: opt }, opt);
-      })) : h(ReadOnlyField, {
-        value: formData.status
-      })), h("div", null, h("span", {
-        className: "text-gray-500 block mb-1 text-xs"
-      }, "保養日期"), isEdit ? h("input", {
-        type: "date",
-        value: formData.planDate,
-        onChange: function (e) { formData = Object.assign({}, formData, { planDate: e.target.value }); rerender(); },
-        className: "w-full p-2.5 border rounded outline-none"
-      }) : h(ReadOnlyField, {
-        value: formData.planDate
-      })), h("div", null, h("span", {
-        className: "text-gray-500 block mb-1 text-xs"
-      }, "組別"), isEdit ? CaseAssigneeFields.renderAssigneeMultiSelect(formData, function (next) {
-        formData = Object.assign({}, formData, {
-          assignees: next,
-          assigneeMemberIds: CaseAssigneeFields.syncMemberIds(next, formData.assigneeMemberIds)
-        });
-        rerender();
-      }, { id: 'maintenance-assignees' }) : h(ReadOnlyField, {
-        value: CaseAssigneeUtils.formatMaintenanceAssignees(formData)
-      })), h("div", null, h("span", {
-        className: "text-gray-500 block mb-1 text-xs"
-      }, "指派人員"), isEdit ? CaseAssigneeFields.renderMemberMultiSelect(formData, function (next) {
-        formData = Object.assign({}, formData, { assigneeMemberIds: next });
-        rerender();
-      }, { id: 'maintenance-assignee-members' }) : h(ReadOnlyField, {
-        value: CaseAssigneeUtils.formatAssigneeMembers(formData)
-      })), h("div", null, h("span", {
-        className: "text-gray-500 block mb-1 text-xs"
-      }, "協力廠商"), isEdit ? IESS.MultiSelect({
-        id: 'maintenance-partner-vendors',
-        options: VendorUtils.getCooperatorSelectOptions(vendors, formData.partnerVendorIds),
-        value: formData.partnerVendorIds || [],
-        onChange: function (next) {
-          formData = Object.assign({}, formData, { partnerVendorIds: next });
-          rerender();
+        wrapperClass: 'flex justify-between items-center p-6 bg-white rounded-lg shadow-sm border border-gray-100'
+      }),
+        /* 1. 排程資料 —— 唯一可編輯的區塊 */
+        sectionCard('1. 排程資料', null, h("div", {
+          className: "grid grid-cols-1 md:grid-cols-3 gap-6"
+        }, h("div", null, fieldLabel('保養日期'), isEdit ? h("input", {
+          type: "date",
+          value: formData.planDate || '',
+          onChange: function (e) { applyChange({ planDate: e.target.value }); },
+          className: "w-full p-2.5 border rounded outline-none"
+        }) : h(ReadOnlyField, { value: formData.planDate })),
+          h("div", null, fieldLabel('保養開始時間'), isEdit ? h(TimeInput24, {
+            value: formData.planTimeStart || '',
+            onChange: function (e) { applyChange({ planTimeStart: e.target.value }); },
+            className: "w-full"
+          }) : h(ReadOnlyField, { value: formData.planTimeStart })),
+          h("div", null, fieldLabel('保養結束時間'), isEdit ? h(TimeInput24, {
+            value: formData.planTimeEnd || '',
+            onChange: function (e) { applyChange({ planTimeEnd: e.target.value }); },
+            className: "w-full"
+          }) : h(ReadOnlyField, { value: formData.planTimeEnd })),
+          h("div", null, fieldLabel('組別'), isEdit ? CaseAssigneeFields.renderAssigneeMultiSelect(formData, function (next) {
+            applyChange({
+              assignees: next,
+              assigneeMemberIds: CaseAssigneeFields.syncMemberIds(next, formData.assigneeMemberIds)
+            });
+          }, { id: 'maintenance-assignees' }) : h(ReadOnlyField, {
+            value: CaseAssigneeUtils.formatMaintenanceAssignees(formData)
+          })),
+          h("div", null, fieldLabel('指派人員'), isEdit ? CaseAssigneeFields.renderMemberMultiSelect(formData, function (next) {
+            applyChange({ assigneeMemberIds: next });
+          }, { id: 'maintenance-assignee-members' }) : h(ReadOnlyField, {
+            value: CaseAssigneeUtils.formatAssigneeMembers(formData)
+          })),
+          h("div", null, fieldLabel('協力廠商'), isEdit ? IESS.MultiSelect({
+            id: 'maintenance-partner-vendors',
+            options: VendorUtils.getCooperatorSelectOptions(vendors, formData.partnerVendorIds),
+            value: formData.partnerVendorIds || [],
+            onChange: function (next) { applyChange({ partnerVendorIds: next }); },
+            placeholder: '請選擇協力廠商'
+          }) : h(ReadOnlyField, {
+            value: VendorUtils.formatCooperatorLabels(vendors, formData.partnerVendorIds)
+          }))
+        )),
+        /* 2. 案件資料 —— 全部唯讀，門市資料自動帶入 */
+        sectionCard('2. 案件資料', null, h("div", {
+          className: "grid grid-cols-2 md:grid-cols-4 gap-4"
+        }, h(ReadOnlyField, {
+          label: "客戶名稱",
+          value: formData.customerName
+        }), h(ReadOnlyField, {
+          label: "門市名稱",
+          value: formData.storeName
+        }), h(ReadOnlyField, {
+          label: "行政區域",
+          value: StoreUtils.getRecordArea(formData) || '—'
+        }), h(ReadOnlyField, {
+          label: "服務等級",
+          value: formData.serviceLevel
+        }), h(ReadOnlyField, {
+          label: "保養區間",
+          value: getMaintenancePeriodLabel(formData)
+        }), h(ReadOnlyField, {
+          label: "門市地址",
+          value: (getStoreForCase(formData) && StoreUtils.buildFullAddress(getStoreForCase(formData))) || formData.storeAddress
+        }), h(ReadOnlyField, {
+          label: "室內機高度",
+          value: (getStoreForCase(formData) || {}).indoorHeight
+        }), h(ReadOnlyField, {
+          label: "室外機高度",
+          value: (getStoreForCase(formData) || {}).outdoorHeight
+        }))),
+        /* 3. 設備資料 —— 由該門市的設備清單挑選，欄位比照設備管理（唯讀） */
+        sectionCard('3. 設備資料', isEdit && h("button", {
+          type: "button",
+          onClick: function () { equipPicker = { show: true }; rerender(); },
+          className: "bg-indigo-50 text-indigo-700 hover:bg-indigo-100 px-4 py-2 rounded-md flex items-center gap-2 font-medium transition-colors border border-indigo-200"
+        }, Icons.Plus({ className: "h-4 w-4" }), ' 加入設備'), h("div", {
+          className: "overflow-x-auto border rounded-lg border-gray-200"
+        }, h("table", {
+          className: "w-full text-left text-sm text-gray-600 whitespace-nowrap"
+        }, h("thead", {
+          className: "bg-gray-50 text-gray-700 border-b"
+        }, h("tr", null,
+          isEdit && h("th", { className: "p-3 font-semibold text-center w-20" }, "操作"),
+          EquipmentUtils.renderListHeaderCells(h)
+        )), h("tbody", {
+          className: "divide-y divide-gray-100"
+        }, equipmentList.length === 0 ? h("tr", null, h("td", {
+          colspan: String(12 + (isEdit ? 1 : 0)),
+          className: "text-center p-8 text-gray-400 bg-gray-50/50"
+        }, '尚未加入任何設備資料')) : equipmentList.map(function (eq) {
+          return h("tr", { key: eq.id, className: "hover:bg-gray-50 transition-colors" },
+            isEdit && h("td", { className: "p-3 text-center" }, h("button", {
+              type: "button",
+              onClick: function () { handleRemoveEquipment(eq.id); },
+              className: "p-1.5 text-red-600 hover:bg-red-100 rounded",
+              title: "移除設備"
+            }, Icons.Trash2({ className: "h-4 w-4" }))),
+            EquipmentUtils.renderListDataCells(h, eq)
+          );
+        }))))),
+        /* 4. 保養結果 */
+        sectionCard('4. 保養結果', null, h("div", {
+          className: "grid grid-cols-1 md:grid-cols-3 gap-6"
+        }, h("div", null, fieldLabel('保養狀態'), isEdit ? h("select", {
+          value: formData.status,
+          onChange: function (e) { handleStatusChange(e.target.value); },
+          className: "w-full p-2.5 border rounded outline-none"
+        }, MAINTENANCE_STATUS_OPTIONS.map(function (opt) {
+          return h("option", { key: opt, value: opt }, opt);
+        })) : h(ReadOnlyField, { value: formData.status })),
+          h(ReadOnlyField, {
+            label: '完成時間',
+            value: IESS.caseDateTime.format(formData.completionDate)
+          }),
+          h("div", null, fieldLabel('客戶簽收'), isEdit ? h("div", {
+            className: "flex items-center gap-3"
+          }, h("button", {
+            type: "button",
+            onClick: function () { signaturePad = { show: true }; rerender(); },
+            className: "px-4 py-2.5 border border-blue-200 bg-blue-50 text-blue-700 rounded-md hover:bg-blue-100 transition-colors font-medium"
+          }, formData.customerSignature ? '重新簽收' : '客戶簽收'),
+            formData.customerSignature ? h("img", {
+              src: formData.customerSignature,
+              alt: '客戶簽名',
+              className: "h-[42px] bg-white border border-gray-200 rounded-md"
+            }) : h("span", { className: "text-gray-400 text-sm" }, '尚未簽收')
+          ) : (formData.customerSignature ? h("img", {
+            src: formData.customerSignature,
+            alt: '客戶簽名',
+            className: "h-[42px] bg-white border border-gray-200 rounded-md"
+          }) : h(ReadOnlyField, { value: '尚未簽收' }))),
+          h("div", { className: "md:col-span-3" }, fieldLabel('備註'), isEdit ? h("textarea", {
+            rows: "3",
+            value: formData.remark || '',
+            onChange: function (e) { formData = Object.assign({}, formData, { remark: e.target.value }); },
+            placeholder: '請輸入保養備註...',
+            className: "w-full p-2.5 border rounded outline-none resize-none"
+          }) : h(ReadOnlyField, { value: formData.remark }))
+        )),
+        /* 5. 按鈕 */
+        isEdit && h("div", {
+          className: "flex justify-end gap-3 pb-2"
         },
-        placeholder: '請選擇協力廠商'
-      }) : h(ReadOnlyField, {
-        value: VendorUtils.formatCooperatorLabels(vendors, formData.partnerVendorIds)
-      })), h("div", null, h("span", {
-        className: "text-gray-500 block mb-1 text-xs"
-      }, "保養開始時間"), isEdit ? h(TimeInput24, {
-        value: formData.planTimeStart || '',
-        onChange: function (e) { formData = Object.assign({}, formData, { planTimeStart: e.target.value }); rerender(); },
-        className: "w-full"
-      }) : h(ReadOnlyField, {
-        value: formData.planTimeStart
-      })), h("div", null, h("span", {
-        className: "text-gray-500 block mb-1 text-xs"
-      }, "保養結束時間"), isEdit ? h(TimeInput24, {
-        value: formData.planTimeEnd || '',
-        onChange: function (e) { formData = Object.assign({}, formData, { planTimeEnd: e.target.value }); rerender(); },
-        className: "w-full"
-      }) : h(ReadOnlyField, {
-        value: formData.planTimeEnd
-      })), h(ReadOnlyField, {
-        label: '完成時間',
-        value: IESS.caseDateTime.format(formData.completionDate)
-      }))), isEdit && h("div", {
-        className: "mt-8 pt-6 border-t flex justify-end gap-3"
-      },
-        h("button", {
-          onClick: function () { setView(backView); },
-          className: "px-6 py-2.5 border rounded-md"
-        }, "取消"),
-        h("button", {
-          onClick: handleSubmit,
-          className: "px-8 py-2.5 bg-blue-600 text-white rounded-md"
-        }, Icons.Save({
-          className: "inline h-4 w-4 mr-2"
-        }), "儲存")
-      )));
+          h("button", {
+            type: "button",
+            onClick: function () { setView(backView); },
+            className: "px-6 py-2.5 border rounded-md bg-white"
+          }, "取消"),
+          h("button", {
+            type: "button",
+            onClick: handleSubmit,
+            className: "px-8 py-2.5 bg-blue-600 text-white rounded-md"
+          }, Icons.Save({
+            className: "inline h-4 w-4 mr-2"
+          }), "儲存")
+        ),
+        isEdit && equipPicker.show && h(ProjectEquipPicker, {
+          equipments: equipments,
+          customerName: formData.customerName,
+          storeName: formData.storeName,
+          addedIds: addedSourceIds,
+          onConfirm: handlePickerConfirm,
+          onClose: function () { equipPicker = { show: false }; rerender(); }
+        }),
+        isEdit && signaturePad.show && IESS.SignaturePadModal({
+          title: '客戶簽收',
+          value: formData.customerSignature,
+          onConfirm: function (dataUrl) {
+            formData = Object.assign({}, formData, { customerSignature: dataUrl });
+            signaturePad = { show: false };
+            showToast(dataUrl ? '客戶簽收已暫存，請記得儲存' : '已清除客戶簽名');
+            rerender();
+          },
+          onClose: function () { signaturePad = { show: false }; rerender(); }
+        })
+      );
     });
   }
 

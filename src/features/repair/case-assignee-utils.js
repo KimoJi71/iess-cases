@@ -121,7 +121,11 @@
     if (!record) return record;
     var next = Object.assign({}, record, {
       assignees: getFormalAssignees(record),
-      assigneeMemberIds: getAssigneeMemberIds(record)
+      assigneeMemberIds: getAssigneeMemberIds(record),
+      partnerVendorIds: asStringArray(record.partnerVendorIds),
+      equipmentList: Array.isArray(record.equipmentList) ? record.equipmentList.slice() : [],
+      remark: record.remark || '',
+      customerSignature: record.customerSignature || ''
     });
     delete next.assignee;
     return next;

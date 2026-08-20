@@ -315,8 +315,8 @@ try {
     '「保養區間」緊接在「工項類別」之後');
   assertEq(headers.indexOf('保養日期'), headers.indexOf('保養區間') + 1,
     '「保養日期」緊接在「保養區間」之後');
-  assertEq(await evaluate(`document.querySelectorAll('table thead th').length`), 15,
-    '表頭共 15 欄');
+  assertEq(await evaluate(`document.querySelectorAll('table thead th').length`), 14,
+    '表頭共 14 欄（保養計劃進度不顯示案件編號）');
 
   console.log('\nSection 2｜保養區間內容與保養日期留白');
   const rows = await evaluate(`(function () {
@@ -331,7 +331,7 @@ try {
       document.querySelectorAll('table tbody tr'),
       function (tr) {
         var tds = tr.querySelectorAll('td');
-        if (tds.length < 15) return null;
+        if (tds.length < 14) return null;
         return {
           customer: tds[customerIdx].textContent.trim(),
           store: tds[storeIdx].textContent.trim(),

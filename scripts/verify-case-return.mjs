@@ -290,7 +290,7 @@ try {
   const maintListCheck = await evaluate(`(function(){
     var node = MaintenanceList({
       cases: window.__returnedMaintenanceCases.concat([
-        { id: 'M2', caseNumber: '20260807004', customerName: '保養客戶', storeName: '保養門市',
+        { id: 'M2', caseNumber: '20260807004', customerName: '保養客戶', storeName: '未退回門市',
           serviceLevel: 'B', status: '未保養', workCategory: '保養', assignee: '王小明',
           isClosed: false, planDate: '${todayDate}', dueMonth: '${currentMonthStr}' }
       ]),
@@ -309,8 +309,9 @@ try {
     return { ths: ths, rows: rows };
   })()`);
   assertEq(maintListCheck.ths[maintListCheck.ths.length - 1], '退回原因', '保養列表最後一欄為「退回原因」');
-  const maintReturnedRow = maintListCheck.rows.filter(r => r.text.indexOf('20260807002') !== -1)[0];
-  const maintCleanRow = maintListCheck.rows.filter(r => r.text.indexOf('20260807004') !== -1)[0];
+  // 保養計劃進度不顯示案件編號，改以門市名稱辨識案件列
+  const maintReturnedRow = maintListCheck.rows.filter(r => r.text.indexOf('保養門市') !== -1)[0];
+  const maintCleanRow = maintListCheck.rows.filter(r => r.text.indexOf('未退回門市') !== -1)[0];
   assertTrue(!!maintReturnedRow, '退回的保養案件真實物件出現在保養計劃進度列表');
   assertEq(maintReturnedRow.last, '保養照片未附', '已退回保養單顯示退回原因');
   assertTrue(maintReturnedRow.title.indexOf('保養照片未附') !== -1, 'title 含退回原因');
