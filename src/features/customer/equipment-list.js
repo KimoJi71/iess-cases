@@ -32,6 +32,7 @@
     var showToast = props.showToast;
 
     var deleteModal = { show: false, id: null };
+    var importMenuOpen = false;
     var listPagination = IESS.createListPagination();
 
     function getStoreOptions() {
@@ -101,6 +102,60 @@
         rerender();
       }
 
+      function handleDownloadTemplate() {
+        importMenuOpen = false;
+        showToast('匯入範例檔案下載成功（demo）');
+        rerender();
+      }
+
+      function handleImport() {
+        importMenuOpen = false;
+        if (!canQuery) {
+          showToast('請先篩選客戶與門市', 'error');
+          rerender();
+          return;
+        }
+        var stamp = Date.now();
+        var demoRows = [
+          {
+            category: '分離式', brand: '日立', deviceName: '分離式冷氣', name: '分離式冷氣',
+            specification: '3.5匹', model: 'RAS-100', equipmentLevel: '一般設備',
+            area: '一樓大廳', manufactureDate: '2023-01-10', installDate: '2023-02-01',
+            assetNumber: 'AST-IMP-001', serialNumber: 'SN-IMP-001', status: '運轉'
+          },
+          {
+            category: '冰水', brand: '大金', deviceName: '冰水箱型機', name: '冰水箱型機',
+            specification: '10噸', model: 'FVQ100', equipmentLevel: '一般設備',
+            area: '二樓辦公室', manufactureDate: '2022-06-15', installDate: '2022-07-01',
+            assetNumber: 'AST-IMP-002', serialNumber: 'SN-IMP-002', status: '運轉'
+          },
+          {
+            category: '空氣門', brand: '東元', deviceName: '空氣門', name: '空氣門',
+            specification: '20RT', model: 'TE-20RT', equipmentLevel: '增額設備',
+            area: '頂樓', manufactureDate: '2021-11-05', installDate: '2021-12-01',
+            assetNumber: 'AST-IMP-003', serialNumber: 'SN-IMP-003', status: '轉汰換'
+          }
+        ];
+        var imported = demoRows.map(function (row, idx) {
+          return Object.assign({}, row, {
+            id: 'EQIMP' + (stamp + idx),
+            customerName: equipmentCustomer,
+            storeName: equipmentStore,
+            createdDate: todayDate
+          });
+        });
+        setEquipments(equipments.concat(imported));
+        showToast('已匯入 ' + imported.length + ' 筆設備');
+      }
+
+      function handleExport() {
+        if (!canQuery) {
+          showToast('請先篩選客戶與門市', 'error');
+          return;
+        }
+        showToast('已匯出 ' + filtered.length + ' 筆設備（demo）');
+      }
+
       function handleDelete(id) {
         var blockedReason = EquipmentUtils.getEquipmentDeleteBlockedReason(id, repairCases);
         if (blockedReason) {
@@ -127,6 +182,7 @@
               h('select', {
                 value: equipmentCustomer,
                 onChange: function (e) {
+                  importMenuOpen = false;
                   setEquipmentCustomer(e.target.value);
                   setEquipmentStore('');
                   listPagination.resetPage();
@@ -144,7 +200,7 @@
                 h('span', { className: 'text-red-500' }, '*')),
               h('select', {
                 value: equipmentStore,
-                onChange: function (e) { setEquipmentStore(e.target.value); listPagination.resetPage(); },
+                onChange: function (e) { importMenuOpen = false; setEquipmentStore(e.target.value); listPagination.resetPage(); },
                 disabled: !equipmentCustomer,
                 className: 'w-56 p-2.5 border rounded-md outline-none bg-white disabled:bg-gray-100'
               },
@@ -155,6 +211,52 @@
               )
             )
           ),
+          h('div', { className: 'flex items-center gap-2 shrink-0' },
+          h('div', { className: 'relative' },
+            importMenuOpen && h('div', {
+              className: 'fixed inset-0 z-10',
+              onClick: function () { importMenuOpen = false; rerender(); }
+            }),
+            iconActionBtn({
+              label: '匯入',
+              wrapperClassName: 'relative z-20',
+              className: 'flex items-center justify-center bg-white hover:bg-gray-50 text-blue-600 border border-blue-200 p-2.5 rounded-full shadow-sm transition-colors shrink-0' +
+                (!canQuery ? ' opacity-50 cursor-not-allowed' : ''),
+              disabled: !canQuery,
+              onClick: function (e) {
+                e.stopPropagation();
+                if (!canQuery) {
+                  showToast('請先篩選客戶與門市', 'error');
+                  return;
+                }
+                importMenuOpen = !importMenuOpen;
+                rerender();
+              },
+              icon: Icons.Download({ className: 'h-5 w-5' })
+            }),
+            importMenuOpen && h('div', {
+              className: 'absolute right-0 mt-1 w-40 bg-white border border-gray-200 rounded-md shadow-lg z-20 py-1'
+            },
+              h('button', {
+                type: 'button',
+                className: 'w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 whitespace-nowrap',
+                onClick: handleDownloadTemplate
+              }, '下載匯入範例'),
+              h('button', {
+                type: 'button',
+                className: 'w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 whitespace-nowrap',
+                onClick: handleImport
+              }, '匯入設備')
+            )
+          ),
+          iconActionBtn({
+            label: '匯出設備',
+            className: 'flex items-center justify-center bg-white hover:bg-gray-50 text-blue-600 border border-blue-200 p-2.5 rounded-full shadow-sm transition-colors shrink-0' +
+              (!canQuery ? ' opacity-50 cursor-not-allowed' : ''),
+            disabled: !canQuery,
+            onClick: handleExport,
+            icon: Icons.Upload({ className: 'h-5 w-5' })
+          }),
           iconActionBtn({
             label: '新增設備',
             className: 'flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white p-2.5 rounded-full shadow-sm transition-colors shrink-0' +
@@ -170,6 +272,7 @@
             },
             icon: Icons.Plus({ className: 'h-5 w-5' })
           })
+          )
         ),
         canQuery && h('div', {
           className: 'flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg'
