@@ -9,6 +9,7 @@
 
   function StoreList(props) {
     var stores = props.stores;
+    var setStores = props.setStores;
     var customers = props.customers;
     var storeCustomer = props.storeCustomer;
     var setStoreCustomer = props.setStoreCustomer;
@@ -21,6 +22,7 @@
     // 區域狀態
     var keyword = '';
     var appliedKeyword = '';
+    var importMenuOpen = false;
     var listPagination = IESS.createListPagination();
 
     function openHistory(store) {
@@ -56,9 +58,75 @@
       var filteredStores = getFilteredStores();
       var pageResult = listPagination.slice(filteredStores);
       var customerSelectOptions = CustomerUtils.getCustomerNameOptions(customers, storeCustomer, true);
+      var canQuery = !!storeCustomer;
 
       function handleSearch() { appliedKeyword = keyword; listPagination.resetPage(); rerender(); }
       function handleKeyDown(e) { if (e.key === 'Enter') handleSearch(); }
+
+      function handleDownloadTemplate() {
+        importMenuOpen = false;
+        showToast('匯入範例檔案下載成功（demo）');
+        rerender();
+      }
+
+      function handleImport() {
+        importMenuOpen = false;
+        if (!canQuery) {
+          showToast('請先篩選客戶', 'error');
+          rerender();
+          return;
+        }
+        var customer = customers.find(function (c) { return c.name === storeCustomer; });
+        var serviceLevel = (customer && customer.serviceLevel) || '';
+        var stamp = Date.now();
+        var demoRows = [
+          {
+            storeCode: 'IMP-001', storeName: '匯入示範一店',
+            companyPhone: '02-2100-0001', companyFax: '02-2100-0002',
+            companyCity: '台北市', companyDistrict: '中山區', companyAddress: '南京東路X號',
+            openDate: '2024-03-01', closeDate: '', storeStatus: '正常營業',
+            workOrderApply: '是', indoorHeight: '3.0m', outdoorHeight: '4.0m',
+            remarks: '匯入示範資料。'
+          },
+          {
+            storeCode: 'IMP-002', storeName: '匯入示範二店',
+            companyPhone: '04-2300-0001', companyFax: '04-2300-0002',
+            companyCity: '台中市', companyDistrict: '西區', companyAddress: '公益路X號',
+            openDate: '2023-09-15', closeDate: '', storeStatus: '整裝',
+            workOrderApply: '否', indoorHeight: '3.5m', outdoorHeight: '4.5m',
+            remarks: '匯入示範資料。'
+          },
+          {
+            storeCode: 'IMP-003', storeName: '匯入示範三店',
+            companyPhone: '07-2400-0001', companyFax: '07-2400-0002',
+            companyCity: '高雄市', companyDistrict: '前鎮區', companyAddress: '中山二路X號',
+            openDate: '2022-06-10', closeDate: '', storeStatus: '正常營業',
+            workOrderApply: '是', indoorHeight: '3.2m', outdoorHeight: '4.2m',
+            remarks: '匯入示範資料。'
+          }
+        ];
+        var imported = demoRows.map(function (row, idx) {
+          return Object.assign({}, row, {
+            id: 'STOREIMP' + (stamp + idx),
+            customerName: storeCustomer,
+            serviceLevel: serviceLevel,
+            contacts: [],
+            photos: [],
+            history: [],
+            createdDate: todayDate
+          });
+        });
+        setStores(imported.concat(stores));
+        showToast('已匯入 ' + imported.length + ' 筆門市');
+      }
+
+      function handleExport() {
+        if (!canQuery) {
+          showToast('請先篩選客戶', 'error');
+          return;
+        }
+        showToast('已匯出 ' + filteredStores.length + ' 筆門市（demo）');
+      }
 
       return h('div', { className: 'bg-white p-6 rounded-lg shadow-sm border border-gray-100' },
         h('div', { className: 'flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4' },
@@ -69,6 +137,7 @@
               h('select', {
                 value: storeCustomer,
                 onChange: function (e) {
+                  importMenuOpen = false;
                   setStoreCustomer(e.target.value);
                   appliedKeyword = '';
                   keyword = '';
@@ -99,19 +168,66 @@
               className: 'flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-md shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
             }, Icons.Search({ className: 'h-4 w-4' }), ' 搜尋')
           ),
-          iconActionBtn({
-            label: '新增門市',
-            className: 'flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white p-2.5 rounded-full shadow-sm transition-colors shrink-0',
-            onClick: function () {
-              if (!storeCustomer) {
-                showToast('請先篩選客戶', 'error');
-                return;
-              }
-              setEditingCase(null);
-              setView('store-add');
-            },
-            icon: Icons.Plus({ className: 'h-5 w-5' })
-          })
+          h('div', { className: 'flex items-center gap-2 shrink-0' },
+            h('div', { className: 'relative' },
+              importMenuOpen && h('div', {
+                className: 'fixed inset-0 z-10',
+                onClick: function () { importMenuOpen = false; rerender(); }
+              }),
+              iconActionBtn({
+                label: '匯入',
+                wrapperClassName: 'relative z-20',
+                className: 'flex items-center justify-center bg-white hover:bg-gray-50 text-blue-600 border border-blue-200 p-2.5 rounded-full shadow-sm transition-colors shrink-0' +
+                  (!canQuery ? ' opacity-50 cursor-not-allowed' : ''),
+                disabled: !canQuery,
+                onClick: function (e) {
+                  e.stopPropagation();
+                  if (!canQuery) {
+                    showToast('請先篩選客戶', 'error');
+                    return;
+                  }
+                  importMenuOpen = !importMenuOpen;
+                  rerender();
+                },
+                icon: Icons.Download({ className: 'h-5 w-5' })
+              }),
+              importMenuOpen && h('div', {
+                className: 'absolute right-0 mt-1 w-40 bg-white border border-gray-200 rounded-md shadow-lg z-20 py-1'
+              },
+                h('button', {
+                  type: 'button',
+                  className: 'w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 whitespace-nowrap',
+                  onClick: handleDownloadTemplate
+                }, '下載匯入範例'),
+                h('button', {
+                  type: 'button',
+                  className: 'w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 whitespace-nowrap',
+                  onClick: handleImport
+                }, '匯入門市')
+              )
+            ),
+            iconActionBtn({
+              label: '匯出門市',
+              className: 'flex items-center justify-center bg-white hover:bg-gray-50 text-blue-600 border border-blue-200 p-2.5 rounded-full shadow-sm transition-colors shrink-0' +
+                (!canQuery ? ' opacity-50 cursor-not-allowed' : ''),
+              disabled: !canQuery,
+              onClick: handleExport,
+              icon: Icons.Upload({ className: 'h-5 w-5' })
+            }),
+            iconActionBtn({
+              label: '新增門市',
+              className: 'flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white p-2.5 rounded-full shadow-sm transition-colors shrink-0',
+              onClick: function () {
+                if (!storeCustomer) {
+                  showToast('請先篩選客戶', 'error');
+                  return;
+                }
+                setEditingCase(null);
+                setView('store-add');
+              },
+              icon: Icons.Plus({ className: 'h-5 w-5' })
+            })
+          )
         ),
         !storeCustomer
           ? h('div', {
