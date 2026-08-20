@@ -36,6 +36,12 @@
     return d;
   }
 
+  function fmtPeopleDays(people, days) {
+    var p = people != null && people !== '' ? String(people) + '人' : '';
+    var d = days != null && days !== '' ? String(days) + '日' : '';
+    return [p, d].filter(Boolean).join('');
+  }
+
   function fmtDateTime(d) {
     var now = new Date();
     var dateStr = d ? fmtDate(d) : fmtDate(now.toISOString().split('T')[0]);
@@ -81,6 +87,30 @@
       return SurveyDuctBoxCombosUtils.formatCombosList(sd, prefix) || '';
     }
     return '';
+  }
+
+  function fmtHoseMaterial(sd, material) {
+    if (window.SurveyDuctBoxCombosUtils) {
+      return SurveyDuctBoxCombosUtils.formatCombosList(sd, 'ductHose', {
+        material: material,
+        omitMaterial: true
+      }) || '';
+    }
+    return '';
+  }
+
+  function fmtHoseOther(sd) {
+    if (window.SurveyDuctBoxCombosUtils) {
+      return SurveyDuctBoxCombosUtils.formatCombosList(sd, 'ductHose', {
+        material: '其他',
+        omitMaterial: false
+      }) || '';
+    }
+    return '';
+  }
+
+  function joinPdfParts() {
+    return Array.prototype.slice.call(arguments).filter(Boolean).join('；');
   }
 
   function fmtVentOutlets(sd) {
@@ -243,6 +273,10 @@
       row2('客戶名稱/門市名稱/店編', customerLine),
       row2('門市地址', c.storeAddress),
       row2('電子郵件', sd.email),
+      row4('進場施工日期', fmtDate(sd.constructionEntryDate), '客戶驗收日期', fmtDate(sd.customerAcceptanceDate)),
+      '<tr><td class="lbl" rowspan="2" colspan="2">預計工時</td>',
+      '<td class="lbl">日工</td><td colspan="5">' + cell(fmtPeopleDays(sd.estimatedDayPeople, sd.estimatedDayDays)) + '</td></tr>',
+      '<tr><td class="lbl">夜工</td><td colspan="5">' + cell(fmtPeopleDays(sd.estimatedNightPeople, sd.estimatedNightDays)) + '</td></tr>',
       row4('工程類型', sd.projectType, '工程工種', trades),
       row4('拆機撤店日期', sd.demolishDate, '驗收日期', sd.acceptanceDate),
       row4('工程進場日期', fmtDate(sd.entryDate), '完工日期', fmtDate(sd.completionDate)),
@@ -340,10 +374,15 @@
       '<div class="page-break"></div>',
       '<table>',
       '<tr><td class="sec" colspan="8">風管工程</td></tr>',
-      row4('保溫軟管(玻璃棉)/米', fmtCheckQtyFromMaps('insulatedHose', 'insulatedHoseQty', sd, '米'),
-        '無保溫軟管(鋁箔)/米', fmtCheckQtyFromMaps('uninsulatedHose', 'uninsulatedHoseQty', sd, '米')),
-      row4('螺旋風管(鍍鋅鐵)/米', sd.spiralDuct, '防火保溫軟管(玻璃棉)/米', sd.fireInsulatedHose),
-      row4('嵌入外接風箱管徑、數量', sd.embeddedBox, '集風箱管徑、數量', fmtDuctBox('collectBox', sd)),
+      row4('保溫軟管(玻璃棉)/米', fmtHoseMaterial(sd, '保溫軟管(玻璃棉)'),
+        '無保溫軟管(鋁箔)/米', fmtHoseMaterial(sd, '無保溫軟管(鋁箔)')),
+      row4('螺旋風管(鍍鋅鐵)/米', fmtHoseMaterial(sd, '螺旋風管(鍍鋅鐵)'),
+        '防火保溫軟管(玻璃棉)/米', joinPdfParts(
+          fmtHoseMaterial(sd, '防火保溫軟管(玻璃棉)'),
+          fmtHoseOther(sd)
+        )),
+      row4('嵌入外接風箱管徑、數量', fmtDuctBox('embeddedBox', sd) || val(sd.embeddedBox),
+        '集風箱管徑、數量', fmtDuctBox('collectBox', sd)),
       row4('出/線型風箱 管徑、數量、開孔尺寸公分', fmtDuctBox('outletBox', sd),
         '回風箱/管徑、孔數、數量', fmtDuctBox('returnBox', sd)),
       row4('強制回風箱/管徑、孔數、數量', fmtDuctBox('forcedReturnBox', sd),

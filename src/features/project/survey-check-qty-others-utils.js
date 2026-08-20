@@ -17,8 +17,6 @@
     { checkName: 'channelFittings', qtyMapName: 'channelFittingsQty' },
     { checkName: 'controlSignalWire', qtyMapName: 'controlSignalWireQty' },
     { checkName: 'powerCableWire', qtyMapName: 'powerCableWireQty' },
-    { checkName: 'insulatedHose', qtyMapName: 'insulatedHoseQty' },
-    { checkName: 'uninsulatedHose', qtyMapName: 'uninsulatedHoseQty' },
     { checkName: 'ventOutlets', qtyMapName: 'ventOutletsQty' },
     { checkName: 'parts', qtyMapName: 'partsQty' }
   ];

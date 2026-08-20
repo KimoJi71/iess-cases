@@ -35,7 +35,7 @@
         value: equip[name] || '',
         onChange: onChange,
         disabled: disabled,
-        className: 'w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 bg-white' +
+        className: 'w-full p-2.5 border rounded-md outline-none bg-white' +
           (disabled ? ' bg-gray-100 text-gray-400 cursor-not-allowed' : '')
       },
         h('option', { value: '', disabled: true }, disabled ? (opts.emptyHint || '請先選擇上層欄位') : '請選擇'),
@@ -295,7 +295,7 @@
             onChange: e => handleQtyMapChange(mapName, opt.label, e.target.value),
             disabled: !checked,
             placeholder: opt.qtyLabel,
-            className: "w-24 p-1.5 border rounded-md text-sm outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-100 disabled:opacity-50"
+            className: "w-24 p-1.5 border rounded-md text-sm outline-none disabled:bg-gray-100 disabled:opacity-50"
           }), h("span", {
             className: "text-sm text-gray-500 whitespace-nowrap"
           }, opt.unit)));
@@ -319,7 +319,7 @@
             value: row.qty || '',
             onChange: e => updateCheckQtyOther(checkName, row.id, { qty: e.target.value }),
             placeholder: qtyLabel,
-            className: "w-24 p-1.5 border rounded-md text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+            className: "w-24 p-1.5 border rounded-md text-sm outline-none"
           }), h("span", {
             className: "text-sm text-gray-500 whitespace-nowrap"
           }, unit), h("button", {
@@ -425,12 +425,15 @@
             className: "w-32 p-1 border-b-2 border-gray-300 outline-none focus:border-indigo-500 bg-transparent text-sm disabled:opacity-50"
           }))), extra);
         };
-        const renderDuctBoxComboRow = (prefix, pipes, hasFlangeHoles, row) => {
+        const renderDuctBoxComboRow = (prefix, pipes, hasFlangeHoles, row, opts) => {
+          opts = opts || {};
+          const materials = opts.materials || DUCT_BOX_MATERIALS;
+          const allowMaterialOther = opts.allowMaterialOther !== false;
+          const allowPipeOther = !!opts.allowPipeOther;
+          const qtyLabel = opts.qtyLabel || '數量';
+          const qtyUnit = opts.qtyUnit || '個';
           const mat = row.material || '';
-          const matRadios = DUCT_BOX_MATERIALS.concat(['其他']).map(opt => h("label", {
-            key: opt,
-            className: "flex items-center gap-2 cursor-pointer"
-          }, h("input", {
+          const matRadioInput = opt => h("input", {
             type: "radio",
             name: prefix + '_mat_' + row.id,
             value: opt,
@@ -442,20 +445,36 @@
                 updateDuctBoxCombo(prefix, row.id, { material: '' });
               }
             },
-            className: "w-4 h-4 text-indigo-600 border-gray-300 focus:ring-indigo-500"
-          }), h("span", {
+            className: "w-4 h-4 shrink-0 text-indigo-600 border-gray-300 focus:ring-indigo-500"
+          });
+          const matRadios = materials.map(opt => h("label", {
+            key: opt,
+            className: "flex items-center gap-2 cursor-pointer min-w-0"
+          }, matRadioInput(opt), h("span", {
             className: "text-sm text-gray-700 font-medium"
           }, opt)));
-          const matOther = h("input", {
+          const matOther = allowMaterialOther ? h("div", {
+            key: "其他",
+            className: "flex items-center gap-2 min-w-0 sm:col-span-2"
+          }, h("label", {
+            className: "flex items-center gap-2 cursor-pointer shrink-0"
+          }, matRadioInput('其他'), h("span", {
+            className: "text-sm text-gray-700 font-medium"
+          }, "其他")), h("input", {
             type: "text",
             value: row.materialOther || '',
             onChange: e => updateDuctBoxCombo(prefix, row.id, { materialOther: e.target.value }),
             disabled: mat !== '其他',
-            placeholder: "請註明",
-            className: "w-32 p-1 border-b-2 border-gray-300 outline-none focus:border-indigo-500 bg-transparent text-sm disabled:opacity-50"
-          });
+            placeholder: "請註明材質",
+            className: "flex-1 min-w-[10rem] max-w-xs p-1.5 border rounded-md text-sm outline-none bg-white disabled:bg-gray-100 disabled:text-gray-400"
+          })) : null;
+          const matBlock = h("div", null, h("div", {
+            className: "text-sm font-medium text-indigo-700 mb-2"
+          }, "材質"), h("div", {
+            className: "grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2"
+          }, matRadios, matOther));
           const flange = hasFlangeHoles ? h("div", {
-            className: "flex flex-wrap items-center gap-3 mt-3"
+            className: "flex flex-wrap items-center gap-3"
           }, h("span", {
             className: "text-sm font-medium text-indigo-700"
           }, "法蘭內徑"), h("span", {
@@ -465,7 +484,7 @@
             value: row.flangeWidth || '',
             onChange: e => updateDuctBoxCombo(prefix, row.id, { flangeWidth: e.target.value }),
             placeholder: "寬",
-            className: "w-24 p-1.5 border rounded-md text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+            className: "w-24 p-1.5 border rounded-md text-sm outline-none"
           }), h("span", {
             className: "text-sm text-gray-500"
           }, "cm"), h("span", {
@@ -475,41 +494,54 @@
             value: row.flangeHeight || '',
             onChange: e => updateDuctBoxCombo(prefix, row.id, { flangeHeight: e.target.value }),
             placeholder: "高",
-            className: "w-24 p-1.5 border rounded-md text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+            className: "w-24 p-1.5 border rounded-md text-sm outline-none"
           }), h("span", {
             className: "text-sm text-gray-500"
           }, "cm")) : null;
+          const pipeOptions = pipes.slice();
+          if (row.pipe && pipeOptions.indexOf(row.pipe) === -1 && row.pipe !== '其他') {
+            pipeOptions.push(row.pipe);
+          }
+          if (allowPipeOther) pipeOptions.push('其他');
           const pipeSelect = h("select", {
             value: row.pipe || '',
             onChange: e => updateDuctBoxCombo(prefix, row.id, { pipe: e.target.value }),
-            className: "w-36 p-1.5 border rounded-md text-sm outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+            className: "w-40 p-1.5 border rounded-md text-sm outline-none bg-white shrink-0"
           }, h("option", {
             value: ""
-          }, "選擇管徑"), pipes.map(p => h("option", {
+          }, "選擇管徑"), pipeOptions.map(p => h("option", {
             key: p,
             value: p
           }, p)));
-          const pipeRow = h("div", {
-            className: "flex flex-wrap items-center gap-3 mt-3"
-          }, h("span", {
-            className: "text-sm font-medium text-indigo-700"
-          }, "管徑"), pipeSelect, hasFlangeHoles ? h("input", {
+          const pipeOtherInput = allowPipeOther ? h("input", {
+            type: "text",
+            value: row.pipeOther || '',
+            onChange: e => updateDuctBoxCombo(prefix, row.id, { pipeOther: e.target.value }),
+            disabled: (row.pipe || '') !== '其他',
+            placeholder: "請註明管徑",
+            className: "w-40 p-1.5 border rounded-md text-sm outline-none bg-white shrink-0 disabled:bg-gray-100 disabled:text-gray-400"
+          }) : null;
+          const pipeBlock = h("div", null, h("div", {
+            className: "text-sm font-medium text-indigo-700 mb-2"
+          }, "管徑"), h("div", {
+            className: "flex flex-wrap items-center gap-3"
+          }, pipeSelect, pipeOtherInput, hasFlangeHoles ? h("input", {
             type: "number",
             value: row.holes || '',
             onChange: e => updateDuctBoxCombo(prefix, row.id, { holes: e.target.value }),
             placeholder: "孔數",
-            className: "w-20 p-1.5 border rounded-md text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+            className: "w-20 p-1.5 border rounded-md text-sm outline-none"
           }) : null, hasFlangeHoles ? h("span", {
             className: "text-sm text-gray-500 whitespace-nowrap"
           }, "孔") : null, h("input", {
             type: "number",
             value: row.qty || '',
             onChange: e => updateDuctBoxCombo(prefix, row.id, { qty: e.target.value }),
-            placeholder: "數量",
-            className: "w-20 p-1.5 border rounded-md text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+            placeholder: qtyLabel,
+            className: "w-20 p-1.5 border rounded-md text-sm outline-none"
           }), h("span", {
             className: "text-sm text-gray-500 whitespace-nowrap"
-          }, "個"));
+          }, qtyUnit)));
           const deleteBtn = h("button", {
             type: "button",
             title: "刪除此組合",
@@ -524,15 +556,11 @@
           }, h("div", {
             className: "flex items-start gap-3"
           }, h("div", {
-            className: "flex-1 min-w-0 space-y-0"
-          }, h("div", {
-            className: "flex flex-wrap items-center gap-x-6 gap-y-2"
-          }, h("span", {
-            className: "text-sm font-medium text-indigo-700"
-          }, "材質"), matRadios, matOther), flange, pipeRow), deleteBtn));
+            className: "flex-1 min-w-0 space-y-3"
+          }, matBlock, flange, pipeBlock), deleteBtn));
         };
 
-        const renderDuctBoxCard = (title, prefix, pipes, hasFlangeHoles) => {
+        const renderDuctBoxCard = (title, prefix, pipes, hasFlangeHoles, opts) => {
           const combos = SurveyDuctBoxCombosUtils.getCombos(formData.surveyData, prefix);
           return h("div", {
             className: "bg-indigo-50/30 p-8 rounded-lg border border-indigo-100 shadow-sm"
@@ -542,7 +570,7 @@
             className: "h-6 w-6"
           }), " " + title), h("div", {
             className: "space-y-3"
-          }, combos.map(row => renderDuctBoxComboRow(prefix, pipes, hasFlangeHoles, row)), h("button", {
+          }, combos.map(row => renderDuctBoxComboRow(prefix, pipes, hasFlangeHoles, row, opts)), h("button", {
             type: "button",
             onClick: () => addDuctBoxCombo(prefix),
             className: "flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-800 mt-2"
@@ -553,6 +581,12 @@
 
         const renderDuctBox = (title, prefix) => renderDuctBoxCard(title, prefix, DUCT_BOX_PIPES, true);
         const renderDuctTeeBox = (title, prefix) => renderDuctBoxCard(title, prefix, DUCT_TEE_PIPES, false);
+        const renderDuctHose = () => renderDuctBoxCard('風管／米', 'ductHose', DUCT_HOSE_PIPES, false, {
+          materials: DUCT_HOSE_MATERIALS,
+          allowPipeOther: true,
+          qtyLabel: '長度',
+          qtyUnit: '米'
+        });
         // 風管工程 出風口 單一型式列（勾選 + 數量個；線型改為多筆尺寸列）
         const renderVentLinearSizeRow = row => h("div", {
           key: row.id,
@@ -564,7 +598,7 @@
           value: row.width || '',
           onChange: e => updateVentLinearSize(row.id, { width: e.target.value }),
           placeholder: "寬",
-          className: "w-24 p-1.5 border rounded-md text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+          className: "w-24 p-1.5 border rounded-md text-sm outline-none"
         }), h("span", {
           className: "text-sm text-gray-500"
         }, "cm"), h("span", {
@@ -574,7 +608,7 @@
           value: row.height || '',
           onChange: e => updateVentLinearSize(row.id, { height: e.target.value }),
           placeholder: "高",
-          className: "w-24 p-1.5 border rounded-md text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+          className: "w-24 p-1.5 border rounded-md text-sm outline-none"
         }), h("span", {
           className: "text-sm text-gray-500"
         }, "cm"), h("input", {
@@ -582,7 +616,7 @@
           value: row.qty || '',
           onChange: e => updateVentLinearSize(row.id, { qty: e.target.value }),
           placeholder: "數量",
-          className: "w-24 p-1.5 border rounded-md text-sm outline-none focus:ring-2 focus:ring-indigo-500 ml-2"
+          className: "w-24 p-1.5 border rounded-md text-sm outline-none ml-2"
         }), h("span", {
           className: "text-sm text-gray-500 whitespace-nowrap"
         }, "個"), h("button", {
@@ -617,7 +651,7 @@
             onChange: e => handleQtyMapChange('ventOutletsQty', opt.label, e.target.value),
             disabled: !checked,
             placeholder: "數量",
-            className: "w-24 p-1.5 border rounded-md text-sm outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-100 disabled:opacity-50"
+            className: "w-24 p-1.5 border rounded-md text-sm outline-none disabled:bg-gray-100 disabled:opacity-50"
           }), h("span", {
             className: "text-sm text-gray-500 whitespace-nowrap"
           }, "個")) : null;
@@ -738,7 +772,7 @@
           name: "customerName",
           value: formData.customerName,
           onChange: handleChange,
-          className: "w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+          className: "w-full p-2.5 border rounded-md outline-none"
         }, h("option", {
           value: "",
           disabled: true
@@ -753,7 +787,7 @@
           name: "storeName",
           value: formData.storeName,
           onChange: handleChange,
-          className: "w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+          className: "w-full p-2.5 border rounded-md outline-none"
         }, h("option", {
           value: "",
           disabled: true
@@ -772,7 +806,7 @@
           name: "storeAddress",
           value: formData.storeAddress,
           placeholder: "\u8ACB\u5148\u9078\u64C7\u5BA2\u6236\u8207\u9580\u5E02",
-          className: "w-full p-2 bg-gray-50 border rounded-md text-gray-500 cursor-not-allowed outline-none"
+          className: IESS.inputClsDisabled
         })), h("div", null, h("label", {
           className: "block text-sm font-medium text-gray-700 mb-1"
         }, "\u586B\u55AE\u65E5\u671F"), h("input", {
@@ -781,7 +815,7 @@
           value: formData.fillDate,
           onChange: handleChange,
           required: true,
-          className: "w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+          className: "w-full p-2.5 border rounded-md outline-none"
         })), h("div", {
           className: "col-span-full"
         }, h("label", {
@@ -795,7 +829,7 @@
           value: formData.fileName || '',
           onChange: handleChange,
           placeholder: "\u9078\u64C7\u5BA2\u6236\u8207\u9580\u5E02\u5F8C\u81EA\u52D5\u5E36\u5165",
-          className: "w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-blue-500"
+          className: "w-full p-2.5 border rounded-md outline-none"
         }), h("p", {
           className: "text-xs text-gray-400 mt-1"
         }, "\u9810\u8A2D\u70BA\u5BA2\u6236\u540D\u7A31\u8207\u9580\u5E02\u540D\u7A31\uFF0C\u82E5\u91CD\u8907\u5247\u81EA\u52D5\u52A0\u4E0A (1)\u3001(2) \u2026 \u5340\u9694"))), h("div", {
@@ -824,12 +858,94 @@
         }), " \u74B0\u5883\u8207\u65BD\u5DE5 - \u73FE\u52D8\u660E\u7D30"), h("div", {
           className: "grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6"
         }, h("div", null, h("label", {
+          className: "block text-sm font-bold text-gray-700 mb-1"
+        }, "進場施工日期"), h("input", {
+          type: "date",
+          name: "constructionEntryDate",
+          value: formData.surveyData?.constructionEntryDate || '',
+          onChange: handleSurveyChange,
+          className: "w-full h-[42px] px-2.5 border rounded-md outline-none"
+        })), h("div", null, h("label", {
+          className: "block text-sm font-bold text-gray-700 mb-1"
+        }, "客戶驗收日期"), h("input", {
+          type: "date",
+          name: "customerAcceptanceDate",
+          value: formData.surveyData?.customerAcceptanceDate || '',
+          onChange: handleSurveyChange,
+          className: "w-full h-[42px] px-2.5 border rounded-md outline-none"
+        })), h("div", {
+          className: "md:col-span-2 bg-white p-4 rounded border border-gray-200"
+        }, h("label", {
+          className: "block text-sm font-bold text-gray-700 mb-3"
+        }, "預計工時"), h("div", {
+          className: "space-y-3"
+        }, h("div", {
+          className: "flex items-center gap-3"
+        }, h("span", {
+          className: "w-12 shrink-0 text-sm font-medium text-gray-700"
+        }, "日工"), h("div", {
+          className: "relative flex-1 min-w-0"
+        }, h("input", {
+          type: "number",
+          min: "0",
+          step: "1",
+          name: "estimatedDayPeople",
+          value: formData.surveyData?.estimatedDayPeople || '',
+          onChange: handleSurveyChange,
+          placeholder: "填寫人數",
+          className: "w-full p-2.5 pr-10 border rounded-md outline-none"
+        }), h("span", {
+          className: "absolute right-3 top-2.5 text-gray-400 text-sm"
+        }, "人")), h("div", {
+          className: "relative flex-1 min-w-0"
+        }, h("input", {
+          type: "number",
+          min: "0",
+          step: "0.5",
+          name: "estimatedDayDays",
+          value: formData.surveyData?.estimatedDayDays || '',
+          onChange: handleSurveyChange,
+          placeholder: "填寫日數",
+          className: "w-full p-2.5 pr-10 border rounded-md outline-none"
+        }), h("span", {
+          className: "absolute right-3 top-2.5 text-gray-400 text-sm"
+        }, "日"))), h("div", {
+          className: "flex items-center gap-3"
+        }, h("span", {
+          className: "w-12 shrink-0 text-sm font-medium text-gray-700"
+        }, "夜工"), h("div", {
+          className: "relative flex-1 min-w-0"
+        }, h("input", {
+          type: "number",
+          min: "0",
+          step: "1",
+          name: "estimatedNightPeople",
+          value: formData.surveyData?.estimatedNightPeople || '',
+          onChange: handleSurveyChange,
+          placeholder: "填寫人數",
+          className: "w-full p-2.5 pr-10 border rounded-md outline-none"
+        }), h("span", {
+          className: "absolute right-3 top-2.5 text-gray-400 text-sm"
+        }, "人")), h("div", {
+          className: "relative flex-1 min-w-0"
+        }, h("input", {
+          type: "number",
+          min: "0",
+          step: "0.5",
+          name: "estimatedNightDays",
+          value: formData.surveyData?.estimatedNightDays || '',
+          onChange: handleSurveyChange,
+          placeholder: "填寫日數",
+          className: "w-full p-2.5 pr-10 border rounded-md outline-none"
+        }), h("span", {
+          className: "absolute right-3 top-2.5 text-gray-400 text-sm"
+        }, "日"))))), h("div", null, h("label", {
           className: "block text-sm font-bold text-gray-700 mb-2"
         }, "\u5DE5\u7A0B\u985E\u578B"), h("select", {
           name: "projectType",
           value: formData.surveyData?.projectType || '',
           onChange: handleSurveyChange,
-          className: "w-full p-2.5 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 bg-white shadow-sm"
+          className: "w-full p-2.5 border rounded-md outline-none bg-white"
         }, h("option", {
           value: ""
         }, "\u8ACB\u9078\u64C7"), ['新開', '加裝', '移機', '撤店', '拆機', '維修汰換', '整裝汰換', '整裝沿用', '其他'].map(opt => h("option", {
@@ -859,7 +975,7 @@
           name: "locationArea",
           value: formData.surveyData?.locationArea || '',
           onChange: handleSurveyChange,
-          className: "w-full p-2.5 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 bg-white shadow-sm"
+          className: "w-full p-2.5 border rounded-md outline-none bg-white"
         }, h("option", {
           value: ""
         }, "\u8ACB\u9078\u64C7"), ['街邊店', '軍營', '醫院', '高鐵、捷運、機場', '電子廠、科技園區', '百貨', '其他'].map(opt => h("option", {
@@ -967,7 +1083,7 @@
           value: formData.surveyData?.electricBoxLocation || '',
           onChange: handleSurveyChange,
           placeholder: "\u586B\u5BEB\u4F4D\u7F6E",
-          className: "w-full p-2.5 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm"
+          className: "w-full p-2.5 border rounded-md outline-none"
         })), h("div", {
           className: "md:col-span-2 bg-white p-4 rounded border border-gray-200"
         }, h("label", {
@@ -1017,7 +1133,7 @@
           value: formData.surveyData?.floorHeight || '',
           onChange: handleSurveyChange,
           placeholder: "\u586B\u5BEB\u9AD8\u5EA6",
-          className: "w-full p-2.5 pr-10 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm"
+          className: "w-full p-2.5 pr-10 border rounded-md outline-none"
         }), h("span", {
           className: "absolute right-3 top-2.5 text-gray-400 text-sm"
         }, "/cm"))), h("div", null, h("label", {
@@ -1030,7 +1146,7 @@
           value: formData.surveyData?.ceilingHeight || '',
           onChange: handleSurveyChange,
           placeholder: "\u586B\u5BEB\u9AD8\u5EA6",
-          className: "w-full p-2.5 pr-10 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm"
+          className: "w-full p-2.5 pr-10 border rounded-md outline-none"
         }), h("span", {
           className: "absolute right-3 top-2.5 text-gray-400 text-sm"
         }, "/cm"))), h("div", null, h("label", {
@@ -1043,7 +1159,7 @@
           value: formData.surveyData?.mainBeamHeight || '',
           onChange: handleSurveyChange,
           placeholder: "\u586B\u5BEB\u9AD8\u5EA6",
-          className: "w-full p-2.5 pr-10 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm"
+          className: "w-full p-2.5 pr-10 border rounded-md outline-none"
         }), h("span", {
           className: "absolute right-3 top-2.5 text-gray-400 text-sm"
         }, "/cm"))), h("div", null, h("label", {
@@ -1056,7 +1172,7 @@
           value: formData.surveyData?.subBeamHeight || '',
           onChange: handleSurveyChange,
           placeholder: "\u586B\u5BEB\u9AD8\u5EA6",
-          className: "w-full p-2.5 pr-10 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm"
+          className: "w-full p-2.5 pr-10 border rounded-md outline-none"
         }), h("span", {
           className: "absolute right-3 top-2.5 text-gray-400 text-sm"
         }, "/cm"))), h("div", {
@@ -1108,7 +1224,7 @@
           value: formData.surveyData?.coSurveyContractor || '',
           onChange: handleSurveyChange,
           placeholder: "\u586B\u5BEB",
-          className: "w-full p-2.5 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm"
+          className: "w-full p-2.5 border rounded-md outline-none"
         })), h("div", null, h("label", {
           className: "block text-sm font-bold text-gray-700 mb-1"
         }, "\u696D\u4E3B\u5DE5\u52D9\u806F\u7E6B\u8CC7\u8A0A"), h("input", {
@@ -1117,7 +1233,7 @@
           value: formData.surveyData?.ownerContact || '',
           onChange: handleSurveyChange,
           placeholder: "\u586B\u5BEB",
-          className: "w-full p-2.5 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm"
+          className: "w-full p-2.5 border rounded-md outline-none"
         })), h("div", {
           className: "md:col-span-2"
         }, h("label", {
@@ -1128,7 +1244,7 @@
           value: formData.surveyData?.decoratorContact || '',
           onChange: handleSurveyChange,
           placeholder: "\u586B\u5BEB",
-          className: "w-full p-2.5 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm"
+          className: "w-full p-2.5 border rounded-md outline-none"
         })), h("div", {
           className: "md:col-span-2"
         }, h("label", {
@@ -1139,7 +1255,7 @@
           onChange: handleSurveyChange,
           rows: "3",
           placeholder: "\u586B\u5BEB",
-          className: "w-full p-2.5 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 resize-none shadow-sm"
+          className: "w-full p-2.5 border rounded-md outline-none resize-none"
         })), h("div", {
           className: "md:col-span-2"
         }, h("label", {
@@ -1199,7 +1315,7 @@
           value: formData.surveyData?.indoorUnitHeight || '',
           onChange: handleSurveyChange,
           placeholder: "填寫高度",
-          className: "w-full p-2.5 pr-10 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm"
+          className: "w-full p-2.5 pr-10 border rounded-md outline-none"
         }), h("span", {
           className: "absolute right-3 top-2.5 text-gray-400 text-sm"
         }, "/cm"))),
@@ -1214,7 +1330,7 @@
           value: formData.surveyData?.indoorUnitAngleSteel || '',
           onChange: handleSurveyChange,
           placeholder: "填寫數量",
-          className: "w-full p-2.5 pr-10 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm"
+          className: "w-full p-2.5 pr-10 border rounded-md outline-none"
         }), h("span", {
           className: "absolute right-3 top-2.5 text-gray-400 text-sm"
         }, "支"))),
@@ -1308,7 +1424,7 @@
           value: hole.diameter || '',
           onChange: e => handleHoleChange(index, e.target.value),
           placeholder: "填寫",
-          className: "w-full p-2 pr-10 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm"
+          className: "w-full p-2.5 pr-10 border rounded-md outline-none"
         }), h("span", {
           className: "absolute right-3 top-2 text-gray-400 text-sm"
         }, "cm")), h("button", {
@@ -1463,7 +1579,7 @@
           value: formData.surveyData?.outdoorRackTons || '',
           onChange: handleSurveyChange,
           placeholder: "填數字",
-          className: "w-full p-2 pr-10 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm"
+          className: "w-full p-2.5 pr-10 border rounded-md outline-none"
         }), h("span", {
           className: "absolute right-3 top-2 text-gray-400 text-sm"
         }, "噸"))), h("div", {
@@ -1478,7 +1594,7 @@
           value: formData.surveyData?.outdoorRackQty || '',
           onChange: handleSurveyChange,
           placeholder: "填數字",
-          className: "w-full p-2 pr-10 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm"
+          className: "w-full p-2.5 pr-10 border rounded-md outline-none"
         }), h("span", {
           className: "absolute right-3 top-2 text-gray-400 text-sm"
         }, "組"))))),
@@ -1525,7 +1641,7 @@
           value: formData.surveyData?.outdoorAngleSteelExtra || '',
           onChange: handleSurveyChange,
           placeholder: "填寫數量",
-          className: "w-full p-2.5 pr-10 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm"
+          className: "w-full p-2.5 pr-10 border rounded-md outline-none"
         }), h("span", {
           className: "absolute right-3 top-2.5 text-gray-400 text-sm"
         }, "支"))))))), activeSurveyTab === '設備與零件' && h("div", {
@@ -1596,7 +1712,7 @@
           value: EquipmentUtils.formatLevel(normalizedEq),
           placeholder: "請先選擇型號",
           disabled: true,
-          className: "w-full p-2 border rounded-md bg-gray-100 text-gray-500 cursor-not-allowed"
+          className: "w-full p-2.5 border rounded-md bg-gray-100 text-gray-500 cursor-not-allowed"
         })),
         h("div", {
           className: "md:col-span-2"
@@ -1607,7 +1723,7 @@
           value: normalizedEq.area || '',
           onChange: e => handleEquipmentChange(index, 'area', e.target.value),
           placeholder: "填寫",
-          className: "w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500"
+          className: "w-full p-2.5 border rounded-md outline-none"
         }))));
         }))),
         /* ===== 零配件（多選 + 填數量） ===== */
@@ -1643,7 +1759,7 @@
           onChange: e => handlePartQtyChange(part, e.target.value),
           disabled: !(formData.surveyData?.parts || []).includes(part),
           placeholder: "數量",
-          className: "w-24 p-1.5 border rounded-md text-sm outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-100 disabled:opacity-50"
+          className: "w-24 p-1.5 border rounded-md text-sm outline-none disabled:bg-gray-100 disabled:opacity-50"
         }), h("span", {
           className: "text-sm text-gray-500"
         }, "組")))), renderCheckQtyOthersBlock('parts', '組', '數量'))),
@@ -1670,7 +1786,7 @@
           value: formData.surveyData?.reuseEquipment || '',
           onChange: handleSurveyChange,
           placeholder: "填寫",
-          className: "w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500"
+          className: "w-full p-2.5 border rounded-md outline-none"
         })), h("div", null, h("label", {
           className: "block text-sm font-bold text-gray-700 mb-1"
         }, "備註"), h("p", {
@@ -1681,7 +1797,7 @@
           value: formData.surveyData?.reuseEquipmentNote || '',
           onChange: handleSurveyChange,
           placeholder: "請填寫...",
-          className: "w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500"
+          className: "w-full p-2.5 border rounded-md outline-none"
         }))))), activeSurveyTab === '配管工程' && h("div", {
           className: "space-y-8"
         },
@@ -1768,26 +1884,8 @@
         }, renderPipingCheckQtyGroup('電源線線材', '請勾選線材規格並填寫長度（米）', 'powerCableWire', 'powerCableWireQty', WIRING_POWER_CABLE, '米', '長度')))), activeSurveyTab === '風管工程' && h("div", {
           className: "space-y-8"
         },
-        /* ===== 保溫軟管(玻璃棉) ===== */
-        h("div", {
-          className: "bg-indigo-50/30 p-8 rounded-lg border border-indigo-100 shadow-sm"
-        }, h("h3", {
-          className: "text-xl font-bold text-indigo-800 border-b-2 border-indigo-200 pb-3 mb-6 flex items-center gap-2"
-        }, Icons.Wrench({
-          className: "h-6 w-6"
-        }), " 保溫軟管(玻璃棉)／米"), h("div", {
-          className: "space-y-6"
-        }, renderPipingCheckQtyGroup('保溫軟管(玻璃棉)', '請勾選管徑並填寫長度（米）', 'insulatedHose', 'insulatedHoseQty', DUCT_INSULATED_HOSE, '米', '長度'))),
-        /* ===== 無保溫軟管(鋁箔) ===== */
-        h("div", {
-          className: "bg-indigo-50/30 p-8 rounded-lg border border-indigo-100 shadow-sm"
-        }, h("h3", {
-          className: "text-xl font-bold text-indigo-800 border-b-2 border-indigo-200 pb-3 mb-6 flex items-center gap-2"
-        }, Icons.Wrench({
-          className: "h-6 w-6"
-        }), " 無保溫軟管(鋁箔)／米"), h("div", {
-          className: "space-y-6"
-        }, renderPipingCheckQtyGroup('無保溫軟管(鋁箔)', '請勾選管徑並填寫長度（米）', 'uninsulatedHose', 'uninsulatedHoseQty', DUCT_UNINSULATED_HOSE, '米', '長度'))),
+        /* ===== 風管／米（保溫軟管、無保溫軟管、螺旋風管、防火保溫軟管） ===== */
+        renderDuctHose(),
         /* ===== 集風箱 ===== */
         renderDuctBox('集風箱（管徑、數量）', 'collectBox'),
         /* ===== 出／線型箱 ===== */
@@ -1798,6 +1896,8 @@
         renderDuctBox('強制回風箱', 'forcedReturnBox'),
         /* ===== 三通風箱 ===== */
         renderDuctTeeBox('三通風箱', 'teeBox'),
+        /* ===== 嵌入外接風箱 ===== */
+        renderDuctTeeBox('嵌入外接風箱', 'embeddedBox'),
         /* ===== 出風口 ===== */
         renderVentOutletBox(),
         /* ===== 回風口 ===== */
@@ -1824,7 +1924,7 @@
           name: "demoEquip",
           value: formData.surveyData?.demoEquip || '',
           onChange: handleSurveyChange,
-          className: "w-full p-2.5 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 bg-white shadow-sm",
+          className: "w-full p-2.5 border rounded-md outline-none bg-white",
           placeholder: "請填寫數量"
         }), h("p", {
           className: "text-xs text-gray-500 mt-1.5"
@@ -1837,7 +1937,7 @@
           name: "demoDuct",
           value: formData.surveyData?.demoDuct || '',
           onChange: handleSurveyChange,
-          className: "w-full p-2.5 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 bg-white shadow-sm",
+          className: "w-full p-2.5 border rounded-md outline-none bg-white",
           placeholder: "請填寫數量"
         })),
         /* 管路拆除/米 */
@@ -1848,7 +1948,7 @@
           name: "demoPipe",
           value: formData.surveyData?.demoPipe || '',
           onChange: handleSurveyChange,
-          className: "w-full p-2.5 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 bg-white shadow-sm",
+          className: "w-full p-2.5 border rounded-md outline-none bg-white",
           placeholder: "請填寫長度（米）"
         })),
         /* 其他拆除項目、數量說明 */
@@ -1859,7 +1959,7 @@
           value: formData.surveyData?.demoOther || '',
           onChange: handleSurveyChange,
           rows: 3,
-          className: "w-full p-2.5 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 bg-white shadow-sm",
+          className: "w-full p-2.5 border rounded-md outline-none bg-white",
           placeholder: "請填寫"
         })))),
         /* ===== 舊機處理方式 ===== */
@@ -1880,7 +1980,7 @@
           name: "oldMachineSpec",
           value: formData.surveyData?.oldMachineSpec || '',
           onChange: handleSurveyChange,
-          className: "w-full p-2.5 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 bg-white shadow-sm",
+          className: "w-full p-2.5 border rounded-md outline-none bg-white",
           placeholder: "請填寫品牌、規格"
         })),
         /* 處理方式（單選） */
@@ -1959,7 +2059,7 @@
           value: formData.surveyData?.renovationHoleSize || '',
           onChange: handleSurveyChange,
           rows: 3,
-          className: "w-full p-2.5 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 bg-white shadow-sm",
+          className: "w-full p-2.5 border rounded-md outline-none bg-white",
           placeholder: "請填寫"
         })),
         /* ===== 是否更新汰換 ===== */
@@ -2004,7 +2104,7 @@
           value: formData.surveyData?.replaceRemark || '',
           onChange: handleSurveyChange,
           rows: 3,
-          className: "w-full p-2.5 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500 bg-white shadow-sm",
+          className: "w-full p-2.5 border rounded-md outline-none bg-white",
           placeholder: "請填寫"
         })))), h("div", {
           className: "mt-8 pt-6 border-t flex justify-end gap-4"
