@@ -202,8 +202,6 @@
         className: "p-3 font-semibold text-center min-w-[88px]"
       }, "操作"), h("th", {
         className: "p-3 font-semibold"
-      }, "案件編號"), h("th", {
-        className: "p-3 font-semibold"
       }, "客戶名稱"), h("th", {
         className: "p-3 font-semibold"
       }, "門市名稱"), h("th", {
@@ -231,7 +229,7 @@
       }, "退回原因"))), h("tbody", {
         className: "divide-y divide-gray-100"
       }, filteredCases.length === 0 ? h("tr", null, h("td", {
-        colspan: "15",
+        colspan: "14",
         className: "text-center p-8 text-gray-400"
       }, "無符合條件之保養資料")) : pageResult.items.map(function (c) {
         var canClose = canCloseMaintenanceCase(c);
@@ -264,10 +262,6 @@
         }, Icons.CheckCircle({
           className: "h-4 w-4"
         })))), h("td", {
-          className: "p-3 font-medium text-blue-700"
-        }, c.caseNumber || h("span", {
-          className: "text-gray-400 italic"
-        }, "待產生")), h("td", {
           className: "p-3 font-medium text-gray-800"
         }, c.customerName), h("td", {
           className: "p-3"
@@ -345,6 +339,7 @@
     var backView = props.backView === undefined ? 'maintenance-list' : props.backView;
 
     var customers = props.customers;
+    var vendors = props.vendors || [];
     var formData = CaseAssigneeUtils.normalizeMaintenanceCase(targetCase);
     var isEdit = mode === 'edit';
 
@@ -376,13 +371,11 @@
           updatedData.completionDate = IESS.caseDateTime.now();
         }
 
-        // 如果原本沒有編號，且現在有了保養日期，就產生一組新編號
+        // 保養計劃進度不顯示案件編號，但銷案審核仍需要，故沿用保養日期在背景補上編號
         if (!updatedData.caseNumber && updatedData.planDate) {
           updatedData.caseNumber = updatedData.planDate.replace(/-/g, '') + String(Math.floor(Math.random() * 1000)).padStart(3, '0');
-          showToast('已產生案件編號：' + updatedData.caseNumber);
-        } else {
-          showToast('保養狀態已更新');
         }
+        showToast('保養狀態已更新');
         if (updatedData.status === '已完成') {
           updateStoreLastMaintenanceDate(stores, setStores, updatedData);
         }
@@ -396,7 +389,6 @@
         className: "max-w-5xl mx-auto bg-white rounded-lg shadow-sm border border-gray-100"
       }, PageHeader({
         title: isEdit ? '編輯保養明細' : '查看保養明細',
-        badge: formData.caseNumber || '待產生編號',
         onClose: function () { setView(backView); },
         wrapperClass: 'flex justify-between items-center p-6 border-b border-gray-200 sticky top-0 z-10 bg-white rounded-t-lg'
       }), h("div", {
@@ -406,9 +398,6 @@
       }, "案件與門市資訊"), h("div", {
         className: "grid grid-cols-2 md:grid-cols-3 gap-4"
       }, h(ReadOnlyField, {
-        label: "案件編號",
-        value: formData.caseNumber || '(依保養日期自動產生)'
-      }), h(ReadOnlyField, {
         label: "客戶名稱",
         value: formData.customerName
       }), h(ReadOnlyField, {
@@ -472,6 +461,19 @@
         rerender();
       }, { id: 'maintenance-assignee-members' }) : h(ReadOnlyField, {
         value: CaseAssigneeUtils.formatAssigneeMembers(formData)
+      })), h("div", null, h("span", {
+        className: "text-gray-500 block mb-1 text-xs"
+      }, "協力廠商"), isEdit ? IESS.MultiSelect({
+        id: 'maintenance-partner-vendors',
+        options: VendorUtils.getCooperatorSelectOptions(vendors, formData.partnerVendorIds),
+        value: formData.partnerVendorIds || [],
+        onChange: function (next) {
+          formData = Object.assign({}, formData, { partnerVendorIds: next });
+          rerender();
+        },
+        placeholder: '請選擇協力廠商'
+      }) : h(ReadOnlyField, {
+        value: VendorUtils.formatCooperatorLabels(vendors, formData.partnerVendorIds)
       })), h("div", null, h("span", {
         className: "text-gray-500 block mb-1 text-xs"
       }, "保養開始時間"), isEdit ? h(TimeInput24, {

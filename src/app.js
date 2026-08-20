@@ -392,17 +392,20 @@
       case 'maintenance-view':
         return h(MaintenanceViewEditForm, {
           targetCase: s.viewingCase, stores: s.stores, customers: s.customers,
+          vendors: s.vendors,
           setView: setView, mode: 'view', showToast: showToast, backView: 'maintenance-list'
         });
       case 'review-maintenance-view':
         return h(MaintenanceViewEditForm, {
           targetCase: s.viewingCase, stores: s.stores, customers: s.customers,
+          vendors: s.vendors,
           setView: setView, mode: 'view', showToast: showToast, backView: 'review-list'
         });
       case 'maintenance-edit':
         return h(MaintenanceViewEditForm, {
           targetCase: s.editingCase, cases: s.maintenanceCases, setCases: setMaintenanceCases,
           stores: s.stores, setStores: setStores, customers: s.customers,
+          vendors: s.vendors,
           setView: setView, mode: 'edit', showToast: showToast
         });
       case 'project-list':
@@ -490,7 +493,7 @@
       case 'store-history-maintenance-view':
         return h(MaintenanceViewEditForm, {
           targetCase: StoreUtils.withStoreHistoryContext(s.viewingCase, s.historyStore),
-          stores: s.stores, customers: s.customers,
+          stores: s.stores, customers: s.customers, vendors: s.vendors,
           setView: setView, mode: 'view', showToast: showToast, backView: 'store-history'
         });
       case 'store-history-project-view':
