@@ -455,6 +455,18 @@
           jobSchedules: s.jobSchedules, setJobSchedules: setJobSchedules,
           setEditingCase: setEditingCase, setView: setView, showToast: showToast
         });
+      case 'job-schedule-add':
+        return h(JobScheduleForm, {
+          jobSchedules: s.jobSchedules, setJobSchedules: setJobSchedules,
+          setView: setView, showToast: showToast,
+          currentOperatorName: getCurrentOperatorName(s.accounts, s.currentAccountId)
+        });
+      case 'job-schedule-edit':
+        return h(JobScheduleForm, {
+          jobSchedules: s.jobSchedules, setJobSchedules: setJobSchedules,
+          targetCase: s.editingCase, setView: setView, showToast: showToast,
+          currentOperatorName: getCurrentOperatorName(s.accounts, s.currentAccountId)
+        });
       case 'customer-list':
         return h(CustomerList, {
           cases: s.customers, setCases: setCustomers, serviceLevels: s.serviceLevels,
