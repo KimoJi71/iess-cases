@@ -703,8 +703,9 @@ try {
 
   console.log('\nSection 6｜app.js 的 serviceLevels 傳遞範圍');
   const appSrc6 = readFileSync(join(ROOT, 'src/app.js'), 'utf8');
-  // 註：generateDueMaintenanceCases 已改為區間驅動，簽章不再吃 serviceLevels，
-  // 詳見 scripts/verify-maintenance-period-column.mjs。
+  // 註：generateDueMaintenanceCases 已改為區間驅動，開單月份不再由 serviceLevels 決定，
+  // 詳見 scripts/verify-maintenance-period-column.mjs；末位的 serviceLevels 參數只用來
+  // 推導門市未設定「是否保養」時的預設值（見 StoreUtils.getStoreMaintenanceFlag）。
   // 取該元件自己的 props 區塊（到對應的收尾 `});` 為止），避免溢出到下一個 case
   function propsBlockOf(comp) {
     const i = appSrc6.indexOf('h(' + comp + ', {');
@@ -712,16 +713,18 @@ try {
     const end = appSrc6.indexOf('\n        });', i);
     return end === -1 ? appSrc6.slice(i) : appSrc6.slice(i, end);
   }
-  // 保養區間改由客戶持有後，保養列表／檢視／案件排程都改以 customerName 取區間，
+  // 保養區間改由客戶持有後，保養檢視／案件排程都改以 customerName 取區間，
   // 不再需要 serviceLevels；ScheduleUtils 已完全不碰 ServiceLevelUtils，
   // 只把 store.serviceLevel 當欄位複製到案件上。
-  for (const comp of ['MaintenanceList', 'MaintenanceViewEditForm', 'CaseArrangement']) {
+  // MaintenanceList 是例外：它要靠 serviceLevels 推導門市未設定的「是否保養」預設值，
+  // 才知道哪些門市不該列示，故列在下方「仍真正使用」那組。
+  for (const comp of ['MaintenanceViewEditForm', 'CaseArrangement']) {
     const block = propsBlockOf(comp);
     assertTrue(block !== null && !block.includes('serviceLevels'),
       `app.js 的 ${comp} 呼叫不再傳 serviceLevels`);
   }
   // 仍真正使用 serviceLevels 的元件必須繼續拿到它
-  for (const comp of ['CaseReviewList', 'MaintenanceAllocation', 'ServiceLevelList', 'CustomerList']) {
+  for (const comp of ['CaseReviewList', 'MaintenanceAllocation', 'ServiceLevelList', 'CustomerList', 'MaintenanceList']) {
     const block = propsBlockOf(comp);
     assertTrue(block !== null && block.includes('serviceLevels'),
       `app.js 的 ${comp} 呼叫仍傳 serviceLevels`);

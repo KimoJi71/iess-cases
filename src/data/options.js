@@ -68,6 +68,8 @@ const CUSTOMER_ENABLED_FILTERS = ['全部', '啟用', '停用'];
 const VENDOR_TYPE_OPTIONS = ['供貨商', '協力商', '其他'];
 const STORE_STATUS_OPTIONS = ['正常營業', '整裝', '撤店'];
 const WORK_ORDER_APPLY_OPTIONS = ['是', '否'];
+// 門市「是否保養」：未設定時由服務等級的「每年保養次數」推導（見 StoreUtils.getStoreMaintenanceFlag）
+const STORE_MAINTENANCE_OPTIONS = ['是', '否'];
 
 // 工程立案專用選項
 const PROJECT_WORK_CATEGORIES = ['新開', '汰換', '撤店', '整裝', '加裝'];

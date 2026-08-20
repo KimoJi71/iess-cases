@@ -206,8 +206,9 @@
    * 依客戶的保養區間產生保養單：每個門市在「參考月份所在的區間」各一筆。
    * 不論上一個區間是否完成，進入下一個區間都會重新建一筆。
    * referenceMonth 為選填的 'YYYY-MM'，省略時取當月。
+   * serviceLevels 為選填，用來推導門市未設定「是否保養」時的預設值（見 StoreUtils.getStoreMaintenanceFlag）。
    */
-  function generateDueMaintenanceCases(customers, stores, existingCases, referenceMonth) {
+  function generateDueMaintenanceCases(customers, stores, existingCases, referenceMonth, serviceLevels) {
     var refMonth = referenceMonth || new Date().toISOString().slice(0, 7);
     var refYear = parseInt(String(refMonth).slice(0, 4), 10);
     var monthNumber = parseInt(String(refMonth).slice(5, 7), 10);
@@ -218,7 +219,8 @@
     (customers || []).forEach(function (c) { customerMap[c.name] = c; });
 
     (stores || []).forEach(function (store) {
-      if (store.storeStatus !== '正常營業') return;
+      // 「整裝」「撤店」，或「正常營業」但「是否保養」為否的門市都不開保養單。
+      if (!StoreUtils.isMaintainableStore(store, serviceLevels)) return;
       var cust = customerMap[store.customerName];
       if (!cust || cust.enabled === false) return;
       // 客戶設定「於開幕 N 個月後開始保養」時，未滿期的門市這一輪不開單。

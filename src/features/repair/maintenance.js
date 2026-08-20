@@ -1,7 +1,7 @@
 /*
  * features/repair/maintenance.js — 保養：保養列表 + 保養明細檢視/編輯
  * props:
- *   MaintenanceList         { cases, setCases, stores, setStores, setViewingCase, setEditingCase, setView, showToast }
+ *   MaintenanceList         { cases, setCases, stores, setStores, customers, serviceLevels, setViewingCase, setEditingCase, setView, showToast }
  *   MaintenanceViewEditForm { targetCase, cases, setCases, stores, setStores, setView, mode, showToast, backView }
  */
 (function () {
@@ -64,6 +64,7 @@
     var stores = props.stores;
     var setStores = props.setStores;
     var customers = props.customers;
+    var serviceLevels = props.serviceLevels;
     var setViewingCase = props.setViewingCase;
     var setEditingCase = props.setEditingCase;
     var setView = props.setView;
@@ -121,6 +122,10 @@
         // 客戶設定「於開幕 N 個月後開始保養」時，未滿期的門市不出現在保養計劃。
         // 只擋這份列表——案件排程待辦、銷案審核、叫修紀錄不受影響。
         if (!ScheduleUtils.caseMaintenanceStarted(c, customers, stores)) return false;
+        // 門市狀態為「整裝」「撤店」，或「正常營業」但「是否保養」為否時不列示。
+        // 查無門市時不擋（與 caseMaintenanceStarted 一致，資料不全的案件不該無聲消失）。
+        var store = ScheduleUtils.resolveStore(stores, c.customerName, c.storeName);
+        if (store && !StoreUtils.isMaintainableStore(store, serviceLevels)) return false;
         return true;
       }).sort(function (a, b) {
         var aDate = a.planDate || a.dueMonth || '1970-01-01';

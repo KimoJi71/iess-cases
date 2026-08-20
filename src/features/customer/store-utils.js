@@ -66,6 +66,36 @@
     return stores.filter(isActiveStore);
   }
 
+  /**
+   * 門市「是否保養」。門市自身有設定時以門市為準；未設定（舊資料／尚未存過此欄位）
+   * 時，由服務等級管理的「每年保養次數」推導：0 → 否，> 0 → 是。
+   * serviceLevels 未提供時一律回 '是'——無從判斷就不套用此規則，
+   * 免得資料不全的門市從保養計劃無聲消失。
+   */
+  function getStoreMaintenanceFlag(store, serviceLevels) {
+    var raw = store && store.maintenanceFlag;
+    if (raw === '是' || raw === '否') return raw;
+    if (!serviceLevels || !serviceLevels.length) return '是';
+    var count = (typeof ServiceLevelUtils !== 'undefined')
+      ? ServiceLevelUtils.getMaintenanceCount(serviceLevels, store && store.serviceLevel)
+      : 0;
+    return count > 0 ? '是' : '否';
+  }
+
+  function isStoreMaintenanceEnabled(store, serviceLevels) {
+    return getStoreMaintenanceFlag(store, serviceLevels) === '是';
+  }
+
+  /**
+   * 該門市是否納入保養計劃（開單與保養計劃進度列表共用）：
+   * 門市狀態為「整裝」「撤店」，或狀態為「正常營業」但「是否保養」為「否」時排除。
+   */
+  function isMaintainableStore(store, serviceLevels) {
+    if (!store) return false;
+    if (store.storeStatus !== '正常營業') return false;
+    return isStoreMaintenanceEnabled(store, serviceLevels);
+  }
+
   function getStoreNameOptions(stores, customerName, selectedStoreName, includeClosed) {
     if (!customerName) return [];
     var activeByName = {};
@@ -256,6 +286,9 @@
     matchesStoreRecord: matchesStoreRecord,
     isActiveStore: isActiveStore,
     getActiveStores: getActiveStores,
+    getStoreMaintenanceFlag: getStoreMaintenanceFlag,
+    isStoreMaintenanceEnabled: isStoreMaintenanceEnabled,
+    isMaintainableStore: isMaintainableStore,
     getStoreNameOptions: getStoreNameOptions,
     buildRepairMaintenanceHistoryRows: buildRepairMaintenanceHistoryRows,
     buildProjectHistoryRows: buildProjectHistoryRows,

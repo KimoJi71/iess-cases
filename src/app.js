@@ -86,7 +86,9 @@
     cases: INITIAL_CASES,
     // 僅在 store 建構時執行一次：之後編輯客戶的保養區間不會回頭重新產生保養案件
     // （這是記憶體版 demo 可接受的限制，需重新整理頁面才會依最新設定重算）
-    maintenanceCases: ScheduleUtils.generateDueMaintenanceCases(INITIAL_CUSTOMERS, INITIAL_STORES, INITIAL_MAINTENANCE_CASES),
+    maintenanceCases: ScheduleUtils.generateDueMaintenanceCases(
+      INITIAL_CUSTOMERS, INITIAL_STORES, INITIAL_MAINTENANCE_CASES, null, INITIAL_SERVICE_LEVELS
+    ),
     projectCases: INITIAL_PROJECT_CASES,
     surveyCases: INITIAL_SURVEY_CASES,
     customers: INITIAL_CUSTOMERS,
@@ -380,6 +382,7 @@
         return h(MaintenanceList, {
           cases: s.maintenanceCases, setCases: setMaintenanceCases,
           stores: s.stores, setStores: setStores, customers: s.customers,
+          serviceLevels: s.serviceLevels,
           setViewingCase: setViewingCase, setEditingCase: setEditingCase,
           setView: setView, showToast: showToast
         });
@@ -497,11 +500,13 @@
       case 'store-add':
         return h(StoreForm, {
           stores: s.stores, setStores: setStores, customers: s.customers,
+          serviceLevels: s.serviceLevels,
           storeCustomer: s.storeCustomer, setView: setView, showToast: showToast
         });
       case 'store-edit':
         return h(StoreForm, {
           stores: s.stores, setStores: setStores, customers: s.customers,
+          serviceLevels: s.serviceLevels,
           targetCase: s.editingCase, storeCustomer: s.storeCustomer,
           setView: setView, showToast: showToast,
           backView: s.customerBackView || 'store-list',

@@ -1,6 +1,6 @@
 /*
  * features/customer/store-form.js — 客戶建檔（門市管理）：門市新增/編輯表單
- * props: { stores, setStores, customers, targetCase, storeCustomer, setView, showToast, backView, clearCustomerBackView }
+ * props: { stores, setStores, customers, serviceLevels, targetCase, storeCustomer, setView, showToast, backView, clearCustomerBackView }
  */
 (function () {
   'use strict';
@@ -11,6 +11,7 @@
     var stores = props.stores;
     var setStores = props.setStores;
     var customers = props.customers;
+    var serviceLevels = props.serviceLevels;
     var targetCase = props.targetCase;
     var storeCustomer = props.storeCustomer;
     var setView = props.setView;
@@ -47,7 +48,12 @@
       lastMaintenanceDate: (targetCase && targetCase.lastMaintenanceDate) || '',
       remarks: (targetCase && targetCase.remarks) || '',
       indoorHeight: (targetCase && targetCase.indoorHeight) || '',
-      outdoorHeight: (targetCase && targetCase.outdoorHeight) || ''
+      outdoorHeight: (targetCase && targetCase.outdoorHeight) || '',
+      // 未存過此欄位時，由服務等級的「每年保養次數」推導預設值（0 → 否，> 0 → 是）
+      maintenanceFlag: StoreUtils.getStoreMaintenanceFlag(
+        { maintenanceFlag: targetCase && targetCase.maintenanceFlag, serviceLevel: autoServiceLevel },
+        serviceLevels
+      )
     };
     var contacts = (targetCase && targetCase.contacts) ? targetCase.contacts.map(function (ct) { return Object.assign({}, ct); }) : [];
     var photos = (targetCase && targetCase.photos) ? targetCase.photos.map(function (p) { return Object.assign({}, p); }) : [];
@@ -265,6 +271,27 @@
                 disabled: true,
                 className: 'w-full p-2.5 border rounded-md bg-gray-100 text-gray-600'
               })
+            ),
+            h('div', null,
+              h('label', { className: 'block text-sm mb-1' }, '是否保養'),
+              h('div', { className: 'flex items-center gap-6 py-2.5' },
+                STORE_MAINTENANCE_OPTIONS.map(function (opt) {
+                  return h('label', {
+                    key: opt,
+                    className: 'flex items-center gap-2 text-sm text-gray-700 cursor-pointer'
+                  },
+                    h('input', {
+                      type: 'radio',
+                      name: 'maintenanceFlag',
+                      value: opt,
+                      checked: formData.maintenanceFlag === opt,
+                      onChange: handleChange,
+                      className: 'h-4 w-4 accent-blue-600'
+                    }),
+                    opt
+                  );
+                })
+              )
             ),
             field('公司電話', 'companyPhone'),
             field('公司傳真', 'companyFax'),
