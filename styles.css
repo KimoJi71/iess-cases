@@ -155,6 +155,57 @@ body {
   font-size: 0.875rem;
 }
 
+/* ===== Form controls：對齊案件處理「編輯案件」 =====
+   標準：p-2.5、rounded-md、無 focus ring、無陰影、高度 42px。
+   不含 checkbox／radio、可搜尋下拉內層 input，以及現勘表 checkbox 旁的小數量欄。 */
+input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):not([type="file"]):not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="range"]):not([type="color"]):not(.searchable-select__input).border.rounded-md:not(.p-1):not(.p-1\.5):not(.py-1\.5),
+select.border.rounded-md:not(.p-1):not(.p-1\.5):not(.py-1\.5),
+textarea.border.rounded-md {
+  padding: 0.625rem;
+  min-height: 42px;
+  box-sizing: border-box;
+  box-shadow: none;
+  outline: none;
+}
+
+input:not(.searchable-select__input).border.rounded-md:focus,
+select.border.rounded-md:focus,
+textarea.border.rounded-md:focus {
+  box-shadow: none;
+  outline: none;
+}
+
+input[type="date"].border.rounded-md,
+input[type="datetime-local"].border.rounded-md,
+input[type="time"].border.rounded-md,
+input.h-\[42px\].border.rounded-md,
+select.h-\[42px\].border.rounded-md {
+  height: 42px;
+  min-height: 42px;
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 0.625rem;
+  padding-right: 0.625rem;
+  box-sizing: border-box;
+  box-shadow: none;
+  outline: none;
+}
+
+input.pr-10.border.rounded-md {
+  padding-right: 2.5rem;
+}
+
+input[type="number"].border.rounded-md::-webkit-outer-spin-button,
+input[type="number"].border.rounded-md::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"].border.rounded-md {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
 /* ===== FullCalendar schedule events ===== */
 .fc-schedule-event {
   white-space: pre-line;

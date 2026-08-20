@@ -88,7 +88,7 @@
                 name: 'plateNo',
                 value: formData.plateNo,
                 onChange: handleChange,
-                className: 'w-full p-2.5 border rounded-md outline-none focus:border-blue-500'
+                className: 'w-full p-2.5 border rounded-md outline-none'
               })
             ),
             h('div', null,
@@ -97,7 +97,7 @@
                 name: 'personInCharge',
                 value: formData.personInCharge,
                 onChange: handleChange,
-                className: 'w-full p-2.5 border rounded-md outline-none focus:border-blue-500 bg-white'
+                className: 'w-full p-2.5 border rounded-md outline-none bg-white'
               },
                 h('option', { value: '' }, '請選擇'),
                 personOptions.map(function (name) {
@@ -112,7 +112,7 @@
                 name: 'owner',
                 value: formData.owner,
                 onChange: handleChange,
-                className: 'w-full p-2.5 border rounded-md outline-none focus:border-blue-500'
+                className: 'w-full p-2.5 border rounded-md outline-none'
               })
             ),
             h('div', null,
@@ -122,7 +122,7 @@
                 name: 'company',
                 value: formData.company,
                 onChange: handleChange,
-                className: 'w-full p-2.5 border rounded-md outline-none focus:border-blue-500'
+                className: 'w-full p-2.5 border rounded-md outline-none'
               })
             )
           ),

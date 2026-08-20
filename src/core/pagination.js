@@ -89,7 +89,7 @@
         onPageSizeChange && h('select', {
           value: result.pageSize,
           onChange: function (e) { onPageSizeChange(Number(e.target.value)); },
-          className: 'px-2 py-1.5 border rounded-md text-sm text-gray-600 outline-none focus:border-blue-500 bg-white'
+          className: 'px-2 py-1.5 border rounded-md text-sm text-gray-600 outline-none bg-white'
         }, pageSizeOptions.map(function (n) {
           return h('option', { key: n, value: n }, '每頁 ' + n + ' 筆');
         })),

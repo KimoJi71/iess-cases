@@ -164,7 +164,7 @@
                   name: 'name',
                   value: formData.name,
                   onChange: handleChange,
-                  className: 'w-full p-2.5 border rounded-md outline-none focus:border-blue-500'
+                  className: 'w-full p-2.5 border rounded-md outline-none'
                 })
               ),
               h('div', null,
@@ -175,7 +175,7 @@
                   value: formData.username,
                   onChange: handleChange,
                   disabled: isEdit && targetCase.username === 'admin',
-                  className: 'w-full p-2.5 border rounded-md outline-none focus:border-blue-500 disabled:bg-gray-100'
+                  className: 'w-full p-2.5 border rounded-md outline-none disabled:bg-gray-100'
                 }),
                 h('p', { className: 'text-xs text-gray-400 mt-1' }, '帳號區分大小寫')
               ),
@@ -191,7 +191,7 @@
                   placeholder: isEdit
                     ? (canEditTargetPassword ? '留空則不變更密碼' : '無法變更此帳號密碼')
                     : '請輸入密碼',
-                  className: 'w-full p-2.5 border rounded-md outline-none focus:border-blue-500 disabled:bg-gray-100'
+                  className: 'w-full p-2.5 border rounded-md outline-none disabled:bg-gray-100'
                 }),
                 canEditTargetPassword && h('p', { className: 'text-xs text-gray-400 mt-1' }, '密碼區分大小寫，儲存時將加密')
               ),
@@ -202,7 +202,7 @@
                   name: 'email',
                   value: formData.email,
                   onChange: handleChange,
-                  className: 'w-full p-2.5 border rounded-md outline-none focus:border-blue-500'
+                  className: 'w-full p-2.5 border rounded-md outline-none'
                 })
               ),
               h('div', null,
@@ -211,7 +211,7 @@
                   name: 'role',
                   value: formData.role,
                   onChange: handleChange,
-                  className: 'w-full p-2.5 border rounded-md outline-none focus:border-blue-500 bg-white'
+                  className: 'w-full p-2.5 border rounded-md outline-none bg-white'
                 },
                   h('option', { value: '' }, '請選擇'),
                   ACCOUNT_ROLE_OPTIONS.map(function (role) {
@@ -229,7 +229,7 @@
                     rerender();
                   },
                   disabled: isEdit && targetCase.username === 'admin',
-                  className: 'w-full p-2.5 border rounded-md outline-none focus:border-blue-500 bg-white disabled:bg-gray-100'
+                  className: 'w-full p-2.5 border rounded-md outline-none bg-white disabled:bg-gray-100'
                 },
                   h('option', { value: 'true' }, '啟用'),
                   h('option', { value: 'false' }, '停用')

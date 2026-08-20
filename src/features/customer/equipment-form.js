@@ -25,7 +25,7 @@
         value: formData[name] || '',
         onChange: onChange,
         disabled: disabled,
-        className: 'w-full p-2.5 border rounded-md outline-none focus:border-blue-500 bg-white' +
+        className: 'w-full p-2.5 border rounded-md outline-none bg-white' +
           (disabled ? ' bg-gray-100 text-gray-400 cursor-not-allowed' : '')
       },
         h('option', { value: '', disabled: true }, disabled ? (opts.emptyHint || '請先選擇上層欄位') : '請選擇'),
@@ -54,7 +54,7 @@
       ? DeviceCategoryUtils.resolveProjectEquip(targetCase, deviceCategories)
       : DeviceCategoryUtils.defaultEquipRecord();
 
-    var inputCls = 'w-full p-2.5 border rounded-md outline-none focus:border-blue-500';
+    var inputCls = IESS.inputCls;
     var disabledCls = 'w-full p-2.5 border rounded-md bg-gray-100 text-gray-600';
 
     return stateful(function (rerender) {

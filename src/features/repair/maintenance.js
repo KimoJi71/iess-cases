@@ -143,20 +143,20 @@
         type: "month",
         value: filterMonthStart,
         onChange: function (e) { filterMonthStart = e.target.value; rerender(); },
-        className: "w-full p-2 border rounded-md outline-none bg-white"
+        className: "w-full p-2.5 border rounded-md outline-none bg-white"
       })), h("div", { className: "min-w-0" }, h("label", {
         className: "block text-xs text-gray-500 mb-1"
       }, "結束月份"), h("input", {
         type: "month",
         value: filterMonthEnd,
         onChange: function (e) { filterMonthEnd = e.target.value; rerender(); },
-        className: "w-full p-2 border rounded-md outline-none bg-white"
+        className: "w-full p-2.5 border rounded-md outline-none bg-white"
       })), h("div", { className: "min-w-0" }, h("label", {
         className: "block text-xs text-gray-500 mb-1"
       }, "客戶名稱"), h("select", {
         value: filterCustomer,
         onChange: function (e) { filterCustomer = e.target.value; rerender(); },
-        className: "w-full p-2 border rounded-md outline-none bg-white"
+        className: "w-full p-2.5 border rounded-md outline-none bg-white"
       }, h("option", {
         value: "全部"
       }, "全部"), customerFilterOptions.map(function (opt) {
@@ -166,7 +166,7 @@
       }, "公司區域"), h("select", {
         value: filterStoreArea,
         onChange: function (e) { filterStoreArea = e.target.value; rerender(); },
-        className: "w-full p-2 border rounded-md outline-none bg-white"
+        className: "w-full p-2.5 border rounded-md outline-none bg-white"
       }, h("option", {
         value: "全部"
       }, "全部"), storeAreaOptions.map(function (d) {
@@ -176,7 +176,7 @@
       }, "保養狀態"), h("select", {
         value: filterStatus,
         onChange: function (e) { filterStatus = e.target.value; rerender(); },
-        className: "w-full p-2 border rounded-md outline-none bg-white"
+        className: "w-full p-2.5 border rounded-md outline-none bg-white"
       }, h("option", {
         value: "全部"
       }, "全部"), MAINTENANCE_STATUS_OPTIONS.map(function (s) {

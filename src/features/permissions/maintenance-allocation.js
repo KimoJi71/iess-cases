@@ -542,7 +542,7 @@
                     editModal.targetCount = e.target.value;
                     rerender();
                   },
-                  className: 'w-full p-2.5 border rounded-md outline-none focus:border-blue-500'
+                  className: 'w-full p-2.5 border rounded-md outline-none'
                 })
               )
             ),
@@ -748,7 +748,7 @@
                   createModal.year = e.target.value;
                   rerender();
                 },
-                className: 'w-full p-2.5 border rounded-md outline-none focus:border-blue-500'
+                className: 'w-full p-2.5 border rounded-md outline-none'
               })
             ),
             h(
@@ -811,7 +811,7 @@
                         deleteModal = null;
                         rerender();
                       },
-                      className: TOOLBAR_CONTROL + ' w-full border-gray-300 outline-none focus:border-blue-500 bg-white'
+                      className: TOOLBAR_CONTROL + ' w-full border-gray-300 outline-none bg-white'
                     },
                     availableYears.map(function (y) {
                       return h('option', { key: y, value: String(y) }, y + ' 年');
@@ -840,7 +840,7 @@
                     deleteModal = null;
                     rerender();
                   },
-                  className: TOOLBAR_CONTROL + ' w-full border-gray-300 outline-none focus:border-blue-500 bg-white'
+                  className: TOOLBAR_CONTROL + ' w-full border-gray-300 outline-none bg-white'
                 },
                 h('option', { value: '' }, '請選擇組別'),
                 sortedAssignees.map(function (item) {

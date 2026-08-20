@@ -6,7 +6,7 @@
   'use strict';
   var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful;
 
-  var inputCls = 'w-full p-2 border rounded-md outline-none bg-white text-sm';
+  var inputCls = 'w-full p-2.5 border rounded-md outline-none bg-white text-sm';
   var labelCls = 'block text-xs text-gray-500 mb-1';
 
   function FilterMultiSelect(props) {

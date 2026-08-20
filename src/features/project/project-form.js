@@ -71,7 +71,7 @@
         value: currentEquip[name] || '',
         onChange: onChange,
         disabled: disabled,
-        className: 'w-full p-2 border rounded focus:ring-1 focus:ring-indigo-500 outline-none' + (disabled ? ' bg-gray-100 text-gray-400 cursor-not-allowed' : '')
+        className: IESS.inputCls + (disabled ? ' bg-gray-100 text-gray-400 cursor-not-allowed' : '')
       },
         h('option', { value: '', disabled: true }, disabled ? (opts.emptyHint || '請先選擇上層欄位') : '請選擇'),
         options.map(function (opt) {
@@ -154,7 +154,7 @@
                   value: EquipmentUtils.formatLevel(currentEquip),
                   placeholder: '請先選擇型號',
                   disabled: true,
-                  className: 'w-full p-2 bg-gray-50 border rounded text-gray-500 cursor-not-allowed'
+                  className: IESS.inputClsDisabled
                 })),
               h('div', { className: 'col-span-2' },
                 h('label', { className: 'block text-sm text-gray-600 mb-1' }, '設備區域'),
@@ -163,7 +163,7 @@
                   name: 'area',
                   value: currentEquip.area,
                   onChange: handleEquipChange,
-                  className: 'w-full p-2 border rounded focus:ring-1 focus:ring-indigo-500 outline-none',
+                  className: IESS.inputCls,
                   placeholder: '例如：天花板上方'
                 })),
               h('div', null,
@@ -173,7 +173,7 @@
                   name: 'manufactureDate',
                   value: currentEquip.manufactureDate,
                   onChange: handleEquipChange,
-                  className: 'w-full p-2 border rounded focus:ring-1 focus:ring-indigo-500 outline-none'
+                  className: IESS.inputCls
                 })),
               h('div', null,
                 h('label', { className: 'block text-sm text-gray-600 mb-1' }, '安裝日期'),
@@ -182,7 +182,7 @@
                   name: 'installDate',
                   value: currentEquip.installDate,
                   onChange: handleEquipChange,
-                  className: 'w-full p-2 border rounded focus:ring-1 focus:ring-indigo-500 outline-none'
+                  className: IESS.inputCls
                 })),
               h('div', null,
                 h('label', { className: 'block text-sm text-gray-600 mb-1' }, '資產編號'),
@@ -191,7 +191,7 @@
                   name: 'assetNumber',
                   value: currentEquip.assetNumber,
                   onChange: handleEquipChange,
-                  className: 'w-full p-2 border rounded focus:ring-1 focus:ring-indigo-500 outline-none',
+                  className: IESS.inputCls,
                   placeholder: '選填'
                 })),
               h('div', null,
@@ -201,7 +201,7 @@
                   name: 'serialNumber',
                   value: currentEquip.serialNumber,
                   onChange: handleEquipChange,
-                  className: 'w-full p-2 border rounded focus:ring-1 focus:ring-indigo-500 outline-none',
+                  className: IESS.inputCls,
                   placeholder: '選填'
                 })))),
           h('div', { className: 'flex justify-end space-x-3 mt-6 pt-4 border-t shrink-0' },
@@ -556,7 +556,7 @@
         name: 'workCategory',
         value: formData.workCategory,
         onChange: handleChange,
-        className: 'w-full p-2.5 border rounded-md outline-none focus:ring-2 focus:ring-blue-500'
+        className: 'w-full p-2.5 border rounded-md outline-none'
       }, PROJECT_WORK_CATEGORIES.map(function (opt) {
         return h('option', { key: opt, value: opt }, opt);
       }))), h('div', null, h('label', {
@@ -568,7 +568,7 @@
         name: 'customerName',
         value: formData.customerName,
         onChange: handleChange,
-        className: 'w-full p-2.5 border rounded-md outline-none focus:ring-2 focus:ring-blue-500'
+        className: 'w-full p-2.5 border rounded-md outline-none'
       }, h('option', {
         value: '',
         disabled: true
@@ -583,7 +583,7 @@
         name: 'storeName',
         value: formData.storeName,
         onChange: handleChange,
-        className: 'w-full p-2.5 border rounded-md outline-none focus:ring-2 focus:ring-blue-500'
+        className: 'w-full p-2.5 border rounded-md outline-none'
       }, h('option', {
         value: '',
         disabled: true
@@ -611,7 +611,7 @@
         name: 'contactPerson',
         value: formData.contactPerson,
         onChange: handleChange,
-        className: 'w-full p-2.5 border rounded-md outline-none focus:ring-2 focus:ring-blue-500'
+        className: 'w-full p-2.5 border rounded-md outline-none'
       }, h('option', {
         value: ''
       }, '請選擇'), PROJECT_ASSIGNEES.map(function (opt) {
@@ -622,7 +622,7 @@
         name: 'suggestedContractor',
         value: formData.suggestedContractor,
         onChange: handleChange,
-        className: 'w-full p-2.5 border rounded-md outline-none focus:ring-2 focus:ring-blue-500'
+        className: 'w-full p-2.5 border rounded-md outline-none'
       }, h('option', {
         value: ''
       }, '請選擇單位'), contractors.map(function (c) {
@@ -634,7 +634,7 @@
         name: 'entryDate',
         value: formData.entryDate,
         onChange: handleChange,
-        className: 'w-full p-2.5 border rounded-md outline-none focus:ring-2 focus:ring-blue-500'
+        className: 'w-full p-2.5 border rounded-md outline-none'
       })), h('div', {
         className: 'col-span-full'
       }, h('label', {
@@ -645,7 +645,7 @@
         onChange: handleChange,
         rows: '3',
         placeholder: '請輸入其他補充事項...',
-        className: 'w-full p-2.5 border rounded-md outline-none focus:ring-2 focus:ring-blue-500 resize-none'
+        className: 'w-full p-2.5 border rounded-md outline-none resize-none'
       })))), h('section', null, h('div', {
         className: 'flex justify-between items-center border-b pb-2 mb-4'
       }, h('h3', {
@@ -724,7 +724,7 @@
     }
     var equipModal = { show: false, editingId: null, initialEquip: null };
     var stagesData = projectStagesData(formData);
-    var inputCls = 'w-full p-2.5 border rounded-md outline-none focus:ring-2 focus:ring-blue-500';
+    var inputCls = IESS.inputCls;
     var fieldCls = isEdit ? inputCls : viewFieldCls;
 
     return stateful(function (rerender) {
@@ -992,7 +992,7 @@
           type: 'date',
           value: stagesData[stage].date,
           onChange: function (e) { handleStageChange(stage, 'date', e.target.value); },
-          className: 'w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500'
+          className: 'w-full p-2.5 border rounded-md outline-none'
         })), h('div', { key: stage + '-start' }, h('label', {
           className: 'block text-xs text-gray-500 mb-1'
         }, '開始時間'), h(TimeInput24, {
@@ -1010,7 +1010,7 @@
         }, '負責人員'), h('select', {
           value: stagesData[stage].assignee,
           onChange: function (e) { handleStageChange(stage, 'assignee', e.target.value); },
-          className: 'w-full p-2 border rounded-md outline-none focus:ring-2 focus:ring-indigo-500'
+          className: 'w-full p-2.5 border rounded-md outline-none'
         }, h('option', {
           value: ''
         }, '尚未指派'), stagePersonOptions.map(function (opt) {
@@ -1018,7 +1018,7 @@
         }))), h('div', { key: stage + '-done' }, h('label', {
           className: 'block text-xs text-gray-500 mb-1'
         }, '完成狀態'), h('label', {
-          className: 'w-full p-2 border rounded-md min-h-[42px] flex items-center gap-2 cursor-pointer transition-colors ' + (
+          className: 'w-full p-2.5 border rounded-md min-h-[42px] flex items-center gap-2 cursor-pointer transition-colors ' + (
             stagesData[stage].done
               ? 'bg-green-50 border-green-200 text-green-700 font-medium'
               : 'bg-white text-gray-600'

@@ -204,4 +204,8 @@
   global.IESS.mount = mount;
   global.IESS.stateful = stateful;
   global.IESS.deferRerenderWhileComposing = deferRerenderWhileComposing;
+  /* 表單輸入框標準 class，對齊案件處理「編輯案件」 */
+  global.IESS.inputCls = 'w-full p-2.5 border rounded-md outline-none';
+  global.IESS.inputClsDate = 'w-full h-[42px] px-2.5 border rounded-md outline-none';
+  global.IESS.inputClsDisabled = 'w-full p-2.5 bg-gray-50 border rounded-md text-gray-500 cursor-not-allowed';
 })(window);

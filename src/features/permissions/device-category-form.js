@@ -91,7 +91,7 @@
                     name: field.name,
                     value: formData[field.name],
                     onChange: handleChange,
-                    className: 'w-full p-2.5 border rounded-md outline-none focus:border-blue-500 bg-white'
+                    className: 'w-full p-2.5 border rounded-md outline-none bg-white'
                   },
                     field.options.map(function (opt) {
                       return h('option', { key: opt, value: opt }, opt);
@@ -106,7 +106,7 @@
                   name: field.name,
                   value: formData[field.name],
                   onChange: handleChange,
-                  className: 'w-full p-2.5 border rounded-md outline-none focus:border-blue-500'
+                  className: 'w-full p-2.5 border rounded-md outline-none'
                 })
               );
             })

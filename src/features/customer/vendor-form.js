@@ -116,7 +116,7 @@
                   value: formData.name,
                   onChange: handleChange,
                   required: true,
-                  className: 'w-full p-2.5 border rounded-md outline-none focus:border-blue-500'
+                  className: 'w-full p-2.5 border rounded-md outline-none'
                 })
               ),
               h('div', null,
@@ -125,7 +125,7 @@
                   name: 'type',
                   value: formData.type,
                   onChange: handleChange,
-                  className: 'w-full p-2.5 border rounded-md outline-none focus:border-blue-500 bg-white'
+                  className: 'w-full p-2.5 border rounded-md outline-none bg-white'
                 }, VENDOR_TYPE_OPTIONS.map(function (opt) {
                   return h('option', { key: opt, value: opt }, opt);
                 }))
@@ -137,7 +137,7 @@
                   name: 'taxId',
                   value: formData.taxId,
                   onChange: handleChange,
-                  className: 'w-full p-2.5 border rounded-md outline-none focus:border-blue-500'
+                  className: 'w-full p-2.5 border rounded-md outline-none'
                 })
               ),
               h('div', null,
@@ -147,7 +147,7 @@
                   name: 'principal',
                   value: formData.principal,
                   onChange: handleChange,
-                  className: 'w-full p-2.5 border rounded-md outline-none focus:border-blue-500'
+                  className: 'w-full p-2.5 border rounded-md outline-none'
                 })
               ),
               h('div', null,
@@ -157,7 +157,7 @@
                   name: 'phone',
                   value: formData.phone,
                   onChange: handleChange,
-                  className: 'w-full p-2.5 border rounded-md outline-none focus:border-blue-500'
+                  className: 'w-full p-2.5 border rounded-md outline-none'
                 })
               ),
               h('div', null,
@@ -167,7 +167,7 @@
                   name: 'fax',
                   value: formData.fax,
                   onChange: handleChange,
-                  className: 'w-full p-2.5 border rounded-md outline-none focus:border-blue-500'
+                  className: 'w-full p-2.5 border rounded-md outline-none'
                 })
               ),
               h('div', { className: 'col-span-full md:col-span-2' },
@@ -177,7 +177,7 @@
                   name: 'address',
                   value: formData.address,
                   onChange: handleChange,
-                  className: 'w-full p-2.5 border rounded-md outline-none focus:border-blue-500'
+                  className: 'w-full p-2.5 border rounded-md outline-none'
                 })
               ),
               h('div', { className: 'col-span-full' },
@@ -187,7 +187,7 @@
                   value: formData.remarks,
                   onChange: handleChange,
                   rows: 3,
-                  className: 'w-full p-2.5 border rounded-md outline-none focus:border-blue-500'
+                  className: 'w-full p-2.5 border rounded-md outline-none'
                 })
               )
             ),
@@ -279,7 +279,7 @@
                   name: 'title',
                   value: currentContact.title,
                   onChange: handleContactChange,
-                  className: 'w-full p-2.5 border rounded-md outline-none focus:border-blue-500'
+                  className: 'w-full p-2.5 border rounded-md outline-none'
                 })
               ),
               h('div', null,
@@ -289,7 +289,7 @@
                   name: 'name',
                   value: currentContact.name,
                   onChange: handleContactChange,
-                  className: 'w-full p-2.5 border rounded-md outline-none focus:border-blue-500'
+                  className: 'w-full p-2.5 border rounded-md outline-none'
                 })
               ),
               h('div', null,
@@ -299,7 +299,7 @@
                   name: 'phone',
                   value: currentContact.phone,
                   onChange: handleContactChange,
-                  className: 'w-full p-2.5 border rounded-md outline-none focus:border-blue-500'
+                  className: 'w-full p-2.5 border rounded-md outline-none'
                 })
               ),
               h('div', null,
@@ -309,7 +309,7 @@
                   name: 'email',
                   value: currentContact.email,
                   onChange: handleContactChange,
-                  className: 'w-full p-2.5 border rounded-md outline-none focus:border-blue-500'
+                  className: 'w-full p-2.5 border rounded-md outline-none'
                 })
               )
             ),

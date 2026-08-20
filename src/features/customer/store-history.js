@@ -154,7 +154,7 @@
                 value: startDate,
                 max: endDate || undefined,
                 onChange: function (e) { startDate = e.target.value; rerender(); },
-                className: 'p-2.5 border rounded-md outline-none focus:border-blue-500 bg-white'
+                className: 'p-2.5 border rounded-md outline-none bg-white'
               })
             ),
             h('div', null,
@@ -164,7 +164,7 @@
                 value: endDate,
                 min: startDate || undefined,
                 onChange: function (e) { endDate = e.target.value; rerender(); },
-                className: 'p-2.5 border rounded-md outline-none focus:border-blue-500 bg-white'
+                className: 'p-2.5 border rounded-md outline-none bg-white'
               })
             ),
             h('div', null,
@@ -174,7 +174,7 @@
                 onChange: function (e) { keyword = e.target.value; rerender(); },
                 onKeyDown: handleKeyDown,
                 placeholder: '請輸入關鍵字',
-                className: 'w-64 p-2.5 border rounded-md outline-none focus:border-blue-500 bg-white'
+                className: 'w-64 p-2.5 border rounded-md outline-none bg-white'
               })
             ),
             h('button', {

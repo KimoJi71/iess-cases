@@ -101,7 +101,7 @@
                   min: field.type === 'number' ? '0' : undefined,
                   step: field.type === 'number' ? '0.1' : undefined,
                   onChange: handleChange,
-                  className: 'w-full p-2.5 border rounded-md outline-none focus:border-blue-500'
+                  className: 'w-full p-2.5 border rounded-md outline-none'
                 })
               );
             })

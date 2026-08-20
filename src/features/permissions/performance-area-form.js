@@ -101,7 +101,7 @@
                 name: 'name',
                 value: formData.name,
                 onChange: handleChange,
-                className: 'w-full p-2.5 border rounded-md outline-none focus:border-blue-500'
+                className: 'w-full p-2.5 border rounded-md outline-none'
               })
             ),
             h('div', null,

@@ -55,7 +55,7 @@
     var currentContact = { id: null, title: '', name: '', phone: '', email: '' };
 
     var MAX_FILES = 5;
-    var inputCls = 'w-full p-2.5 border rounded-md outline-none focus:border-blue-500';
+    var inputCls = IESS.inputCls;
 
     function isPdfFile(file) {
       return file.type === 'application/pdf' || /\.pdf$/i.test(file.name);

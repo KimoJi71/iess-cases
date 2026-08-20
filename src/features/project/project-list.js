@@ -119,20 +119,20 @@
         type: 'date',
         value: startDate,
         onChange: function (e) { startDate = e.target.value; rerender(); },
-        className: 'w-full p-2 border rounded-md outline-none bg-white'
+        className: 'w-full p-2.5 border rounded-md outline-none bg-white'
       })), h('div', { className: 'min-w-0' }, h('label', {
         className: 'block text-xs text-gray-500 mb-1'
       }, '結束日期'), h('input', {
         type: 'date',
         value: endDate,
         onChange: function (e) { endDate = e.target.value; rerender(); },
-        className: 'w-full p-2 border rounded-md outline-none bg-white'
+        className: 'w-full p-2.5 border rounded-md outline-none bg-white'
       })), h('div', { className: 'min-w-0' }, h('label', {
         className: 'block text-xs text-gray-500 mb-1'
       }, '客戶名稱'), h('select', {
         value: filterCustomer,
         onChange: function (e) { filterCustomer = e.target.value; rerender(); },
-        className: 'w-full p-2 border rounded-md outline-none bg-white'
+        className: 'w-full p-2.5 border rounded-md outline-none bg-white'
       }, h('option', { value: '全部' }, '全部'), customerFilterOptions.map(function (opt) {
         return h('option', { key: opt, value: opt }, opt);
       }))), h('div', { className: 'min-w-0' }, h('label', {
@@ -140,7 +140,7 @@
       }, '負責人員'), h('select', {
         value: filterContactPerson,
         onChange: function (e) { filterContactPerson = e.target.value; rerender(); },
-        className: 'w-full p-2 border rounded-md outline-none bg-white'
+        className: 'w-full p-2.5 border rounded-md outline-none bg-white'
       }, h('option', { value: '全部' }, '全部'), PROJECT_ASSIGNEES.map(function (opt) {
         return h('option', { key: opt, value: opt }, opt);
       }))), h('div', { className: 'min-w-0 flex items-end' }, h('button', {

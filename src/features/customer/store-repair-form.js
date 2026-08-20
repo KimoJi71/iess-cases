@@ -36,7 +36,7 @@
       expectedTimeEnd: ''
     };
 
-    var inputCls = 'w-full p-2.5 border rounded-md outline-none focus:border-blue-500';
+    var inputCls = IESS.inputCls;
     var disabledCls = 'w-full p-2.5 border rounded-md bg-gray-100 text-gray-600';
 
     return stateful(function (rerender) {
@@ -173,7 +173,7 @@
               h('div', { className: 'col-span-full font-semibold text-lg text-blue-800 border-b pb-2 mt-4 mb-2' }, '排程'),
               h('div', null,
                 h('label', { className: 'block text-sm mb-1' }, '預計日期'),
-                h('input', { type: 'date', name: 'expectedDate', value: formData.expectedDate, onChange: handleChange, className: inputCls + ' h-[42px] box-border' })
+                h('input', { type: 'date', name: 'expectedDate', value: formData.expectedDate, onChange: handleChange, className: IESS.inputClsDate })
               ),
               ExpectedTimeRangeFields({
                 startValue: formData.expectedTimeStart,

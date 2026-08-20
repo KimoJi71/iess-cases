@@ -74,7 +74,7 @@
                   keyword = '';
                   listPagination.resetPage();
                 },
-                className: 'w-56 p-2.5 border rounded-md outline-none focus:border-blue-500 bg-white'
+                className: 'w-56 p-2.5 border rounded-md outline-none bg-white'
               },
                 h('option', { value: '' }, '請選擇客戶'),
                 customerSelectOptions.map(function (name) {
@@ -90,7 +90,7 @@
                 onKeyDown: handleKeyDown,
                 placeholder: '請輸入關鍵字',
                 disabled: !storeCustomer,
-                className: 'w-60 p-2.5 border rounded-md outline-none focus:border-blue-500 disabled:bg-gray-100'
+                className: 'w-60 p-2.5 border rounded-md outline-none disabled:bg-gray-100'
               })
             ),
             h('button', {

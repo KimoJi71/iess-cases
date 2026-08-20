@@ -131,7 +131,7 @@
                   setEquipmentStore('');
                   listPagination.resetPage();
                 },
-                className: 'w-56 p-2.5 border rounded-md outline-none focus:border-blue-500 bg-white'
+                className: 'w-56 p-2.5 border rounded-md outline-none bg-white'
               },
                 h('option', { value: '' }, '請選擇客戶'),
                 customerSelectOptions.map(function (name) {
@@ -146,7 +146,7 @@
                 value: equipmentStore,
                 onChange: function (e) { setEquipmentStore(e.target.value); listPagination.resetPage(); },
                 disabled: !equipmentCustomer,
-                className: 'w-56 p-2.5 border rounded-md outline-none focus:border-blue-500 bg-white disabled:bg-gray-100'
+                className: 'w-56 p-2.5 border rounded-md outline-none bg-white disabled:bg-gray-100'
               },
                 h('option', { value: '' }, '請選擇門市'),
                 storeOptions.map(function (name) {

@@ -108,7 +108,7 @@
                 name: 'startMonth-' + n,
                 value: p.startMonth === '' ? '' : String(p.startMonth),
                 onChange: function (e) { handleMonthChange(index, 'startMonth', e.target.value); },
-                className: 'flex-1 min-w-0 p-2.5 border rounded-md outline-none focus:border-blue-500 bg-white'
+                className: 'flex-1 min-w-0 p-2.5 border rounded-md outline-none bg-white'
               },
                 h('option', { value: '' }, '起始月'),
                 MONTH_OPTIONS.map(function (m) {
@@ -120,7 +120,7 @@
                 name: 'endMonth-' + n,
                 value: p.endMonth === '' ? '' : String(p.endMonth),
                 onChange: function (e) { handleMonthChange(index, 'endMonth', e.target.value); },
-                className: 'flex-1 min-w-0 p-2.5 border rounded-md outline-none focus:border-blue-500 bg-white'
+                className: 'flex-1 min-w-0 p-2.5 border rounded-md outline-none bg-white'
               },
                 h('option', { value: '' }, '結束月'),
                 MONTH_OPTIONS.map(function (m) {
@@ -239,7 +239,7 @@
                 value: formData.name,
                 onChange: handleChange,
                 required: true,
-                className: 'w-full p-2.5 border rounded-md outline-none focus:border-blue-500'
+                className: 'w-full p-2.5 border rounded-md outline-none'
               })
             ),
             h('div', null,
@@ -249,7 +249,7 @@
                 name: 'taxId',
                 value: formData.taxId,
                 onChange: handleChange,
-                className: 'w-full p-2.5 border rounded-md outline-none focus:border-blue-500'
+                className: 'w-full p-2.5 border rounded-md outline-none'
               })
             ),
             h('div', null,
@@ -259,7 +259,7 @@
                 name: 'principal',
                 value: formData.principal,
                 onChange: handleChange,
-                className: 'w-full p-2.5 border rounded-md outline-none focus:border-blue-500'
+                className: 'w-full p-2.5 border rounded-md outline-none'
               })
             ),
             h('div', null,
@@ -284,7 +284,7 @@
                   step: '1',
                   value: formData.maintenanceStartMonths,
                   onChange: handleChange,
-                  className: 'w-24 p-2.5 border rounded-md outline-none focus:border-blue-500'
+                  className: 'w-24 p-2.5 border rounded-md outline-none'
                 }),
                 h('span', { className: 'text-sm text-gray-500 whitespace-nowrap' }, '個月後開始保養')
               )
@@ -298,7 +298,7 @@
                 step: '1',
                 value: formData.overtimeHours,
                 onChange: handleChange,
-                className: 'w-full p-2.5 border rounded-md outline-none focus:border-blue-500'
+                className: 'w-full p-2.5 border rounded-md outline-none'
               })
             ),
             h('div', null,
@@ -310,7 +310,7 @@
                   formData.enabled = e.target.value === 'true';
                   rerender();
                 },
-                className: 'w-full p-2.5 border rounded-md outline-none focus:border-blue-500 bg-white'
+                className: 'w-full p-2.5 border rounded-md outline-none bg-white'
               },
                 h('option', { value: 'true' }, '啟用'),
                 h('option', { value: 'false' }, '停用')
@@ -323,7 +323,7 @@
                 name: 'phone',
                 value: formData.phone,
                 onChange: handleChange,
-                className: 'w-full p-2.5 border rounded-md outline-none focus:border-blue-500'
+                className: 'w-full p-2.5 border rounded-md outline-none'
               })
             ),
             h('div', null,
@@ -333,7 +333,7 @@
                 name: 'fax',
                 value: formData.fax,
                 onChange: handleChange,
-                className: 'w-full p-2.5 border rounded-md outline-none focus:border-blue-500'
+                className: 'w-full p-2.5 border rounded-md outline-none'
               })
             ),
             h('div', { className: 'col-span-full md:col-span-2' },
@@ -343,7 +343,7 @@
                 name: 'address',
                 value: formData.address,
                 onChange: handleChange,
-                className: 'w-full p-2.5 border rounded-md outline-none focus:border-blue-500'
+                className: 'w-full p-2.5 border rounded-md outline-none'
               })
             ),
             h('div', { className: 'col-span-full' },
@@ -353,7 +353,7 @@
                 value: formData.remarks,
                 onChange: handleChange,
                 rows: 3,
-                className: 'w-full p-2.5 border rounded-md outline-none focus:border-blue-500'
+                className: 'w-full p-2.5 border rounded-md outline-none'
               })
             )
           ),
@@ -444,7 +444,7 @@
                   name: 'title',
                   value: currentContact.title,
                   onChange: handleContactChange,
-                  className: 'w-full p-2.5 border rounded-md outline-none focus:border-blue-500'
+                  className: 'w-full p-2.5 border rounded-md outline-none'
                 })
               ),
               h('div', null,
@@ -454,7 +454,7 @@
                   name: 'name',
                   value: currentContact.name,
                   onChange: handleContactChange,
-                  className: 'w-full p-2.5 border rounded-md outline-none focus:border-blue-500'
+                  className: 'w-full p-2.5 border rounded-md outline-none'
                 })
               ),
               h('div', null,
@@ -464,7 +464,7 @@
                   name: 'phone',
                   value: currentContact.phone,
                   onChange: handleContactChange,
-                  className: 'w-full p-2.5 border rounded-md outline-none focus:border-blue-500'
+                  className: 'w-full p-2.5 border rounded-md outline-none'
                 })
               ),
               h('div', null,
@@ -474,7 +474,7 @@
                   name: 'email',
                   value: currentContact.email,
                   onChange: handleContactChange,
-                  className: 'w-full p-2.5 border rounded-md outline-none focus:border-blue-500'
+                  className: 'w-full p-2.5 border rounded-md outline-none'
                 })
               )
             ),

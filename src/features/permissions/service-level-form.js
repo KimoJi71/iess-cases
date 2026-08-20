@@ -118,7 +118,7 @@
                 name: 'name',
                 value: formData.name,
                 onChange: handleNameChange,
-                className: 'w-full p-2.5 border rounded-md outline-none focus:border-blue-500'
+                className: 'w-full p-2.5 border rounded-md outline-none'
               })
             ),
             h('div', null,
@@ -129,7 +129,7 @@
                 name: 'maintenanceCount',
                 value: formData.maintenanceCount,
                 onChange: handleCountChange,
-                className: 'w-full p-2.5 border rounded-md outline-none focus:border-blue-500'
+                className: 'w-full p-2.5 border rounded-md outline-none'
               }),
               h('p', { className: 'text-xs text-gray-500 mt-1' },
                 Number(formData.maintenanceCount) > 0
@@ -142,7 +142,7 @@
                 name: 'countsBonusPoints',
                 value: formData.countsBonusPoints ? '是' : '否',
                 onChange: handleBonusChange,
-                className: 'w-full p-2.5 border rounded-md outline-none focus:border-blue-500 bg-white'
+                className: 'w-full p-2.5 border rounded-md outline-none bg-white'
               },
                 h('option', { value: '否' }, '否'),
                 h('option', { value: '是' }, '是')

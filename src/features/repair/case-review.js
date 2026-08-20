@@ -162,14 +162,14 @@
             type: 'date',
             value: startDate,
             onChange: function (e) { startDate = e.target.value; rerender(); },
-            className: 'p-2 border rounded-md outline-none'
+            className: 'p-2.5 border rounded-md outline-none'
           }),
           h('span', { className: 'text-gray-500' }, '至'),
           h('input', {
             type: 'date',
             value: endDate,
             onChange: function (e) { endDate = e.target.value; rerender(); },
-            className: 'p-2 border rounded-md outline-none'
+            className: 'p-2.5 border rounded-md outline-none'
           }),
           h('input', {
             type: 'text',
@@ -177,7 +177,7 @@
             onChange: function (e) { keyword = e.target.value; rerender(); },
             onKeyDown: handleKeyDown,
             placeholder: '請輸入關鍵字',
-            className: 'w-64 p-2 border rounded-md outline-none focus:border-blue-500'
+            className: 'w-64 p-2.5 border rounded-md outline-none'
           }),
           h('button', {
             onClick: handleSearch,
@@ -304,7 +304,7 @@
               onChange: function (e) { returnModal.reason = e.target.value; rerender(); },
               rows: 4,
               placeholder: '請說明退回原因…',
-              className: 'w-full p-2 border rounded-md outline-none mb-6'
+              className: 'w-full p-2.5 border rounded-md outline-none mb-6'
             }),
             h('div', { className: 'flex justify-end space-x-3' },
               h('button', {

@@ -555,7 +555,7 @@
           h('select', {
             value: scheduleModal.assignee || '',
             onChange: function (e) { updateScheduleModalAssignee(e.target.value); },
-            className: 'w-full p-2 border rounded-md outline-none focus:border-blue-500 bg-white'
+            className: 'w-full p-2.5 border rounded-md outline-none bg-white'
           },
             h('option', { value: '' }, '請選擇'),
             ASSIGNEES.map(function (opt) {
@@ -570,7 +570,7 @@
         var isOther = formData.workCategory === '其他';
         var customerOptions = CustomerUtils.getCustomerNameOptions(customers, formData.customerName);
         var storeOptions = ScheduleUtils.getStoreNamesForCustomer(stores, formData.customerName, formData.storeName);
-        var inputCls = 'w-full p-2 border rounded-md outline-none focus:border-blue-500 text-sm';
+        var inputCls = 'w-full p-2.5 border rounded-md outline-none text-sm';
 
         function ReadOnlyField(p) {
           return renderScheduleReadOnly(p.label, p.value, p.fullWidth);
@@ -759,7 +759,7 @@
         var store = ScheduleUtils.resolveStore(stores, formData.customerName, formData.storeName);
         // 與保養列表／保養明細的「保養區間」同源同格式，避免各處對不上
         var periodLabel = ScheduleUtils.formatPeriodRange(ScheduleUtils.resolveCasePeriod(formData, customers));
-        var inputCls = 'w-full p-2 border rounded-md outline-none focus:border-blue-500 text-sm';
+        var inputCls = 'w-full p-2.5 border rounded-md outline-none text-sm';
 
         return h('div', { className: 'space-y-4' },
           h('section', { className: 'bg-gray-50 border border-gray-200 rounded-md p-4' },
@@ -887,7 +887,7 @@
                     type: 'date',
                     value: scheduleModal.planDate,
                     onChange: function (e) { updateScheduleModalTime('planDate', e.target.value); },
-                    className: 'w-full p-2 border rounded-md outline-none focus:border-blue-500'
+                    className: 'w-full p-2.5 border rounded-md outline-none'
                   })
                 ),
                 h('div', null,
@@ -936,7 +936,7 @@
               h('input', {
                 type: 'date', value: calDate,
                 onChange: function (e) { calDate = e.target.value; rerender(); },
-                className: 'p-2 border rounded-md outline-none focus:border-blue-500'
+                className: 'p-2.5 border rounded-md outline-none'
               })
             ),
             h('div', null,
@@ -944,7 +944,7 @@
               h('select', {
                 value: calAssignee,
                 onChange: function (e) { calAssignee = e.target.value; rerender(); },
-                className: 'p-2 border rounded-md outline-none focus:border-blue-500 bg-white min-w-[120px]'
+                className: 'p-2.5 border rounded-md outline-none bg-white min-w-[120px]'
               },
                 h('option', { value: '全部' }, '全部'),
                 SCHEDULE_ASSIGNEE_OPTIONS.map(function (a) {

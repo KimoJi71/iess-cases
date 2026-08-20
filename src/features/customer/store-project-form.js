@@ -32,7 +32,7 @@
     var equipmentList = [];
     var equipModal = { show: false, editingId: null, initialEquip: null };
 
-    var inputCls = 'w-full p-2.5 border rounded-md outline-none focus:ring-2 focus:ring-blue-500';
+    var inputCls = IESS.inputCls;
     var disabledCls = 'w-full p-2.5 bg-gray-50 border rounded-md text-gray-500 cursor-not-allowed';
 
     return stateful(function (rerender) {

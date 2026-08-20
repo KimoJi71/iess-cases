@@ -76,7 +76,7 @@
                 onChange: function (e) { keyword = e.target.value; rerender(); },
                 onKeyDown: handleKeyDown,
                 placeholder: '請輸入關鍵字',
-                className: 'w-72 p-2.5 border rounded-md outline-none focus:border-blue-500'
+                className: 'w-72 p-2.5 border rounded-md outline-none'
               })
             ),
             h('button', {

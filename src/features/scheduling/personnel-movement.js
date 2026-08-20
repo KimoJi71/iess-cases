@@ -112,7 +112,7 @@
             h('input', {
               type: 'date', value: calDate,
               onChange: function (e) { calDate = e.target.value; rerender(); },
-              className: 'p-2 border rounded-md outline-none focus:border-blue-500'
+              className: 'p-2.5 border rounded-md outline-none'
             })
           ),
           h('div', null,
@@ -120,7 +120,7 @@
             h('select', {
               value: calAssignee,
               onChange: function (e) { calAssignee = e.target.value; rerender(); },
-              className: 'p-2 border rounded-md outline-none focus:border-blue-500 bg-white min-w-[120px]'
+              className: 'p-2.5 border rounded-md outline-none bg-white min-w-[120px]'
             },
               h('option', { value: '全部' }, '全部'),
               SCHEDULE_ASSIGNEE_OPTIONS.map(function (a) {

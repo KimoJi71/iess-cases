@@ -83,7 +83,7 @@
               type: 'date',
               value: startDate,
               onChange: function (e) { startDate = e.target.value; rerender(); },
-              className: 'p-2 border rounded-md outline-none'
+              className: 'p-2.5 border rounded-md outline-none'
             }),
             h('span', {
               className: 'text-gray-500'
@@ -92,7 +92,7 @@
               type: 'date',
               value: endDate,
               onChange: function (e) { endDate = e.target.value; rerender(); },
-              className: 'p-2 border rounded-md outline-none'
+              className: 'p-2.5 border rounded-md outline-none'
             }),
             h('button', {
               onClick: handleSearch,

@@ -136,7 +136,7 @@
                 name: 'name',
                 value: formData.name,
                 onChange: handleChange,
-                className: 'w-full p-2.5 border rounded-md outline-none focus:border-blue-500'
+                className: 'w-full p-2.5 border rounded-md outline-none'
               })
             ),
             h('div', null,
@@ -145,7 +145,7 @@
                 name: 'leaderId',
                 value: formData.leaderId,
                 onChange: handleChange,
-                className: 'w-full p-2.5 border rounded-md outline-none focus:border-blue-500 bg-white'
+                className: 'w-full p-2.5 border rounded-md outline-none bg-white'
               },
                 h('option', { value: '' }, '請選擇'),
                 sortedAccounts.map(function (acc) {

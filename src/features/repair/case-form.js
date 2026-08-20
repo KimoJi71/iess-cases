@@ -576,7 +576,7 @@
             ),
             h("div", null,
               h("span", { className: "text-gray-500 block mb-1" }, "使用車輛"),
-              renderVehicleSelect(formData, vehicles, handleChange, "w-full p-2 border rounded-md outline-none")
+              renderVehicleSelect(formData, vehicles, handleChange, "w-full p-2.5 border rounded-md outline-none")
             ),
             h("div", { className: "col-span-full md:col-span-2" },
               h("span", { className: "text-gray-500 block mb-1" }, "協力廠商"),
@@ -674,7 +674,7 @@
         value: formData.actualReason || '',
         onChange: handleChange,
         rows: "2",
-        className: "w-full p-2 border rounded-md outline-none"
+        className: "w-full p-2.5 border rounded-md outline-none"
       })), h("div", null, h("label", {
         className: "block text-sm font-medium text-gray-700 mb-2"
       }, "處理方式"), h("div", {
@@ -829,7 +829,7 @@
         onChange: handleChange,
         disabled: !formData.equipment,
         rows: "4",
-        className: "w-full p-2 border rounded-md outline-none disabled:bg-gray-100 disabled:cursor-not-allowed",
+        className: "w-full p-2.5 border rounded-md outline-none disabled:bg-gray-100 disabled:cursor-not-allowed",
         placeholder: formData.equipment ? "請輸入備註..." : "請先加入設備"
       })))), h("section", {
         className: "bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-100 relative overflow-hidden"
