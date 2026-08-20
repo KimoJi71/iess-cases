@@ -59,6 +59,29 @@
     return '';
   }
 
+  function defaultStatus() {
+    return typeof EQUIP_STATUS_OPTIONS !== 'undefined' ? EQUIP_STATUS_OPTIONS[0] : '運轉中';
+  }
+
+  // 舊資料的設備狀態（運轉／轉汰換）對應到新選項
+  var LEGACY_STATUS_MAP = { 運轉: '運轉中', 轉汰換: '達年限' };
+
+  function normalizeStatus(status) {
+    var val = String(status || '').trim();
+    if (!val) return defaultStatus();
+    return LEGACY_STATUS_MAP[val] || val;
+  }
+
+  // 已汰換的設備不可再被叫修案件加入
+  function isRetired(equip) {
+    return normalizeStatus(equip && equip.status) === '已汰換';
+  }
+
+  // 達年限的設備仍可選用，但在列表以紅字提醒
+  function isOverAge(equip) {
+    return normalizeStatus(equip && equip.status) === '達年限';
+  }
+
   var LIST_COLUMNS = [
     { key: 'category', label: '設備分類' },
     { key: 'brand', label: '品牌' },
@@ -67,8 +90,8 @@
     { key: 'model', label: '型號' },
     { key: 'equipmentLevel', label: '設備等級', kind: 'level' },
     { key: 'area', label: '設備區域' },
-    { key: 'manufactureDate', label: '出廠日期' },
-    { key: 'installDate', label: '安裝日期' },
+    { key: 'acceptanceDate', label: '驗收日期' },
+    { key: 'installer', label: '安裝人員' },
     { key: 'assetNumber', label: '資產編號' },
     { key: 'serialNumber', label: '流水序號' },
     { key: 'status', label: '設備狀態', kind: 'status' }
@@ -76,11 +99,11 @@
 
   function renderStatusBadge(h, status) {
     var map = {
-      運轉: 'bg-green-100 text-green-700',
-      轉汰換: 'bg-amber-100 text-amber-700',
+      運轉中: 'bg-green-100 text-green-700',
+      達年限: 'bg-red-100 text-red-700',
       已汰換: 'bg-gray-200 text-gray-600'
     };
-    var label = status || (typeof EQUIP_STATUS_OPTIONS !== 'undefined' ? EQUIP_STATUS_OPTIONS[0] : '運轉');
+    var label = normalizeStatus(status);
     return h('span', {
       className: 'px-2 py-0.5 rounded-full text-xs font-medium ' + (map[label] || 'bg-gray-100 text-gray-600')
     }, label);
@@ -122,6 +145,92 @@
     });
   }
 
+  /* --- 工程立案單結案時的設備同步 ---
+   * 新開／整裝／加裝：立案單上的設備新增到該門市（安裝人員＝施作單位、驗收日期＝客戶驗收日期）
+   * 汰換／撤店：立案單上的設備在設備管理中改為「已汰換」
+   */
+  var PROJECT_ADD_CATEGORIES = ['新開', '整裝', '加裝'];
+  var PROJECT_RETIRE_CATEGORIES = ['汰換', '撤店'];
+
+  function getCustomerAcceptanceDate(projectCase) {
+    var entry = ((projectCase && projectCase.history) || []).find(function (item) {
+      return item && item.stage === '客戶驗收';
+    });
+    return (entry && entry.date) || '';
+  }
+
+  function sameText(a, b) {
+    return String(a || '').trim() === String(b || '').trim();
+  }
+
+  // 立案單上的設備多為手動輸入，先比對 id，再以「門市＋型號＋資產編號／流水序號／區域」比對
+  function matchesProjectEquip(eq, projectEq, projectCase) {
+    if (!eq || !projectEq) return false;
+    if (projectEq.id != null && String(eq.id) === String(projectEq.id)) return true;
+    if (!sameText(eq.customerName, projectCase.customerName)) return false;
+    if (!sameText(eq.storeName, projectCase.storeName)) return false;
+    if (!sameText(eq.model, projectEq.model)) return false;
+    if (projectEq.assetNumber) return sameText(eq.assetNumber, projectEq.assetNumber);
+    if (projectEq.serialNumber) return sameText(eq.serialNumber, projectEq.serialNumber);
+    return sameText(eq.area, projectEq.area);
+  }
+
+  function toStoreEquipment(projectEq, projectCase, idSuffix) {
+    return {
+      id: 'E' + idSuffix,
+      customerName: projectCase.customerName,
+      storeName: projectCase.storeName,
+      category: projectEq.category || '',
+      brand: projectEq.brand || '',
+      deviceName: projectEq.deviceName || projectEq.name || '',
+      name: projectEq.deviceName || projectEq.name || '',
+      specification: projectEq.specification || '',
+      model: projectEq.model || '',
+      equipmentLevel: projectEq.equipmentLevel || DEFAULT_EQUIPMENT_LEVEL,
+      area: projectEq.area || '',
+      acceptanceDate: getCustomerAcceptanceDate(projectCase),
+      installer: (projectCase.details && projectCase.details.suggestedContractor) || '',
+      assetNumber: projectEq.assetNumber || '',
+      serialNumber: projectEq.serialNumber || '',
+      status: defaultStatus(),
+      createdDate: typeof todayDate !== 'undefined' ? todayDate : ''
+    };
+  }
+
+  function applyProjectCloseToEquipments(projectCase, equipments) {
+    var list = (equipments || []).slice();
+    var projectEquips = ((projectCase && projectCase.details && projectCase.details.equipment) || []);
+    var category = (projectCase && projectCase.workCategory) || '';
+    var result = { equipments: list, added: 0, retired: 0 };
+    if (!projectCase || !projectEquips.length) return result;
+
+    if (PROJECT_ADD_CATEGORIES.indexOf(category) !== -1) {
+      var stamp = Date.now();
+      var added = projectEquips.map(function (projectEq, idx) {
+        return toStoreEquipment(projectEq, projectCase, stamp + idx);
+      });
+      result.equipments = added.concat(list);
+      result.added = added.length;
+      return result;
+    }
+
+    if (PROJECT_RETIRE_CATEGORIES.indexOf(category) !== -1) {
+      var retired = 0;
+      result.equipments = list.map(function (eq) {
+        var hit = projectEquips.some(function (projectEq) {
+          return matchesProjectEquip(eq, projectEq, projectCase);
+        });
+        if (!hit || normalizeStatus(eq.status) === '已汰換') return eq;
+        retired += 1;
+        return Object.assign({}, eq, { status: '已汰換' });
+      });
+      result.retired = retired;
+      return result;
+    }
+
+    return result;
+  }
+
   function removeEquipmentFromProjectCases(equipmentId, projectCases) {
     var target = String(equipmentId);
     return (projectCases || []).map(function (project) {
@@ -138,6 +247,10 @@
 
   window.EquipmentUtils = {
     LIST_COLUMNS: LIST_COLUMNS,
+    defaultStatus: defaultStatus,
+    normalizeStatus: normalizeStatus,
+    isRetired: isRetired,
+    isOverAge: isOverAge,
     getLevel: getLevel,
     formatLevel: formatLevel,
     renderStatusBadge: renderStatusBadge,
@@ -150,6 +263,8 @@
     canDeleteEquipment: canDeleteEquipment,
     canRemoveProjectEquipment: canRemoveProjectEquipment,
     getProjectEquipmentRemoveBlockedReason: getProjectEquipmentRemoveBlockedReason,
+    getCustomerAcceptanceDate: getCustomerAcceptanceDate,
+    applyProjectCloseToEquipments: applyProjectCloseToEquipments,
     removeEquipmentFromProjectCases: removeEquipmentFromProjectCases
   };
 })();

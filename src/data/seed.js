@@ -620,11 +620,11 @@ const INITIAL_EQUIPMENTS = [{
   model: 'RAS-100',
   equipmentLevel: '增額設備',
   area: '頂樓',
-  manufactureDate: '2023-05-10',
-  installDate: '2023-06-01',
+  acceptanceDate: '2023-06-01',
+  installer: '王小明',
   assetNumber: 'AST-SB-001',
   serialNumber: 'SN-SB-001',
-  status: '運轉',
+  status: '運轉中',
   createdDate: yesterdayDate
 }, {
   id: 'E2',
@@ -638,11 +638,11 @@ const INITIAL_EQUIPMENTS = [{
   model: 'RAS-100',
   equipmentLevel: '一般設備',
   area: '一樓大廳',
-  manufactureDate: '2022-03-15',
-  installDate: '2022-04-01',
+  acceptanceDate: '2022-04-01',
+  installer: '李美華',
   assetNumber: 'AST-WT-001',
   serialNumber: 'SN-WT-001',
-  status: '運轉',
+  status: '運轉中',
   createdDate: todayDate
 }, {
   id: 'E2b',
@@ -656,11 +656,11 @@ const INITIAL_EQUIPMENTS = [{
   model: 'RAS-50',
   equipmentLevel: '一般設備',
   area: '倉庫',
-  manufactureDate: '2022-08-20',
-  installDate: '2022-09-01',
+  acceptanceDate: '2022-09-01',
+  installer: '陳志豪',
   assetNumber: 'AST-WT-002',
   serialNumber: 'SN-WT-002',
-  status: '運轉',
+  status: '運轉中',
   createdDate: yesterdayDate
 }, {
   id: 'E3',
@@ -674,11 +674,11 @@ const INITIAL_EQUIPMENTS = [{
   model: 'FXYP100',
   equipmentLevel: '增額設備',
   area: '賣場區',
-  manufactureDate: '2021-11-01',
-  installDate: '2021-12-15',
+  acceptanceDate: '2021-12-15',
+  installer: '林雅婷',
   assetNumber: 'AST-HF-001',
   serialNumber: 'SN-HF-001',
-  status: '運轉',
+  status: '運轉中',
   createdDate: twoDaysAgoDate
 }, {
   id: 'E4',
@@ -692,11 +692,11 @@ const INITIAL_EQUIPMENTS = [{
   model: 'FXMQ125',
   equipmentLevel: '一般設備',
   area: '收銀台上方',
-  manufactureDate: '2021-06-01',
-  installDate: '2021-07-15',
+  acceptanceDate: '2021-07-15',
+  installer: '張建國',
   assetNumber: 'AST-FM-001',
   serialNumber: 'SN-FM-001',
-  status: '運轉',
+  status: '運轉中',
   createdDate: twoDaysAgoDate
 }, {
   id: 'E5',
@@ -710,11 +710,11 @@ const INITIAL_EQUIPMENTS = [{
   model: 'FXMQ80',
   equipmentLevel: '一般設備',
   area: '休息區',
-  manufactureDate: '2022-01-10',
-  installDate: '2022-02-20',
+  acceptanceDate: '2022-02-20',
+  installer: '黃淑芬',
   assetNumber: 'AST-UC-001',
   serialNumber: 'SN-UC-001',
-  status: '轉汰換',
+  status: '達年限',
   createdDate: yesterdayDate
 }, {
   id: 'E6',
@@ -728,11 +728,11 @@ const INITIAL_EQUIPMENTS = [{
   model: 'PA-063',
   equipmentLevel: '增額設備',
   area: '機房',
-  manufactureDate: '2020-01-10',
-  installDate: '2020-03-01',
+  acceptanceDate: '2020-03-01',
+  installer: '王小明',
   assetNumber: 'AST-WT-TC-001',
   serialNumber: 'SN-WT-TC-001',
-  status: '運轉',
+  status: '運轉中',
   createdDate: todayDate
 }, {
   id: 'E7',
@@ -746,8 +746,8 @@ const INITIAL_EQUIPMENTS = [{
   model: 'RAS-80',
   equipmentLevel: '一般設備',
   area: '大廳',
-  manufactureDate: '2019-04-01',
-  installDate: '2019-05-15',
+  acceptanceDate: '2019-05-15',
+  installer: '李美華',
   assetNumber: 'AST-SB-002',
   serialNumber: 'SN-SB-002',
   status: '已汰換',
@@ -764,11 +764,11 @@ const INITIAL_EQUIPMENTS = [{
   model: 'FXMQ50',
   equipmentLevel: '一般設備',
   area: '收銀台',
-  manufactureDate: '2020-08-20',
-  installDate: '2020-09-10',
+  acceptanceDate: '2020-09-10',
+  installer: '陳志豪',
   assetNumber: 'AST-UC-002',
   serialNumber: 'SN-UC-002',
-  status: '運轉',
+  status: '運轉中',
   createdDate: twoDaysAgoDate
 }, {
   id: 'E9',
@@ -782,11 +782,11 @@ const INITIAL_EQUIPMENTS = [{
   model: 'RAS-80',
   equipmentLevel: '一般設備',
   area: '頂樓',
-  manufactureDate: '2018-11-05',
-  installDate: '2018-12-01',
+  acceptanceDate: '2018-12-01',
+  installer: '林雅婷',
   assetNumber: 'AST-FM-002',
   serialNumber: 'SN-FM-002',
-  status: '運轉',
+  status: '運轉中',
   createdDate: twoDaysAgoDate
 }];
 
@@ -1655,8 +1655,8 @@ const INITIAL_PROJECT_CASES = [{
       area: '賣場區',
       assetNumber: 'A-001',
       serialNumber: '',
-      manufactureDate: '',
-      installDate: ''
+      acceptanceDate: '',
+      installer: ''
     }]
   }
 }, {
@@ -1797,8 +1797,8 @@ const INITIAL_PROJECT_CASES = [{
       area: '賣場區',
       assetNumber: 'WT-001-A1',
       serialNumber: '',
-      manufactureDate: '',
-      installDate: ''
+      acceptanceDate: '',
+      installer: ''
     }]
   }
 }, {

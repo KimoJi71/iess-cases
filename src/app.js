@@ -402,6 +402,7 @@
       case 'project-list':
         return h(ProjectList, {
           cases: s.projectCases, setCases: setProjectCases, customers: s.customers,
+          equipments: s.equipments, setEquipments: setEquipments,
           setEditingCase: setEditingCase, setView: setView, showToast: showToast
         });
       case 'project-add':
@@ -532,14 +533,14 @@
       case 'equipment-add':
         return h(EquipmentForm, {
           equipments: s.equipments, setEquipments: setEquipments,
-          deviceCategories: s.deviceCategories,
+          deviceCategories: s.deviceCategories, accounts: s.accounts,
           equipmentCustomer: s.equipmentCustomer, equipmentStore: s.equipmentStore,
           setView: setView, showToast: showToast
         });
       case 'equipment-edit':
         return h(EquipmentForm, {
           equipments: s.equipments, setEquipments: setEquipments,
-          deviceCategories: s.deviceCategories,
+          deviceCategories: s.deviceCategories, accounts: s.accounts,
           targetCase: s.editingCase,
           equipmentCustomer: s.equipmentCustomer, equipmentStore: s.equipmentStore,
           setView: setView, showToast: showToast

@@ -105,7 +105,7 @@ try {
     // 叫修單直接顯示原始設備，不做正規化；level 傳 null 模擬未存等級的舊資料
     window.__equip = function (level) {
       var eq = { id:'EQ-' + level, category:'分離式', brand:'大金', deviceName:'分離式冷氣',
-        specification:'3.5匹', model:'DUP-1', area:'頂樓', status:'運轉' };
+        specification:'3.5匹', model:'DUP-1', area:'頂樓', status:'運轉中' };
       if (level) eq.equipmentLevel = level;
       return eq;
     };
@@ -114,10 +114,10 @@ try {
       return which === 'addon'
         ? { id:'EQ-ADDON', category:'吊隱式', brand:'大金', deviceName:'吊隱式冷氣',
             specification:'2.0匹', model:'ADDON-1', equipmentLevel:'增額設備',
-            area:'頂樓', status:'運轉' }
+            area:'頂樓', status:'運轉中' }
         : { id:'EQ-BASE', category:'箱型', brand:'日立', deviceName:'箱型冷氣',
             specification:'5.0匹', model:'BASE-1', equipmentLevel:'一般設備',
-            area:'一樓', status:'運轉' };
+            area:'一樓', status:'運轉中' };
     }; 'ok'`);
 
   console.log('\n共用工具 EquipmentUtils.formatLevel');

@@ -164,11 +164,11 @@
         model: matched.model || '',
         equipmentLevel: equip.equipmentLevel || DEFAULT_EQUIPMENT_LEVEL,
         area: equip.area || '',
-        manufactureDate: equip.manufactureDate || '',
-        installDate: equip.installDate || '',
+        acceptanceDate: equip.acceptanceDate || '',
+        installer: equip.installer || '',
         assetNumber: equip.assetNumber || '',
         serialNumber: equip.serialNumber || '',
-        status: equip.status || (typeof EQUIP_STATUS_OPTIONS !== 'undefined' ? EQUIP_STATUS_OPTIONS[0] : '運轉')
+        status: EquipmentUtils.normalizeStatus(equip.status)
       };
     }
 
@@ -180,11 +180,11 @@
       model: equip.model || '',
       equipmentLevel: equip.equipmentLevel || DEFAULT_EQUIPMENT_LEVEL,
       area: equip.area || '',
-      manufactureDate: equip.manufactureDate || '',
-      installDate: equip.installDate || '',
+      acceptanceDate: equip.acceptanceDate || '',
+      installer: equip.installer || '',
       assetNumber: equip.assetNumber || '',
       serialNumber: equip.serialNumber || '',
-      status: equip.status || (typeof EQUIP_STATUS_OPTIONS !== 'undefined' ? EQUIP_STATUS_OPTIONS[0] : '運轉')
+      status: EquipmentUtils.normalizeStatus(equip.status)
     };
   }
 
@@ -197,11 +197,11 @@
       model: '',
       equipmentLevel: DEFAULT_EQUIPMENT_LEVEL,
       area: '',
-      manufactureDate: '',
-      installDate: '',
+      acceptanceDate: '',
+      installer: '',
       assetNumber: '',
       serialNumber: '',
-      status: typeof EQUIP_STATUS_OPTIONS !== 'undefined' ? EQUIP_STATUS_OPTIONS[0] : '運轉'
+      status: EquipmentUtils.defaultStatus()
     };
   }
 

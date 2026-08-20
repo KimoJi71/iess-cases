@@ -26,8 +26,8 @@
       specification: '',
       model: '',
       area: '',
-      manufactureDate: '',
-      installDate: '',
+      acceptanceDate: '',
+      installer: '',
       assetNumber: '',
       serialNumber: ''
     };
@@ -45,8 +45,8 @@
       specification: eq.specification || '',
       model: eq.model || '',
       area: eq.area || '',
-      manufactureDate: eq.manufactureDate || '',
-      installDate: eq.installDate || '',
+      acceptanceDate: eq.acceptanceDate || '',
+      installer: eq.installer || '',
       assetNumber: eq.assetNumber || '',
       serialNumber: eq.serialNumber || ''
     };
@@ -167,22 +167,22 @@
                   placeholder: '例如：天花板上方'
                 })),
               h('div', null,
-                h('label', { className: 'block text-sm text-gray-600 mb-1' }, '出廠日期'),
+                h('label', { className: 'block text-sm text-gray-600 mb-1' }, '驗收日期'),
                 h('input', {
-                  type: 'date',
-                  name: 'manufactureDate',
-                  value: currentEquip.manufactureDate,
-                  onChange: handleEquipChange,
-                  className: IESS.inputCls
+                  type: 'text',
+                  value: currentEquip.acceptanceDate || '',
+                  placeholder: '結案時自動帶入客戶驗收日期',
+                  disabled: true,
+                  className: IESS.inputClsDisabled
                 })),
               h('div', null,
-                h('label', { className: 'block text-sm text-gray-600 mb-1' }, '安裝日期'),
+                h('label', { className: 'block text-sm text-gray-600 mb-1' }, '安裝人員'),
                 h('input', {
-                  type: 'date',
-                  name: 'installDate',
-                  value: currentEquip.installDate,
-                  onChange: handleEquipChange,
-                  className: IESS.inputCls
+                  type: 'text',
+                  value: currentEquip.installer || '',
+                  placeholder: '結案時自動帶入施作單位',
+                  disabled: true,
+                  className: IESS.inputClsDisabled
                 })),
               h('div', null,
                 h('label', { className: 'block text-sm text-gray-600 mb-1' }, '資產編號'),
@@ -228,9 +228,8 @@
       h('td', { className: 'p-3 font-medium text-indigo-600' }, eq.model || '-'),
       h('td', { className: 'p-3' }, EquipmentUtils.formatLevel(eq) || '-'),
       h('td', { className: 'p-3' }, eq.area || '-'),
-      h('td', { className: 'p-3' },
-        h('div', { className: 'text-xs' }, '出：', eq.manufactureDate || '-'),
-        h('div', { className: 'text-xs' }, '裝：', eq.installDate || '-')),
+      h('td', { className: 'p-3' }, eq.acceptanceDate || '-'),
+      h('td', { className: 'p-3' }, eq.installer || '-'),
       h('td', { className: 'p-3' }, eq.assetNumber || '-'),
       h('td', { className: 'p-3' }, eq.serialNumber || '-'),
       (p.onEdit || p.onDelete) ? h('td', { className: 'p-3 text-center' },
@@ -254,7 +253,8 @@
       h('th', { className: 'p-3 font-semibold' }, '型號'),
       h('th', { className: 'p-3 font-semibold' }, '設備等級'),
       h('th', { className: 'p-3 font-semibold' }, '設備區域'),
-      h('th', { className: 'p-3 font-semibold' }, '出廠 / 安裝日期'),
+      h('th', { className: 'p-3 font-semibold' }, '驗收日期'),
+      h('th', { className: 'p-3 font-semibold' }, '安裝人員'),
       h('th', { className: 'p-3 font-semibold' }, '資產編號'),
       h('th', { className: 'p-3 font-semibold' }, '流水序號'),
       includeActions ? h('th', { className: 'p-3 font-semibold text-center w-24' }, '操作') : null);
@@ -346,7 +346,7 @@
         h('tbody', { className: 'divide-y divide-gray-100' },
           equipmentList.length === 0
             ? h('tr', null, h('td', {
-                colspan: includeActions ? '10' : '9',
+                colspan: includeActions ? '11' : '10',
                 className: 'text-center p-8 text-gray-400 bg-gray-50/50'
               }, '尚未加入任何設備資料'))
             : equipmentList.map(function (eq) {
@@ -665,7 +665,7 @@
       }, equipmentTableHeaders(true)), h('tbody', {
         className: 'divide-y divide-gray-100'
       }, equipmentList.length === 0 ? h('tr', null, h('td', {
-        colspan: '10',
+        colspan: '11',
         className: 'text-center p-8 text-gray-400 bg-gray-50/50'
       }, '尚未加入任何設備資料')) : equipmentList.map(function (eq) {
         return renderEquipmentTableRow(eq, {

@@ -120,20 +120,20 @@
           {
             category: '分離式', brand: '日立', deviceName: '分離式冷氣', name: '分離式冷氣',
             specification: '3.5匹', model: 'RAS-100', equipmentLevel: '一般設備',
-            area: '一樓大廳', manufactureDate: '2023-01-10', installDate: '2023-02-01',
-            assetNumber: 'AST-IMP-001', serialNumber: 'SN-IMP-001', status: '運轉'
+            area: '一樓大廳', acceptanceDate: '2023-02-01', installer: '王小明',
+            assetNumber: 'AST-IMP-001', serialNumber: 'SN-IMP-001', status: '運轉中'
           },
           {
             category: '冰水', brand: '大金', deviceName: '冰水箱型機', name: '冰水箱型機',
             specification: '10噸', model: 'FVQ100', equipmentLevel: '一般設備',
-            area: '二樓辦公室', manufactureDate: '2022-06-15', installDate: '2022-07-01',
-            assetNumber: 'AST-IMP-002', serialNumber: 'SN-IMP-002', status: '運轉'
+            area: '二樓辦公室', acceptanceDate: '2022-07-01', installer: '李美華',
+            assetNumber: 'AST-IMP-002', serialNumber: 'SN-IMP-002', status: '運轉中'
           },
           {
             category: '空氣門', brand: '東元', deviceName: '空氣門', name: '空氣門',
             specification: '20RT', model: 'TE-20RT', equipmentLevel: '增額設備',
-            area: '頂樓', manufactureDate: '2021-11-05', installDate: '2021-12-01',
-            assetNumber: 'AST-IMP-003', serialNumber: 'SN-IMP-003', status: '轉汰換'
+            area: '頂樓', acceptanceDate: '2021-12-01', installer: '陳志豪',
+            assetNumber: 'AST-IMP-003', serialNumber: 'SN-IMP-003', status: '達年限'
           }
         ];
         var imported = demoRows.map(function (row, idx) {

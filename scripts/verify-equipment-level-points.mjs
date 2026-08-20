@@ -47,7 +47,7 @@ const sandbox = {
   EQUIP_CATEGORY_OPTIONS: [],
   EQUIP_BRAND_OPTIONS: [],
   EQUIP_NAME_OPTIONS: [],
-  EQUIP_STATUS_OPTIONS: ['運轉', '轉汰換', '已汰換']
+  EQUIP_STATUS_OPTIONS: ['運轉中', '達年限', '已汰換']
 };
 sandbox.window = sandbox;
 vm.createContext(sandbox);

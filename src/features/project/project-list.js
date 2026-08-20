@@ -1,6 +1,6 @@
 /*
  * features/project/project-list.js — 工程立案：立案單列表（未結案）
- * props: { cases, setCases, setEditingCase, setView, showToast }
+ * props: { cases, setCases, customers, equipments, setEquipments, setEditingCase, setView, showToast }
  */
 (function () {
   'use strict';
@@ -33,6 +33,8 @@
     var cases = props.cases;
     var setCases = props.setCases;
     var customers = props.customers;
+    var equipments = props.equipments || [];
+    var setEquipments = props.setEquipments;
     var setEditingCase = props.setEditingCase;
     var setView = props.setView;
     var showToast = props.showToast;
@@ -95,6 +97,7 @@
       }
 
       function handleCloseProject(id) {
+        var target = cases.find(function (c) { return c.id === id; });
         setCases(cases.map(function (c) {
           return c.id === id ? Object.assign({}, c, {
             isClosed: true,
@@ -102,7 +105,18 @@
           }) : c;
         }));
         closeConfirmModal = { show: false, id: null };
-        showToast('工程案件已結案並移至銷案審核列表');
+        // 結案後同步設備管理：新開／整裝／加裝新增設備，汰換／撤店改為已汰換
+        var syncMessage = '';
+        if (target && setEquipments) {
+          var synced = EquipmentUtils.applyProjectCloseToEquipments(target, equipments);
+          if (synced.added || synced.retired) {
+            setEquipments(synced.equipments);
+            syncMessage = synced.added
+              ? '，並新增 ' + synced.added + ' 筆設備至該門市'
+              : '，並將 ' + synced.retired + ' 筆設備改為已汰換';
+          }
+        }
+        showToast('工程案件已結案並移至銷案審核列表' + syncMessage);
       }
 
       return h('div', {

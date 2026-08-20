@@ -1,6 +1,6 @@
 /*
  * features/customer/equipment-form.js — 客戶建檔（設備管理）：設備新增/編輯表單
- * props: { equipments, setEquipments, deviceCategories, targetCase?, equipmentCustomer, equipmentStore, setView, showToast }
+ * props: { equipments, setEquipments, deviceCategories, accounts, targetCase?, equipmentCustomer, equipmentStore, setView, showToast }
  */
 (function () {
   'use strict';
@@ -40,6 +40,7 @@
     var equipments = props.equipments;
     var setEquipments = props.setEquipments;
     var deviceCategories = props.deviceCategories || [];
+    var accounts = props.accounts || [];
     var targetCase = props.targetCase;
     var equipmentCustomer = props.equipmentCustomer;
     var equipmentStore = props.equipmentStore;
@@ -92,11 +93,11 @@
           model: formData.model,
           equipmentLevel: formData.equipmentLevel || DEFAULT_EQUIPMENT_LEVEL,
           area: formData.area,
-          manufactureDate: formData.manufactureDate,
-          installDate: formData.installDate,
+          acceptanceDate: formData.acceptanceDate,
+          installer: formData.installer,
           assetNumber: formData.assetNumber,
           serialNumber: formData.serialNumber,
-          status: formData.status,
+          status: EquipmentUtils.normalizeStatus(formData.status),
           customerName: customerName,
           storeName: storeName
         };
@@ -133,6 +134,8 @@
       }
 
       var fieldOptions = DeviceCategoryUtils.getEquipFieldOptions(deviceCategories, formData);
+      // 安裝人員選項取自帳號管理（含既有值，避免舊資料被清掉）
+      var installerOptions = AccountUtils.getProjectPersonOptions(accounts, [formData.installer]);
 
       return h('div', { className: 'max-w-5xl mx-auto bg-white rounded-lg shadow-sm border border-gray-100' },
         PageHeader({
@@ -189,8 +192,21 @@
                 )
               ),
               field('設備區域', 'area', { placeholder: '例如：天花板上方' }),
-              field('出廠日期', 'manufactureDate', { type: 'date' }),
-              field('安裝日期', 'installDate', { type: 'date' }),
+              field('驗收日期', 'acceptanceDate', { type: 'date' }),
+              h('div', null,
+                h('label', { className: 'block text-sm mb-1' }, '安裝人員'),
+                h('select', {
+                  name: 'installer',
+                  value: formData.installer || '',
+                  onChange: handleChange,
+                  className: inputCls + ' bg-white'
+                },
+                  h('option', { value: '' }, '請選擇'),
+                  installerOptions.map(function (opt) {
+                    return h('option', { key: opt, value: opt }, opt);
+                  })
+                )
+              ),
               field('資產編號', 'assetNumber'),
               field('流水序號', 'serialNumber'),
               h('div', null,
@@ -198,7 +214,7 @@
                   h('span', { className: 'text-red-500' }, '*')),
                 h('select', {
                   name: 'status',
-                  value: formData.status || EQUIP_STATUS_OPTIONS[0],
+                  value: EquipmentUtils.normalizeStatus(formData.status),
                   onChange: handleChange,
                   className: inputCls + ' bg-white'
                 },

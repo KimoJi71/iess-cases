@@ -140,16 +140,16 @@ try {
     var eqs = [
       { id:'E1', customerName:'測試客戶', storeName:'測試門市', category:'分離式',
         brand:'大金', deviceName:'分離式冷氣', specification:'3.5匹', model:'DUP-1',
-        equipmentLevel:'增額設備', status:'運轉', createdDate:'2026-08-01' },
+        equipmentLevel:'增額設備', status:'運轉中', createdDate:'2026-08-01' },
       { id:'E2', customerName:'測試客戶', storeName:'測試門市', category:'分離式',
         brand:'日立', deviceName:'分離式冷氣', specification:'3.5匹', model:'DUP-1',
-        equipmentLevel:'一般設備', status:'運轉', createdDate:'2026-08-02' },
+        equipmentLevel:'一般設備', status:'運轉中', createdDate:'2026-08-02' },
       { id:'E4', customerName:'測試客戶', storeName:'測試門市', category:'分離式',
         brand:'日立', deviceName:'分離式冷氣', specification:'2.0匹', model:'LEGACY-1',
-        status:'運轉', createdDate:'2026-08-04' },
+        status:'運轉中', createdDate:'2026-08-04' },
       { id:'E3', customerName:'測試客戶', storeName:'測試門市', category:'分離式',
         brand:'日立', deviceName:'分離式冷氣', specification:'3.5匹', model:'',
-        status:'運轉', createdDate:'2026-08-03' }
+        status:'運轉中', createdDate:'2026-08-03' }
     ];
     var node = EquipmentList({
       equipments: eqs, setEquipments: function(){},
@@ -218,10 +218,10 @@ try {
       addNew: fieldOf(null),
       addOn: fieldOf({ id:'E1', customerName:'測試客戶', storeName:'測試門市',
         category:'分離式', brand:'大金', deviceName:'分離式冷氣',
-        specification:'3.5匹', model:'DUP-1', equipmentLevel:'增額設備', status:'運轉' }),
+        specification:'3.5匹', model:'DUP-1', equipmentLevel:'增額設備', status:'運轉中' }),
       legacy: fieldOf({ id:'E4', customerName:'測試客戶', storeName:'測試門市',
         category:'分離式', brand:'日立', deviceName:'分離式冷氣',
-        specification:'2.0匹', model:'LEGACY-1', status:'運轉' })
+        specification:'2.0匹', model:'LEGACY-1', status:'運轉中' })
     };
   })()`);
   assertTrue(eqForm.addNew !== null, '表單有「設備等級」欄位');

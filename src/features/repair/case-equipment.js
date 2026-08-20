@@ -15,8 +15,8 @@
     // 設備等級由設備管理設定，隨設備快照存進案件資料
     { key: 'equipmentLevel', label: '設備等級', derived: true },
     { key: 'area', label: '設備區域' },
-    { key: 'manufactureDate', label: '出廠日期' },
-    { key: 'installDate', label: '安裝日期' },
+    { key: 'acceptanceDate', label: '驗收日期' },
+    { key: 'installer', label: '安裝人員' },
     { key: 'assetNumber', label: '資產編號' },
     { key: 'serialNumber', label: '流水序號' },
     { key: 'status', label: '設備狀態' }
@@ -36,10 +36,16 @@
 
   function getDisplayFields(equipment, caseContext, deviceCategories) {
     return FIELD_DEFS.map(function (def) {
-      return {
+      var field = {
         label: def.label,
         value: getFieldValue(equipment, caseContext, def, deviceCategories)
       };
+      // 達年限的設備狀態以紅字提醒
+      if (def.key === 'status') {
+        field.value = EquipmentUtils.normalizeStatus(field.value);
+        if (EquipmentUtils.isOverAge(equipment)) field.tone = 'danger';
+      }
+      return field;
     });
   }
 
@@ -53,11 +59,17 @@
     });
   }
 
+  // 已汰換的設備不可再被加入案件，掃描時一併排除
+  function isSelectable(equipment) {
+    return !EquipmentUtils.isRetired(equipment);
+  }
+
   function findEquipmentForScan(equipments, formData) {
     if (!equipments || !equipments.length) return null;
-    var matched = listForCase(equipments, formData);
-    var source = matched.length ? matched[0] : equipments[0];
-    return Object.assign({}, source);
+    var matched = listForCase(equipments, formData).filter(isSelectable);
+    if (matched.length) return Object.assign({}, matched[0]);
+    var fallback = (equipments || []).filter(isSelectable)[0];
+    return fallback ? Object.assign({}, fallback) : null;
   }
 
   function PickerModal(props) {
@@ -94,13 +106,25 @@
                 ),
                 h('tbody', { className: 'divide-y divide-gray-100' },
                   items.map(function (eq) {
-                    return h('tr', { key: eq.id, className: 'hover:bg-blue-50/50 transition-colors' },
+                    // 達年限已由設備狀態的紅色標籤標示，整列不再上色
+                    var retired = EquipmentUtils.isRetired(eq);
+                    return h('tr', {
+                      key: eq.id,
+                      className: 'transition-colors ' + (
+                        retired ? 'bg-gray-50 text-gray-400' : 'hover:bg-blue-50/50'
+                      )
+                    },
                       h('td', { className: 'p-3 text-center' },
-                        h('button', {
-                          type: 'button',
-                          onClick: function () { onSelect(eq); },
-                          className: 'px-3 py-1.5 bg-blue-600 text-white rounded-md text-sm'
-                        }, '選擇')
+                        retired
+                          ? h('span', {
+                              className: 'px-3 py-1.5 bg-gray-100 text-gray-400 rounded-md text-sm cursor-not-allowed',
+                              title: '已汰換的設備無法加入'
+                            }, '已汰換')
+                          : h('button', {
+                              type: 'button',
+                              onClick: function () { onSelect(eq); },
+                              className: 'px-3 py-1.5 bg-blue-600 text-white rounded-md text-sm'
+                            }, '選擇')
                       ),
                       EquipmentUtils.renderListDataCells(h, eq)
                     );
@@ -141,7 +165,11 @@
         return h('div', { key: field.label },
           h('span', { className: 'text-gray-500 block mb-1 text-xs' }, field.label),
           h('div', {
-            className: 'font-medium bg-gray-50 p-2.5 rounded-md border border-gray-100 min-h-[42px] flex items-center'
+            className: 'font-medium p-2.5 rounded-md border min-h-[42px] flex items-center ' + (
+              field.tone === 'danger'
+                ? 'bg-red-50 border-red-100 text-red-600'
+                : 'bg-gray-50 border-gray-100'
+            )
           }, field.value || '-')
         );
       })
@@ -153,6 +181,7 @@
     getFieldValue: getFieldValue,
     getDisplayFields: getDisplayFields,
     listForCase: listForCase,
+    isSelectable: isSelectable,
     findEquipmentForScan: findEquipmentForScan,
     PickerModal: PickerModal,
     Panel: Panel

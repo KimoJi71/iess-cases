@@ -59,7 +59,7 @@ async function evaluate(expression) {
 
 const EQUIPMENT_TABLE_HEADERS = [
   '操作', '設備分類', '品牌', '設備名稱', '設備規格', '型號', '設備等級',
-  '設備區域', '出廠日期', '安裝日期', '資產編號', '流水序號', '設備狀態'
+  '設備區域', '驗收日期', '安裝人員', '資產編號', '流水序號', '設備狀態'
 ];
 
 try {
@@ -101,8 +101,8 @@ try {
         id: 'E1', customerName: '測試客戶', storeName: '測試門市',
         category: '空調', brand: '大金', deviceName: '室內機',
         specification: '2.2kW', model: 'FTXS', equipmentLevel: '增額設備',
-        area: '廚房', manufactureDate: '2020-01-01', installDate: '2020-02-01',
-        assetNumber: 'A-001', serialNumber: 'SN-001', status: '運轉',
+        area: '廚房', acceptanceDate: '2020-02-01', installer: '王小明',
+        assetNumber: 'A-001', serialNumber: 'SN-001', status: '運轉中',
         createdDate: '${todayDate}'
       };
     };
@@ -156,8 +156,8 @@ try {
   assertTrue(picker.firstRow.indexOf('大金') !== -1, '列含品牌', picker.firstRow.join(' | '));
   assertTrue(picker.firstRow.indexOf('2.2kW') !== -1, '列含設備規格', picker.firstRow.join(' | '));
   assertTrue(picker.firstRow.indexOf('增額設備') !== -1, '列含設備等級', picker.firstRow.join(' | '));
-  assertTrue(picker.firstRow.indexOf('2020-01-01') !== -1, '列含出廠日期', picker.firstRow.join(' | '));
-  assertTrue(picker.firstRow.indexOf('2020-02-01') !== -1, '列含安裝日期', picker.firstRow.join(' | '));
+  assertTrue(picker.firstRow.indexOf('2020-02-01') !== -1, '列含驗收日期', picker.firstRow.join(' | '));
+  assertTrue(picker.firstRow.indexOf('王小明') !== -1, '列含安裝人員', picker.firstRow.join(' | '));
 
   console.log('\n編輯表單加入設備按鈕選單');
   const menu = await evaluate(`(function () {

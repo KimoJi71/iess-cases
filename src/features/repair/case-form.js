@@ -449,10 +449,19 @@
         rerender();
       }
       function assignEquipment(eq) {
+        // 已汰換的設備不可加入案件
+        if (EquipmentUtils.isRetired(eq)) {
+          showToast('已汰換的設備無法加入設備資料', 'error');
+          pickerOpen = false;
+          addEquipMenuOpen = false;
+          rerender();
+          return false;
+        }
         formData.equipment = Object.assign({}, eq);
         pickerOpen = false;
         addEquipMenuOpen = false;
         rerender();
+        return true;
       }
       function handleSimulateScan(e) {
         if (e) e.preventDefault();
@@ -471,18 +480,17 @@
             specification: '3.5匹',
             model: 'RAS-100',
             area: '1F 營業廳',
-            manufactureDate: '',
-            installDate: '',
+            acceptanceDate: '',
+            installer: '',
             assetNumber: '',
             serialNumber: '',
-            status: EQUIP_STATUS_OPTIONS[0]
+            status: EquipmentUtils.defaultStatus()
           });
         }
         showToast('成功掃描設備並帶入資料');
       }
       function handleSelectEquipment(eq) {
-        assignEquipment(eq);
-        showToast('已帶入設備資料');
+        if (assignEquipment(eq)) showToast('已帶入設備資料');
       }
       function formatRecordPoints(r) {
         var pts = ProcessMethodUtils.resolveCaseRecordPoints(r, processMethods, formData.isClosed);
