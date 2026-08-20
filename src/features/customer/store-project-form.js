@@ -1,9 +1,10 @@
 /*
  * features/customer/store-project-form.js — 門市管理：由門市資料新增立案單
- * props: { store, cases, setCases, deviceCategories, setView, showToast }
+ * props: { store, cases, setCases, equipments, deviceCategories, setView, showToast }
  *
  * 由「編輯門市」頁右上方 [新增立案單] 進入，客戶／門市／地址／服務等級皆由門市自動帶入。
  * 可透過 [加入設備] 暫存多筆設備資料，儲存後新增一筆工程立案單（寫入工程立案清單）。
+ * 工項分類為「汰換／撤店」時，[加入設備] 改為從該門市既有設備多選。
  */
 (function () {
   'use strict';
@@ -13,6 +14,7 @@
     var store = props.store || {};
     var cases = props.cases;
     var setCases = props.setCases;
+    var equipments = props.equipments || [];
     var deviceCategories = props.deviceCategories || [];
     var setView = props.setView;
     var showToast = props.showToast;
@@ -31,13 +33,48 @@
     };
     var equipmentList = [];
     var equipModal = { show: false, editingId: null, initialEquip: null };
+    var equipPicker = { show: false };
+    var categoryConfirm = { show: false, nextCategory: '' };
 
     var inputCls = IESS.inputCls;
     var disabledCls = 'w-full p-2.5 bg-gray-50 border rounded-md text-gray-500 cursor-not-allowed';
 
     return stateful(function (rerender) {
       function handleChange(e) {
-        formData[e.target.name] = e.target.value;
+        var name = e.target.name;
+        var value = e.target.value;
+        // 工項分類跨越「既有設備／手動填寫」兩種模式時，先確認再清空已加入的設備
+        if (name === 'workCategory' && equipmentList.length
+          && ProjectEquipmentShared.usesEquipmentPicker(value)
+            !== ProjectEquipmentShared.usesEquipmentPicker(formData.workCategory)) {
+          categoryConfirm = { show: true, nextCategory: value };
+          rerender();
+          return;
+        }
+        formData[name] = value;
+        rerender();
+      }
+      function confirmCategorySwitch() {
+        equipmentList = [];
+        formData.workCategory = categoryConfirm.nextCategory;
+        categoryConfirm = { show: false, nextCategory: '' };
+        rerender();
+      }
+      function openAddEquipment() {
+        if (ProjectEquipmentShared.usesEquipmentPicker(formData.workCategory)) {
+          equipPicker = { show: true };
+          rerender();
+          return;
+        }
+        openEquipModal(null);
+      }
+      function handlePickerConfirm(picked) {
+        var stamp = Date.now();
+        equipmentList = equipmentList.concat(picked.map(function (eq, idx) {
+          return Object.assign({}, eq, { id: stamp + idx });
+        }));
+        equipPicker = { show: false };
+        showToast('已加入 ' + picked.length + ' 筆設備');
         rerender();
       }
       function openEquipModal(eq) {
@@ -45,8 +82,8 @@
           show: true,
           editingId: eq ? eq.id : null,
           initialEquip: eq
-            ? DeviceCategoryUtils.resolveProjectEquip(eq, deviceCategories)
-            : DeviceCategoryUtils.defaultEquipRecord()
+            ? ProjectEquipmentShared.normalizeEquip(eq, deviceCategories)
+            : ProjectEquipmentShared.defaultEquip()
         };
         rerender();
       }
@@ -166,50 +203,16 @@
                 h('h3', { className: 'text-lg font-bold text-blue-800' }, '2. 設備資料 ',
                   h('span', { className: 'text-sm font-normal text-gray-400' }, '(可多筆)')),
                 h('button', {
-                  type: 'button', onClick: function () { openEquipModal(null); },
+                  type: 'button', onClick: openAddEquipment,
                   className: 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100 px-4 py-2 rounded-md flex items-center gap-2 font-medium transition-colors border border-indigo-200'
                 }, Icons.Plus({ className: 'h-4 w-4' }), ' 加入設備')
               ),
-              h('div', { className: 'overflow-x-auto border rounded-lg border-gray-200' },
-                h('table', { className: 'w-full text-left text-sm text-gray-600 whitespace-nowrap' },
-                  h('thead', { className: 'bg-gray-50 text-gray-700 border-b' },
-                    h('tr', null,
-                      h('th', { className: 'p-3 font-semibold' }, '設備分類'),
-                      h('th', { className: 'p-3 font-semibold' }, '品牌'),
-                      h('th', { className: 'p-3 font-semibold' }, '設備規格'),
-                      h('th', { className: 'p-3 font-semibold' }, '型號'),
-                      h('th', { className: 'p-3 font-semibold' }, '設備等級'),
-                      h('th', { className: 'p-3 font-semibold' }, '設備區域'),
-                      h('th', { className: 'p-3 font-semibold text-center w-24' }, '操作'))),
-                  h('tbody', { className: 'divide-y divide-gray-100' },
-                    equipmentList.length === 0
-                      ? h('tr', null, h('td', { colspan: '7', className: 'text-center p-8 text-gray-400 bg-gray-50/50' }, '尚未加入任何設備資料'))
-                      : equipmentList.map(function (eq) {
-                          return h('tr', { key: eq.id, className: 'hover:bg-gray-50' },
-                            h('td', { className: 'p-3' },
-                              h('div', { className: 'font-medium text-gray-800' }, eq.category || '-'),
-                              eq.deviceName ? h('div', { className: 'text-xs text-gray-500' }, eq.deviceName) : null),
-                            h('td', { className: 'p-3' }, eq.brand || '-'),
-                            h('td', { className: 'p-3' }, eq.specification || '-'),
-                            h('td', { className: 'p-3 font-medium text-indigo-600' }, eq.model || '-'),
-                            h('td', { className: 'p-3' }, EquipmentUtils.formatLevel(eq) || '-'),
-                            h('td', { className: 'p-3' }, eq.area || '-'),
-                            h('td', { className: 'p-3 text-center' },
-                              h('div', { className: 'flex items-center justify-center gap-1' },
-                                h('button', {
-                                  type: 'button', onClick: function () { openEquipModal(eq); },
-                                  className: 'p-1.5 text-blue-600 hover:bg-blue-100 rounded transition-colors', title: '編輯設備'
-                                }, Icons.Edit({ className: 'h-4 w-4' })),
-                                h('button', {
-                                  type: 'button', onClick: function () { handleDeleteEquipment(eq.id); },
-                                  className: 'p-1.5 text-red-500 hover:bg-red-100 rounded transition-colors', title: '刪除設備'
-                                }, Icons.Trash2({ className: 'h-4 w-4' }))
-                              )
-                            ));
-                        })
-                  )
-                )
-              )
+              // 設備欄位與「設備管理」一致，與工程立案的設備表格共用
+              ProjectEquipmentShared.equipmentTable(equipmentList, {
+                deviceCategories: deviceCategories,
+                onEdit: openEquipModal,
+                onDelete: handleDeleteEquipment
+              })
             )
           ),
           h('div', { className: 'mt-8 pt-6 border-t flex justify-end gap-4' },
@@ -233,6 +236,25 @@
             rerender();
           },
           onSave: handleEquipSaved
+        }),
+        equipPicker.show && h(ProjectEquipPicker, {
+          equipments: equipments,
+          customerName: store.customerName || '',
+          storeName: store.storeName || '',
+          addedIds: ProjectEquipmentShared.pickedSourceIds(equipmentList),
+          onConfirm: handlePickerConfirm,
+          onClose: function () {
+            equipPicker = { show: false };
+            rerender();
+          }
+        }),
+        categoryConfirm.show && h(ProjectEquipmentShared.CategorySwitchConfirmModal, {
+          nextCategory: categoryConfirm.nextCategory,
+          onConfirm: confirmCategorySwitch,
+          onCancel: function () {
+            categoryConfirm = { show: false, nextCategory: '' };
+            rerender();
+          }
         })
       );
     });

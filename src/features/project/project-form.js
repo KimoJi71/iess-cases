@@ -19,37 +19,52 @@
   }
 
   function defaultEquip() {
-    return {
-      category: '',
-      brand: '',
-      deviceName: '',
-      specification: '',
-      model: '',
-      area: '',
-      acceptanceDate: '',
-      installer: '',
-      assetNumber: '',
-      serialNumber: ''
-    };
+    return DeviceCategoryUtils.defaultEquipRecord();
   }
 
+  // 設備欄位與「設備管理」一致；既有設備挑進來時以 sourceEquipmentId 記住來源
   function normalizeEquip(eq, deviceCategories) {
     if (!eq) return defaultEquip();
-    if (deviceCategories && deviceCategories.length) {
-      return DeviceCategoryUtils.resolveProjectEquip(eq, deviceCategories);
-    }
-    return {
-      category: eq.category || '',
-      brand: eq.brand || '',
-      deviceName: eq.deviceName || eq.name || '',
-      specification: eq.specification || '',
-      model: eq.model || '',
-      area: eq.area || '',
-      acceptanceDate: eq.acceptanceDate || '',
-      installer: eq.installer || '',
-      assetNumber: eq.assetNumber || '',
-      serialNumber: eq.serialNumber || ''
-    };
+    var resolved = DeviceCategoryUtils.resolveProjectEquip(eq, deviceCategories);
+    if (eq.sourceEquipmentId != null) resolved.sourceEquipmentId = eq.sourceEquipmentId;
+    return resolved;
+  }
+
+  // 從門市設備列表挑選的設備為既有資料快照，只可移除不可編輯
+  function isPickedEquip(eq) {
+    return !!(eq && eq.sourceEquipmentId != null);
+  }
+
+  function usesEquipmentPicker(workCategory) {
+    return EquipmentUtils.PROJECT_RETIRE_CATEGORIES.indexOf(workCategory) !== -1;
+  }
+
+  function pickedSourceIds(equipmentList) {
+    return (equipmentList || []).filter(isPickedEquip).map(function (eq) {
+      return eq.sourceEquipmentId;
+    });
+  }
+
+  // 兩種工項分類的設備來源不同（既有設備 vs 手動填寫），跨模式切換時先確認再清空
+  function CategorySwitchConfirmModal(props) {
+    return h('div', { className: 'app-modal-overlay' },
+      h('div', { className: 'bg-white rounded-lg shadow-xl p-6 w-96 max-w-full m-4' },
+        h('div', { className: 'flex items-center space-x-3 text-amber-600 mb-4' },
+          Icons.AlertCircle({ className: 'h-6 w-6' }),
+          h('h3', { className: 'text-lg font-bold text-gray-800' }, '確認切換工項分類')),
+        h('p', { className: 'text-gray-600 mb-6' },
+          '切換為「' + props.nextCategory + '」會清空已加入的設備資料，確定要切換嗎？'),
+        h('div', { className: 'flex justify-end space-x-3' },
+          h('button', {
+            type: 'button',
+            onClick: props.onCancel,
+            className: 'px-4 py-2 border rounded-md text-gray-600 hover:bg-gray-50 transition-colors'
+          }, '取消'),
+          h('button', {
+            type: 'button',
+            onClick: props.onConfirm,
+            className: 'px-4 py-2 bg-amber-600 text-white rounded-md hover:bg-amber-700 transition-colors'
+          }, '確認切換'))));
   }
 
   function renderEquipSelect(label, name, options, currentEquip, onChange, opts) {
@@ -185,6 +200,16 @@
                   className: IESS.inputClsDisabled
                 })),
               h('div', null,
+                h('label', { className: 'block text-sm text-gray-600 mb-1' }, '設備狀態'),
+                h('select', {
+                  name: 'status',
+                  value: EquipmentUtils.normalizeStatus(currentEquip.status),
+                  onChange: handleEquipChange,
+                  className: IESS.inputCls
+                }, EQUIP_STATUS_OPTIONS.map(function (opt) {
+                  return h('option', { key: opt, value: opt }, opt);
+                }))),
+              h('div', null,
                 h('label', { className: 'block text-sm text-gray-600 mb-1' }, '資產編號'),
                 h('input', {
                   type: 'text',
@@ -219,22 +244,13 @@
   }
 
   function renderEquipmentTableRow(eq, p) {
+    var picked = isPickedEquip(eq);
     return h('tr', { key: eq.id, className: 'hover:bg-gray-50' },
-      h('td', { className: 'p-3' },
-        h('div', { className: 'font-medium text-gray-800' }, eq.category || '-'),
-        h('div', { className: 'text-xs text-gray-500' }, eq.deviceName || eq.name || '')),
-      h('td', { className: 'p-3' }, eq.brand || '-'),
-      h('td', { className: 'p-3' }, eq.specification || '-'),
-      h('td', { className: 'p-3 font-medium text-indigo-600' }, eq.model || '-'),
-      h('td', { className: 'p-3' }, EquipmentUtils.formatLevel(eq) || '-'),
-      h('td', { className: 'p-3' }, eq.area || '-'),
-      h('td', { className: 'p-3' }, eq.acceptanceDate || '-'),
-      h('td', { className: 'p-3' }, eq.installer || '-'),
-      h('td', { className: 'p-3' }, eq.assetNumber || '-'),
-      h('td', { className: 'p-3' }, eq.serialNumber || '-'),
+      EquipmentUtils.renderListDataCells(h, eq),
       (p.onEdit || p.onDelete) ? h('td', { className: 'p-3 text-center' },
         h('div', { className: 'flex items-center justify-center gap-1' },
-          p.onEdit && h('button', {
+          // 既有設備是設備管理的快照，只提供移除
+          (p.onEdit && !picked) && h('button', {
             type: 'button',
             onClick: function () { p.onEdit(eq); },
             className: 'p-1.5 text-blue-600 hover:bg-blue-100 rounded transition-colors',
@@ -245,19 +261,15 @@
             className: 'p-1.5 text-red-500 hover:bg-red-100 rounded transition-colors', icon: Icons.Trash2({ className: 'h-4 w-4' }) }))) : null);
   }
 
+  // 表頭與「設備管理」列表一致
   function equipmentTableHeaders(includeActions) {
     return h('tr', null,
-      h('th', { className: 'p-3 font-semibold' }, '設備分類'),
-      h('th', { className: 'p-3 font-semibold' }, '品牌'),
-      h('th', { className: 'p-3 font-semibold' }, '設備規格'),
-      h('th', { className: 'p-3 font-semibold' }, '型號'),
-      h('th', { className: 'p-3 font-semibold' }, '設備等級'),
-      h('th', { className: 'p-3 font-semibold' }, '設備區域'),
-      h('th', { className: 'p-3 font-semibold' }, '驗收日期'),
-      h('th', { className: 'p-3 font-semibold' }, '安裝人員'),
-      h('th', { className: 'p-3 font-semibold' }, '資產編號'),
-      h('th', { className: 'p-3 font-semibold' }, '流水序號'),
+      EquipmentUtils.renderListHeaderCells(h),
       includeActions ? h('th', { className: 'p-3 font-semibold text-center w-24' }, '操作') : null);
+  }
+
+  function equipmentColumnCount(includeActions) {
+    return EquipmentUtils.LIST_COLUMNS.length + (includeActions ? 1 : 0);
   }
 
   /* --- 以下為「編輯／查看工程案件」的版面組件 ---
@@ -346,7 +358,7 @@
         h('tbody', { className: 'divide-y divide-gray-100' },
           equipmentList.length === 0
             ? h('tr', null, h('td', {
-                colspan: includeActions ? '11' : '10',
+                colspan: String(equipmentColumnCount(includeActions)),
                 className: 'text-center p-8 text-gray-400 bg-gray-50/50'
               }, '尚未加入任何設備資料'))
             : equipmentList.map(function (eq) {
@@ -433,6 +445,7 @@
     var setCases = props.setCases;
     var stores = props.stores;
     var customers = props.customers;
+    var equipments = props.equipments || [];
     var deviceCategories = props.deviceCategories || [];
     var setView = props.setView;
     var showToast = props.showToast;
@@ -452,6 +465,8 @@
     var contractors = ASSIGNEES.slice();
     var equipmentList = [];
     var equipModal = { show: false, editingId: null, initialEquip: null };
+    var equipPicker = { show: false };
+    var categoryConfirm = { show: false, nextCategory: '' };
 
     return stateful(function (rerender) {
       var storeOptions = ScheduleUtils.getStoreNamesForCustomer(stores, formData.customerName, formData.storeName);
@@ -463,9 +478,7 @@
         formData.serviceLevel = synced.serviceLevel || formData.serviceLevel;
       }
 
-      function handleChange(e) {
-        var name = e.target.name;
-        var value = e.target.value;
+      function applyChange(name, value) {
         formData[name] = value;
         if (name === 'customerName') {
           formData.serviceLevel = CustomerUtils.getServiceLevelByCustomerName(customers, value);
@@ -475,6 +488,50 @@
         if (name === 'storeName') {
           syncProjectStoreFields();
         }
+        // 換了客戶／門市後，原門市挑進來的既有設備已不適用
+        if ((name === 'customerName' || name === 'storeName') && pickedSourceIds(equipmentList).length) {
+          equipmentList = equipmentList.filter(function (eq) { return !isPickedEquip(eq); });
+          showToast('已清空原門市的設備資料', 'error');
+        }
+      }
+      function handleChange(e) {
+        var name = e.target.name;
+        var value = e.target.value;
+        // 工項分類跨越「既有設備／手動填寫」兩種模式時，先確認再清空已加入的設備
+        if (name === 'workCategory' && equipmentList.length
+          && usesEquipmentPicker(value) !== usesEquipmentPicker(formData.workCategory)) {
+          categoryConfirm = { show: true, nextCategory: value };
+          rerender();
+          return;
+        }
+        applyChange(name, value);
+        rerender();
+      }
+      function confirmCategorySwitch() {
+        equipmentList = [];
+        applyChange('workCategory', categoryConfirm.nextCategory);
+        categoryConfirm = { show: false, nextCategory: '' };
+        rerender();
+      }
+      function openAddEquipment() {
+        if (usesEquipmentPicker(formData.workCategory)) {
+          if (!formData.customerName || !formData.storeName) {
+            showToast('請先選擇客戶與門市', 'error');
+            return;
+          }
+          equipPicker = { show: true };
+          rerender();
+          return;
+        }
+        openEquipModal(null);
+      }
+      function handlePickerConfirm(picked) {
+        var stamp = Date.now();
+        equipmentList = equipmentList.concat(picked.map(function (eq, idx) {
+          return Object.assign({}, eq, { id: stamp + idx });
+        }));
+        equipPicker = { show: false };
+        showToast('已加入 ' + picked.length + ' 筆設備');
         rerender();
       }
       function openEquipModal(eq) {
@@ -652,7 +709,7 @@
         className: 'text-lg font-bold text-blue-800'
       }, '2. 設備資料'), h('button', {
         type: 'button',
-        onClick: function () { openEquipModal(null); },
+        onClick: openAddEquipment,
         className: 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100 px-4 py-2 rounded-md flex items-center gap-2 font-medium transition-colors border border-indigo-200'
       }, Icons.Plus({
         className: 'h-4 w-4'
@@ -665,7 +722,7 @@
       }, equipmentTableHeaders(true)), h('tbody', {
         className: 'divide-y divide-gray-100'
       }, equipmentList.length === 0 ? h('tr', null, h('td', {
-        colspan: '11',
+        colspan: String(equipmentColumnCount(true)),
         className: 'text-center p-8 text-gray-400 bg-gray-50/50'
       }, '尚未加入任何設備資料')) : equipmentList.map(function (eq) {
         return renderEquipmentTableRow(eq, {
@@ -694,6 +751,23 @@
           rerender();
         },
         onSave: handleEquipSaved
+      }), equipPicker.show && h(ProjectEquipPicker, {
+        equipments: equipments,
+        customerName: formData.customerName,
+        storeName: formData.storeName,
+        addedIds: pickedSourceIds(equipmentList),
+        onConfirm: handlePickerConfirm,
+        onClose: function () {
+          equipPicker = { show: false };
+          rerender();
+        }
+      }), categoryConfirm.show && h(CategorySwitchConfirmModal, {
+        nextCategory: categoryConfirm.nextCategory,
+        onConfirm: confirmCategorySwitch,
+        onCancel: function () {
+          categoryConfirm = { show: false, nextCategory: '' };
+          rerender();
+        }
       }));
     });
   }
@@ -705,6 +779,7 @@
     var stores = props.stores;
     var customers = props.customers;
     var accounts = props.accounts || [];
+    var equipments = props.equipments || [];
     var deviceCategories = props.deviceCategories || [];
     var repairCases = props.repairCases || [];
     var setView = props.setView;
@@ -723,6 +798,8 @@
       contractors = contractors.concat([detailsData.suggestedContractor]);
     }
     var equipModal = { show: false, editingId: null, initialEquip: null };
+    var equipPicker = { show: false };
+    var categoryConfirm = { show: false, nextCategory: '' };
     var stagesData = projectStagesData(formData);
     var inputCls = IESS.inputCls;
     var fieldCls = isEdit ? inputCls : viewFieldCls;
@@ -744,22 +821,73 @@
         detailsData.serviceLevel = synced.serviceLevel || detailsData.serviceLevel || '';
       }
 
+      function applyChange(name, value) {
+        if (name.indexOf('details.') === 0) {
+          detailsData[name.slice(8)] = value;
+          if (name === 'details.workCategory') formData.workCategory = value;
+          return;
+        }
+        formData[name] = value;
+        if (name === 'customerName') {
+          detailsData.serviceLevel = CustomerUtils.getServiceLevelByCustomerName(customers, value);
+          formData.storeName = '';
+          detailsData.storeAddress = '';
+        }
+        if (name === 'storeName') {
+          syncProjectStoreFields();
+        }
+        // 換了客戶／門市後，原門市挑進來的既有設備已不適用
+        if ((name === 'customerName' || name === 'storeName') && pickedSourceIds(equipmentList).length) {
+          equipmentList = equipmentList.filter(function (eq) { return !isPickedEquip(eq); });
+          showToast('已清空原門市的設備資料', 'error');
+        }
+      }
+
+      function currentWorkCategory() {
+        return formData.workCategory || detailsData.workCategory || '';
+      }
+
       function handleChange(e) {
         var name = e.target.name;
         var value = e.target.value;
-        if (name.indexOf('details.') === 0) {
-          detailsData[name.slice(8)] = value;
-        } else {
-          formData[name] = value;
-          if (name === 'customerName') {
-            detailsData.serviceLevel = CustomerUtils.getServiceLevelByCustomerName(customers, value);
-            formData.storeName = '';
-            detailsData.storeAddress = '';
-          }
-          if (name === 'storeName') {
-            syncProjectStoreFields();
-          }
+        // 工項分類跨越「既有設備／手動填寫」兩種模式時，先確認再清空已加入的設備
+        if ((name === 'workCategory' || name === 'details.workCategory') && equipmentList.length
+          && usesEquipmentPicker(value) !== usesEquipmentPicker(currentWorkCategory())) {
+          categoryConfirm = { show: true, nextCategory: value, field: name };
+          rerender();
+          return;
         }
+        applyChange(name, value);
+        rerender();
+      }
+
+      function confirmCategorySwitch() {
+        equipmentList = [];
+        applyChange(categoryConfirm.field, categoryConfirm.nextCategory);
+        categoryConfirm = { show: false, nextCategory: '' };
+        rerender();
+      }
+
+      function openAddEquipment() {
+        if (usesEquipmentPicker(currentWorkCategory())) {
+          if (!formData.customerName || !formData.storeName) {
+            showToast('請先選擇客戶與門市', 'error');
+            return;
+          }
+          equipPicker = { show: true };
+          rerender();
+          return;
+        }
+        openEquipModal(null);
+      }
+
+      function handlePickerConfirm(picked) {
+        var stamp = Date.now();
+        equipmentList = equipmentList.concat(picked.map(function (eq, idx) {
+          return Object.assign({}, eq, { id: stamp + idx });
+        }));
+        equipPicker = { show: false };
+        showToast('已加入 ' + picked.length + ' 筆設備');
         rerender();
       }
 
@@ -973,7 +1101,7 @@
         className: 'text-lg font-bold text-blue-800'
       }, '2. 設備資料'), isEdit && h('button', {
         type: 'button',
-        onClick: function () { openEquipModal(null); },
+        onClick: openAddEquipment,
         className: 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100 px-4 py-2 rounded-md flex items-center gap-2 font-medium transition-colors border border-indigo-200'
       }, Icons.Plus({
         className: 'h-4 w-4'
@@ -1051,6 +1179,23 @@
           rerender();
         },
         onSave: handleEquipSaved
+      }), isEdit && equipPicker.show && h(ProjectEquipPicker, {
+        equipments: equipments,
+        customerName: formData.customerName,
+        storeName: formData.storeName,
+        addedIds: pickedSourceIds(equipmentList),
+        onConfirm: handlePickerConfirm,
+        onClose: function () {
+          equipPicker = { show: false };
+          rerender();
+        }
+      }), isEdit && categoryConfirm.show && h(CategorySwitchConfirmModal, {
+        nextCategory: categoryConfirm.nextCategory,
+        onConfirm: confirmCategorySwitch,
+        onCancel: function () {
+          categoryConfirm = { show: false, nextCategory: '' };
+          rerender();
+        }
       }));
     });
   }
@@ -1062,4 +1207,14 @@
   window.AddProjectForm = AddProjectForm;
   window.EditProjectForm = EditProjectForm;
   window.ProjectEquipModal = ProjectEquipModal;
+  // 供「門市 → 新增立案單」共用同一組設備表格與工項分類切換邏輯
+  window.ProjectEquipmentShared = {
+    defaultEquip: defaultEquip,
+    normalizeEquip: normalizeEquip,
+    isPickedEquip: isPickedEquip,
+    usesEquipmentPicker: usesEquipmentPicker,
+    pickedSourceIds: pickedSourceIds,
+    equipmentTable: projectEquipmentTable,
+    CategorySwitchConfirmModal: CategorySwitchConfirmModal
+  };
 })();

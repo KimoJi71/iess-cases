@@ -414,13 +414,15 @@
       case 'project-add':
         return h(AddProjectForm, {
           cases: s.projectCases, setCases: setProjectCases, stores: s.stores,
-          customers: s.customers, deviceCategories: s.deviceCategories,
+          customers: s.customers, equipments: s.equipments,
+          deviceCategories: s.deviceCategories,
           setView: setView, showToast: showToast
         });
       case 'project-edit':
         return h(EditProjectForm, {
           editingCase: s.editingCase, cases: s.projectCases, setCases: setProjectCases,
           stores: s.stores, customers: s.customers, accounts: s.accounts,
+          equipments: s.equipments,
           deviceCategories: s.deviceCategories, repairCases: s.cases,
           setView: setView, showToast: showToast
         });
@@ -495,6 +497,7 @@
           editingCase: StoreUtils.withStoreHistoryContext(s.editingCase, s.historyStore),
           cases: s.projectCases, setCases: setProjectCases,
           stores: s.stores, customers: s.customers, accounts: s.accounts,
+          equipments: s.equipments,
           deviceCategories: s.deviceCategories, repairCases: s.cases,
           setView: setView, showToast: showToast,
           backView: 'store-history',
@@ -524,7 +527,7 @@
       case 'store-project-add':
         return h(StoreProjectForm, {
           store: s.editingCase, cases: s.projectCases, setCases: setProjectCases,
-          deviceCategories: s.deviceCategories,
+          equipments: s.equipments, deviceCategories: s.deviceCategories,
           setView: setView, showToast: showToast
         });
       case 'equipment-list':

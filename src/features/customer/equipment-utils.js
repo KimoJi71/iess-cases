@@ -155,6 +155,8 @@
   // 立案單上的設備多為手動輸入，先比對 id，再以「門市＋型號＋資產編號／流水序號／區域」比對
   function matchesProjectEquip(eq, projectEq, projectCase) {
     if (!eq || !projectEq) return false;
+    // 從門市設備列表挑進立案單的設備，用來源 id 直接對上
+    if (projectEq.sourceEquipmentId != null && String(eq.id) === String(projectEq.sourceEquipmentId)) return true;
     if (projectEq.id != null && String(eq.id) === String(projectEq.id)) return true;
     if (!sameText(eq.customerName, projectCase.customerName)) return false;
     if (!sameText(eq.storeName, projectCase.storeName)) return false;
@@ -237,6 +239,8 @@
     canRemoveProjectEquipment: canRemoveProjectEquipment,
     getProjectEquipmentRemoveBlockedReason: getProjectEquipmentRemoveBlockedReason,
     getCustomerAcceptanceDate: getCustomerAcceptanceDate,
+    PROJECT_ADD_CATEGORIES: PROJECT_ADD_CATEGORIES,
+    PROJECT_RETIRE_CATEGORIES: PROJECT_RETIRE_CATEGORIES,
     applyProjectCloseToEquipments: applyProjectCloseToEquipments
   };
 })();

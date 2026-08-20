@@ -4,9 +4,8 @@
 (function () {
   'use strict';
 
+  // 欄位與「設備管理」列表一致；客戶／門市已在案件標頭，不再逐列重複
   var FIELD_DEFS = [
-    { key: 'customerName', label: '客戶名稱', caseFallback: 'customerName' },
-    { key: 'storeName', label: '門市名稱', caseFallback: 'storeName' },
     { key: 'category', label: '設備分類' },
     { key: 'brand', label: '品牌' },
     { key: 'deviceName', label: '設備名稱', altKey: 'name' },
