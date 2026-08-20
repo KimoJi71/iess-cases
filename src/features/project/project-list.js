@@ -1,6 +1,6 @@
 /*
  * features/project/project-list.js — 工程立案：立案單列表（未結案）
- * props: { cases, setCases, customers, equipments, setEquipments, setEditingCase, setView, showToast }
+ * props: { cases, setCases, customers, equipments, setEquipments, stores, setStores, setEditingCase, setView, showToast }
  */
 (function () {
   'use strict';
@@ -35,6 +35,8 @@
     var customers = props.customers;
     var equipments = props.equipments || [];
     var setEquipments = props.setEquipments;
+    var stores = props.stores;
+    var setStores = props.setStores;
     var setEditingCase = props.setEditingCase;
     var setView = props.setView;
     var showToast = props.showToast;
@@ -98,11 +100,12 @@
 
       function handleCloseProject(id) {
         var target = cases.find(function (c) { return c.id === id; });
+        var closedCase = target && Object.assign({}, target, {
+          isClosed: true,
+          closeDate: IESS.caseDateTime.now()
+        });
         setCases(cases.map(function (c) {
-          return c.id === id ? Object.assign({}, c, {
-            isClosed: true,
-            closeDate: IESS.caseDateTime.now()
-          }) : c;
+          return c.id === id && closedCase ? closedCase : c;
         }));
         closeConfirmModal = { show: false, id: null };
         // 結案後同步設備管理：新開／整裝／加裝新增設備，汰換／撤店改為已汰換
@@ -114,6 +117,14 @@
             syncMessage = synced.added
               ? '，並新增 ' + synced.added + ' 筆設備至該門市'
               : '，並將 ' + synced.retired + ' 筆設備改為已汰換';
+          }
+        }
+        // 工項分類為「撤店」時，另同步該門市的撤店日期與門市狀態
+        if (closedCase && setStores) {
+          var storeSync = StoreUtils.applyProjectCloseToStores(closedCase, stores);
+          if (storeSync.closedStore) {
+            setStores(storeSync.stores);
+            syncMessage += '，並將門市撤店日期更新為 ' + storeSync.closeDate;
           }
         }
         showToast('工程案件已結案並移至銷案審核列表' + syncMessage);

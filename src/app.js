@@ -409,6 +409,7 @@
         return h(ProjectList, {
           cases: s.projectCases, setCases: setProjectCases, customers: s.customers,
           equipments: s.equipments, setEquipments: setEquipments,
+          stores: s.stores, setStores: setStores,
           setEditingCase: setEditingCase, setView: setView, showToast: showToast
         });
       case 'project-add':

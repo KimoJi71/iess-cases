@@ -274,6 +274,36 @@
     });
   }
 
+  /* --- 「撤店」工程立案單結案時的門市同步 ---
+   * 撤店日期取歷程中的「客戶驗收」日期（同設備同步的驗收日期），沒有才退回結案日期。
+   * 門市狀態一併改為「撤店」，門市列表與保養計劃進度才會立即視為已撤店。
+   */
+  function resolveProjectCloseDate(projectCase) {
+    var entry = ((projectCase && projectCase.history) || []).find(function (item) {
+      return item && item.stage === '客戶驗收';
+    });
+    if (entry && entry.date) return String(entry.date).slice(0, 10);
+    return String((projectCase && projectCase.closeDate) || '').slice(0, 10);
+  }
+
+  function applyProjectCloseToStores(projectCase, stores) {
+    var list = (stores || []).slice();
+    var result = { stores: list, closedStore: '', closeDate: '' };
+    if (!projectCase || projectCase.workCategory !== '撤店') return result;
+    var closeDate = resolveProjectCloseDate(projectCase);
+    if (!closeDate) return result;
+    var hit = null;
+    result.stores = list.map(function (s) {
+      if (!matchesStoreRecord(projectCase, s)) return s;
+      hit = s;
+      return Object.assign({}, s, { closeDate: closeDate, storeStatus: '撤店' });
+    });
+    if (!hit) return { stores: list, closedStore: '', closeDate: '' };
+    result.closedStore = hit.storeName || '';
+    result.closeDate = closeDate;
+    return result;
+  }
+
   window.StoreUtils = {
     formatStoreArea: formatStoreArea,
     getStoreArea: getStoreArea,
@@ -293,6 +323,7 @@
     buildRepairMaintenanceHistoryRows: buildRepairMaintenanceHistoryRows,
     buildProjectHistoryRows: buildProjectHistoryRows,
     formatHistoryDateTime: formatHistoryDateTime,
-    withStoreHistoryContext: withStoreHistoryContext
+    withStoreHistoryContext: withStoreHistoryContext,
+    applyProjectCloseToStores: applyProjectCloseToStores
   };
 })();
