@@ -182,7 +182,7 @@ try {
     window.__unmount();
     return hs;
   })()`);
-  assertEq(headers, EQUIP_COLUMNS.concat(['操作']), '立案單設備表頭 = 設備管理欄位 + 操作');
+  assertEq(headers, ['操作'].concat(EQUIP_COLUMNS), '立案單設備表頭 = 操作 + 設備管理欄位');
 
   console.log('\n案件處理設備面板');
   const panelLabels = await evaluate(`(function () {
@@ -256,7 +256,7 @@ try {
     confirmBtn.click();
     var table = window.__probe().querySelector('table');
     var bodyRows = table.querySelectorAll('tbody tr');
-    var actionBtns = bodyRows[0].querySelectorAll('td:last-child button').length;
+    var actionBtns = bodyRows[0].querySelectorAll('td:first-child button').length;
     var res = {
       pickerHeaders: pickerHeaders,
       checkboxCount: boxes.length,
@@ -407,7 +407,7 @@ try {
     window.__unmount();
     return res;
   })()`);
-  assertEq(storeForm.headers, EQUIP_COLUMNS.concat(['操作']), '門市立案單設備表頭一致');
+  assertEq(storeForm.headers, ['操作'].concat(EQUIP_COLUMNS), '門市立案單設備表頭一致');
   assertEq(storeForm.pickerTitle, '選擇設備', '門市立案單：汰換 → 開選擇設備視窗');
   assertEq(storeForm.checkboxes, 2, '門市立案單：已汰換設備不可勾選');
 
@@ -448,12 +448,12 @@ try {
       headers: headers,
       pickerTitle: pickerTitle,
       rows: rows.length,
-      actionBtns: rows[0].querySelectorAll('td:last-child button').length
+      actionBtns: rows[0].querySelectorAll('td:first-child button').length
     };
     window.__unmount();
     return res;
   })()`);
-  assertEq(editForm.headers, EQUIP_COLUMNS.concat(['操作']), '編輯工程案件設備表頭一致');
+  assertEq(editForm.headers, ['操作'].concat(EQUIP_COLUMNS), '編輯工程案件設備表頭一致');
   assertEq(editForm.pickerTitle, '選擇設備', '編輯工程案件：撤店 → 開選擇設備視窗');
   assertEq(editForm.rows, 1, '加入 1 筆既有設備');
   assertEq(editForm.actionBtns, 1, '既有設備只有移除鈕');
@@ -484,7 +484,7 @@ try {
         setView: function () {}, showToast: function () {}
       }));
       var row = window.__probe().querySelector('table tbody tr');
-      var titles = Array.prototype.map.call(row.querySelectorAll('td:last-child button'), function (b) {
+      var titles = Array.prototype.map.call(row.querySelectorAll('td:first-child button'), function (b) {
         return b.getAttribute('title') || b.getAttribute('aria-label') || b.textContent.trim();
       });
       window.__unmount();

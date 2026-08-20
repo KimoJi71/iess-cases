@@ -246,7 +246,6 @@
   function renderEquipmentTableRow(eq, p) {
     var picked = isPickedEquip(eq);
     return h('tr', { key: eq.id, className: 'hover:bg-gray-50' },
-      EquipmentUtils.renderListDataCells(h, eq),
       (p.onEdit || p.onDelete) ? h('td', { className: 'p-3 text-center' },
         h('div', { className: 'flex items-center justify-center gap-1' },
           // 既有設備是設備管理的快照，只提供移除
@@ -258,14 +257,15 @@
           }, Icons.Edit({ className: 'h-4 w-4' })),
           p.onDelete && iconActionBtn({ label: '移除此設備', type: 'button',
             onClick: function () { p.onDelete(eq.id); },
-            className: 'p-1.5 text-red-500 hover:bg-red-100 rounded transition-colors', icon: Icons.Trash2({ className: 'h-4 w-4' }) }))) : null);
+            className: 'p-1.5 text-red-500 hover:bg-red-100 rounded transition-colors', icon: Icons.Trash2({ className: 'h-4 w-4' }) }))) : null,
+      EquipmentUtils.renderListDataCells(h, eq));
   }
 
   // 表頭與「設備管理」列表一致
   function equipmentTableHeaders(includeActions) {
     return h('tr', null,
-      EquipmentUtils.renderListHeaderCells(h),
-      includeActions ? h('th', { className: 'p-3 font-semibold text-center w-24' }, '操作') : null);
+      includeActions ? h('th', { className: 'p-3 font-semibold text-center w-24' }, '操作') : null,
+      EquipmentUtils.renderListHeaderCells(h));
   }
 
   function equipmentColumnCount(includeActions) {
