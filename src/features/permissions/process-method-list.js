@@ -32,6 +32,7 @@
     var keyword = '';
     var appliedKeyword = '';
     var deleteModal = { show: false, id: null, label: '' };
+    var importMenuOpen = false;
     var listPagination = IESS.createListPagination();
 
     function getFilteredMethods() {
@@ -57,6 +58,42 @@
 
       function handleSearch() { appliedKeyword = keyword; listPagination.resetPage(); rerender(); }
       function handleKeyDown(e) { if (e.key === 'Enter') handleSearch(); }
+
+      function handleDownloadTemplate() {
+        importMenuOpen = false;
+        showToast('匯入範例檔案下載成功（demo）');
+        rerender();
+      }
+
+      function handleImport() {
+        importMenuOpen = false;
+        var stamp = Date.now();
+        var demoRows = [
+          {
+            category1: '零件類', category2: '商用分離式', category3: '壓縮機',
+            specification: '8馬力', unit: '台', brand: '日立',
+            productCode: 'IMP0001', model: '2HA20088A', points: 5
+          },
+          {
+            category1: '保養類', category2: '箱型機', category3: '濾網清洗',
+            specification: '標準', unit: '式', brand: '大金',
+            productCode: 'IMP0002', model: 'FVQ100', points: 3
+          },
+          {
+            category1: '維修工資', category2: '通用', category3: '冷媒充填',
+            specification: 'R410A', unit: '式', brand: '',
+            productCode: 'IMP0003', model: '', points: 8
+          }
+        ];
+        var imported = demoRows.map(function (row, idx) {
+          return Object.assign({}, row, {
+            id: 'PM' + (stamp + idx),
+            createdDate: todayDate
+          });
+        });
+        setProcessMethods(processMethods.concat(imported));
+        showToast('已匯入 ' + imported.length + ' 筆處理方式與積分');
+      }
 
       function handleDelete(id) {
         var target = processMethods.find(function (pm) { return pm.id === id; });
@@ -96,12 +133,45 @@
               className: 'flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-md shadow-sm transition-colors'
             }, Icons.Search({ className: 'h-4 w-4' }), ' 搜尋')
           ),
+          h('div', { className: 'flex items-center gap-2 shrink-0' },
+          h('div', { className: 'relative' },
+            importMenuOpen && h('div', {
+              className: 'fixed inset-0 z-10',
+              onClick: function () { importMenuOpen = false; rerender(); }
+            }),
+            iconActionBtn({
+              label: '匯入',
+              wrapperClassName: 'relative z-20',
+              className: 'flex items-center justify-center bg-white hover:bg-gray-50 text-blue-600 border border-blue-200 p-2.5 rounded-full shadow-sm transition-colors shrink-0',
+              onClick: function (e) {
+                e.stopPropagation();
+                importMenuOpen = !importMenuOpen;
+                rerender();
+              },
+              icon: Icons.Download({ className: 'h-5 w-5' })
+            }),
+            importMenuOpen && h('div', {
+              className: 'absolute right-0 mt-1 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-20 py-1'
+            },
+              h('button', {
+                type: 'button',
+                className: 'w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 whitespace-nowrap',
+                onClick: handleDownloadTemplate
+              }, '下載匯入範例'),
+              h('button', {
+                type: 'button',
+                className: 'w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 whitespace-nowrap',
+                onClick: handleImport
+              }, '匯入處理方式與積分')
+            )
+          ),
           iconActionBtn({
             label: '新增處理方式與積分',
             className: 'flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white p-2.5 rounded-full shadow-sm transition-colors shrink-0',
             onClick: function () { setEditingCase(null); setView('process-method-add'); },
             icon: Icons.Plus({ className: 'h-5 w-5' })
           })
+          )
         ),
         h('div', {
           className: 'overflow-x-auto border rounded-lg'
