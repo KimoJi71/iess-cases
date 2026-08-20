@@ -139,7 +139,7 @@
       return h("div", {
         className: "bg-white p-6 rounded-lg shadow-sm border border-gray-100"
       }, h("div", {
-        className: "bg-gray-50 p-4 rounded-lg mb-6 border border-gray-200"
+        className: "bg-gray-50 p-4 rounded-lg border border-gray-200 mb-6"
       }, h("div", {
         className: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 items-end"
       }, h("div", { className: "min-w-0" }, h("label", {

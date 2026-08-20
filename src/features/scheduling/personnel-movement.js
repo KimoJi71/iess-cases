@@ -106,16 +106,17 @@
       setTimeout(function () { refreshCalendar(); }, 0);
 
       return h('div', { className: 'bg-white p-6 rounded-lg shadow-sm border border-gray-100' },
-        h('div', { className: 'flex flex-wrap items-end gap-3 mb-6' },
-          h('div', null,
+        h('div', { className: 'bg-gray-50 p-4 rounded-lg border border-gray-200 mb-6' },
+        h('div', { className: 'flex flex-wrap items-end gap-3' },
+          h('div', { className: 'min-w-0' },
             h('label', { className: 'block text-xs text-gray-500 mb-1' }, '指定日期'),
             h('input', {
               type: 'date', value: calDate,
               onChange: function (e) { calDate = e.target.value; rerender(); },
-              className: 'p-2.5 border rounded-md outline-none'
+              className: 'p-2.5 border rounded-md outline-none bg-white'
             })
           ),
-          h('div', null,
+          h('div', { className: 'min-w-0' },
             h('label', { className: 'block text-xs text-gray-500 mb-1' }, '組別'),
             h('select', {
               value: calAssignee,
@@ -130,9 +131,9 @@
           ),
           h('button', {
             onClick: handleSearch,
-            className: 'px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center gap-1'
+            className: 'px-5 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center gap-1.5 min-h-[42px]'
           }, Icons.Search({ className: 'h-4 w-4' }), '查詢')
-        ),
+        )),
 
         h('div', {
           className: 'min-h-[480px] border border-gray-200 rounded-lg p-2 bg-white mb-6',

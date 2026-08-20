@@ -155,34 +155,49 @@
       return h('div', {
         className: 'bg-white p-6 rounded-lg shadow-sm border border-gray-100'
       },
-        h('div', { className: 'flex flex-wrap items-center gap-3 mb-6 pb-6 border-b' },
-          Icons.Calendar({ className: 'h-5 w-5 text-gray-500' }),
-          h('span', { className: 'font-medium text-gray-700' }, '查詢區間：'),
-          h('input', {
-            type: 'date',
-            value: startDate,
-            onChange: function (e) { startDate = e.target.value; rerender(); },
-            className: 'p-2.5 border rounded-md outline-none'
-          }),
-          h('span', { className: 'text-gray-500' }, '至'),
-          h('input', {
-            type: 'date',
-            value: endDate,
-            onChange: function (e) { endDate = e.target.value; rerender(); },
-            className: 'p-2.5 border rounded-md outline-none'
-          }),
-          h('input', {
-            type: 'text',
-            value: keyword,
-            onChange: function (e) { keyword = e.target.value; rerender(); },
-            onKeyDown: handleKeyDown,
-            placeholder: '請輸入關鍵字',
-            className: 'w-64 p-2.5 border rounded-md outline-none'
-          }),
-          h('button', {
-            onClick: handleSearch,
-            className: 'bg-blue-600 text-white px-4 py-2 rounded-md flex items-center gap-2 transition-colors hover:bg-blue-700'
-          }, Icons.Search({ className: 'h-4 w-4' }), ' 搜尋')
+        h('div', {
+          className: 'bg-gray-50 p-4 rounded-lg border border-gray-200 mb-6'
+        },
+          h('div', {
+            className: 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-end'
+          },
+            h('div', { className: 'min-w-0' },
+              h('label', { className: 'block text-xs text-gray-500 mb-1' }, '開始日期'),
+              h('input', {
+                type: 'date',
+                value: startDate,
+                onChange: function (e) { startDate = e.target.value; rerender(); },
+                className: 'w-full p-2.5 border rounded-md outline-none bg-white'
+              })
+            ),
+            h('div', { className: 'min-w-0' },
+              h('label', { className: 'block text-xs text-gray-500 mb-1' }, '結束日期'),
+              h('input', {
+                type: 'date',
+                value: endDate,
+                onChange: function (e) { endDate = e.target.value; rerender(); },
+                className: 'w-full p-2.5 border rounded-md outline-none bg-white'
+              })
+            ),
+            h('div', { className: 'min-w-0' },
+              h('label', { className: 'block text-xs text-gray-500 mb-1' }, '關鍵字'),
+              h('input', {
+                type: 'text',
+                value: keyword,
+                onChange: function (e) { keyword = e.target.value; rerender(); },
+                onKeyDown: handleKeyDown,
+                placeholder: '請輸入關鍵字',
+                className: 'w-full p-2.5 border rounded-md outline-none bg-white'
+              })
+            ),
+            h('div', { className: 'min-w-0 flex items-end' },
+              h('button', {
+                type: 'button',
+                onClick: handleSearch,
+                className: 'w-full xl:w-auto bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-md flex items-center justify-center gap-1.5 whitespace-nowrap min-h-[42px] transition-colors'
+              }, Icons.Search({ className: 'h-4 w-4 shrink-0' }), '搜尋')
+            )
+          )
         ),
         h('div', {
           className: 'overflow-x-auto border rounded-lg'

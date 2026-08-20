@@ -790,7 +790,10 @@
         { className: 'bg-white p-6 rounded-lg shadow-sm border border-gray-100' },
         h(
           'div',
-          { className: 'flex flex-col lg:flex-row lg:items-end lg:justify-between mb-6 gap-4' },
+          { className: 'flex flex-col lg:flex-row lg:items-start lg:justify-between mb-6 gap-4' },
+          h(
+            'div',
+            { className: 'bg-gray-50 p-4 rounded-lg border border-gray-200 flex-1' },
           h(
             'div',
             { className: 'flex flex-wrap items-end gap-3' },
@@ -851,13 +854,13 @@
             assignee && snapshot
               ? h(
                   'div',
-                  { className: TOOLBAR_CONTROL + ' border-transparent bg-gray-50 text-sm text-gray-500 flex items-center whitespace-nowrap' },
+                  { className: TOOLBAR_CONTROL + ' border-transparent bg-white text-sm text-gray-500 flex items-center whitespace-nowrap' },
                   '共 ',
                   h('span', { className: 'font-semibold text-gray-700 mx-1' }, String(rows.length)),
                   ' 位客戶'
                 )
               : null
-          ),
+          )),
           // 兩顆動作鈕維持同一種外框樣式與高度，才不會一顆圓形 icon、一顆方形文字鈕各走各的
           h(
             'div',

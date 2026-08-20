@@ -315,6 +315,7 @@
 
       return h('div', null,
         h('div', { className: 'bg-white p-6 rounded-lg shadow-sm border border-gray-100 mb-6' },
+          h('div', { className: 'bg-gray-50 p-4 rounded-lg border border-gray-200' },
           h('div', { className: 'flex flex-wrap gap-2 mb-5' },
             DataRetrievalUtils.CASE_TYPES.map(function (type) {
               var active = caseType === type;
@@ -335,7 +336,7 @@
             : caseType === '維修' ? renderRepairFilters()
               : renderMaintenanceFilters(),
 
-          h('div', { className: 'flex flex-wrap gap-3 mt-5 pt-5 border-t border-gray-100' },
+          h('div', { className: 'flex flex-wrap gap-3 mt-5 pt-5 border-t border-gray-200' },
             h('button', {
               type: 'button',
               onClick: handleSearch,
@@ -351,6 +352,7 @@
                   : 'bg-gray-200 text-gray-400 cursor-not-allowed'
               )
             }, Icons.Download({ className: 'h-4 w-4' }), '匯出 CSV')
+          )
           )
         ),
 

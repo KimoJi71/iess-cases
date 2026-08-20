@@ -141,13 +141,14 @@
           wrapperClass: 'flex justify-between items-center p-6 border-b border-gray-200'
         }),
         h('div', { className: 'p-6' },
-          h('div', { className: 'flex flex-col gap-3 mb-6 pb-6 border-b' },
+          h('div', { className: 'bg-gray-50 p-4 rounded-lg border border-gray-200 mb-6' },
+            h('div', { className: 'flex flex-col gap-3' },
             h('div', { className: 'flex flex-wrap gap-2' },
               caseTypeFilterBtn('repair-maintenance', '叫修 / 保養'),
               caseTypeFilterBtn('project', '工程')
             ),
             h('div', { className: 'flex flex-wrap items-end gap-3' },
-            h('div', null,
+            h('div', { className: 'min-w-0' },
               h('label', { className: 'block text-xs text-gray-500 mb-1' }, '開始日期'),
               h('input', {
                 type: 'date',
@@ -157,7 +158,7 @@
                 className: 'p-2.5 border rounded-md outline-none bg-white'
               })
             ),
-            h('div', null,
+            h('div', { className: 'min-w-0' },
               h('label', { className: 'block text-xs text-gray-500 mb-1' }, '結束日期'),
               h('input', {
                 type: 'date',
@@ -167,20 +168,22 @@
                 className: 'p-2.5 border rounded-md outline-none bg-white'
               })
             ),
-            h('div', null,
+            h('div', { className: 'min-w-0' },
+              h('label', { className: 'block text-xs text-gray-500 mb-1' }, '關鍵字'),
               h('input', {
                 type: 'text',
                 value: keyword,
                 onChange: function (e) { keyword = e.target.value; rerender(); },
                 onKeyDown: handleKeyDown,
                 placeholder: '請輸入關鍵字',
-                className: 'w-64 p-2.5 border rounded-md outline-none bg-white'
+                className: 'w-64 max-w-full p-2.5 border rounded-md outline-none bg-white'
               })
             ),
             h('button', {
               onClick: handleSearch,
-              className: 'flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-md shadow-sm transition-colors'
+              className: 'flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-md shadow-sm transition-colors min-h-[42px]'
             }, Icons.Search({ className: 'h-4 w-4' }), ' 搜尋')
+            )
             )
           ),
           h('div', {

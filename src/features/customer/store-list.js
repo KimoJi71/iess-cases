@@ -129,9 +129,10 @@
       }
 
       return h('div', { className: 'bg-white p-6 rounded-lg shadow-sm border border-gray-100' },
-        h('div', { className: 'flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4' },
+        h('div', { className: 'flex flex-col md:flex-row justify-between items-start mb-6 gap-4' },
+          h('div', { className: 'bg-gray-50 p-4 rounded-lg border border-gray-200 flex-1' },
           h('div', { className: 'flex flex-wrap items-end gap-3' },
-            h('div', null,
+            h('div', { className: 'min-w-0' },
               h('label', { className: 'block text-xs text-gray-500 mb-1' }, '客戶名稱 ',
                 h('span', { className: 'text-red-500' }, '*')),
               h('select', {
@@ -143,7 +144,7 @@
                   keyword = '';
                   listPagination.resetPage();
                 },
-                className: 'w-56 p-2.5 border rounded-md outline-none bg-white'
+                className: 'w-56 max-w-full p-2.5 border rounded-md outline-none bg-white'
               },
                 h('option', { value: '' }, '請選擇客戶'),
                 customerSelectOptions.map(function (name) {
@@ -151,7 +152,8 @@
                 })
               )
             ),
-            h('div', null,
+            h('div', { className: 'min-w-0' },
+              h('label', { className: 'block text-xs text-gray-500 mb-1' }, '關鍵字'),
               h('input', {
                 type: 'text',
                 value: keyword,
@@ -159,15 +161,15 @@
                 onKeyDown: handleKeyDown,
                 placeholder: '請輸入關鍵字',
                 disabled: !storeCustomer,
-                className: 'w-60 p-2.5 border rounded-md outline-none disabled:bg-gray-100'
+                className: 'w-60 max-w-full p-2.5 border rounded-md outline-none bg-white disabled:bg-gray-100'
               })
             ),
             h('button', {
               onClick: handleSearch,
               disabled: !storeCustomer,
-              className: 'flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-md shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
+              className: 'flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-md shadow-sm transition-colors min-h-[42px] disabled:opacity-50 disabled:cursor-not-allowed'
             }, Icons.Search({ className: 'h-4 w-4' }), ' 搜尋')
-          ),
+          )),
           h('div', { className: 'flex items-center gap-2 shrink-0' },
             h('div', { className: 'relative' },
               importMenuOpen && h('div', {

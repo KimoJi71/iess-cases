@@ -227,7 +227,8 @@
       function handleKeyDown(e) { if (e.key === 'Enter') handleSearch(); }
 
       return h('div', { className: 'bg-white p-6 rounded-lg shadow-sm border border-gray-100' },
-        h('div', { className: 'flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4' },
+        h('div', { className: 'flex flex-col md:flex-row justify-between items-start mb-6 gap-4' },
+          h('div', { className: 'bg-gray-50 p-4 rounded-lg border border-gray-200 flex-1' },
           h('div', { className: 'flex flex-col gap-3' },
             h('div', { className: 'flex flex-wrap gap-2' },
               [ALL_STATUS].concat(CASE_LIST_STATUS_FILTERS).map(function (status) {
@@ -235,14 +236,15 @@
               })
             ),
             h('div', { className: 'flex flex-wrap items-end gap-3' },
-              h('div', null,
+              h('div', { className: 'min-w-0' },
+                h('label', { className: 'block text-xs text-gray-500 mb-1' }, '關鍵字'),
                 h('input', {
                   type: 'text',
                   value: keyword,
                   onChange: function (e) { keyword = e.target.value; rerender(); },
                   onKeyDown: handleKeyDown,
                   placeholder: '請輸入關鍵字',
-                  className: 'w-80 max-w-full p-2.5 border rounded-md outline-none'
+                  className: 'w-80 max-w-full p-2.5 border rounded-md outline-none bg-white'
                 })
               ),
               h('button', {
@@ -259,7 +261,7 @@
                 className: 'px-4 py-2.5 border rounded-md text-gray-600 hover:bg-gray-50 transition-colors'
               }, '清除')
             )
-          ),
+          )),
           iconActionBtn({
             label: '新增叫修案件',
             className: 'flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white p-2.5 rounded-full shadow-sm transition-colors shrink-0',
