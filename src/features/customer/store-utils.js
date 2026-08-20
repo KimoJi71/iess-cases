@@ -275,15 +275,16 @@
   }
 
   /* --- 「撤店」工程立案單結案時的門市同步 ---
-   * 撤店日期取歷程中的「客戶驗收」日期（同設備同步的驗收日期），沒有才退回結案日期。
+   * 撤店日期取結案單的「結案日期」，沒有才退回歷程中的「客戶驗收」日期。
    * 門市狀態一併改為「撤店」，門市列表與保養計劃進度才會立即視為已撤店。
    */
   function resolveProjectCloseDate(projectCase) {
+    var closeDate = String((projectCase && projectCase.closeDate) || '').slice(0, 10);
+    if (closeDate) return closeDate;
     var entry = ((projectCase && projectCase.history) || []).find(function (item) {
       return item && item.stage === '客戶驗收';
     });
-    if (entry && entry.date) return String(entry.date).slice(0, 10);
-    return String((projectCase && projectCase.closeDate) || '').slice(0, 10);
+    return entry && entry.date ? String(entry.date).slice(0, 10) : '';
   }
 
   function applyProjectCloseToStores(projectCase, stores) {
