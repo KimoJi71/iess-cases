@@ -644,7 +644,8 @@
           stores: s.stores,
           performanceAreas: s.performanceAreas,
           serviceLevels: s.serviceLevels,
-          customers: s.customers
+          customers: s.customers,
+          accounts: s.accounts
         });
       case 'data-retrieval':
         return h(DataRetrieval, {

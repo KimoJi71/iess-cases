@@ -20,6 +20,16 @@ const ASSIGNEE_MEMBER_LABELS = {};
 // 組別名稱 → 成員名單（頓號分隔），供組別下拉以 hint 顯示。
 const ASSIGNEE_GROUP_HINTS = {};
 const ACCOUNT_ROLE_OPTIONS = ['課長', '副課長', '課員', '實習生'];
+// 案件總積分分配到組別時的職務權重：積分依「指派人員」的職務比例分配。
+// 不在表內的職務（空白、或未來新增的職稱）視為 1，仍參與分配，
+// 免得整案積分因為一個沒對到的職稱而憑空縮水。
+const ACCOUNT_ROLE_POINT_WEIGHTS = {
+  '課長': 5,
+  '副課長': 4,
+  '課員': 2,
+  '實習生': 1
+};
+const DEFAULT_ACCOUNT_ROLE_POINT_WEIGHT = 1;
 const CUSTOMER_OPTIONS = ['屈臣氏', '星巴克', '萊爾富', '統一超商', '全家便利商店'];
 const STORE_OPTIONS = ['台北信義店', '台中旗艦店', '高雄左營店', '站前店', '中山店'];
 const REPORTER_OPTIONS = ['林店長', '陳副理', '王專員', '張小姐', '李先生'];

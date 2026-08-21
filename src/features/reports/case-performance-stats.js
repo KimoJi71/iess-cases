@@ -3,7 +3,7 @@
  * props: {
  *   cases, maintenanceCases, assignees,
  *   maintenanceAllocations, maintenanceAllocationYears,
- *   stores, performanceAreas, serviceLevels, customers
+ *   stores, performanceAreas, serviceLevels, customers, accounts
  * }
  */
 (function () {
@@ -59,6 +59,13 @@
     svg.appendChild(label);
 
     return svg;
+  }
+
+  // 積分依職務權重分配後常是循環小數（13 × 2/3），直接印會是一長串浮點數。
+  // 計算端不取整以保證各組加總等於案件總積分，只在顯示時收到小數點一位。
+  function formatPoints(value) {
+    var n = Math.round((Number(value) || 0) * 10) / 10;
+    return String(n);
   }
 
   function RingStatCard(props) {
@@ -117,7 +124,7 @@
             '增額積分'
           ),
           h('span', { className: 'text-sky-700 font-bold text-base' },
-            String(bonusPoints),
+            formatPoints(bonusPoints),
             h('span', { className: 'text-xs font-medium ml-0.5' }, '分')
           )
         )
@@ -128,7 +135,10 @@
   function CasePerformanceStats(props) {
     var cases = props.cases || [];
     var maintenanceCases = props.maintenanceCases || [];
-    var assignees = (props.assignees || []).filter(function (a) {
+    // 組別主檔全量：積分權重要查得到案件上任何一個組別的成員，
+    // 不能只看被 PERFORMANCE_ASSIGNEES 篩剩下、會出現在畫面上的那幾組。
+    var allAssignees = props.assignees || [];
+    var assignees = allAssignees.filter(function (a) {
       return PERFORMANCE_ASSIGNEES.indexOf(a.name) !== -1;
     });
     var allocations = props.maintenanceAllocations || [];
@@ -137,6 +147,7 @@
     var serviceLevels = props.serviceLevels || [];
     var allocationYears = props.maintenanceAllocationYears || [];
     var customers = props.customers || [];
+    var accounts = props.accounts || [];
     var now = new Date();
     var quarter = PerformanceUtils.getQuarterRange(now);
     var currentMonth = now.getMonth() + 1;
@@ -159,6 +170,8 @@
       assignees: assignees,
       allocations: allocations,
       serviceLevels: serviceLevels,
+      accounts: accounts,
+      assigneeProfiles: allAssignees,
       quarter: quarter
     });
 

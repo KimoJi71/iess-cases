@@ -122,8 +122,14 @@
     var assignees = input.assignees || [];
     var allocations = input.allocations || [];
     var serviceLevels = input.serviceLevels || [];
+    var accounts = input.accounts || [];
     var quarter = input.quarter;
     var months = getQuarterMonths(quarter);
+    // 積分依「指派人員」的職務比例分到各組，需要帳號主檔（職務）與組別主檔（成員）。
+    var assigneeProfiles = input.assigneeProfiles || assignees;
+    var bonusContext = accounts.length
+      ? { accounts: accounts, assignees: assigneeProfiles }
+      : null;
 
     return assignees.map(function (assignee) {
       var completed = 0;
@@ -139,7 +145,7 @@
         if (!c.isPerformanceIncluded) return;
         if (!isDateInRange(getRepairCaseDate(c), quarter.start, quarter.end)) return;
         if (!isBonusEligible(c, serviceLevels)) return;
-        bonusPoints += CaseAssigneeUtils.computeBonusPointsForAssignee(c, assignee.name);
+        bonusPoints += CaseAssigneeUtils.computeBonusPointsForAssignee(c, assignee.name, bonusContext);
       });
 
       var target = sumAllocationTargets(allocations, {

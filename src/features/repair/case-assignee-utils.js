@@ -147,12 +147,67 @@
     return total;
   }
 
-  function computeBonusPointsForAssignee(record, assigneeName) {
+  // options.js 的權重表是 const 宣告，不會掛在 window 上，只能用裸識別字讀；
+  // typeof 守衛是給沒載入 options.js 的驗證腳本用的。
+  function getRolePointWeight(role) {
+    var table = typeof ACCOUNT_ROLE_POINT_WEIGHTS !== 'undefined'
+      ? ACCOUNT_ROLE_POINT_WEIGHTS : {};
+    var fallback = typeof DEFAULT_ACCOUNT_ROLE_POINT_WEIGHT !== 'undefined'
+      ? DEFAULT_ACCOUNT_ROLE_POINT_WEIGHT : 1;
+    var w = table[role];
+    return Number(w) >= 0 ? Number(w) : (Number(fallback) >= 0 ? Number(fallback) : 1);
+  }
+
+  /**
+   * 一個組別在這筆案件裡的職務權重。
+   * 取該案「指派人員」中屬於這組的成員；該組一個都沒被指派到（或整案都沒選人員）時，
+   * 退回用該組主檔的全體成員計算——組別既然被選上就該分到積分，
+   * 不能因為沒細選人員而變 0。
+   */
+  function groupRoleWeight(record, groupName, ctx) {
+    var accountById = ctx.accountById;
+    var group = (ctx.assignees || []).find(function (a) { return a.name === groupName; });
+    var groupMemberIds = (group && Array.isArray(group.memberIds)) ? group.memberIds : [];
+    var picked = getAssigneeMemberIds(record).filter(function (id) {
+      return groupMemberIds.indexOf(id) !== -1;
+    });
+    var ids = picked.length ? picked : groupMemberIds;
+    var total = 0;
+    ids.forEach(function (id) {
+      var account = accountById[id];
+      if (!account) return;
+      total += getRolePointWeight(account.role);
+    });
+    return total;
+  }
+
+  /**
+   * 這筆案件的總積分該分給某個組別多少。
+   * 積分歸組別所有，但比例由「指派人員」的職務決定（課長 5／副課長 4／課員 2／實習生 1）。
+   * ctx: { accounts, assignees }；未給 ctx、或所有組別權重都算不出來（帳號查無、
+   * 組別沒有成員）時退回各組平分，維持舊行為，避免積分整筆消失。
+   */
+  function computeBonusPointsForAssignee(record, assigneeName, ctx) {
     if (!record || !assigneeName) return 0;
     var formal = getPerformanceAssignees(record);
     if (formal.indexOf(assigneeName) === -1) return 0;
     var n = formal.length;
-    return n > 0 ? sumProcessPoints(record) / n : 0;
+    if (n <= 0) return 0;
+    var total = sumProcessPoints(record);
+
+    if (!ctx || !ctx.accounts || !ctx.assignees) return total / n;
+
+    var accountById = {};
+    ctx.accounts.forEach(function (a) { accountById[a.id] = a; });
+    var lookup = { accountById: accountById, assignees: ctx.assignees };
+
+    var weights = formal.map(function (name) {
+      return groupRoleWeight(record, name, lookup);
+    });
+    var weightSum = weights.reduce(function (acc, w) { return acc + w; }, 0);
+    if (weightSum <= 0) return total / n;
+
+    return total * (weights[formal.indexOf(assigneeName)] / weightSum);
   }
 
   window.CaseAssigneeUtils = {
@@ -173,6 +228,7 @@
     normalizeMaintenanceCase: normalizeMaintenanceCase,
     formatMaintenanceAssignees: formatMaintenanceAssignees,
     sumProcessPoints: sumProcessPoints,
+    getRolePointWeight: getRolePointWeight,
     computeBonusPointsForAssignee: computeBonusPointsForAssignee
   };
 })();
