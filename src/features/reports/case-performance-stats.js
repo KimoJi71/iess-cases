@@ -86,11 +86,10 @@
       ),
       h('div', { className: 'px-5 pt-5 pb-4' },
         h('p', { className: 'text-slate-500 text-sm mb-2 text-center' },
-          props.subtitle || '本季保養目標達成率'),
+          props.subtitle || null),
         createRingSvg(rate, theme, title),
         h('div', {
-          className: 'mt-4 grid gap-2 text-center text-xs text-slate-500 ' +
-            (showBonus ? 'grid-cols-3' : 'grid-cols-2')
+          className: 'mt-4 grid grid-cols-2 gap-2 text-center text-xs text-slate-500'
         },
           h('div', null,
             h('div', null, '目標店數'),
@@ -101,11 +100,20 @@
             h('div', null, '完成店數'),
             h('div', { className: 'text-slate-900 font-bold text-base mt-0.5' },
               String(completed))
+          )
+        ),
+        // 增額積分不是店數，單位與計算基礎都和上面兩欄不同，
+        // 所以獨立成一列並用分隔線切開，避免被誤讀成第三個店數欄位。
+        showBonus && h('div', {
+          className: 'mt-3 pt-3 border-t border-slate-100 flex items-center justify-between'
+        },
+          h('span', { className: 'inline-flex items-center gap-1.5 text-xs text-slate-500' },
+            h('span', { className: 'w-1.5 h-1.5 rounded-full bg-sky-500' }),
+            '增額積分'
           ),
-          showBonus && h('div', null,
-            h('div', null, '增額積分'),
-            h('div', { className: 'text-sky-700 font-bold text-base mt-0.5' },
-              String(bonusPoints))
+          h('span', { className: 'text-sky-700 font-bold text-base' },
+            String(bonusPoints),
+            h('span', { className: 'text-xs font-medium ml-0.5' }, '分')
           )
         )
       )
