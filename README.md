@@ -28,6 +28,7 @@ src/
 │   │   ├── case-record.js   叫修案件紀錄（日期查詢）
 │   │   ├── case-review.js   案件銷案審核
 │   │   ├── case-view.js     案件唯讀明細
+│   │   ├── case-pdf.js      案件明細／保養明細 PDF 匯出（列表操作欄「下載 PDF」）
 │   │   └── maintenance.js   保養計劃進度（依客戶保養區間列示 + 檢視／編輯）
 │   ├── project/      工程服務：工程立案／現勘表收集
 │   │   ├── project-list.js     工程立案列表

@@ -340,6 +340,8 @@
         return h(CaseList, {
           cases: s.cases, setCases: setCasesData, stores: s.stores, setStores: setStores,
           customers: s.customers,
+          processMethods: s.processMethods, deviceCategories: s.deviceCategories,
+          vehicles: s.vehicles, vendors: s.vendors,
           setEditingCase: setEditingCase, setView: setView, showToast: showToast,
           statusFilter: s.statusFilter, setStatusFilter: setStatusFilter
         });
@@ -388,7 +390,7 @@
         return h(MaintenanceList, {
           cases: s.maintenanceCases, setCases: setMaintenanceCases,
           stores: s.stores, setStores: setStores, customers: s.customers,
-          serviceLevels: s.serviceLevels,
+          serviceLevels: s.serviceLevels, vendors: s.vendors,
           setViewingCase: setViewingCase, setEditingCase: setEditingCase,
           setView: setView, showToast: showToast
         });

@@ -69,6 +69,23 @@
     var setEditingCase = props.setEditingCase;
     var setView = props.setView;
     var showToast = props.showToast;
+    var vendors = props.vendors || [];
+
+    function handleExportPdf(c) {
+      if (typeof exportMaintenancePdf !== 'function') {
+        showToast('PDF 匯出功能尚未載入', 'error');
+        return;
+      }
+      showToast('正在產生 PDF…');
+      exportMaintenancePdf(c, {
+        stores: stores,
+        customers: customers,
+        vendors: vendors,
+        onError: function (msg) { showToast(msg || 'PDF 匯出失敗', 'error'); }
+      }).then(function () {
+        showToast('PDF 已下載：' + [c.customerName, c.storeName].filter(Boolean).join(' '));
+      }).catch(function () { /* onError 已提示 */ });
+    }
 
     var filterMonthStart = currentMonthStr;
     var filterMonthEnd = currentMonthStr;
@@ -199,7 +216,7 @@
       }, h("thead", {
         className: "bg-gray-50 text-gray-700 border-b"
       }, h("tr", null, h("th", {
-        className: "p-3 font-semibold text-center min-w-[88px]"
+        className: "p-3 font-semibold text-center w-px whitespace-nowrap"
       }, "操作"), h("th", {
         className: "p-3 font-semibold"
       }, "客戶名稱"), h("th", {
@@ -239,7 +256,7 @@
         }, h("td", {
           className: "p-3"
         }, h("div", {
-          className: "flex items-center justify-center flex-wrap gap-1"
+          className: "flex items-center justify-center flex-nowrap gap-1"
         }, h("button", {
           onClick: function () {
             setEditingCase(c);
@@ -260,6 +277,13 @@
           className: "p-1.5 text-green-600 hover:bg-green-100 rounded disabled:text-gray-300 disabled:hover:bg-transparent disabled:cursor-not-allowed",
           title: canClose ? "案件結案" : "保養完成後方可結案"
         }, Icons.CheckCircle({
+          className: "h-4 w-4"
+        })), h("button", {
+          type: "button",
+          onClick: function () { handleExportPdf(c); },
+          className: "p-1.5 text-emerald-600 hover:bg-emerald-100 rounded",
+          title: "下載 PDF"
+        }, Icons.Download({
           className: "h-4 w-4"
         })))), h("td", {
           className: "p-3 font-medium text-gray-800"

@@ -56,6 +56,10 @@
     var showToast = props.showToast;
     var statusFilter = props.statusFilter;
     var setStatusFilter = props.setStatusFilter;
+    var processMethods = props.processMethods || [];
+    var deviceCategories = props.deviceCategories || [];
+    var vehicles = props.vehicles || [];
+    var vendors = props.vendors || [];
 
     var closeConfirmModal = { show: false, caseId: null, mode: 'close' };
     var listPagination = IESS.createListPagination();
@@ -153,6 +157,23 @@
       showToast('案件已完成，已自案件處理列表移除');
     }
 
+    function handleExportPdf(c) {
+      if (typeof exportCasePdf !== 'function') {
+        showToast('PDF 匯出功能尚未載入', 'error');
+        return;
+      }
+      showToast('正在產生 PDF…');
+      exportCasePdf(c, {
+        processMethods: processMethods,
+        deviceCategories: deviceCategories,
+        vehicles: vehicles,
+        vendors: vendors,
+        onError: function (msg) { showToast(msg || 'PDF 匯出失敗', 'error'); }
+      }).then(function () {
+        showToast('PDF 已下載：' + (c.caseNumber || '案件明細'));
+      }).catch(function () { /* onError 已提示 */ });
+    }
+
     function getIndicatorColor(c) {
       return caseStatus.getCaseListIndicatorClass(c, customers);
     }
@@ -191,6 +212,13 @@
           icon: Icons.CheckCircle({ className: 'h-4 w-4' })
         }));
       }
+
+      actions.push(iconActionBtn({
+        label: '下載 PDF',
+        className: 'p-1.5 text-emerald-600 hover:bg-emerald-100 rounded',
+        onClick: function () { handleExportPdf(c); },
+        icon: Icons.Download({ className: 'h-4 w-4' })
+      }));
 
       actions.push(iconActionBtn({
         label: '複製URL',
@@ -275,7 +303,7 @@
           h('table', { className: 'w-full text-left text-sm text-gray-600 whitespace-nowrap' },
             h('thead', { className: 'bg-gray-50 text-gray-700 border-b' },
               h('tr', null,
-                h('th', { className: 'p-3 font-semibold text-center min-w-[140px]' }, '操作'),
+                h('th', { className: 'p-3 font-semibold text-center w-px whitespace-nowrap' }, '操作'),
                 h('th', {
                   className: 'p-3 font-semibold text-center cursor-pointer select-none hover:bg-gray-100',
                   title: '依燈號排序',
@@ -321,7 +349,7 @@
                 var isOther = c.workCategory === '其他';
                 return h('tr', { key: c.id, className: 'hover:bg-blue-50/50 transition-colors' },
                   h('td', { className: 'p-3' },
-                    h('div', { className: 'flex items-center justify-center flex-wrap gap-1' },
+                    h('div', { className: 'flex items-center justify-center flex-nowrap gap-1' },
                       renderRowActions(c, rerender)
                     )
                   ),
