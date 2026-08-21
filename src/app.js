@@ -643,7 +643,8 @@
           maintenanceAllocationYears: s.maintenanceAllocationYears,
           stores: s.stores,
           performanceAreas: s.performanceAreas,
-          serviceLevels: s.serviceLevels
+          serviceLevels: s.serviceLevels,
+          customers: s.customers
         });
       case 'data-retrieval':
         return h(DataRetrieval, {

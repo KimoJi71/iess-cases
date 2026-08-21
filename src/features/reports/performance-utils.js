@@ -166,6 +166,16 @@
     var allocations = input.allocations || [];
     var quarter = input.quarter;
     var months = getQuarterMonths(quarter);
+    // 客戶主檔；用來剔除沒有設定保養次數（保養區間）的客戶。
+    // 未傳入時代表呼叫端不做這個過濾，全部保留。
+    var customerProfiles = input.customers || [];
+
+    // 沒有任何可用保養區間的客戶，本來就不會有保養案件，
+    // 留在績效統計裡只是一張永遠 0% 的空卡。
+    function hasMaintenanceVisits(customerName) {
+      if (!customerProfiles.length) return true;
+      return CustomerUtils.getPeriods(customerProfiles, customerName).length > 0;
+    }
 
     function districtSet(districts) {
       var set = {};
@@ -181,7 +191,7 @@
         if (!set[area]) return;
         if (store.customerName) names[store.customerName] = true;
       });
-      return Object.keys(names).sort(function (a, b) {
+      return Object.keys(names).filter(hasMaintenanceVisits).sort(function (a, b) {
         return a.localeCompare(b, 'zh-Hant');
       });
     }

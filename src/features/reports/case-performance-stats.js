@@ -3,7 +3,7 @@
  * props: {
  *   cases, maintenanceCases, assignees,
  *   maintenanceAllocations, maintenanceAllocationYears,
- *   stores, performanceAreas, serviceLevels
+ *   stores, performanceAreas, serviceLevels, customers
  * }
  */
 (function () {
@@ -76,13 +76,18 @@
         (emphasize ? 'border-teal-200' : 'border-slate-200')
     },
       h('div', {
-        className: 'px-4 py-3 border-b border-slate-100 ' +
+        className: 'px-4 py-3 border-b border-slate-100 flex items-center gap-2 ' +
           (emphasize ? 'bg-teal-50/80' : 'bg-slate-50')
       },
         h('span', {
-          className: 'text-slate-800 font-bold text-base truncate block',
+          className: 'text-slate-800 font-bold text-base truncate',
           title: title
-        }, title)
+        }, title),
+        props.periodLabel && h('span', {
+          className: 'shrink-0 inline-flex items-center px-2 py-0.5 rounded-full ' +
+            'text-xs font-medium text-teal-700 bg-teal-50 border border-teal-200',
+          title: '當前保養區間'
+        }, props.periodLabel)
       ),
       h('div', { className: 'px-5 pt-5 pb-4' },
         h('p', { className: 'text-slate-500 text-sm mb-2 text-center' },
@@ -131,7 +136,18 @@
     var performanceAreas = props.performanceAreas || [];
     var serviceLevels = props.serviceLevels || [];
     var allocationYears = props.maintenanceAllocationYears || [];
-    var quarter = PerformanceUtils.getQuarterRange(new Date());
+    var customers = props.customers || [];
+    var now = new Date();
+    var quarter = PerformanceUtils.getQuarterRange(now);
+    var currentMonth = now.getMonth() + 1;
+
+    // 客戶當前所處的保養區間（以今天的月份判斷）；客戶未設定區間、
+    // 或這個月不落在任何區間內時不顯示標籤。
+    function currentPeriodLabel(customerName) {
+      var period = CustomerUtils.findPeriodForMonth(customers, customerName, currentMonth);
+      return period ? ScheduleUtils.formatPeriodRange(period) : '';
+    }
+
     // 每年 1 月 1 日起、到有人手動建立該年度分配表之前，目標一律是 0；
     // 沒有這行說明的話，畫面看起來就只是所有組達成率都掛 0%。
     var quarterYear = Number(String(quarter.start).slice(0, 4));
@@ -151,6 +167,7 @@
       stores: stores,
       performanceAreas: performanceAreas,
       allocations: allocations,
+      customers: customers,
       quarter: quarter
     });
 
@@ -220,7 +237,7 @@
                 ),
                 region.customers.length === 0
                   ? h('p', { className: 'text-sm text-gray-400 mb-2 pl-4' },
-                      '此區域尚無對應門市客戶')
+                      '此區域尚無有保養次數的門市客戶')
                   : h('div', {
                       className: 'grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5'
                     },
@@ -228,6 +245,7 @@
                         return h(RingStatCard, {
                           key: region.id + ':' + cust.customerName,
                           title: cust.customerName,
+                          periodLabel: currentPeriodLabel(cust.customerName),
                           rate: cust.rate,
                           target: cust.target,
                           completed: cust.completed,
