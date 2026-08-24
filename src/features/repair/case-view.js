@@ -6,7 +6,6 @@
   'use strict';
   var h = IESS.h;
   var caseDT = IESS.caseDateTime;
-  var caseStatus = IESS.caseStatus;
 
   function ViewCaseForm(props) {
     var viewingCase = props.viewingCase;
@@ -42,7 +41,6 @@
       );
     }
 
-    var showSecondRepairDate = viewingCase && caseStatus.isReRepairPendingStatus(viewingCase.processStatus);
     var isOther = viewingCase && viewingCase.workCategory === '其他';
 
     return h('div', {
@@ -173,16 +171,13 @@
             h('div', { className: 'pt-4 border-t border-gray-100' },
               h('h4', { className: 'text-sm font-semibold text-gray-800 mb-4' }, '時間紀錄'),
               h('div', {
-                className: showSecondRepairDate
-                  ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6'
-                  : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'
+                className: 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'
               },
                 h(ReadOnlyField, {
                   label: '叫修時間',
                   value: caseDT.format(viewingCase && (viewingCase.createdAt || viewingCase.repairDate))
                 }),
                 h(ReadOnlyField, { label: '到店時間', value: caseDT.format(viewingCase && viewingCase.reRepairDate) }),
-                showSecondRepairDate ? h(ReadOnlyField, { label: '再次維修時間', value: caseDT.format(viewingCase && viewingCase.secondRepairDate) }) : null,
                 h(ReadOnlyField, { label: '完成時間', value: caseDT.format(viewingCase && viewingCase.completionDate) })
               )
             )

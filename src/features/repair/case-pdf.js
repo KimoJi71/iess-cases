@@ -122,7 +122,6 @@
     var vendors = opts.vendors || [];
     var caseDT = IESS.caseDateTime;
     var isOther = c.workCategory === '其他';
-    var showSecondRepairDate = IESS.caseStatus.isReRepairPendingStatus(c.processStatus);
 
     var schedule = fieldTable([
       { label: '預計日期', value: c.expectedDate || c.planDate },
@@ -175,7 +174,6 @@
       fieldTable([
         { label: '叫修時間', value: caseDT.format(c.createdAt || c.repairDate) },
         { label: '到店時間', value: caseDT.format(c.reRepairDate) },
-        showSecondRepairDate && { label: '再次維修時間', value: caseDT.format(c.secondRepairDate) },
         { label: '完成時間', value: caseDT.format(c.completionDate) }
       ]);
 

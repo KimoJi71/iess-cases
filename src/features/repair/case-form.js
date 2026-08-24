@@ -188,7 +188,6 @@
           processRecords: [],
           equipment: null,
           reRepairDate: '',
-          secondRepairDate: '',
           completionDate: '',
           planDate: payload.expectedDate || '',
           planTimeStart: payload.expectedTimeStart || '',
@@ -534,7 +533,6 @@
         setView('list');
       }
 
-      var showSecondRepairDate = caseStatus.isReRepairPendingStatus(formData.processStatus);
       var isOther = isOtherWorkCategory(formData.workCategory);
 
       return h("div", {
@@ -866,9 +864,7 @@
       }, h("h4", {
         className: "text-sm font-semibold text-gray-800 mb-4"
       }, "時間紀錄"), h("div", {
-        className: showSecondRepairDate
-          ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
-          : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+        className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
       }, TimeRecordField({
         label: '叫修時間',
         readOnly: true,
@@ -878,12 +874,7 @@
         name: 'reRepairDate',
         value: formData.reRepairDate,
         onChange: handleChange
-      }), showSecondRepairDate ? TimeRecordField({
-        label: '再次維修時間',
-        name: 'secondRepairDate',
-        value: formData.secondRepairDate,
-        onChange: handleChange
-      }) : null, TimeRecordField({
+      }), TimeRecordField({
         label: '完成時間',
         name: 'completionDate',
         value: formData.completionDate,

@@ -840,7 +840,6 @@ const INITIAL_CASES = [{
   equipment: null,
   processRecords: [],
   reRepairDate: '',
-  secondRepairDate: '',
   completionDate: '',
   expectedDate: todayDate,
   planDate: '',
@@ -876,7 +875,6 @@ const INITIAL_CASES = [{
   },
   processRecords: [],
   reRepairDate: '',
-  secondRepairDate: '',
   completionDate: '',
   expectedDate: yesterdayDate,
   planDate: '',
@@ -915,7 +913,6 @@ const INITIAL_CASES = [{
     caseProcessRecordFromPm('MC0012', 1, 2, '待處理')
   ],
   reRepairDate: yesterdayDate,
-  secondRepairDate: '',
   completionDate: todayDate,
   expectedDate: todayDate,
   planDate: '',
@@ -954,7 +951,6 @@ const INITIAL_CASES = [{
     caseProcessRecordFromPm('MC0012', 2, 2)
   ],
   reRepairDate: '',
-  secondRepairDate: '',
   completionDate: twoDaysAgoDate,
   expectedDate: yesterdayDate,
   planDate: '',
@@ -990,7 +986,6 @@ const INITIAL_CASES = [{
   },
   processRecords: [caseProcessRecordFromPm('RG0002', 1, 1)],
   reRepairDate: '',
-  secondRepairDate: '',
   completionDate: todayDate,
   expectedDate: todayDate,
   planDate: '',
@@ -1018,7 +1013,6 @@ const INITIAL_CASES = [{
   equipment: null,
   processRecords: [],
   reRepairDate: '',
-  secondRepairDate: '',
   completionDate: '',
   expectedDate: '',
   planDate: '',
@@ -1047,7 +1041,6 @@ const INITIAL_CASES = [{
   equipment: null,
   processRecords: [],
   reRepairDate: '',
-  secondRepairDate: '',
   completionDate: '',
   expectedDate: todayDate,
   planDate: todayDate,
@@ -1086,7 +1079,6 @@ const INITIAL_CASES = [{
     caseProcessRecordFromPm('MS0001', 2, 2)
   ],
   reRepairDate: '',
-  secondRepairDate: '',
   completionDate: twoDaysAgoDate,
   expectedDate: twoDaysAgoDate,
   planDate: '',
@@ -1122,7 +1114,6 @@ const INITIAL_CASES = [{
   },
   processRecords: [],
   reRepairDate: '',
-  secondRepairDate: '',
   completionDate: todayDate,
   expectedDate: todayDate,
   planDate: '',
@@ -1158,7 +1149,6 @@ const INITIAL_CASES = [{
   },
   processRecords: [],
   reRepairDate: '',
-  secondRepairDate: '',
   completionDate: todayDate,
   expectedDate: todayDate,
   planDate: '',
@@ -1194,7 +1184,6 @@ const INITIAL_CASES = [{
   },
   processRecords: [caseProcessRecordFromPm('RG0002', 1, 1), caseProcessRecordFromPm('MC0012', 1, 2)],
   reRepairDate: '',
-  secondRepairDate: '',
   completionDate: todayDate,
   expectedDate: todayDate,
   planDate: '',
@@ -1230,7 +1219,6 @@ const INITIAL_CASES = [{
   },
   processRecords: [caseProcessRecordFromPm('RG0004', 2, 1)],
   reRepairDate: '',
-  secondRepairDate: '',
   completionDate: todayDate,
   expectedDate: todayDate,
   planDate: '',
@@ -1266,7 +1254,6 @@ const INITIAL_CASES = [{
   },
   processRecords: [caseProcessRecordFromPm('RG0002', 1, 1), caseProcessRecordFromPm('PS0001', 1, 2)],
   reRepairDate: '',
-  secondRepairDate: '',
   completionDate: yesterdayDate,
   expectedDate: yesterdayDate,
   planDate: '',
@@ -1302,7 +1289,6 @@ const INITIAL_CASES = [{
   },
   processRecords: [caseProcessRecordFromPm('RG0004', 1, 1)],
   reRepairDate: '',
-  secondRepairDate: '',
   completionDate: todayDate,
   expectedDate: todayDate,
   planDate: '',
@@ -1332,7 +1318,6 @@ const INITIAL_CASES = [{
   equipment: null,
   processRecords: [],
   reRepairDate: '',
-  secondRepairDate: '',
   completionDate: '',
   expectedDate: '',
   planDate: '',
@@ -1361,7 +1346,6 @@ const INITIAL_CASES = [{
   equipment: null,
   processRecords: [],
   reRepairDate: '',
-  secondRepairDate: '',
   completionDate: '',
   expectedDate: '',
   planDate: '',
@@ -1377,7 +1361,6 @@ function caseHasProcessData(c) {
   if (c.processStatus) return true;
   if (c.reRepairDate) return true;
   if (c.completionDate) return true;
-  if (c.secondRepairDate) return true;
   return false;
 }
 
@@ -1403,7 +1386,7 @@ INITIAL_CASES.forEach(function (c, i) {
     c.createdAt = c.repairDate + 'T' + String(hour).padStart(2, '0') + ':' + String(minute).padStart(2, '0') + ':00';
   }
   c.repairDate = IESS.caseDateTime.format(c.createdAt || c.repairDate);
-  ['reRepairDate', 'secondRepairDate', 'completionDate', 'closeDate'].forEach(function (field) {
+  ['reRepairDate', 'completionDate', 'closeDate'].forEach(function (field) {
     if (c[field]) c[field] = IESS.caseDateTime.format(c[field]);
   });
   if (c.isClosed && !c.closeDate) {
@@ -1419,7 +1402,6 @@ INITIAL_CASES.forEach(function (c, i) {
       c.processRecords = [];
       c.processStatus = null;
       c.reRepairDate = '';
-      c.secondRepairDate = '';
       c.completionDate = '';
     }
   }

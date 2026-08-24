@@ -2,7 +2,7 @@
  * features/repair/case-status.js — 案件處理狀態邏輯
  *
  * 時間欄位保留規則（savedProcessStatus = 進入編輯當下已儲存的狀態）：
- * - 維修時間 / 再次維修時間：僅在 saved 為待料件／待報價／尚未處理完成 時保留
+ * - 維修時間：僅在 saved 為待料件／待報價／尚未處理完成 時保留
  * - 完成時間：僅在 saved 為案件完成 時保留
  * 同一次編輯中未儲存的切換，會清空尚未儲存對應狀態所押的時間。
  */
@@ -144,7 +144,6 @@
   function clearReRepairIfNotSaved(formData, savedProcessStatus) {
     if (!isReRepairPendingStatus(savedProcessStatus)) {
       formData.reRepairDate = '';
-      formData.secondRepairDate = '';
     }
   }
 
@@ -164,7 +163,6 @@
     if (c.processStatus) return true;
     if (c.reRepairDate) return true;
     if (c.completionDate) return true;
-    if (c.secondRepairDate) return true;
     return false;
   }
 

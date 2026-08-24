@@ -74,7 +74,6 @@
           processRecords: [],
           equipment: null,
           reRepairDate: '',
-          secondRepairDate: '',
           completionDate: '',
           planDate: payload.expectedDate || '',
           planTimeStart: payload.expectedTimeStart || '',
