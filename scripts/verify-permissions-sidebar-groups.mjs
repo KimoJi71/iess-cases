@@ -122,8 +122,9 @@ const HELPERS = `
   };
 `;
 
+// 「車輛管理」於「新增車輛管理列表與新增表單」後加入，歸在人員與權限底下。
 const EXPECTED_TREE = [
-  { title: '人員與權限', expanded: true, children: ['帳號管理', '組別管理'] },
+  { title: '人員與權限', expanded: true, children: ['帳號管理', '組別管理', '車輛管理'] },
   { title: '基礎資料設定', expanded: true, children: ['服務等級管理', '處理方式與積分管理', '設備分類管理', '績效區域管理'] },
   { title: '保養作業', expanded: true, children: ['保養分配'] }
 ];
@@ -260,7 +261,7 @@ try {
     };
   })()`);
   assertJson(permLeaves.missing, [], '每個葉節點都在 PERMISSION_FUNCTIONS 內（權限勾選才會生效）');
-  assertEq(permLeaves.count, 7, '系統權限底下仍是 7 個功能，只是重新分群');
+  assertEq(permLeaves.count, 8, '系統權限底下共 8 個功能，依三個群組分群');
 
   console.log('\n6. 權限面板渲染出巢狀群組列，且群組勾選會連動底下功能');
   const panel = await evaluateAsync(`(function () {
@@ -302,7 +303,7 @@ try {
     panel.rows.slice(panel.rows.indexOf('系統權限')),
     [
       '系統權限',
-      '人員與權限', '帳號管理', '組別管理',
+      '人員與權限', '帳號管理', '組別管理', '車輛管理',
       '基礎資料設定', '服務等級管理', '處理方式與積分管理', '設備分類管理', '績效區域管理',
       '保養作業', '保養分配'
     ],

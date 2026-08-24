@@ -357,7 +357,9 @@ try {
   assertTrue(!maintenanceForm.hasMaintainerLabel, '保養計劃不再有「保養人員」欄位');
   assertTrue(maintenanceForm.hasGroupLabel, '保養計劃有「組別」欄位');
   assertTrue(maintenanceForm.hasMemberLabel, '保養計劃有「指派人員」欄位');
-  assertEq(maintenanceForm.multiSelects, 2, '組別與指派人員都是複選元件');
+  // 保養明細後來加了「協力廠商」，同樣是複選元件，故為 3 個；
+  // 「組別／指派人員各自是複選元件」由下一條斷言逐一比對標籤把關。
+  assertEq(maintenanceForm.multiSelects, 3, '組別、指派人員、協力廠商都是複選元件');
   assertJson(maintenanceForm.fieldControls, ['組別:multi-select', '指派人員:multi-select'],
     '「組別」與「指派人員」欄位都改用複選元件（不再是單選下拉）');
   assertJson(maintenanceForm.chips, ['A組'], '舊的單值 assignee 會轉成組別多選的已選值');

@@ -258,9 +258,14 @@ try {
       var input = container.querySelectorAll('input[role="combobox"]')[1];
       if (!input) throw new Error('__chooseAllocAssignee2: 找不到組別下拉');
       input.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
+      // 選項按鈕在 label 之外還會帶 hint（組別的組員名單），textContent 會是
+      // 「A組王小明、陳志豪」，不能拿整顆按鈕的文字去等值比對組別名稱。
       var btns = Array.prototype.filter.call(
         document.querySelectorAll('.searchable-select__menu--portal .searchable-select__option'),
-        function (b) { return b.textContent.trim() === label; }
+        function (b) {
+          var labelEl = b.querySelector('.searchable-select__option-label');
+          return (labelEl ? labelEl.textContent : b.textContent).trim() === label;
+        }
       );
       if (!btns.length) throw new Error('__chooseAllocAssignee2: 找不到選項 ' + label);
       btns[0].dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));

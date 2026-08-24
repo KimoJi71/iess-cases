@@ -203,8 +203,10 @@ try {
       var toggle = el.parentNode.querySelector('.searchable-select__toggle');
       if (toggle) toggle.click();
       var root = el.closest('.searchable-select');
+      // 只取選項的 label。原本的 class 前綴比對會連選項內層的
+      // option-label 元素一起選到，讓每個選項被數兩次。
       var opts = Array.prototype.map.call(
-        document.querySelectorAll('.searchable-select__option, [class*="searchable-select__option"]'),
+        document.querySelectorAll('.searchable-select__menu .searchable-select__option-label'),
         function(o){ return o.textContent.trim(); });
       if (!opts.length && root) {
         opts = Array.prototype.map.call(root.querySelectorAll('li,[role="option"]'),

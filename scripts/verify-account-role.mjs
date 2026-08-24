@@ -212,7 +212,9 @@ try {
     });
   })()`);
   assertJson(searched.rows.map(r => r[1]), ['王小明'], '搜「副課長」只剩王小明');
-  assertEq(searched.placeholder, '姓名 / 帳號 / Email / 職務', '搜尋提示文字含職務');
+  // 搜尋欄的 placeholder 已由「關鍵字搜尋欄移除標籤並統一 placeholder」改為共用文案；
+  // 「職務可被搜到」這件事由上一條斷言（搜「副課長」只剩王小明）把關，不再靠提示文字。
+  assertEq(searched.placeholder, '請輸入關鍵字', '搜尋欄使用統一的提示文字');
 
   console.log('\n4. 新增帳號表單有職務下拉，選項為四個職務');
   const addForm = await evaluateAsync(`(function () {

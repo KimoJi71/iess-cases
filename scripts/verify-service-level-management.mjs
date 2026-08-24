@@ -652,8 +652,10 @@ try {
   // 'D 維修(無簽約客戶)'（表單初始預設值／另一個同步邏輯的 fallback，與客戶
   // 對照表無關），所以不能對整檔做「零次出現裸字串」的粗略檢查；改為精準比對
   // 「轉換後的呼叫點是否仍以該字串當 OR fallback」，才是這次重構真正要保證的事。
+  // case-form.js 於「編輯叫修案件改五段排版」後只剩一個客戶名稱下拉，
+  // 呼叫點由 2 處併為 1 處。
   const callSites = [
-    ['src/features/repair/case-form.js', 2],
+    ['src/features/repair/case-form.js', 1],
     ['src/features/project/project-form.js', 2],
     // 保養區間搬到客戶後，renderMaintenanceScheduleDetails 直接以 customerName
     // 取得區間，不再需要服務等級名稱，故呼叫點由 2 處回到 1 處。
@@ -671,7 +673,7 @@ try {
 
   console.log('\nSection 5｜case-form.js／project-form.js 呼叫點無 OR fallback');
   const noFallbackSites = [
-    ['src/features/repair/case-form.js', 2],
+    ['src/features/repair/case-form.js', 1],
     ['src/features/project/project-form.js', 2]
   ];
   for (const [rel, expectedCount] of noFallbackSites) {
@@ -816,9 +818,14 @@ try {
       var input = container.querySelectorAll('input[role="combobox"]')[1];
       if (!input) throw new Error('__chooseAllocAssignee: 找不到組別下拉');
       input.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
+      // 選項按鈕在 label 之外還會帶 hint（組別的組員名單），textContent 會是
+      // 「A組王小明、陳志豪」，不能拿整顆按鈕的文字去等值比對組別名稱。
       var btns = Array.prototype.filter.call(
         document.querySelectorAll('.searchable-select__menu--portal .searchable-select__option'),
-        function (b) { return b.textContent.trim() === label; }
+        function (b) {
+          var labelEl = b.querySelector('.searchable-select__option-label');
+          return (labelEl ? labelEl.textContent : b.textContent).trim() === label;
+        }
       );
       if (!btns.length) throw new Error('__chooseAllocAssignee: 找不到選項 ' + label);
       btns[0].dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
