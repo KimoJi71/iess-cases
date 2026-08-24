@@ -66,6 +66,7 @@
     var menuEl = null;
     var blurTimer = null;
     var menuScrollHandler = null;
+    var detachTimer = null;
 
     return stateful(function (rerender) {
       var options = props.options || [];
@@ -135,7 +136,9 @@
 
       function positionMenu() {
         if (!menuEl || !inputEl) return;
-        var rect = inputEl.getBoundingClientRect();
+        // 量的是整個欄位控制項（含左右內距與展開鈕），不是內層的 input：
+        // 以 input 為準會讓選單比欄位窄、左緣還往內縮，看起來像浮在旁邊的另一塊東西。
+        var rect = (rootEl || inputEl).getBoundingClientRect();
         menuEl.style.position = 'fixed';
         menuEl.style.top = (rect.bottom + 2) + 'px';
         menuEl.style.left = rect.left + 'px';
@@ -151,9 +154,22 @@
         };
         window.addEventListener('scroll', menuScrollHandler, true);
         window.addEventListener('resize', menuScrollHandler);
+        // 選單展開時元件可能被父層整批換掉（切換頁面、關閉 Modal、表單重繪成另一種型態），
+        // 這條路徑不會產生 blur 或 click，元件沒有機會自己收尾，浮動選單就永遠留在畫面上，
+        // 蓋住底下的內容，也讓下一個選單的選項與它疊在一起。
+        // 定時確認自己的欄位還在文件裡，不在就把選單一起收掉。
+        detachTimer = setInterval(function () {
+          if (inputEl && document.body.contains(inputEl)) return;
+          isOpen = false;
+          removeMenu();
+        }, 200);
       }
 
       function unbindMenuListeners() {
+        if (detachTimer) {
+          clearInterval(detachTimer);
+          detachTimer = null;
+        }
         if (!menuScrollHandler) return;
         window.removeEventListener('scroll', menuScrollHandler, true);
         window.removeEventListener('resize', menuScrollHandler);
@@ -302,8 +318,11 @@
         filterText = inputEl ? inputEl.value : '';
         hasTyped = true;
         activeIndex = 0;
-        syncMenu();
+        // 順序不能顛倒：rerender() 會重建整棵子樹，新根節點的 ref 回呼會把目前的浮動選單
+        // 當成舊實例的殘留而 removeMenu()。先 syncMenu() 再 rerender() 等於畫完就被刪掉，
+        // 使用者一打字選單就整個消失。與 openMenu() 一樣，先 rerender 再 syncMenu。
         rerender();
+        syncMenu();
       }
 
       function handleInputMouseDown(e) {

@@ -20,6 +20,10 @@
  *
  * 選單以 portal 掛在 document.body 並 fixed 定位，避免被外層 overflow 裁切
  * （與 core/searchable-select.js 相同策略）。同一時間只會有一個選單展開。
+ *
+ * 選單頂端固定一列關鍵字輸入框，比對 label／chipLabel／hint／value。
+ * 篩選只縮小選單的可見範圍，不影響已選項目（chips 照舊全數顯示）；
+ * 關鍵字在展開期間有效，收合時清空。
  */
 (function (global) {
   'use strict';
@@ -29,8 +33,15 @@
 
   var openId = null;
   var menuEl = null;
+  var listEl = null;
+  var searchEl = null;
   var listeners = null;
   var autoIdSeq = 0;
+  // 關鍵字是「目前展開的那個選單」的狀態，與 openId/menuEl 同層級（一次只有一個選單）。
+  // 刻意不放進 destroyMenu 清除：勾選選項會讓父層 rerender → syncMenu 重建選單，
+  // 關鍵字必須撐過這個重建，使用者才能連續勾選多個搜尋結果。只在開合選單時重置。
+  var filterText = '';
+  var isComposing = false;
 
   // options 支援兩種形態：
   //   A. string[]（既有呼叫端）
@@ -68,6 +79,30 @@
     return null;
   }
 
+  function normalizeQuery(text) {
+    return String(text || '').trim().toLowerCase();
+  }
+
+  // 比對 label／chipLabel／hint／value：跨群組同名門市只有 chipLabel 分得出來，
+  // hint 則是組別的成員名單這類次要說明，使用者常直接搜成員名字。
+  function optionMatchesQuery(opt, query) {
+    if (!query) return true;
+    return normalizeQuery(opt.label).indexOf(query) >= 0 ||
+      normalizeQuery(opt.chipLabel).indexOf(query) >= 0 ||
+      normalizeQuery(opt.hint).indexOf(query) >= 0 ||
+      normalizeQuery(opt.value).indexOf(query) >= 0;
+  }
+
+  function filterGroups(groups, query) {
+    if (!query) return groups;
+    return groups.map(function (g) {
+      return {
+        group: g.group,
+        options: g.options.filter(function (opt) { return optionMatchesQuery(opt, query); })
+      };
+    });
+  }
+
   function destroyMenu() {
     if (listeners) {
       window.removeEventListener('scroll', listeners.reposition, true);
@@ -78,6 +113,8 @@
     }
     if (menuEl && menuEl.parentNode) menuEl.parentNode.removeChild(menuEl);
     menuEl = null;
+    listEl = null;
+    searchEl = null;
   }
 
   function MultiSelect(props) {
@@ -149,16 +186,24 @@
 
       function closeMenu() {
         openId = null;
+        filterText = '';
+        isComposing = false;
         destroyMenu();
         rerender();
       }
 
       function buildMenu() {
-        menuEl = document.createElement('ul');
+        menuEl = document.createElement('div');
         menuEl.className = 'multi-select__menu';
-        menuEl.setAttribute('role', 'listbox');
-        menuEl.setAttribute('aria-multiselectable', 'true');
         document.body.appendChild(menuEl);
+
+        buildSearch();
+
+        listEl = document.createElement('ul');
+        listEl.className = 'multi-select__list';
+        listEl.setAttribute('role', 'listbox');
+        listEl.setAttribute('aria-multiselectable', 'true');
+        menuEl.appendChild(listEl);
 
         listeners = {
           reposition: function () { if (isOpen()) positionMenu(); },
@@ -177,29 +222,93 @@
         document.addEventListener('keydown', listeners.key, true);
 
         positionMenu();
+        renderList();
+        focusSearch();
+      }
 
-        if (!flatOptions.length && !showEmptyGroups) {
+      // 展開時把游標直接放進搜尋框，使用者不必再點一次就能打字。
+      // 勾選選項會讓父層 rerender、整個選單重建，這裡一併把焦點與游標位置接回去，
+      // 才能連續勾選多筆搜尋結果而不用每次重打關鍵字。
+      function focusSearch() {
+        if (!searchEl) return;
+        searchEl.focus();
+        var end = searchEl.value.length;
+        try { searchEl.setSelectionRange(end, end); } catch (err) { /* ignore */ }
+      }
+
+      function buildSearch() {
+        var wrap = document.createElement('div');
+        wrap.className = 'multi-select__search';
+
+        searchEl = document.createElement('input');
+        searchEl.type = 'text';
+        searchEl.className = 'multi-select__search-input';
+        searchEl.placeholder = '輸入關鍵字篩選';
+        searchEl.setAttribute('aria-label', '輸入關鍵字篩選選項');
+        searchEl.autocomplete = 'off';
+        searchEl.spellcheck = false;
+        searchEl.value = filterText;
+
+        // 注音／倉頡組字期間的 input 事件帶的是還沒組好的字根，拿去比對只會把選項全篩掉，
+        // 使用者會以為選單壞了。等 compositionend 拿到組好的字再套用。
+        searchEl.addEventListener('compositionstart', function () { isComposing = true; });
+        searchEl.addEventListener('compositionend', function () {
+          isComposing = false;
+          applyFilter();
+        });
+        searchEl.addEventListener('input', function () {
+          if (isComposing) return;
+          applyFilter();
+        });
+        // 選單內按 Escape 由全域 keydown 監聽器關閉；此處只擋住 Enter，
+        // 避免在表單裡打關鍵字時不小心送出整張表單。
+        searchEl.addEventListener('keydown', function (e) {
+          if (e.key === 'Enter') e.preventDefault();
+        });
+
+        wrap.appendChild(searchEl);
+        menuEl.appendChild(wrap);
+      }
+
+      function applyFilter() {
+        filterText = searchEl ? searchEl.value : '';
+        renderList();
+        positionMenu();
+      }
+
+      function renderList() {
+        if (!listEl) return;
+        listEl.innerHTML = '';
+
+        var query = normalizeQuery(filterText);
+        var visibleGroups = filterGroups(groups, query);
+        var visibleCount = visibleGroups.reduce(function (n, g) { return n + g.options.length; }, 0);
+        // 有關鍵字時 showEmptyGroups 暫時失效：搜尋結果若夾雜一排「無可選項目」的空群組，
+        // 反而看不出真正命中的是哪幾筆。清空關鍵字就回到原本行為。
+        var keepEmptyGroups = showEmptyGroups && !query;
+
+        if (!visibleCount && !keepEmptyGroups) {
           var empty = document.createElement('li');
           empty.className = 'multi-select__empty';
-          empty.textContent = '無可選項目';
-          menuEl.appendChild(empty);
+          empty.textContent = query ? '找不到符合的選項' : '無可選項目';
+          listEl.appendChild(empty);
           return;
         }
 
-        groups.forEach(function (group) {
-          if (!group.options.length && !(showEmptyGroups && group.group != null)) return;
+        visibleGroups.forEach(function (group) {
+          if (!group.options.length && !(keepEmptyGroups && group.group != null)) return;
           if (group.group != null) {
             var head = document.createElement('li');
             head.className = 'multi-select__group';
             head.setAttribute('role', 'presentation');
             head.textContent = group.group;
-            menuEl.appendChild(head);
+            listEl.appendChild(head);
           }
           if (!group.options.length) {
             var groupEmpty = document.createElement('li');
             groupEmpty.className = 'multi-select__empty';
             groupEmpty.textContent = emptyGroupText;
-            menuEl.appendChild(groupEmpty);
+            listEl.appendChild(groupEmpty);
             return;
           }
           group.options.forEach(function (opt) {
@@ -245,7 +354,7 @@
             });
 
             item.appendChild(btn);
-            menuEl.appendChild(item);
+            listEl.appendChild(item);
           });
         });
       }
@@ -269,6 +378,8 @@
           return;
         }
         destroyMenu();
+        filterText = '';
+        isComposing = false;
         openId = id;
         rerender();
       }
@@ -327,6 +438,8 @@
   // 只有在面板會被整批換掉、且新面板可能沒有相同 id 的實例可以接手清理時才需要。
   function closeAll() {
     openId = null;
+    filterText = '';
+    isComposing = false;
     destroyMenu();
   }
 

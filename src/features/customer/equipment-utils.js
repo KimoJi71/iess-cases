@@ -119,6 +119,15 @@
     return val ? String(val).trim() : '';
   }
 
+  // 設備列表列的可搜尋文字：與畫面上看得到的欄位一致（含設備等級與狀態徽章的文字），
+  // 使用者搜什麼就該找得到什麼。
+  function listRowText(eq) {
+    return LIST_COLUMNS.map(function (col) {
+      if (col.kind === 'status') return normalizeStatus(eq && eq.status);
+      return listCellText(eq, col);
+    }).filter(Boolean).join(' ');
+  }
+
   function renderListHeaderCells(h) {
     return LIST_COLUMNS.map(function (col) {
       return h('th', { className: 'p-3 font-semibold' }, col.label);
@@ -232,6 +241,7 @@
     formatLevel: formatLevel,
     renderStatusBadge: renderStatusBadge,
     renderLevelBadge: renderLevelBadge,
+    listRowText: listRowText,
     renderListHeaderCells: renderListHeaderCells,
     renderListDataCells: renderListDataCells,
     isEquipmentUsedInRepair: isEquipmentUsedInRepair,
