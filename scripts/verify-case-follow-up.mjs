@@ -375,6 +375,117 @@ try {
 
   assertEq(consoleErrors.length, 0, '列表操作後仍無 JS 錯誤');
 
+  console.log('\n已結案案件：編輯鈕改開唯讀明細');
+  await evaluate(`
+    window.__views = [];
+    window.__viewing = null;
+    window.__mkListWithNav = function (cases, filter) {
+      document.querySelectorAll('.action-menu__menu').forEach(function (m) { m.remove(); });
+      var old = document.getElementById('follow-up-host');
+      if (old) old.remove();
+      var host = document.createElement('div');
+      host.id = 'follow-up-host';
+      document.body.appendChild(host);
+      window.__views = [];
+      window.__viewing = null;
+      window.__editing = null;
+      host.appendChild(CaseList({
+        cases: cases,
+        setCases: function () {},
+        stores: [], setStores: function () {},
+        setEditingCase: function (c) { window.__editing = c && c.id; },
+        setViewingCase: function (c) { window.__viewing = c && c.id; },
+        setView: function (v) { window.__views.push(v); },
+        showToast: function () {},
+        statusFilter: filter, setStatusFilter: function () {}
+      }));
+      return true;
+    };
+    'ok'`);
+
+  await evaluate(`window.__mkListWithNav([window.__makeCase('待報價')], '待報價')`);
+  assertEq(await evaluate('window.__actionLabels()[0]'), '編輯',
+    '已結案案件仍顯示編輯按鈕');
+  await evaluate(`window.__clickAction('編輯')`);
+  assertEq(await evaluate('({ views: window.__views, viewing: window.__viewing, editing: window.__editing })'),
+    { views: ['case-view'], viewing: 'C1', editing: null },
+    '已結案案件的編輯鈕開啟唯讀明細，不進入編輯表單');
+
+  await evaluate(
+    `window.__mkListWithNav([window.__makeCase('待報價', { isClosed: false, isListClosed: false })], '待報價')`);
+  await evaluate(`window.__clickAction('編輯')`);
+  assertEq(await evaluate('({ views: window.__views, viewing: window.__viewing, editing: window.__editing })'),
+    { views: ['edit'], viewing: null, editing: 'C1' },
+    '未結案案件的編輯鈕仍進入編輯表單');
+
+  console.log('\n唯讀明細：結案提示與無可編輯欄位');
+  await evaluate(`
+    window.__mkDetail = function (targetCase) {
+      var old = document.getElementById('detail-host');
+      if (old) old.remove();
+      var host = document.createElement('div');
+      host.id = 'detail-host';
+      document.body.appendChild(host);
+      host.appendChild(ViewCaseForm({
+        viewingCase: targetCase, setView: function (v) { window.__views.push(v); },
+        backView: 'list', currentView: 'case-view',
+        notice: '此案件已結案，已轉為叫修案件紀錄，僅供檢視、不可編輯。',
+        processMethods: [], deviceCategories: [], vehicles: [], vendors: [], cases: []
+      }));
+      return true;
+    };
+    'ok'`);
+  await evaluate(`window.__mkDetail(window.__makeCase('待報價'))`);
+  assertTrue(await evaluate(
+    `document.querySelector('#detail-host').textContent.indexOf('僅供檢視、不可編輯') !== -1`),
+    '唯讀明細顯示已結案提示文字');
+  assertEq(await evaluate(`(function () {
+    return Array.prototype.filter.call(
+      document.querySelectorAll('#detail-host input, #detail-host select, #detail-host textarea'),
+      function (el) { return !el.disabled && !el.readOnly; }
+    ).length;
+  })()`), 0, '唯讀明細沒有任何可編輯欄位');
+
+  console.log('\n真實 app：case-view 路由與返回');
+  const routed = await evaluate(`(function () {
+    // 先移除前面直接掛載元件用的測試容器，避免混入真實 app 的斷言。
+    ['follow-up-host', 'detail-host'].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) el.remove();
+    });
+    document.querySelectorAll('.action-menu__menu').forEach(function (m) { m.remove(); });
+    var nav = window.__caseNavForTest;
+    var s = nav.store.get();
+    var target = s.cases.filter(function (c) { return c.isClosed; })[0];
+    nav.store.set({ view: 'case-view', viewingCase: target });
+    var root = document.getElementById('app') || document.body;
+    var text = root.textContent;
+    var editable = Array.prototype.filter.call(
+      root.querySelectorAll('input, select, textarea'),
+      function (el) { return !el.disabled && !el.readOnly; }
+    ).length;
+    return {
+      hasTitle: text.indexOf('查看案件明細') !== -1,
+      hasNotice: text.indexOf('僅供檢視、不可編輯') !== -1,
+      hasCaseNumber: text.indexOf(target.caseNumber) !== -1,
+      editable: editable,
+    };
+  })()`);
+  assertEq(routed.hasTitle, true, 'case-view 路由渲染查看案件明細');
+  assertEq(routed.hasNotice, true, 'case-view 路由帶入結案提示');
+  assertEq(routed.hasCaseNumber, true, 'case-view 顯示該案件編號');
+  assertEq(routed.editable, 0, 'case-view 全頁無可編輯欄位');
+
+  assertEq(await evaluate(`(function () {
+    var root = document.getElementById('app') || document.body;
+    var back = Array.prototype.slice.call(root.querySelectorAll('button'))
+      .filter(function (b) { return (b.getAttribute('aria-label') || '') === '關閉'; })[0]
+      || root.querySelector('.page-header-sticky button');
+    back.click();
+    return window.__caseNavForTest.store.get().view;
+  })()`), 'list', '返回鍵回到案件處理列表');
+  assertEq(consoleErrors.length, 0, 'case-view 路由無 JS 錯誤');
+
   console.log('\n列表顯示：待報價結案後仍留在案件處理列表');
   assertEq(await evaluate(`(function () {
     var c = window.__makeCase('待報價');

@@ -1,6 +1,7 @@
 /*
  * features/repair/case-list.js — 案件處理：案件列表（未結案）
- * props: { cases, setCases, stores, setStores, customers, setEditingCase, setView, showToast, statusFilter, setStatusFilter }
+ * props: { cases, setCases, stores, setStores, customers, setEditingCase, setViewingCase,
+ *          setView, showToast, statusFilter, setStatusFilter }
  */
 (function () {
   'use strict';
@@ -52,6 +53,7 @@
     var setStores = props.setStores;
     var customers = props.customers;
     var setEditingCase = props.setEditingCase;
+    var setViewingCase = props.setViewingCase;
     var setView = props.setView;
     var showToast = props.showToast;
     var statusFilter = props.statusFilter;
@@ -207,11 +209,20 @@
     }
 
     function renderRowActions(c, rerender) {
+      // 已結案的案件視同叫修案件紀錄：編輯鈕保留，但改開唯讀明細（帶結案提示）而非編輯表單。
       var actions = [
         iconActionBtn({
           label: '編輯',
           className: 'p-1.5 text-blue-600 hover:bg-blue-100 rounded',
-          onClick: function () { setEditingCase(c); setView('edit'); },
+          onClick: function () {
+            if (c.isClosed && setViewingCase) {
+              setViewingCase(c);
+              setView('case-view');
+              return;
+            }
+            setEditingCase(c);
+            setView('edit');
+          },
           icon: Icons.Edit({ className: 'h-4 w-4' })
         })
       ];

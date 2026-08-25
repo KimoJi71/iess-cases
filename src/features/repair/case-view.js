@@ -1,6 +1,8 @@
 /*
  * features/repair/case-view.js — 共用元件：查看案件明細
- * props: { viewingCase, setView, backView, deviceCategories }
+ * props: { viewingCase, setView, backView, deviceCategories, notice }
+ *
+ * notice：可選的說明橫幅，用於告知使用者此頁為何唯讀（例：自案件處理列表點進已結案案件）。
  */
 (function () {
   'use strict';
@@ -19,6 +21,7 @@
     var openPrevCase = props.openPrevCase;
     var currentView = props.currentView || backView;
     var onClose = props.onClose;
+    var notice = props.notice;
 
     var pmColumns = ProcessMethodUtils.CASE_DISPLAY_COLUMNS;
 
@@ -67,6 +70,13 @@
         wrapperClass: 'page-header-sticky flex justify-between items-center p-4 sm:p-6 border-b border-gray-200 sticky top-0 z-10 bg-white rounded-t-lg'
       }),
       h('div', { className: 'p-4 sm:p-6 space-y-6 sm:space-y-8 bg-gray-50' },
+        notice && h('div', {
+          className: 'flex items-start gap-2 p-3 rounded-md border border-amber-200 ' +
+            'bg-amber-50 text-amber-800 text-sm'
+        },
+          IESS.Icons.AlertCircle({ className: 'h-4 w-4 mt-0.5 shrink-0' }),
+          h('span', null, notice)
+        ),
         h('section', { className: 'bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-100' },
           h('h3', { className: 'text-lg font-bold text-blue-800 border-b pb-2 mb-4' }, '1. 排程資料'),
           h('div', { className: 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-sm items-start' },

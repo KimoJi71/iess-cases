@@ -374,8 +374,18 @@
           customers: s.customers,
           processMethods: s.processMethods, deviceCategories: s.deviceCategories,
           vehicles: s.vehicles, vendors: s.vendors,
-          setEditingCase: setEditingCase, setView: setView, showToast: showToast,
+          setEditingCase: setEditingCase, setViewingCase: setViewingCase,
+          setView: setView, showToast: showToast,
           statusFilter: s.statusFilter, setStatusFilter: setStatusFilter
+        });
+      // 案件處理列表中的已結案案件：視同叫修案件紀錄，只能檢視。
+      case 'case-view':
+        return h(ViewCaseForm, {
+          viewingCase: s.viewingCase, setView: setView, backView: 'list',
+          notice: '此案件已結案，已轉為叫修案件紀錄，僅供檢視、不可編輯。',
+          processMethods: s.processMethods, deviceCategories: s.deviceCategories,
+          vehicles: s.vehicles, vendors: s.vendors,
+          cases: s.cases, openPrevCase: openPrevCase, currentView: 'case-view'
         });
       case 'add':
         return h(AddCaseForm, {
