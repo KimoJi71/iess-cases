@@ -139,6 +139,35 @@
         return;
       }
 
+      if (caseStatus.isExtensionStatus(target.processStatus)) {
+        var existingExtensionCase = CaseExtensionUtils.findExistingExtensionCase(target, cases);
+        if (existingExtensionCase) {
+          setCases(cases.map(function (c) {
+            if (c.id !== caseId) return c;
+            return Object.assign({}, c, {
+              isClosed: true,
+              closeDate: stamp
+            });
+          }));
+          showToast('案件已結案並移至「案件銷案審核」列表，延伸案件 ' +
+            existingExtensionCase.caseNumber + ' 已存在，不再重複建立');
+          return;
+        }
+
+        var extensionCase = CaseExtensionUtils.buildExtensionCase(target, cases);
+        // 原案件與延伸案件在同一次 setCases 寫入，避免兩次重繪讓序號重算。
+        setCases(cases.map(function (c) {
+          if (c.id !== caseId) return c;
+          return Object.assign({}, c, {
+            isClosed: true,
+            closeDate: stamp,
+            extensionCaseId: extensionCase.id
+          });
+        }).concat([extensionCase]));
+        showToast('案件已結案並移至「案件銷案審核」列表，已建立延伸案件 ' + extensionCase.caseNumber);
+        return;
+      }
+
       setCases(cases.map(function (c) {
         if (c.id !== caseId) return c;
         return Object.assign({}, c, {
@@ -419,7 +448,11 @@
                 ? '確定要標記為已完成嗎？完成後將自案件處理列表移除（仍保留於案件銷案審核）。'
                 : modalCase && caseStatus.isTransferStatus(modalCase.processStatus)
                   ? '確定要將此案件結案嗎？結案後將同步移至「案件銷案審核」列表，並保留於本列表，待完成後請點選對應完成按鈕。'
-                  : '確定要將此案件結案嗎？結案後將移至「案件銷案審核」列表。'
+                  : modalCase && caseStatus.isExtensionStatus(modalCase.processStatus)
+                    ? '確定要將此案件結案嗎？結案後將移至「案件銷案審核」列表，並自動建立一筆延伸案件（編號 ' +
+                      CaseExtensionUtils.getNextExtensionCaseNumber(modalCase, cases) +
+                      '）於案件處理列表。'
+                    : '確定要將此案件結案嗎？結案後將移至「案件銷案審核」列表。'
             ),
             h('div', { className: 'flex justify-end space-x-3' },
               h('button', {

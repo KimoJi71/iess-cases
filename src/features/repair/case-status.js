@@ -11,6 +11,7 @@
   'use strict';
 
   var TRANSFER_STATUSES = ['轉汰換', '轉原廠'];
+  var EXTENSION_STATUSES = ['待料件', '尚未處理完成'];
 
   var UNASSIGNED_ASSIGNEES = ['', '案件待辦', '尚未指派'];
 
@@ -116,6 +117,11 @@
     return TRANSFER_STATUSES.indexOf(status) !== -1;
   }
 
+  // 延伸狀態：結案時要複製出一筆延伸案件，承接尚未完成的服務項目。
+  function isExtensionStatus(status) {
+    return EXTENSION_STATUSES.indexOf(status) !== -1;
+  }
+
   // 結案按鈕一律顯示，以停用狀態控制：選過處理狀態（不分哪一種）且尚未結案才可結案。
   function canCloseCase(c) {
     return !!(c && c.processStatus) && !c.isClosed;
@@ -159,6 +165,7 @@
   global.IESS = global.IESS || {};
   global.IESS.caseStatus = {
     isTransferStatus: isTransferStatus,
+    isExtensionStatus: isExtensionStatus,
     canCloseCase: canCloseCase,
     getCaseCloseDisabledReason: getCaseCloseDisabledReason,
     showsInterimCompleteButton: showsInterimCompleteButton,

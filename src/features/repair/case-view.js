@@ -15,6 +15,10 @@
     var deviceCategories = props.deviceCategories || [];
     var vehicles = props.vehicles || [];
     var vendors = props.vendors || [];
+    var cases = props.cases || [];
+    var openPrevCase = props.openPrevCase;
+    var currentView = props.currentView || backView;
+    var onClose = props.onClose;
 
     var pmColumns = ProcessMethodUtils.CASE_DISPLAY_COLUMNS;
 
@@ -41,6 +45,15 @@
       );
     }
 
+    function buildPrevCaseAction() {
+      return CaseExtensionUtils.buildPrevCaseAction({
+        cases: cases,
+        targetCase: viewingCase,
+        currentView: currentView,
+        openPrevCase: openPrevCase
+      });
+    }
+
     var isOther = viewingCase && viewingCase.workCategory === '其他';
 
     return h('div', {
@@ -49,7 +62,8 @@
       PageHeader({
         title: '查看案件明細',
         badge: viewingCase && viewingCase.caseNumber,
-        onClose: function () { setView(backView); },
+        onClose: onClose || function () { setView(backView); },
+        actions: buildPrevCaseAction(),
         wrapperClass: 'page-header-sticky flex justify-between items-center p-4 sm:p-6 border-b border-gray-200 sticky top-0 z-10 bg-white rounded-t-lg'
       }),
       h('div', { className: 'p-4 sm:p-6 space-y-6 sm:space-y-8 bg-gray-50' },

@@ -377,6 +377,7 @@
     var processMethods = props.processMethods || [];
     var setView = props.setView;
     var showToast = props.showToast;
+    var openPrevCase = props.openPrevCase;
 
     var formData = CaseAssigneeUtils.normalizeRepairCase(
       JSON.parse(JSON.stringify(editingCase))
@@ -538,12 +539,22 @@
       /* 維修結果原則上要先加入設備才可編輯；工項分類為「其他」時不受此限 */
       var resultLocked = !formData.equipment && !isOther;
 
+      function buildPrevCaseAction() {
+        return CaseExtensionUtils.buildPrevCaseAction({
+          cases: cases,
+          targetCase: formData,
+          currentView: 'edit',
+          openPrevCase: openPrevCase
+        });
+      }
+
       return h("div", {
         className: "max-w-5xl mx-auto bg-white rounded-lg shadow-sm border border-gray-100"
       }, PageHeader({
         title: '編輯案件',
         badge: formData.caseNumber,
         onClose: function () { setView('list'); },
+        actions: buildPrevCaseAction(),
         wrapperClass: 'page-header-sticky flex justify-between items-center p-4 sm:p-6 border-b border-gray-200 sticky top-0 z-10 bg-white rounded-t-lg'
       }), h("div", {
         className: "p-4 sm:p-6 space-y-6 sm:space-y-8 bg-gray-50"

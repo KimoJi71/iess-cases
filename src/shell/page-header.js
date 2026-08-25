@@ -4,9 +4,10 @@
  * 左側：標題（無 icon，統一樣式），可選帶入一個 badge（如案號／立案號）。
  * 右側：關閉按鈕（X），點擊回到列表頁。
  *
- * opts: { title, badge?, onClose, wrapperClass? }
+ * opts: { title, badge?, onClose, wrapperClass?, actions? }
  *   wrapperClass 預設為卡片內頁首（mb-6 pb-4）；若頁面為 flex-col 捲動容器，
  *   傳入 'flex justify-between items-center p-6 border-b border-gray-200 shrink-0'。
+ *   actions? 額外操作節點陣列，渲染於關閉鈕左側（如「先前案件」）。
  */
 (function () {
   'use strict';
@@ -16,6 +17,9 @@
   function PageHeader(opts) {
     var wrapperClass = opts.wrapperClass ||
       'flex justify-between items-center mb-6 pb-4 border-b border-gray-200';
+    var closeBtn = iconActionBtn({ label: '關閉並返回列表', onClick: opts.onClose,
+      className: 'shrink-0 p-2.5 sm:p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors', icon: Icons.X({ className: 'h-6 w-6' }) });
+    var actions = opts.actions || [];
 
     return h('div', { className: wrapperClass },
       h('div', { className: 'flex items-center gap-2 sm:gap-3 min-w-0 flex-1' },
@@ -26,8 +30,9 @@
             }, opts.badge)
           : null
       ),
-      iconActionBtn({ label: '關閉並返回列表', onClick: opts.onClose,
-        className: 'shrink-0 p-2.5 sm:p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors', icon: Icons.X({ className: 'h-6 w-6' }) })
+      actions.length
+        ? h('div', { className: 'flex items-center gap-2 shrink-0' }, actions.concat([closeBtn]))
+        : closeBtn
     );
   }
 
