@@ -106,12 +106,17 @@
       performanceAssignees: performanceAssignees,
       vehicleId: record.vehicleId || '',
       partnerVendorIds: asStringArray(record.partnerVendorIds),
+      // 設備與服務項目改以卡片陣列承載；舊案件的三個單一欄位在此摺疊後移除
+      serviceItems: RepairCaseServiceItems.normalizeServiceItems(record),
       processStatus: Object.prototype.hasOwnProperty.call(record, 'processStatus')
         ? normalizeProcessStatus(record.processStatus)
         : record.processStatus
     });
     delete next.assignee;
     delete next.collaborators;
+    delete next.equipment;
+    delete next.actualReason;
+    delete next.processRecords;
     return next;
   }
 

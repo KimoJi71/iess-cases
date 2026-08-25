@@ -34,6 +34,7 @@ function loadIife(relativePath, sandbox) {
 const sandbox = { console, window: {}, DEFAULT_EQUIPMENT_LEVEL: '一般設備' };
 sandbox.window = sandbox;
 vm.createContext(sandbox);
+loadIife('src/features/repair/case-service-items.js', sandbox);
 loadIife('src/features/repair/case-assignee-utils.js', sandbox);
 sandbox.EquipmentUtils = {
   formatLevel: function (eq) { return (eq && eq.equipmentLevel) || '一般設備'; }

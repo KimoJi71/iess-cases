@@ -86,6 +86,7 @@ function createSandbox() {
 function loadModules() {
   const sandbox = createSandbox();
   loadIife('src/features/permissions/process-method-utils.js', sandbox);
+  loadIife('src/features/repair/case-service-items.js', sandbox);
   loadIife('src/features/repair/case-assignee-utils.js', sandbox);
   loadIife('src/features/permissions/assignee-utils.js', sandbox);
   loadIife('src/features/permissions/service-level-utils.js', sandbox);
