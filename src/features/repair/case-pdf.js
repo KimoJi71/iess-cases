@@ -150,10 +150,7 @@
     // 一台設備一個小節：設備欄位 → 實際維修原因 → 處理方式表
     var serviceItems = items.length
       ? items.map(function (item, idx) {
-          var eq = item.equipment || {};
-          var title = '設備 ' + (idx + 1) + '　'
-            + (eq.deviceName || eq.name || '未指定設備')
-            + (eq.model ? ' ' + eq.model : '');
+          var title = RepairCaseServiceItems.formatItemTitle(idx, item);
           var records = ProcessMethodUtils.sortCaseProcessRecords(item.processRecords || []);
           var pmRows = records.map(function (r) {
             var isDone = ProcessMethodUtils.isCaseRecordDone(r);

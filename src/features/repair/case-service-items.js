@@ -87,6 +87,13 @@
     });
   }
 
+  // 卡片標題（編輯卡片／唯讀明細／PDF／派工明細共用），避免各處各自拼字串走樣
+  function formatItemTitle(index, item) {
+    var eq = (item && item.equipment) || {};
+    var name = eq.deviceName || eq.name || '未指定設備';
+    return '設備 ' + (index + 1) + '　' + name + (eq.model ? ' ' + eq.model : '');
+  }
+
   window.RepairCaseServiceItems = {
     createItem: createItem,
     normalizeItem: normalizeItem,
@@ -96,6 +103,7 @@
     getAllProcessRecords: getAllProcessRecords,
     hasAnyProcessData: hasAnyProcessData,
     removeItem: removeItem,
-    updateItem: updateItem
+    updateItem: updateItem,
+    formatItemTitle: formatItemTitle
   };
 })();

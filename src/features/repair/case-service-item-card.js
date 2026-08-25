@@ -5,12 +5,6 @@
 (function () {
   'use strict';
 
-  function cardTitle(index, item) {
-    var eq = item.equipment || {};
-    var name = eq.deviceName || eq.name || '未指定設備';
-    return '設備 ' + (index + 1) + '　' + name + (eq.model ? ' ' + eq.model : '');
-  }
-
   function RepairCaseServiceItemCard(props) {
     var h = props.h || IESS.h;
     var Icons = IESS.Icons;
@@ -182,7 +176,7 @@
 
     return h('div', { className: 'border border-gray-200 rounded-lg overflow-hidden mb-4' },
       h('div', { className: 'flex justify-between items-center bg-gray-50 border-b px-4 py-2' },
-        h('span', { className: 'font-semibold text-gray-700 text-sm' }, cardTitle(props.index, item)),
+        h('span', { className: 'font-semibold text-gray-700 text-sm' }, RepairCaseServiceItems.formatItemTitle(props.index, item)),
         readOnly ? null : h('button', {
           type: 'button',
           onClick: function () { props.onRemoveItem(); },
