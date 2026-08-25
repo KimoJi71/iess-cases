@@ -264,8 +264,7 @@
 
   function hasProcessData(c) {
     if (!c) return false;
-    if (c.actualReason && String(c.actualReason).trim()) return true;
-    if (c.processRecords && c.processRecords.length > 0) return true;
+    if (RepairCaseServiceItems.hasAnyProcessData(c)) return true;
     if (c.processStatus) return true;
     if (c.reRepairDate) return true;
     if (c.completionDate) return true;
