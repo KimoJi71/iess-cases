@@ -8,7 +8,8 @@
  * 押上完成時間後，列表即出現「案件結案」按鈕。
  *
  * 待報價／轉汰換／轉原廠結案後仍留在案件處理列表，改由「後續處理」選單收尾，
- * 詳見 LIST_RETAINED_STATUSES 與 FOLLOW_UP_ACTIONS。
+ * 詳見 LIST_RETAINED_STATUSES 與 FOLLOW_UP_ACTIONS；收尾結果以 followUpStatus／
+ * followUpStatusAt 記錄，由 FOLLOW_UP_FIELDS 決定明細／PDF／匯出的呈現欄位。
  */
 (function (global) {
   'use strict';
@@ -27,15 +28,34 @@
 
   var FOLLOW_UP_ACTIONS = {
     '待報價': [
-      { key: 'quoteAccept', label: '接受報價', kind: 'extend' },
-      { key: 'quoteReject', label: '拒絕報價', kind: 'finish' }
+      { key: 'quoteAccept', label: '接受報價', kind: 'extend', statusValue: '接受' },
+      { key: 'quoteReject', label: '拒絕報價', kind: 'finish', statusValue: '拒絕' }
     ],
     '轉汰換': [
-      { key: 'toRepair', label: '轉維修', kind: 'extend' },
-      { key: 'replaceDone', label: '汰換完成', kind: 'finish' }
+      { key: 'toRepair', label: '轉維修', kind: 'extend', statusValue: '轉維修' },
+      { key: 'replaceDone', label: '汰換完成', kind: 'finish', statusValue: '完成' }
     ],
     '轉原廠': [
-      { key: 'vendorDone', label: '轉原廠完成', kind: 'finish' }
+      { key: 'vendorDone', label: '轉原廠完成', kind: 'finish', statusValue: '完成' }
+    ]
+  };
+
+  /*
+   * 後續處理的結果欄位：接在明細／PDF 的「處理狀態」後方，值取自案件的
+   * followUpStatus（動作的 statusValue）與 followUpStatusAt（按下動作的時間）。
+   * 轉原廠只有一種動作，狀態本身沒有資訊量，因此只呈現完成時間。
+   */
+  var FOLLOW_UP_FIELDS = {
+    '待報價': [
+      { key: 'status', label: '報價狀態' },
+      { key: 'at', label: '修改報價狀態時間' }
+    ],
+    '轉汰換': [
+      { key: 'status', label: '汰換狀態' },
+      { key: 'at', label: '修改汰換狀態時間' }
+    ],
+    '轉原廠': [
+      { key: 'at', label: '轉原廠完成時間' }
     ]
   };
 
@@ -166,6 +186,20 @@
     return FOLLOW_UP_ACTIONS[c.processStatus] || [];
   }
 
+  /*
+   * 明細／PDF／匯出共用：回傳 [{ key, label, value }]，處理狀態非滯留狀態時回空陣列。
+   * 尚未做後續處理時 value 為空字串，由呈現端決定顯示 '—' 或留白。
+   */
+  function getFollowUpFields(c) {
+    var fields = (c && FOLLOW_UP_FIELDS[c.processStatus]) || [];
+    return fields.map(function (f) {
+      var value = f.key === 'at'
+        ? (c.followUpStatusAt ? global.IESS.caseDateTime.format(c.followUpStatusAt) : '')
+        : (c.followUpStatus || '');
+      return { key: f.key, label: f.label, value: value };
+    });
+  }
+
   function showsFollowUpButton(c) {
     return getFollowUpActions(c).length > 0;
   }
@@ -185,9 +219,17 @@
     var action = getFollowUpAction(target, actionKey);
     if (!action) return null;
 
+    // 每個後續處理動作都在原案件押上結果狀態與當下時間，供明細／PDF／匯出呈現。
+    var followUp = {
+      followUpStatus: action.statusValue || '',
+      followUpStatusAt: global.IESS.caseDateTime.now()
+    };
+
     function leaveList(patch) {
       return list.map(function (c) {
-        return c.id === caseId ? Object.assign({}, c, { isListClosed: false }, patch || {}) : c;
+        return c.id === caseId
+          ? Object.assign({}, c, { isListClosed: false }, followUp, patch || {})
+          : c;
       });
     }
 
@@ -246,6 +288,7 @@
     isListRetainedStatus: isListRetainedStatus,
     getFollowUpActions: getFollowUpActions,
     getFollowUpAction: getFollowUpAction,
+    getFollowUpFields: getFollowUpFields,
     showsFollowUpButton: showsFollowUpButton,
     applyFollowUpAction: applyFollowUpAction,
     applyProcessStatusChange: applyProcessStatusChange,

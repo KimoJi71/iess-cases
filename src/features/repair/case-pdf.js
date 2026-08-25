@@ -172,10 +172,16 @@
     var caseSignature = c.customerSignature
       ? '<img class="sign" src="' + esc(c.customerSignature) + '" alt="客戶簽名"/>'
       : '尚未簽收';
+    // 待報價／轉汰換／轉原廠：處理狀態後方接後續處理的結果與時間。
+    var followUpFields = IESS.caseStatus.getFollowUpFields(c);
+    var followUp = followUpFields.length ? fieldTable(followUpFields.map(function (f) {
+      return { label: f.label, value: f.value };
+    })) : '';
     var result = '<table>' +
       '<tr><td class="lbl">處理狀態</td><td class="val">' + cell(c.processStatus) + '</td>' +
       '<td class="lbl">客戶簽收</td><td class="val" colspan="5">' + caseSignature + '</td></tr>' +
       '</table>' +
+      followUp +
       fieldTable([{ label: '維修備註', value: c.repairRemark, full: true }]) +
       '<div class="sub-title">時間紀錄</div>' +
       fieldTable([
