@@ -22,8 +22,9 @@
 | `rootCaseNumber` | string | 延伸鏈最初的原始案件編號，例如 `20260825001` |
 | `prevCaseId` | string | 直接上一筆案件的 `id`，供「先前案件」按鈕逐層回溯 |
 | `extensionSeq` | number | 此案在延伸鏈中的序號（1、2、3…） |
+| `extensionCaseId` | string | 原始案件結案建立延伸案件後，記錄延伸案件的 `id`；再次結案時若此 id 對應的案件仍在 `cases` 中，不重複建立，只提示已存在 |
 
-原始案件三個欄位皆為 `undefined`（seed 資料不預設）。
+原始案件三個欄位皆為 `undefined`（seed 資料不預設）。`extensionCaseId` 則相反，只寫在建立過延伸案件的原始案件上。
 
 ### 編號規則
 

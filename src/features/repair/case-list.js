@@ -140,13 +140,28 @@
       }
 
       if (caseStatus.isExtensionStatus(target.processStatus)) {
+        var existingExtensionCase = CaseExtensionUtils.findExistingExtensionCase(target, cases);
+        if (existingExtensionCase) {
+          setCases(cases.map(function (c) {
+            if (c.id !== caseId) return c;
+            return Object.assign({}, c, {
+              isClosed: true,
+              closeDate: stamp
+            });
+          }));
+          showToast('案件已結案並移至「案件銷案審核」列表，延伸案件 ' +
+            existingExtensionCase.caseNumber + ' 已存在，不再重複建立');
+          return;
+        }
+
         var extensionCase = CaseExtensionUtils.buildExtensionCase(target, cases);
         // 原案件與延伸案件在同一次 setCases 寫入，避免兩次重繪讓序號重算。
         setCases(cases.map(function (c) {
           if (c.id !== caseId) return c;
           return Object.assign({}, c, {
             isClosed: true,
-            closeDate: stamp
+            closeDate: stamp,
+            extensionCaseId: extensionCase.id
           });
         }).concat([extensionCase]));
         showToast('案件已結案並移至「案件銷案審核」列表，已建立延伸案件 ' + extensionCase.caseNumber);

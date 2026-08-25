@@ -143,15 +143,15 @@
   var setViewingCase = makeSetter('viewingCase');
   var setHistoryStore = makeSetter('historyStore');
   var setCustomerBackView = makeSetter('customerBackView');
-  var setPrevCaseStack = makeSetter('prevCaseStack');
   var setStatusFilter = makeSetter('statusFilter');
 
   function openPrevCase(prevCase, fromView, fromCase) {
     store.set(function (s) {
-      var stack = (s.prevCaseStack || []).concat([{
+      var frame = {
         view: fromView,
         caseId: fromCase ? fromCase.id : null
-      }]);
+      };
+      var stack = s.view === 'prev-case-view' ? (s.prevCaseStack || []).concat([frame]) : [frame];
       return {
         prevCaseStack: stack,
         viewingCase: prevCase,

@@ -348,6 +348,109 @@ try {
   assertTrue(String(plainClose.toast).indexOf('延伸') === -1,
     '案件完成的 toast 不提延伸', plainClose.toast);
 
+  console.log('\n案件處理列表 — 延伸結案避免重複建立（Important #2）');
+  const extIdCheck = await evaluate(`(function(){
+    window.__written = { cases: null, stores: null, toast: null };
+    var target = Object.assign({}, window.__origCase, {
+      isClosed: false, isListClosed: false, closeDate: '', extensionCaseId: undefined
+    });
+    var node = CaseList({
+      cases: [target],
+      setCases: function (next) { window.__written.cases = next; },
+      stores: [], setStores: function () {}, customers: [],
+      setEditingCase: function () {}, setView: function () {},
+      showToast: function (msg) { window.__written.toast = msg; },
+      statusFilter: '全部', setStatusFilter: function () {},
+      processMethods: [], deviceCategories: [], vehicles: [], vendors: []
+    });
+    document.body.appendChild(node);
+    window.__findCloseBtn(node, '20260825001').click();
+    window.__findBtnByText('確認').click();
+    var written = window.__written.cases || [];
+    var origin = written.filter(function (c) { return c.id === 'C1'; })[0];
+    var ext = written.filter(function (c) { return c.caseNumber === '20260825001-1'; })[0];
+    var result = {
+      total: written.length,
+      extensionCaseId: origin && origin.extensionCaseId,
+      extId: ext && ext.id
+    };
+    document.body.innerHTML = '';
+    return result;
+  })()`);
+  assertEq(extIdCheck.total, 2, '首次結案建立延伸案件（原案 + 延伸案）');
+  assertTrue(!!extIdCheck.extensionCaseId, '原案件寫入 extensionCaseId');
+  assertTrue(extIdCheck.extensionCaseId === extIdCheck.extId,
+    '原案件 extensionCaseId 指向新建的延伸案件', extIdCheck.extensionCaseId);
+
+  const dupCloseCheck = await evaluate(`(function(){
+    window.__written = { cases: null, stores: null, toast: null };
+    var extCase = Object.assign({}, CaseExtensionUtils.buildExtensionCase(window.__origCase, [window.__origCase]),
+      { id: 'EXT1' });
+    var target = Object.assign({}, window.__origCase, {
+      isClosed: false, isListClosed: false, closeDate: '', extensionCaseId: 'EXT1'
+    });
+    var node = CaseList({
+      cases: [target, extCase],
+      setCases: function (next) { window.__written.cases = next; },
+      stores: [], setStores: function () {}, customers: [],
+      setEditingCase: function () {}, setView: function () {},
+      showToast: function (msg) { window.__written.toast = msg; },
+      statusFilter: '全部', setStatusFilter: function () {},
+      processMethods: [], deviceCategories: [], vehicles: [], vendors: []
+    });
+    document.body.appendChild(node);
+    // 列表同時有原案件與其延伸案件（編號含 -1），caseNumber 用「非延伸編號」精準比對，
+    // 避免 window.__findCloseBtn 的子字串比對誤配到延伸案件那一列。
+    var rows = Array.prototype.slice.call(node.querySelectorAll('tbody tr'));
+    var targetRow = rows.filter(function (tr) {
+      return tr.textContent.indexOf(target.caseNumber) !== -1
+        && tr.textContent.indexOf(extCase.caseNumber) === -1;
+    })[0];
+    targetRow.querySelector('button[aria-label="案件結案"]').click();
+    window.__findBtnByText('確認').click();
+    var written = window.__written.cases || [];
+    var result = {
+      total: written.length,
+      toast: window.__written.toast,
+      extNumber: extCase.caseNumber
+    };
+    document.body.innerHTML = '';
+    return result;
+  })()`);
+  assertEq(dupCloseCheck.total, 2, '延伸案件仍存在時，再次結案不新增案件');
+  assertTrue(String(dupCloseCheck.toast).indexOf(dupCloseCheck.extNumber) !== -1,
+    'toast 提及既有的延伸案件編號', dupCloseCheck.toast);
+  assertTrue(String(dupCloseCheck.toast).indexOf('已建立延伸案件') === -1,
+    'toast 不使用「已建立」字樣（避免誤導為新建）', dupCloseCheck.toast);
+
+  const staleExtCheck = await evaluate(`(function(){
+    window.__written = { cases: null, stores: null, toast: null };
+    var target = Object.assign({}, window.__origCase, {
+      isClosed: false, isListClosed: false, closeDate: '', extensionCaseId: 'GONE'
+    });
+    var node = CaseList({
+      cases: [target],
+      setCases: function (next) { window.__written.cases = next; },
+      stores: [], setStores: function () {}, customers: [],
+      setEditingCase: function () {}, setView: function () {},
+      showToast: function (msg) { window.__written.toast = msg; },
+      statusFilter: '全部', setStatusFilter: function () {},
+      processMethods: [], deviceCategories: [], vehicles: [], vendors: []
+    });
+    document.body.appendChild(node);
+    window.__findCloseBtn(node, '20260825001').click();
+    window.__findBtnByText('確認').click();
+    var written = window.__written.cases || [];
+    var ext = written.filter(function (c) { return c.caseNumber === '20260825001-1'; })[0];
+    var result = { total: written.length, hasExt: !!ext, toast: window.__written.toast };
+    document.body.innerHTML = '';
+    return result;
+  })()`);
+  assertEq(staleExtCheck.total, 2, 'extensionCaseId 指向的案件已不存在時仍建立新的延伸案件');
+  assertTrue(staleExtCheck.hasExt, '新延伸案件編號正確為 -1');
+  assertTrue(String(staleExtCheck.toast).indexOf('已建立延伸案件') !== -1,
+    'toast 顯示為新建（非既存提示）', staleExtCheck.toast);
+
   console.log('\nPageHeader actions 與 Icons.History');
   assertEq(await evaluate('typeof IESS.Icons.History'), 'function', 'Icons.History 已定義');
   assertEq(await evaluate(`IESS.Icons.History({ className: 'h-4 w-4' }).tagName`),
@@ -525,6 +628,25 @@ try {
   assertEq(multiHop.trace[3].viewingId, multiHop.ext1Id, '第一次關閉看到 -1（未被上一層 backView 蓋掉）');
   assertEq(multiHop.trace[4].view, 'record-view', '第二次關閉退回 record-view');
   assertEq(multiHop.trace[4].viewingId, multiHop.ext2Id, '第二次關閉看到 -2');
+
+  console.log('\nsidebar 導覽後重新起始 prevCaseStack（Important #1）');
+  const sidebarNav = await evaluate(`(function(){
+    var nav = window.__caseNavForTest;
+    var orig = window.__origCase;
+    var ext1 = Object.assign({}, CaseExtensionUtils.buildExtensionCase(orig, [orig]), { id: 'Y1' });
+    nav.store.set({ cases: [orig, ext1], view: 'record-view', viewingCase: ext1, prevCaseStack: [] });
+    nav.openPrevCase(orig, 'record-view', ext1);
+    // 模擬透過側邊選單／menu 直接切換 view（如 selectTopMenu），不經過 closePrevCase，
+    // stack 因此殘留舊的一層。
+    nav.store.set({ view: 'review-view' });
+    nav.openPrevCase(orig, 'review-view', null);
+    nav.closePrevCase();
+    var s = nav.store.get();
+    return { view: s.view, stackLen: (s.prevCaseStack || []).length };
+  })()`);
+  assertEq(sidebarNav.view, 'review-view',
+    '離開先前案件鏈後（sidebar 導覽）從新頁面開啟先前案件，關閉時回到新的來源 view，而非殘留的 prev-case-view');
+  assertEq(sidebarNav.stackLen, 0, 'stack 因非 prev-case-view 起點而重設為單層，關閉後清空');
 } catch (err) {
   console.error(err);
   failed++;

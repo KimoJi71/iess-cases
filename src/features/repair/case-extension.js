@@ -105,6 +105,15 @@
     };
   }
 
+  // 結案時是否已經建立過延伸案件：原案件的 extensionCaseId 若指向仍存在的案件，
+  // 代表退回重開後再次結案，不應該再多建一筆，回傳既有的那筆讓呼叫端提示使用者。
+  function findExistingExtensionCase(original, cases) {
+    if (!original || !original.extensionCaseId) return null;
+    return (cases || []).filter(function (c) {
+      return c.id === original.extensionCaseId;
+    })[0] || null;
+  }
+
   // 明細頁／編輯頁共用的「先前案件」按鈕：找不到來源案件或未提供 openPrevCase 時不顯示。
   function buildPrevCaseAction(opts) {
     opts = opts || {};
@@ -132,6 +141,7 @@
     getNextExtensionSeq: getNextExtensionSeq,
     getNextExtensionCaseNumber: getNextExtensionCaseNumber,
     buildExtensionCase: buildExtensionCase,
+    findExistingExtensionCase: findExistingExtensionCase,
     buildPrevCaseAction: buildPrevCaseAction
   };
 })();
