@@ -324,9 +324,20 @@ try {
     ['編輯', '此案件已結案', '後續處理', '更多'],
     '滯留列表的待報價案件顯示後續處理按鈕，結案鈕已停用');
 
+  assertEq(await evaluate(`(function () {
+    var btns = document.querySelectorAll('#follow-up-host tbody tr:first-child td:first-child button');
+    var closeIcon = btns[1].querySelector('svg').innerHTML;
+    var followUpIcon = btns[2].querySelector('svg').innerHTML;
+    return closeIcon !== followUpIcon;
+  })()`), true, '案件結案與後續處理的圖示不同');
+
   await evaluate(`window.__clickAction('後續處理')`);
   assertEq(await evaluate('window.__menuItems()'), ['接受報價', '拒絕報價'],
     '待報價的後續處理選單');
+  assertEq(await evaluate(`(function () {
+    var items = document.querySelectorAll('.action-menu__menu .action-menu__item');
+    return items[0].querySelector('svg').innerHTML !== items[1].querySelector('svg').innerHTML;
+  })()`), true, '延伸類與結束類選項的圖示不同');
 
   await evaluate(`window.__clickMenuItem('接受報價')`);
   const modal = await evaluate('window.__modalText()');

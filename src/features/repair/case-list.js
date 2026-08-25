@@ -231,14 +231,17 @@
       }));
 
       if (caseStatus.showsFollowUpButton(c)) {
+        // 圖示刻意與「案件結案」的綠色勾圈區隔：後續處理代表案子還在流轉，尚未真正結束。
         actions.push(IESS.actionMenuBtn({
           label: '後續處理',
           className: 'p-1.5 text-indigo-600 hover:bg-indigo-100 rounded',
-          icon: Icons.CheckCircle({ className: 'h-4 w-4' }),
+          icon: Icons.RefreshCw({ className: 'h-4 w-4' }),
           items: caseStatus.getFollowUpActions(c).map(function (action) {
+            // extend 會再開一筆案件繼續做，finish 才是結束。
+            var itemIcon = action.kind === 'extend' ? Icons.RefreshCw : Icons.CheckCircle;
             return {
               label: action.label,
-              icon: Icons.CheckCircle({ className: 'h-4 w-4' }),
+              icon: itemIcon({ className: 'h-4 w-4' }),
               onClick: function () {
                 closeConfirmModal = {
                   show: true, caseId: c.id, mode: 'followUp', actionKey: action.key
