@@ -148,14 +148,14 @@ History: '<path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><path d="M
 
 ### 導覽
 
-點擊行為：找出 `cases` 中 `id === prevCaseId` 的案件 → `setViewingCase(該案件)`、`setPrevCaseBackView(來源 view)`、`setView('prev-case-view')`。來源 view 於 `case-view.js` 為目前的 `backView`（`record-view` 為 `'record-list'`、`review-view` 為 `'review-list'`、`prev-case-view` 為 `'prev-case-view'`），於 `EditCaseForm` 為 `'edit'`。
+點擊行為：找出 `cases` 中 `id === prevCaseId` 的案件 → `setViewingCase(該案件)`、`setPrevCaseBackView(來源 view)`、`setView('prev-case-view')`。來源 view 由新的 `currentView` prop 傳入（`record-view` / `review-view` / `prev-case-view` 各自傳自己的名字），`EditCaseForm` 固定為 `'edit'`。
 
 `app.js` 新增：
 
 - state：`prevCaseBackView`（字串，預設 `'list'`）與其 setter
 - view route `'prev-case-view'`：以 `ViewCaseForm` 唯讀呈現 `s.viewingCase`，`backView: s.prevCaseBackView`
 
-`ViewCaseForm` 與 `EditCaseForm` 需多收 `cases`、`setViewingCase`、`setPrevCaseBackView` 三個 props（`EditCaseForm` 已有 `cases`）。
+`ViewCaseForm` 需多收 `cases`、`setViewingCase`、`setPrevCaseBackView`、`currentView` 四個 props；`EditCaseForm` 需多收 `setViewingCase`、`setPrevCaseBackView`（它已有 `cases`）。
 
 從 `'prev-case-view'` 返回 `'edit'` 時，`s.editingCase` 未被更動，故編輯中的案件仍在（表單欄位暫存於元件閉包，會重置為儲存值——這與現有離開表單的行為一致）。
 
