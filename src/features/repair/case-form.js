@@ -413,10 +413,23 @@
         }
         rerender();
       }
+      function getAddedEquipmentIds() {
+        return RepairCaseServiceItems.getEquipments(formData).map(function (eq) {
+          return String(eq.id);
+        });
+      }
       function assignEquipment(eq) {
         // 已汰換的設備不可加入案件
         if (EquipmentUtils.isRetired(eq)) {
           showToast('已汰換的設備無法加入設備資料', 'error');
+          pickerOpen = false;
+          addEquipMenuOpen = false;
+          rerender();
+          return false;
+        }
+        // 同一筆設備在同一張案件只能出現一次
+        if (RepairCaseEquipment.isAdded(eq, getAddedEquipmentIds())) {
+          showToast('此設備已加入本案件', 'error');
           pickerOpen = false;
           addEquipMenuOpen = false;
           rerender();
@@ -478,9 +491,17 @@
       }
       function handleSimulateScan(e) {
         if (e) e.preventDefault();
-        var scanned = RepairCaseEquipment.findEquipmentForScan(equipments, formData);
+        var scanned = RepairCaseEquipment.findEquipmentForScan(
+          equipments, formData, getAddedEquipmentIds()
+        );
         if (scanned) {
-          assignEquipment(scanned);
+          if (!assignEquipment(scanned)) return;
+        } else if (storeEquipments.length || RepairCaseServiceItems.getItems(formData).length) {
+          // 此門市有設備卻掃不到可用的，代表能加的都加了；門市無設備時也只補一次假資料
+          showToast('已無可加入的設備', 'error');
+          addEquipMenuOpen = false;
+          rerender();
+          return;
         } else {
           assignEquipment({
             id: 'E' + Date.now(),
@@ -695,6 +716,7 @@
           pickerOpen && h(RepairCaseEquipment.PickerModal, {
             h: h,
             items: storeEquipments,
+            addedIds: getAddedEquipmentIds(),
             onSelect: handleSelectEquipment,
             onClose: function () { pickerOpen = false; rerender(); }
           })

@@ -58,17 +58,28 @@
     });
   }
 
-  // 已汰換的設備不可再被加入案件，掃描時一併排除
-  function isSelectable(equipment) {
-    return !EquipmentUtils.isRetired(equipment);
+  function normalizeAddedIds(addedIds) {
+    return (addedIds || []).map(String);
   }
 
-  function findEquipmentForScan(equipments, formData) {
+  // 同一筆設備在同一張案件只能出現一次
+  function isAdded(equipment, addedIds) {
+    if (!equipment) return false;
+    return normalizeAddedIds(addedIds).indexOf(String(equipment.id)) !== -1;
+  }
+
+  // 已汰換與已加入本案件的設備都不可再被加入，掃描時一併排除
+  function isSelectable(equipment, addedIds) {
+    return !EquipmentUtils.isRetired(equipment) && !isAdded(equipment, addedIds);
+  }
+
+  // 掃描只在本案件的客戶／門市內取件；沒有可用的就回傳 null，不跨門市撈設備
+  function findEquipmentForScan(equipments, formData, addedIds) {
     if (!equipments || !equipments.length) return null;
-    var matched = listForCase(equipments, formData).filter(isSelectable);
-    if (matched.length) return Object.assign({}, matched[0]);
-    var fallback = (equipments || []).filter(isSelectable)[0];
-    return fallback ? Object.assign({}, fallback) : null;
+    var matched = listForCase(equipments, formData).filter(function (eq) {
+      return isSelectable(eq, addedIds);
+    });
+    return matched.length ? Object.assign({}, matched[0]) : null;
   }
 
   function PickerModal(props) {
@@ -79,6 +90,7 @@
     });
     var onSelect = props.onSelect;
     var onClose = props.onClose;
+    var addedIds = normalizeAddedIds(props.addedIds);
     return h('div', { className: 'app-modal-overlay p-4' },
       h('div', {
         className: 'bg-white rounded-lg shadow-xl p-6 w-full max-w-7xl m-4 max-h-[80vh] overflow-hidden flex flex-col'
@@ -107,18 +119,20 @@
                   items.map(function (eq) {
                     // 達年限已由設備狀態的紅色標籤標示，整列不再上色
                     var retired = EquipmentUtils.isRetired(eq);
+                    var added = isAdded(eq, addedIds);
+                    var disabled = retired || added;
                     return h('tr', {
                       key: eq.id,
                       className: 'transition-colors ' + (
-                        retired ? 'bg-gray-50 text-gray-400' : 'hover:bg-blue-50/50'
+                        disabled ? 'bg-gray-50 text-gray-400' : 'hover:bg-blue-50/50'
                       )
                     },
                       h('td', { className: 'p-3 text-center' },
-                        retired
+                        disabled
                           ? h('span', {
                               className: 'px-3 py-1.5 bg-gray-100 text-gray-400 rounded-md text-sm cursor-not-allowed',
-                              title: '已汰換的設備無法加入'
-                            }, '已汰換')
+                              title: retired ? '已汰換的設備無法加入' : '已加入此案件'
+                            }, retired ? '已汰換' : '已加入')
                           : h('button', {
                               type: 'button',
                               onClick: function () { onSelect(eq); },
@@ -180,6 +194,7 @@
     getFieldValue: getFieldValue,
     getDisplayFields: getDisplayFields,
     listForCase: listForCase,
+    isAdded: isAdded,
     isSelectable: isSelectable,
     findEquipmentForScan: findEquipmentForScan,
     PickerModal: PickerModal,
