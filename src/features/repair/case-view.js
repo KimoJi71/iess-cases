@@ -191,6 +191,10 @@
           h('div', { className: 'space-y-6' },
             h('div', { className: 'grid grid-cols-1 md:grid-cols-2 gap-6' },
               h(ReadOnlyField, { label: '處理狀態', value: (viewingCase && viewingCase.processStatus) || '—' }),
+              // 待報價／轉汰換／轉原廠：接在處理狀態後方呈現後續處理的結果與時間。
+              IESS.caseStatus.getFollowUpFields(viewingCase).map(function (f) {
+                return h(ReadOnlyField, { key: f.key, label: f.label, value: f.value || '—' });
+              }),
               h('div', null,
                 h('span', { className: 'text-gray-500 block mb-1 text-xs' }, '客戶簽收'),
                 viewingCase && viewingCase.customerSignature

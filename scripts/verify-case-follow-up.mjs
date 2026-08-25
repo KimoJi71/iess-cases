@@ -237,6 +237,95 @@ try {
     `IESS.caseStatus.applyFollowUpAction([window.__makeCase('待報價')], 'C1', 'vendorDone') === null`),
     true, '動作與處理狀態不相符時回 null');
 
+  console.log('\n後續處理結果欄位：定義');
+  const fieldsOf = async (status) => evaluate(
+    `IESS.caseStatus.getFollowUpFields(window.__makeCase(${JSON.stringify(status)}))
+       .map(function (f) { return f.key + ':' + f.label + ':' + f.value; })`);
+
+  assertEq((await fieldsOf('待報價')).join('|'),
+    'status:報價狀態:|at:修改報價狀態時間:', '待報價的欄位為 報價狀態／修改報價狀態時間');
+  assertEq((await fieldsOf('轉汰換')).join('|'),
+    'status:汰換狀態:|at:修改汰換狀態時間:', '轉汰換的欄位為 汰換狀態／修改汰換狀態時間');
+  assertEq((await fieldsOf('轉原廠')).join('|'),
+    'at:轉原廠完成時間:', '轉原廠只有 轉原廠完成時間 一欄');
+  assertEq((await fieldsOf('待料件')).length, 0, '待料件沒有後續處理結果欄位');
+  assertEq((await fieldsOf('案件完成')).length, 0, '案件完成沒有後續處理結果欄位');
+  assertEq(await evaluate('IESS.caseStatus.getFollowUpFields(null).length'), 0,
+    '案件為 null 時回空陣列');
+
+  console.log('\n後續處理結果欄位：動作押上狀態與時間');
+  const TS_RE = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/;
+  for (const [status, key, label, expectStatus] of [
+    ['待報價', 'quoteAccept', '接受報價', '接受'],
+    ['待報價', 'quoteReject', '拒絕報價', '拒絕'],
+    ['轉汰換', 'toRepair', '轉維修', '轉維修'],
+    ['轉汰換', 'replaceDone', '汰換完成', '完成'],
+    ['轉原廠', 'vendorDone', '轉原廠完成', '完成']
+  ]) {
+    const r = await evaluate(`(function () {
+      var res = IESS.caseStatus.applyFollowUpAction(
+        [window.__makeCase(${JSON.stringify(status)})], 'C1', ${JSON.stringify(key)});
+      var orig = res.cases[0];
+      return {
+        followUpStatus: orig.followUpStatus,
+        followUpStatusAt: orig.followUpStatusAt,
+        fields: IESS.caseStatus.getFollowUpFields(orig)
+          .map(function (f) { return f.label + '=' + f.value; }),
+        extFollowUp: res.cases[1] ? res.cases[1].followUpStatus : undefined
+      };
+    })()`);
+    assertEq(r.followUpStatus, expectStatus, `${label} 押上 followUpStatus`);
+    assertTrue(TS_RE.test(r.followUpStatusAt || ''),
+      `${label} 押上 followUpStatusAt`, r.followUpStatusAt);
+    assertTrue(r.fields[0].endsWith('=' + (status === '轉原廠' ? r.followUpStatusAt : expectStatus)),
+      `${label} 後第一個結果欄位帶值`, r.fields.join('|'));
+    if (status !== '轉原廠') {
+      assertEq(r.fields[1], (status === '待報價' ? '修改報價狀態時間=' : '修改汰換狀態時間=')
+        + r.followUpStatusAt, `${label} 後時間欄位顯示押上的時間`);
+    }
+    assertEq(r.extFollowUp, undefined, `${label} 的延伸案件不帶後續處理結果`);
+  }
+
+  console.log('\n後續處理結果欄位：資料調閱匯出');
+  assertTrue(await evaluate(
+    `DataRetrievalUtils.getColumns('維修').join('|').indexOf('處理狀態|後續處理狀態|後續處理時間|結案狀態') !== -1`),
+    '維修匯出欄位在處理狀態後接後續處理狀態／時間');
+  const exported = await evaluate(`(function () {
+    var res = IESS.caseStatus.applyFollowUpAction(
+      [window.__makeCase('待報價')], 'C1', 'quoteReject');
+    var rows = DataRetrievalUtils.buildRows('維修', res.cases, []);
+    var pending = DataRetrievalUtils.buildRows('維修', [window.__makeCase('轉汰換')], []);
+    return {
+      status: rows[0]['後續處理狀態'],
+      at: rows[0]['後續處理時間'],
+      pendingStatus: pending[0]['後續處理狀態'],
+      pendingAt: pending[0]['後續處理時間']
+    };
+  })()`);
+  assertEq(exported.status, '拒絕', '匯出帶出後續處理狀態');
+  assertTrue(TS_RE.test(exported.at || ''), '匯出帶出後續處理時間', exported.at);
+  assertEq(exported.pendingStatus, '—', '尚未後續處理時匯出狀態為 —');
+  assertEq(exported.pendingAt, '—', '尚未後續處理時匯出時間為 —');
+
+  console.log('\n後續處理結果欄位：案件 PDF');
+  const pdf = await evaluate(`(function () {
+    var res = IESS.caseStatus.applyFollowUpAction(
+      [window.__makeCase('轉汰換')], 'C1', 'replaceDone');
+    return {
+      done: buildCasePdfHtml(res.cases[0], { processMethods: [], deviceCategories: [] }),
+      pending: buildCasePdfHtml(window.__makeCase('轉原廠'), { processMethods: [], deviceCategories: [] }),
+      plain: buildCasePdfHtml(window.__makeCase('案件完成'), { processMethods: [], deviceCategories: [] }),
+      at: res.cases[0].followUpStatusAt
+    };
+  })()`);
+  assertTrue(pdf.done.indexOf('汰換狀態') !== -1 && pdf.done.indexOf('修改汰換狀態時間') !== -1,
+    'PDF 帶出汰換狀態與修改時間欄位');
+  assertTrue(pdf.done.indexOf(pdf.at) !== -1, 'PDF 顯示押上的時間', pdf.at);
+  assertTrue(pdf.pending.indexOf('轉原廠完成時間') !== -1,
+    '轉原廠 PDF 帶出轉原廠完成時間欄位');
+  assertTrue(pdf.plain.indexOf('報價狀態') === -1 && pdf.plain.indexOf('汰換狀態') === -1,
+    '非滯留狀態的 PDF 不出現後續處理欄位');
+
   console.log('\n人員／車輛佔用：滯留列表的待報價案件仍視為進行中');
   assertEq(await evaluate(
     `AssigneeUtils.hasOpenCasesForAssignee('北區一組', [window.__makeCase('待報價')], [], [])`),
@@ -445,6 +534,41 @@ try {
       function (el) { return !el.disabled && !el.readOnly; }
     ).length;
   })()`), 0, '唯讀明細沒有任何可編輯欄位');
+
+  console.log('\n唯讀明細：處理狀態後方的後續處理結果欄位');
+  // 取「處理狀態」起算的 n 個唯讀欄位，驗證後續處理欄位確實接在它後面。
+  const detailFields = async (targetCaseExpr, n) => evaluate(`(function () {
+    window.__mkDetail(${targetCaseExpr});
+    var labels = Array.prototype.slice.call(
+      document.querySelectorAll('#detail-host span.text-gray-500'));
+    var idx = -1;
+    labels.forEach(function (el, i) { if (el.textContent.trim() === '處理狀態') idx = i; });
+    return labels.slice(idx, idx + ${n}).map(function (el) {
+      return el.textContent.trim() + '=' + el.nextSibling.textContent.trim();
+    });
+  })()`);
+
+  assertEq(await detailFields(`window.__makeCase('待報價')`, 4),
+    ['處理狀態=待報價', '報價狀態=—', '修改報價狀態時間=—', '客戶簽收=尚未簽收'],
+    '尚未後續處理的待報價明細顯示欄位且值為 —');
+
+  const appliedFields = await detailFields(`(function () {
+      var res = IESS.caseStatus.applyFollowUpAction(
+        [window.__makeCase('待報價')], 'C1', 'quoteReject');
+      window.__applied = res.cases[0];
+      return window.__applied;
+    })()`, 3);
+  assertEq(appliedFields, await evaluate(
+    `['處理狀態=待報價', '報價狀態=拒絕', '修改報價狀態時間=' + window.__applied.followUpStatusAt]`),
+    '拒絕報價後明細顯示報價狀態與修改時間');
+
+  assertEq(await detailFields(`window.__makeCase('轉原廠')`, 3),
+    ['處理狀態=轉原廠', '轉原廠完成時間=—', '客戶簽收=尚未簽收'],
+    '轉原廠明細只多出轉原廠完成時間一欄');
+
+  assertEq(await detailFields(`window.__makeCase('案件完成')`, 3),
+    ['處理狀態=案件完成', '客戶簽收=尚未簽收', '維修備註=-'],
+    '非滯留狀態的明細不出現後續處理欄位');
 
   console.log('\n真實 app：case-view 路由與返回');
   const routed = await evaluate(`(function () {
