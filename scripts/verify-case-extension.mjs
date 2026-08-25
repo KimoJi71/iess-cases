@@ -347,6 +347,37 @@ try {
   assertEq(plainClose.total, 1, '案件完成結案不產生延伸案件');
   assertTrue(String(plainClose.toast).indexOf('延伸') === -1,
     '案件完成的 toast 不提延伸', plainClose.toast);
+
+  console.log('\nPageHeader actions 與 Icons.History');
+  assertEq(await evaluate('typeof IESS.Icons.History'), 'function', 'Icons.History 已定義');
+  assertEq(await evaluate(`IESS.Icons.History({ className: 'h-4 w-4' }).tagName`),
+    'svg', 'Icons.History 回傳 svg 節點');
+  assertTrue(await evaluate(`IESS.Icons.History({ className: 'h-4 w-4' }).querySelectorAll('path').length > 0`),
+    'Icons.History 含 path');
+
+  const headerCheck = await evaluate(`(function(){
+    var plain = PageHeader({ title: '測試', badge: 'X1', onClose: function () {} });
+    var withActions = PageHeader({
+      title: '測試', badge: 'X1', onClose: function () {},
+      actions: [IESS.h('button', { type: 'button' }, '先前案件')]
+    });
+    var actionBtn = Array.prototype.slice.call(withActions.querySelectorAll('button'))
+      .filter(function (b) { return b.textContent.trim() === '先前案件'; })[0];
+    var closeBtn = withActions.querySelector('button[aria-label="關閉並返回列表"]');
+    var buttons = Array.prototype.slice.call(withActions.querySelectorAll('button'));
+    return {
+      plainButtons: plain.querySelectorAll('button').length,
+      plainHasClose: !!plain.querySelector('button[aria-label="關閉並返回列表"]'),
+      hasActionBtn: !!actionBtn,
+      hasCloseBtn: !!closeBtn,
+      actionBeforeClose: buttons.indexOf(actionBtn) < buttons.indexOf(closeBtn)
+    };
+  })()`);
+  assertEq(headerCheck.plainButtons, 1, '未傳 actions 時仍只有關閉鈕');
+  assertTrue(headerCheck.plainHasClose, '未傳 actions 時關閉鈕不變');
+  assertTrue(headerCheck.hasActionBtn, '傳入 actions 後出現該按鈕');
+  assertTrue(headerCheck.hasCloseBtn, '傳入 actions 後關閉鈕仍在');
+  assertTrue(headerCheck.actionBeforeClose, 'actions 渲染於關閉鈕左側');
 } catch (err) {
   console.error(err);
   failed++;
