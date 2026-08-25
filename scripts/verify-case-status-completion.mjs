@@ -166,7 +166,8 @@ try {
       workCategory: '一般叫修', repairItem: '室內機', assignees: [], isClosed: false,
       processStatus: null, completionDate: '', createdAt: '2026-08-25 09:00:00',
       repairDate: '2026-08-25 09:00:00', expectedDate: '2026-08-26',
-      expectedTimeStart: '09:00', expectedTimeEnd: '11:00', processRecords: [], equipment: eq
+      expectedTimeStart: '09:00', expectedTimeEnd: '11:00',
+      serviceItems: [{ id: 'SI1', equipment: eq, actualReason: '', processRecords: [] }]
     };
     window.__saved = null;
     host.appendChild(EditCaseForm({

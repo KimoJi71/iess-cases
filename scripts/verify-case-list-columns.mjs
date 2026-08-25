@@ -219,8 +219,13 @@ try {
     var btnLabels = Array.prototype.map.call(node.querySelectorAll('button'), function (b) {
       return b.textContent.replace(/\\s+/g, ' ').trim();
     });
+    // Task 5 起，實際維修原因欄改由 RepairCaseServiceItemCard 渲染，
+    // 該 textarea 不再帶 name 屬性，改以前一個 label 的文字辨識。
+    var hasActualReasonBox = Array.prototype.some.call(node.querySelectorAll('textarea'), function (t) {
+      return t.previousSibling && t.previousSibling.textContent === '實際維修原因';
+    });
     var result = {
-      hasActualReason: !!node.querySelector('textarea[name="actualReason"]'),
+      hasActualReason: hasActualReasonBox,
       hasRemarks: !!node.querySelector('textarea[name="remarks"]'),
       // 原生 <select> 會被 searchable-select 攔截成 input[role=combobox]
       hasProcessStatus: !!node.querySelector('[name="processStatus"]'),
@@ -266,9 +271,12 @@ try {
     });
     document.body.appendChild(viewNode);
     document.body.appendChild(editNode);
+    var editHasActualReasonBox = Array.prototype.some.call(editNode.querySelectorAll('textarea'), function (t) {
+      return t.previousSibling && t.previousSibling.textContent === '實際維修原因';
+    });
     var result = {
       viewHasActualReason: viewNode.textContent.indexOf('實際維修原因') !== -1,
-      editHasActualReason: !!editNode.querySelector('textarea[name="actualReason"]')
+      editHasActualReason: editHasActualReasonBox
     };
     viewNode.remove();
     editNode.remove();

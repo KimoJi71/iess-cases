@@ -119,20 +119,23 @@ assertEq(PU.sumProcessPoints(withRecords([{ points: 9, qty: 3 }])), 27,
   '舊資料（無 status）仍計分');
 
 console.log('\n畫面：加入按鈕與狀態欄');
+// Task 5 起，編輯案件的處理方式表格已移入 RepairCaseServiceItemCard（每張設備卡各自一份）
 const formSrc = readFileSync(join(ROOT, 'src/features/repair/case-form.js'), 'utf8');
-assertTrue(!/onClick: handleAddRecord\b/.test(formSrc) && !/}, "新增"\)/.test(formSrc),
+const cardSrc = readFileSync(join(ROOT, 'src/features/repair/case-service-item-card.js'), 'utf8');
+assertTrue(!/onClick: handleAddRecord\b/.test(formSrc) && !/}, "新增"\)/.test(formSrc)
+  && !/onClick: handleAddRecord\b/.test(cardSrc) && !/}, "新增"\)/.test(cardSrc),
   '編輯案件不再有單一「新增」按鈕');
-assertTrue(/PROCESS_RECORD_STATUS\.PENDING\); \}[\s\S]{0,220}"待處理"/.test(formSrc),
+assertTrue(/PROCESS_RECORD_STATUS\.PENDING\);[\s\S]{0,220}'待處理'/.test(cardSrc),
   '「待處理」按鈕以待處理狀態加入');
-assertTrue(/PROCESS_RECORD_STATUS\.DONE\); \}[\s\S]{0,220}"已處理"/.test(formSrc),
+assertTrue(/PROCESS_RECORD_STATUS\.DONE\);[\s\S]{0,220}'已處理'/.test(cardSrc),
   '「已處理」按鈕以已處理狀態加入');
-assertTrue(/handleToggleRecordStatus/.test(formSrc) && /"轉待處理"/.test(formSrc) && /"轉已處理"/.test(formSrc),
+assertTrue(/onToggleRecordStatus/.test(cardSrc) && /'轉待處理'/.test(cardSrc) && /'轉已處理'/.test(cardSrc),
   '表格內可切換狀態');
-assertTrue(/colspan: String\(pmColumns\.length \+ 4\)/.test(formSrc),
+assertTrue(/colCount = pmColumns\.length \+ \(readOnly \? 3 : 4\)/.test(cardSrc),
   '編輯案件空列 colspan 已含狀態欄');
 
 const surfaces = [
-  ['src/features/repair/case-form.js', '編輯案件'],
+  ['src/features/repair/case-service-item-card.js', '編輯案件'],
   ['src/features/repair/case-view.js', '案件明細'],
   ['src/features/scheduling/case-arrangement.js', '案件安排']
 ];
