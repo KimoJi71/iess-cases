@@ -377,6 +377,8 @@
     var processMethods = props.processMethods || [];
     var setView = props.setView;
     var showToast = props.showToast;
+    var setViewingCase = props.setViewingCase;
+    var setPrevCaseBackView = props.setPrevCaseBackView;
 
     var formData = CaseAssigneeUtils.normalizeRepairCase(
       JSON.parse(JSON.stringify(editingCase))
@@ -538,12 +540,30 @@
       /* 維修結果原則上要先加入設備才可編輯；工項分類為「其他」時不受此限 */
       var resultLocked = !formData.equipment && !isOther;
 
+      function buildPrevCaseAction() {
+        if (!formData.prevCaseId || !setViewingCase) return [];
+        var prev = cases.filter(function (c) { return c.id === formData.prevCaseId; })[0];
+        if (!prev) return [];
+        return [h('button', {
+          type: 'button',
+          className: 'px-3 py-1.5 text-sm border rounded-md text-blue-600 hover:bg-blue-50 ' +
+            'flex items-center gap-1.5 shrink-0',
+          title: '檢視先前案件 ' + prev.caseNumber,
+          onClick: function () {
+            if (setPrevCaseBackView) setPrevCaseBackView('edit');
+            setViewingCase(prev);
+            setView('prev-case-view');
+          }
+        }, Icons.History({ className: 'h-4 w-4' }), '先前案件')];
+      }
+
       return h("div", {
         className: "max-w-5xl mx-auto bg-white rounded-lg shadow-sm border border-gray-100"
       }, PageHeader({
         title: '編輯案件',
         badge: formData.caseNumber,
         onClose: function () { setView('list'); },
+        actions: buildPrevCaseAction(),
         wrapperClass: 'page-header-sticky flex justify-between items-center p-4 sm:p-6 border-b border-gray-200 sticky top-0 z-10 bg-white rounded-t-lg'
       }), h("div", {
         className: "p-4 sm:p-6 space-y-6 sm:space-y-8 bg-gray-50"

@@ -15,6 +15,10 @@
     var deviceCategories = props.deviceCategories || [];
     var vehicles = props.vehicles || [];
     var vendors = props.vendors || [];
+    var cases = props.cases || [];
+    var setViewingCase = props.setViewingCase;
+    var setPrevCaseBackView = props.setPrevCaseBackView;
+    var currentView = props.currentView || backView;
 
     var pmColumns = ProcessMethodUtils.CASE_DISPLAY_COLUMNS;
 
@@ -41,6 +45,27 @@
       );
     }
 
+    function findPrevCase() {
+      if (!viewingCase || !viewingCase.prevCaseId || !setViewingCase) return null;
+      return cases.filter(function (c) { return c.id === viewingCase.prevCaseId; })[0] || null;
+    }
+
+    function buildPrevCaseAction() {
+      var prev = findPrevCase();
+      if (!prev) return [];
+      return [h('button', {
+        type: 'button',
+        className: 'px-3 py-1.5 text-sm border rounded-md text-blue-600 hover:bg-blue-50 ' +
+          'flex items-center gap-1.5 shrink-0',
+        title: '檢視先前案件 ' + prev.caseNumber,
+        onClick: function () {
+          if (setPrevCaseBackView) setPrevCaseBackView(currentView);
+          setViewingCase(prev);
+          setView('prev-case-view');
+        }
+      }, IESS.Icons.History({ className: 'h-4 w-4' }), '先前案件')];
+    }
+
     var isOther = viewingCase && viewingCase.workCategory === '其他';
 
     return h('div', {
@@ -50,6 +75,7 @@
         title: '查看案件明細',
         badge: viewingCase && viewingCase.caseNumber,
         onClose: function () { setView(backView); },
+        actions: buildPrevCaseAction(),
         wrapperClass: 'page-header-sticky flex justify-between items-center p-4 sm:p-6 border-b border-gray-200 sticky top-0 z-10 bg-white rounded-t-lg'
       }),
       h('div', { className: 'p-4 sm:p-6 space-y-6 sm:space-y-8 bg-gray-50' },

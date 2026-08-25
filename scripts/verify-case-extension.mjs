@@ -378,6 +378,98 @@ try {
   assertTrue(headerCheck.hasActionBtn, '傳入 actions 後出現該按鈕');
   assertTrue(headerCheck.hasCloseBtn, '傳入 actions 後關閉鈕仍在');
   assertTrue(headerCheck.actionBeforeClose, 'actions 渲染於關閉鈕左側');
+
+  console.log('\n先前案件按鈕');
+  await evaluate(`
+    window.__extCase = CaseExtensionUtils.buildExtensionCase(window.__origCase, [window.__origCase]);
+    window.__nav = { viewingCase: null, view: null, backView: null };
+    window.__mkView = function (target, currentView) {
+      var node = ViewCaseForm({
+        viewingCase: target, setView: function (v) { window.__nav.view = v; },
+        backView: 'record-list', currentView: currentView || 'record-view',
+        cases: [window.__origCase, window.__extCase],
+        setViewingCase: function (c) { window.__nav.viewingCase = c; },
+        setPrevCaseBackView: function (v) { window.__nav.backView = v; },
+        processMethods: [], deviceCategories: [], vehicles: [], vendors: []
+      });
+      document.body.appendChild(node);
+      return node;
+    };
+    window.__findPrevBtn = function (node) {
+      return Array.prototype.slice.call(node.querySelectorAll('button'))
+        .filter(function (b) { return b.textContent.trim().indexOf('先前案件') !== -1; })[0];
+    };
+    'ok'`);
+
+  const viewBtn = await evaluate(`(function(){
+    var extNode = window.__mkView(window.__extCase);
+    var hasBtnOnExt = !!window.__findPrevBtn(extNode);
+    extNode.remove();
+    var origNode = window.__mkView(window.__origCase);
+    var hasBtnOnOrig = !!window.__findPrevBtn(origNode);
+    origNode.remove();
+    document.body.innerHTML = '';
+    return { hasBtnOnExt: hasBtnOnExt, hasBtnOnOrig: hasBtnOnOrig };
+  })()`);
+  assertTrue(viewBtn.hasBtnOnExt, '延伸案件明細頁有「先前案件」按鈕');
+  assertEq(viewBtn.hasBtnOnOrig, false, '原始案件明細頁沒有「先前案件」按鈕');
+
+  const viewNav = await evaluate(`(function(){
+    window.__nav = { viewingCase: null, view: null, backView: null };
+    var node = window.__mkView(window.__extCase, 'record-view');
+    window.__findPrevBtn(node).click();
+    var result = {
+      viewingId: window.__nav.viewingCase && window.__nav.viewingCase.id,
+      view: window.__nav.view,
+      backView: window.__nav.backView
+    };
+    document.body.innerHTML = '';
+    return result;
+  })()`);
+  assertEq(viewNav.viewingId, 'C1', '點擊後切換到前一筆案件');
+  assertEq(viewNav.view, 'prev-case-view', '切換到 prev-case-view');
+  assertEq(viewNav.backView, 'record-view', '記錄來源 view 供返回');
+
+  const editBtn = await evaluate(`(function(){
+    window.__nav = { viewingCase: null, view: null, backView: null };
+    var node = EditCaseForm({
+      editingCase: window.__extCase,
+      cases: [window.__origCase, window.__extCase],
+      setCases: function () {},
+      stores: [], customers: [], equipments: [], vehicles: [], vendors: [],
+      deviceCategories: [], processMethods: [],
+      setView: function (v) { window.__nav.view = v; },
+      showToast: function () {},
+      setViewingCase: function (c) { window.__nav.viewingCase = c; },
+      setPrevCaseBackView: function (v) { window.__nav.backView = v; }
+    });
+    document.body.appendChild(node);
+    var btn = Array.prototype.slice.call(node.querySelectorAll('button'))
+      .filter(function (b) { return b.textContent.trim().indexOf('先前案件') !== -1; })[0];
+    var hasBtn = !!btn;
+    if (btn) btn.click();
+    var result = {
+      hasBtn: hasBtn,
+      viewingId: window.__nav.viewingCase && window.__nav.viewingCase.id,
+      view: window.__nav.view,
+      backView: window.__nav.backView
+    };
+    document.body.innerHTML = '';
+    return result;
+  })()`);
+  assertTrue(editBtn.hasBtn, '延伸案件編輯頁有「先前案件」按鈕');
+  assertEq(editBtn.viewingId, 'C1', '編輯頁點擊後切換到前一筆案件');
+  assertEq(editBtn.view, 'prev-case-view', '編輯頁切換到 prev-case-view');
+  assertEq(editBtn.backView, 'edit', '編輯頁記錄來源為 edit');
+
+  const missingPrev = await evaluate(`(function(){
+    var orphan = Object.assign({}, window.__extCase, { prevCaseId: 'C-NOT-EXIST' });
+    var node = window.__mkView(orphan);
+    var hasBtn = !!window.__findPrevBtn(node);
+    document.body.innerHTML = '';
+    return hasBtn;
+  })()`);
+  assertEq(missingPrev, false, '找不到前一筆案件時不顯示按鈕');
 } catch (err) {
   console.error(err);
   failed++;

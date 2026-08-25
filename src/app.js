@@ -117,6 +117,7 @@
     viewingCase: null,
     historyStore: null,
     customerBackView: '',
+    prevCaseBackView: 'list',
     statusFilter: '全部',
     currentAccountId: 'ACC1'
   });
@@ -142,6 +143,7 @@
   var setViewingCase = makeSetter('viewingCase');
   var setHistoryStore = makeSetter('historyStore');
   var setCustomerBackView = makeSetter('customerBackView');
+  var setPrevCaseBackView = makeSetter('prevCaseBackView');
   var setStatusFilter = makeSetter('statusFilter');
 
   function openStoreHistory(storeRecord, backView) {
@@ -360,6 +362,8 @@
           deviceCategories: s.deviceCategories,
           processMethods: s.processMethods,
           setView: setView, showToast: showToast,
+          setViewingCase: setViewingCase,
+          setPrevCaseBackView: setPrevCaseBackView,
           currentOperatorName: getCurrentOperatorName(s.accounts, s.currentAccountId)
         });
       case 'record-list':
@@ -370,7 +374,9 @@
         return h(ViewCaseForm, {
           viewingCase: s.viewingCase, setView: setView, backView: 'record-list',
           processMethods: s.processMethods, deviceCategories: s.deviceCategories,
-          vehicles: s.vehicles, vendors: s.vendors
+          vehicles: s.vehicles, vendors: s.vendors,
+          cases: s.cases, setViewingCase: setViewingCase,
+          setPrevCaseBackView: setPrevCaseBackView, currentView: 'record-view'
         });
       case 'review-list':
         return h(CaseReviewList, {
@@ -383,6 +389,18 @@
       case 'review-view':
         return h(ViewCaseForm, {
           viewingCase: s.viewingCase, setView: setView, backView: 'review-list',
+          processMethods: s.processMethods, deviceCategories: s.deviceCategories,
+          vehicles: s.vehicles, vendors: s.vendors,
+          cases: s.cases, setViewingCase: setViewingCase,
+          setPrevCaseBackView: setPrevCaseBackView, currentView: 'review-view'
+        });
+      case 'prev-case-view':
+        return h(ViewCaseForm, {
+          viewingCase: s.viewingCase, setView: setView,
+          backView: s.prevCaseBackView || 'list',
+          currentView: 'prev-case-view',
+          cases: s.cases, setViewingCase: setViewingCase,
+          setPrevCaseBackView: setPrevCaseBackView,
           processMethods: s.processMethods, deviceCategories: s.deviceCategories,
           vehicles: s.vehicles, vendors: s.vendors
         });
