@@ -104,7 +104,8 @@ function makeRepairCase(overrides) {
   return Object.assign(
     {
       assignees: ['A組', 'B組'],
-      processRecords: [{ points: 30, qty: 1 }],
+      serviceItems: [{ id: 'SI1', equipment: null, actualReason: '',
+        processRecords: [{ points: 30, qty: 1 }] }],
       isPerformanceIncluded: true,
       serviceLevel: 'D 一般',
       completionDate: '2026-08-01',

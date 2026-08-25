@@ -65,6 +65,7 @@ function load(sandbox, relPath) {
 
 const sandbox = createSandbox();
 load(sandbox, 'src/features/permissions/process-method-utils.js');
+load(sandbox, 'src/features/repair/case-service-items.js');
 load(sandbox, 'src/features/repair/case-assignee-utils.js');
 load(sandbox, 'src/features/permissions/service-level-utils.js');
 load(sandbox, 'src/features/reports/performance-utils.js');
@@ -105,13 +106,16 @@ assertEq(records.map(r => r.id), [1, 2, 3, 4], '不改動原陣列');
 assertEq(PMU.sortCaseProcessRecords(null), [], 'null 回傳空陣列');
 
 console.log('\n積分只計已處理');
-const caseData = { processRecords: records };
+function withRecords(recs) {
+  return { serviceItems: [{ id: 'SI1', equipment: null, actualReason: '', processRecords: recs }] };
+}
+const caseData = withRecords(records);
 // 已處理：5*2 + 4*1 = 14；待處理 3、7 不計
 assertEq(PU.sumProcessPoints(caseData), 14, 'PerformanceUtils.sumProcessPoints');
 assertEq(CAU.sumProcessPoints(caseData), 14, 'CaseAssigneeUtils.sumProcessPoints');
-assertEq(PU.sumProcessPoints({ processRecords: [{ status: '待處理', points: 9, qty: 3 }] }), 0,
+assertEq(PU.sumProcessPoints(withRecords([{ status: '待處理', points: 9, qty: 3 }])), 0,
   '全部待處理時積分為 0');
-assertEq(PU.sumProcessPoints({ processRecords: [{ points: 9, qty: 3 }] }), 27,
+assertEq(PU.sumProcessPoints(withRecords([{ points: 9, qty: 3 }])), 27,
   '舊資料（無 status）仍計分');
 
 console.log('\n畫面：加入按鈕與狀態欄');

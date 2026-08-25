@@ -140,10 +140,10 @@
     return formatAssignees(record) || '尚未指派';
   }
 
-  // 只有「已處理」的處理方式計入積分（舊資料無 status 視為已處理）。
+  // 只有「已處理」的處理方式計入積分（舊資料無 status 視為已處理）；跨所有設備卡片加總。
   function sumProcessPoints(record) {
     var total = 0;
-    ((record && record.processRecords) || []).forEach(function (r) {
+    RepairCaseServiceItems.getAllProcessRecords(record).forEach(function (r) {
       if (!ProcessMethodUtils.isCaseRecordDone(r)) return;
       var points = Number(r.points) || 0;
       var qty = Number(r.qty) > 0 ? Number(r.qty) : 1;

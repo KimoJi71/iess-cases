@@ -244,8 +244,8 @@ try {
       return PerformanceUtils.computeAssigneePerformance({
         cases: [{ id:'R1', serviceLevel:'A 保修(一年四次)', isPerformanceIncluded:true,
           completionDate:'2026-08-05', performanceAssignees:['王小明'],
-          equipment: equip,
-          processRecords:[{ processMethodId:'PS1', points:10, qty:1 }] }],
+          serviceItems: [{ id:'SI1', equipment: equip, actualReason:'',
+            processRecords:[{ processMethodId:'PS1', points:10, qty:1 }] }] }],
         maintenanceCases: [], assignees: [{ id:'A1', name:'王小明' }],
         allocations: [], quarter: quarter
       })[0].bonusPoints;
