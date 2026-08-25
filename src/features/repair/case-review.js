@@ -11,6 +11,14 @@
     return c && c.sourceType === 'maintenance';
   }
 
+  // 叫修案件的實際原因已改成逐設備卡片；保養案件沒有 serviceItems，getItems 會自然回空陣列
+  function getActualReasonSummary(c) {
+    if (!c || !window.RepairCaseServiceItems) return '';
+    return RepairCaseServiceItems.getItems(c).map(function (it) {
+      return it.actualReason;
+    }).filter(Boolean).join('、');
+  }
+
   // 增額任務：服務等級設定為計算增額積分的叫修案件，或雖未設定但設備為增額設備的叫修案件。
   // 保養計劃案件不列入增額積分（與 performance-utils 的統計口徑一致），一律回 null。
   function resolveReviewCaseBonusPoints(c, serviceLevels) {
@@ -32,7 +40,7 @@
       isMaintenance ? '例行保養' : c.workCategory,
       isMaintenance ? '' : c.repairItem,
       isMaintenance ? '' : c.repairReason,
-      c.actualReason,
+      getActualReasonSummary(c),
       CaseAssigneeUtils.formatAssignees(c)
     ].filter(Boolean).some(function (v) {
       return String(v).toLowerCase().includes(kw);
@@ -267,7 +275,7 @@
                   h('td', { className: 'p-3' }, isMaintenance ? '例行保養' : c.workCategory),
                   h('td', { className: 'p-3' }, isMaintenance ? '' : c.repairItem),
                   h('td', { className: 'p-3' }, isMaintenance ? '' : c.repairReason),
-                  h('td', { className: 'p-3 max-w-[150px] truncate', title: c.actualReason }, c.actualReason || '-'),
+                  h('td', { className: 'p-3 max-w-[150px] truncate', title: getActualReasonSummary(c) }, getActualReasonSummary(c) || '-'),
                   h('td', { className: 'p-3' }, CaseAssigneeUtils.formatAssignees(c))
                 );
               })

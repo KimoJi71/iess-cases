@@ -20,7 +20,10 @@
     if (equipmentId == null || equipmentId === '') return false;
     var target = String(equipmentId);
     return (repairCases || []).some(function (c) {
-      return c.equipment && String(c.equipment.id) === target;
+      // 一筆叫修案件可能掛多台設備，逐張卡片比對
+      return window.RepairCaseServiceItems && RepairCaseServiceItems.getEquipments(c).some(function (eq) {
+        return eq && String(eq.id) === target;
+      });
     });
   }
 

@@ -164,7 +164,7 @@ try {
     var node = ViewCaseForm({
       viewingCase: { id:'R1', caseNumber:'R-001', customerName:'測試客戶',
         storeName:'測試門市', workCategory:'維修', serviceLevel:'A 保修(一年四次)',
-        equipment: window.__equip('增額設備'), processRecords: [] },
+        serviceItems: [{ id: 'SI1', equipment: window.__equip('增額設備'), actualReason: '', processRecords: [] }] },
       setView: function(){}, backView: 'record-list',
       processMethods: [], deviceCategories: window.__cats
     });

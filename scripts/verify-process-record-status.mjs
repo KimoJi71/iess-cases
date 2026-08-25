@@ -134,9 +134,11 @@ assertTrue(/onToggleRecordStatus/.test(cardSrc) && /'轉待處理'/.test(cardSrc
 assertTrue(/colCount = pmColumns\.length \+ \(readOnly \? 3 : 4\)/.test(cardSrc),
   '編輯案件空列 colspan 已含狀態欄');
 
+// Task 6 起，案件明細（case-view.js）不再自己畫表格，改成 readOnly:true 重用
+// RepairCaseServiceItemCard（跟編輯案件同一份元件），故狀態欄／排序／badge／
+// colspan 的實際檢查已經涵蓋在「編輯案件」那組；這裡改驗證案件明細確實有委派過去。
 const surfaces = [
   ['src/features/repair/case-service-item-card.js', '編輯案件'],
-  ['src/features/repair/case-view.js', '案件明細'],
   ['src/features/scheduling/case-arrangement.js', '案件安排']
 ];
 surfaces.forEach(([rel, label]) => {
@@ -148,7 +150,8 @@ surfaces.forEach(([rel, label]) => {
 });
 
 const viewSrc = readFileSync(join(ROOT, 'src/features/repair/case-view.js'), 'utf8');
-assertTrue(/colspan: String\(pmColumns\.length \+ 3\)/.test(viewSrc), '案件明細空列 colspan 已含狀態欄');
+assertTrue(/RepairCaseServiceItemCard[\s\S]{0,400}readOnly:\s*true/.test(viewSrc),
+  '案件明細：以 readOnly 重用設備卡片元件（狀態欄／排序／badge／不計分皆隨之共用）');
 const arrangeSrc = readFileSync(join(ROOT, 'src/features/scheduling/case-arrangement.js'), 'utf8');
 assertTrue(/colspan: String\(pmColumns\.length \+ 3\)/.test(arrangeSrc), '案件安排空列 colspan 已含狀態欄');
 

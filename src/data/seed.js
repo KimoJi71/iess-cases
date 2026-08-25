@@ -1466,17 +1466,22 @@ INITIAL_CASES.forEach(function (c, i) {
   if (c.isClosed && !c.closeDate) {
     c.closeDate = c.completionDate || c.repairDate || '';
   }
-  if (c.equipment) {
-    c.equipment = snapshotCaseEquipment(c.equipment);
-  }
-  if (!c.equipment) {
-    if (!c.isClosed) c.processStatus = null;
-    if (caseHasProcessData(c)) {
-      c.actualReason = '';
-      c.processRecords = [];
-      c.processStatus = null;
-      c.reRepairDate = '';
-      c.completionDate = '';
+  // 這段只處理舊版「案件層級單一設備」的資料；已經是 serviceItems 結構的案件
+  // （例如展示多設備的示範案件）沒有 c.equipment 可言，不該被當成「沒設備」而清空
+  // processStatus——那是遷移前才需要的補救邏輯。
+  if (!Array.isArray(c.serviceItems)) {
+    if (c.equipment) {
+      c.equipment = snapshotCaseEquipment(c.equipment);
+    }
+    if (!c.equipment) {
+      if (!c.isClosed) c.processStatus = null;
+      if (caseHasProcessData(c)) {
+        c.actualReason = '';
+        c.processRecords = [];
+        c.processStatus = null;
+        c.reRepairDate = '';
+        c.completionDate = '';
+      }
     }
   }
   if (c.isListClosed == null) c.isListClosed = false;

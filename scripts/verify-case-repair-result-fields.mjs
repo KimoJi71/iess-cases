@@ -142,8 +142,8 @@ try {
       }));
       return true;
     };
-    // 編輯表單合併區塊後，維修結果標題遞補為「4. 維修結果」；
-    // 案件明細檢視頁不在本任務範圍，仍是「5. 維修結果」，故標題可傳入覆寫。
+    // 編輯表單與案件明細檢視頁合併區塊後，維修結果標題都遞補為「4. 維修結果」；
+    // 標題仍可傳入覆寫以便未來版面調整。
     window.__section5 = function (title) {
       title = title || '4. 維修結果';
       return Array.prototype.slice.call(document.querySelectorAll('#case-host section'))
@@ -233,22 +233,22 @@ try {
     '客戶簽名以 PNG dataURL 寫入案件');
 
   console.log('\nSection 5｜案件明細檢視頁（案件紀錄／門市歷史紀錄共用）');
-  // 檢視頁（case-view.js）不在本任務（Task 5）範圍內，維修結果仍是「5. 維修結果」
+  // 檢視頁（case-view.js）也已改為「4. 維修結果」
   await evaluate(`window.__mountView({
     processStatus: '已完成', repairRemark: '更換壓縮機並測試運轉正常',
     customerSignature: 'data:image/png;base64,iVBORw0KGgo='
   })`);
-  assertEq(await evaluate("window.__section5Labels('5. 維修結果')"),
+  assertEq(await evaluate("window.__section5Labels('4. 維修結果')"),
     ['處理狀態', '客戶簽收', '維修備註', '時間紀錄', '叫修時間', '到店時間', '完成時間'],
     '檢視頁欄位順序與編輯表單一致');
-  assertTrue(await evaluate(`window.__section5('5. 維修結果').textContent.indexOf('客戶簽收') !== -1`),
+  assertTrue(await evaluate(`window.__section5('4. 維修結果').textContent.indexOf('客戶簽收') !== -1`),
     '檢視頁顯示客戶簽收欄');
-  assertTrue(await evaluate(`!!window.__section5('5. 維修結果').querySelector('img[alt=客戶簽名]')`),
+  assertTrue(await evaluate(`!!window.__section5('4. 維修結果').querySelector('img[alt=客戶簽名]')`),
     '檢視頁顯示簽名圖');
-  assertTrue(await evaluate(`window.__section5('5. 維修結果').textContent.indexOf('更換壓縮機並測試運轉正常') !== -1`),
+  assertTrue(await evaluate(`window.__section5('4. 維修結果').textContent.indexOf('更換壓縮機並測試運轉正常') !== -1`),
     '檢視頁顯示維修備註內容');
   await evaluate('window.__mountView({ processStatus: "已完成" })');
-  assertTrue(await evaluate(`window.__section5('5. 維修結果').textContent.indexOf('尚未簽收') !== -1`),
+  assertTrue(await evaluate(`window.__section5('4. 維修結果').textContent.indexOf('尚未簽收') !== -1`),
     '沒有簽名時檢視頁顯示「尚未簽收」');
 
   console.log('\nSection 6｜案件明細 PDF');

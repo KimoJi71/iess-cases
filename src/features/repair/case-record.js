@@ -6,11 +6,19 @@
   'use strict';
   var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful;
 
+  // 實際原因已改成逐設備卡片，彙整所有卡片的文字供搜尋與列表顯示
+  function getActualReasonSummary(c) {
+    if (!c || !window.RepairCaseServiceItems) return '';
+    return RepairCaseServiceItems.getItems(c).map(function (it) {
+      return it.actualReason;
+    }).filter(Boolean).join('、');
+  }
+
   function matchKeyword(c, kw) {
     if (!kw) return true;
     return [
       c.caseNumber, c.customerName, c.storeName, c.workCategory,
-      c.repairItem, c.repairReason, c.faultDesc, c.actualReason,
+      c.repairItem, c.repairReason, c.faultDesc, getActualReasonSummary(c),
       StoreUtils.getRecordArea(c),
       CaseAssigneeUtils.formatAssignees(c),
       CaseAssigneeUtils.formatAssigneeMembers(c)
@@ -147,7 +155,7 @@
                   h('td', { className: 'p-3' }, c.repairItem),
                   h('td', { className: 'p-3' }, c.repairReason),
                   h('td', { className: 'p-3 max-w-[150px] truncate', title: c.faultDesc }, c.faultDesc),
-                  h('td', { className: 'p-3 max-w-[150px] truncate', title: c.actualReason }, c.actualReason || '-'),
+                  h('td', { className: 'p-3 max-w-[150px] truncate', title: getActualReasonSummary(c) }, getActualReasonSummary(c) || '-'),
                   h('td', { className: 'p-3' }, CaseAssigneeUtils.formatAssignees(c)),
                   h('td', { className: 'p-3' }, CaseAssigneeUtils.formatAssigneeMembers(c) || '—')
                 );

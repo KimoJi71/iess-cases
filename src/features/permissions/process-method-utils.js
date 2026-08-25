@@ -309,7 +309,10 @@
     var allCases = collectCaseArrays(cases, maintenanceCases, projectCases);
     return allCases.some(function (c) {
       if (c.isPerformanceIncluded) return false;
-      var records = c.processRecords || [];
+      // 叫修案件的處理紀錄已搬到各設備卡片；保養／工程案件沒有 serviceItems，維持原本欄位
+      var records = (window.RepairCaseServiceItems && Array.isArray(c.serviceItems))
+        ? RepairCaseServiceItems.getAllProcessRecords(c)
+        : (c.processRecords || []);
       return records.some(function (pr) {
         return recordMatchesProcessRecord(record, pr);
       });

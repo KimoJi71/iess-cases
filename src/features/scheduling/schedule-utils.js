@@ -44,9 +44,12 @@
     ].join('\n');
   }
 
+  // 一筆叫修案件可能對到多台設備，日曆卡片仍只留一行文字，故串接顯示
   function getRepairEquipmentName(c) {
-    if (!c || !c.equipment) return '';
-    return c.equipment.deviceName || c.equipment.name || '';
+    if (!c || !window.RepairCaseServiceItems) return '';
+    return RepairCaseServiceItems.getEquipments(c).map(function (eq) {
+      return eq.deviceName || eq.name || '';
+    }).filter(Boolean).join('、');
   }
 
   function getProjectStoreAddress(c) {

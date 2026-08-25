@@ -97,12 +97,12 @@ try {
     window.__fixtureCases = [
       { id: 'R1', caseNumber: 'KW001', customerName: '全家便利商店', storeName: '信義門市',
         serviceLevel: 'C 保養(一年一次)', workCategory: '一般叫修', repairItem: '冷氣',
-        repairReason: '不冷', actualReason: '缺冷媒', isClosed: true,
-        closeDate: '${todayDate} 10:00', processRecords: [] },
+        repairReason: '不冷', isClosed: true, closeDate: '${todayDate} 10:00',
+        serviceItems: [{ id: 'SI1', equipment: null, actualReason: '缺冷媒', processRecords: [] }] },
       { id: 'R2', caseNumber: 'KW002', customerName: '萊爾富', storeName: '中山門市',
         serviceLevel: 'A 保修(一年四次)', workCategory: '一般叫修', repairItem: '冰箱',
-        repairReason: '異音', actualReason: '軸承磨損', isClosed: true,
-        closeDate: '${todayDate} 10:00', processRecords: [] }
+        repairReason: '異音', isClosed: true, closeDate: '${todayDate} 10:00',
+        serviceItems: [{ id: 'SI2', equipment: null, actualReason: '軸承磨損', processRecords: [] }] }
     ];
     window.__fixtureMaintenance = [
       { id: 'M1', caseNumber: 'KW003', customerName: '全家便利商店', storeName: '大安門市',

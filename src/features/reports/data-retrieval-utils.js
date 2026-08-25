@@ -220,6 +220,14 @@
     return store ? StoreUtils.getStoreArea(store) : '';
   }
 
+  // 實際原因已改成逐設備卡片，匯出報表沿用一列一案件的格式，彙整所有卡片文字
+  function getActualReasonSummary(c) {
+    if (!c || !window.RepairCaseServiceItems) return '';
+    return RepairCaseServiceItems.getItems(c).map(function (it) {
+      return it.actualReason;
+    }).filter(Boolean).join('、');
+  }
+
   function mapRepairRow(c, stores) {
     return {
       '叫修時間': IESS.caseDateTime.format(c.repairDate) || '—',
@@ -232,7 +240,7 @@
       '叫修項目': c.repairItem || '—',
       '叫修原因': c.repairReason || '—',
       '故障描述': c.faultDesc || '—',
-      '實際原因': c.actualReason || '—',
+      '實際原因': getActualReasonSummary(c) || '—',
       '維修人員': formatAssignees(c),
       '處理狀態': c.processStatus || '未處理',
       // 後續處理（待報價／轉汰換／轉原廠）的結果；匯出為扁平表格，欄名不隨處理狀態浮動。

@@ -103,10 +103,10 @@ try {
         id: 'C1', caseNumber: '20260813001', customerName: '測試客戶', storeName: '測試門市',
         companyCity: '台北市', companyDistrict: '中山區', workCategory: '一般叫修',
         repairItem: '室內機', repairReason: '不冷', faultDesc: '出風不冷',
-        actualReason: '冷媒不足', assignees: [], isClosed: false, processStatus: '案件完成',
+        assignees: [], isClosed: false, processStatus: '案件完成',
         createdAt: '${todayDate} 09:00:00', repairDate: '${todayDate} 09:00:00',
         expectedDate: '${todayDate}', expectedTimeStart: '09:00', expectedTimeEnd: '11:00',
-        processRecords: [], equipment: null
+        serviceItems: [{ id: 'SI1', equipment: null, actualReason: '冷媒不足', processRecords: [] }]
       }, extra || {});
     };
     window.__mkList = function (cases) {
@@ -166,18 +166,32 @@ try {
   console.log('\n查看案件明細 — 工項分類「其他」');
   const otherView = await evaluate(`(function(){
     var node = ViewCaseForm({
-      viewingCase: window.__mkCase({ workCategory: '其他', remarks: '安裝完成' }),
+      // Task 4 起「設備資料」併入「設備與服務項目」單一區塊，需帶一張設備卡片才能驗到
+      // 設備欄位與處理方式確實有渲染，而非只驗到「無設備資料」的空狀態。
+      viewingCase: window.__mkCase({
+        workCategory: '其他',
+        remarks: '安裝完成',
+        serviceItems: [{
+          id: 'SI1',
+          equipment: { id: 'E1', category: '分離式', deviceName: '室內機', model: 'FTXS' },
+          actualReason: '',
+          processRecords: [{
+            id: 1, processMethodId: 'PM1', category1: '冷氣', category2: '安裝',
+            category3: '新機安裝', specification: '', unit: '式', points: 5, qty: 1, status: '已處理'
+          }]
+        }]
+      }),
       setView: function () {}, backView: 'list', processMethods: [], deviceCategories: []
     });
     document.body.appendChild(node);
     var text = node.textContent;
     var result = {
-      hasServiceSection: text.indexOf('4. 服務項目') !== -1,
+      hasServiceSection: text.indexOf('3. 設備與服務項目') !== -1,
       hasRemarkOnlySection: text.indexOf('3. 備註') !== -1,
       hasScheduleSection: text.indexOf('1. 排程資料') !== -1,
       hasCaseSection: text.indexOf('2. 案件資料') !== -1,
-      hasEquipmentSection: text.indexOf('3. 設備資料') !== -1,
-      hasResultSection: text.indexOf('5. 維修結果') !== -1,
+      hasEquipmentSection: text.indexOf('分離式') !== -1 && text.indexOf('FTXS') !== -1,
+      hasResultSection: text.indexOf('4. 維修結果') !== -1,
       hasActualReason: text.indexOf('實際維修原因') !== -1,
       hasProcessMethods: text.indexOf('處理方式') !== -1,
       hasProcessStatus: text.indexOf('處理狀態') !== -1,
@@ -188,12 +202,12 @@ try {
     node.remove();
     return result;
   })()`);
-  assertTrue(otherView.hasServiceSection, '其他案件顯示「4. 服務項目」區塊');
+  assertTrue(otherView.hasServiceSection, '其他案件顯示「3. 設備與服務項目」區塊');
   assertEq(otherView.hasRemarkOnlySection, false, '不再是只有「3. 備註」的區塊');
   assertTrue(otherView.hasScheduleSection, '顯示「1. 排程資料」');
   assertTrue(otherView.hasCaseSection, '顯示「2. 案件資料」');
-  assertTrue(otherView.hasEquipmentSection, '顯示「3. 設備資料」');
-  assertTrue(otherView.hasResultSection, '顯示「5. 維修結果」');
+  assertTrue(otherView.hasEquipmentSection, '設備卡片顯示設備分類與型號');
+  assertTrue(otherView.hasResultSection, '顯示「4. 維修結果」');
   assertEq(otherView.hasActualReason, false, '其他案件不顯示實際維修原因');
   assertTrue(otherView.hasProcessMethods, '顯示處理方式');
   assertTrue(otherView.hasProcessStatus, '顯示處理狀態');
@@ -206,7 +220,7 @@ try {
     var wrap = document.createElement('div');
     document.body.appendChild(wrap);
     wrap.appendChild(EditCaseForm({
-      editingCase: window.__mkCase({ workCategory: '其他', equipment: { id: 'E1' } }),
+      editingCase: window.__mkCase({ workCategory: '其他' }),
       cases: [], setCases: function () {}, stores: [], customers: [], equipments: [],
       deviceCategories: [], processMethods: [],
       setView: function () {}, showToast: function () {}
@@ -264,7 +278,7 @@ try {
       processMethods: [], deviceCategories: []
     });
     var editNode = EditCaseForm({
-      editingCase: window.__mkCase({ equipment: { id: 'E1' } }),
+      editingCase: window.__mkCase(),
       cases: [], setCases: function () {}, stores: [], customers: [], equipments: [],
       deviceCategories: [], processMethods: [],
       setView: function () {}, showToast: function () {}
