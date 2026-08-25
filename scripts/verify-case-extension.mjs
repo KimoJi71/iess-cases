@@ -234,6 +234,119 @@ try {
   assertEq(chain.seq2Seq, 2, '第二次延伸序號為 2');
   assertEq(chain.emptyNumber, '20260825009-1', '無待處理項目仍建立延伸案件');
   assertEq(chain.emptyRecords, 0, '無待處理項目時服務項目為空');
+
+  console.log('\n案件處理列表 — 延伸結案');
+  await evaluate(`
+    window.__mkList = function () {
+      var target = Object.assign({}, window.__origCase, {
+        isClosed: false, isListClosed: false, closeDate: '',
+        returnReason: undefined, returnedAt: undefined
+      });
+      window.__written = { cases: null, stores: null, toast: null };
+      var node = CaseList({
+        cases: [target],
+        setCases: function (next) { window.__written.cases = next; },
+        stores: [], setStores: function (next) { window.__written.stores = next; },
+        customers: [],
+        setEditingCase: function () {}, setView: function () {},
+        showToast: function (msg) { window.__written.toast = msg; },
+        statusFilter: '全部', setStatusFilter: function () {},
+        processMethods: [], deviceCategories: [], vehicles: [], vendors: []
+      });
+      document.body.appendChild(node);
+      return node;
+    };
+    window.__findCloseBtn = function (node, caseNumber) {
+      var rows = Array.prototype.slice.call(node.querySelectorAll('tbody tr'));
+      var row = rows.filter(function (tr) { return tr.textContent.indexOf(caseNumber) !== -1; })[0];
+      if (!row) return null;
+      return row.querySelector('button[aria-label="案件結案"]');
+    };
+    window.__findBtnByText = function (text) {
+      return Array.prototype.slice.call(document.body.querySelectorAll('button'))
+        .filter(function (b) { return b.textContent.trim() === text; })[0];
+    };
+    'ok'`);
+
+  const modalCheck = await evaluate(`(function(){
+    var node = window.__mkList();
+    window.__findCloseBtn(node, '20260825001').click();
+    var text = document.body.textContent;
+    var result = {
+      mentionsExtension: text.indexOf('延伸案件') !== -1,
+      mentionsNumber: text.indexOf('20260825001-1') !== -1
+    };
+    document.body.innerHTML = '';
+    return result;
+  })()`);
+  assertTrue(modalCheck.mentionsExtension, '確認視窗文案提到延伸案件');
+  assertTrue(modalCheck.mentionsNumber, '確認視窗預告延伸編號 20260825001-1');
+
+  const closeResult = await evaluate(`(function(){
+    var node = window.__mkList();
+    window.__findCloseBtn(node, '20260825001').click();
+    window.__findBtnByText('確認').click();
+    var written = window.__written.cases || [];
+    var origin = written.filter(function (c) { return c.id === 'C1'; })[0];
+    var ext = written.filter(function (c) { return c.caseNumber === '20260825001-1'; })[0];
+    var result = {
+      total: written.length,
+      originClosed: origin && origin.isClosed,
+      originIsListClosed: origin && !!origin.isListClosed,
+      originHasCloseDate: !!(origin && origin.closeDate),
+      originRecords: origin && origin.processRecords.length,
+      hasExtension: !!ext,
+      extPrev: ext && ext.prevCaseId,
+      extStatus: ext && ext.processStatus,
+      extRecords: ext && ext.processRecords.length,
+      toast: window.__written.toast
+    };
+    document.body.innerHTML = '';
+    return result;
+  })()`);
+  assertEq(closeResult.total, 2, '結案後案件集共 2 筆（原案 + 延伸案）');
+  assertEq(closeResult.originClosed, true, '原案件已結案');
+  assertEq(closeResult.originIsListClosed, false, '原案件不留在處理列表');
+  assertTrue(closeResult.originHasCloseDate, '原案件寫入結案時間');
+  assertEq(closeResult.originRecords, 2, '原案件服務項目保留原樣');
+  assertTrue(closeResult.hasExtension, '建立延伸案件 20260825001-1');
+  assertEq(closeResult.extPrev, 'C1', '延伸案件連結原案件');
+  assertEq(closeResult.extStatus, null, '延伸案件為未處理');
+  assertEq(closeResult.extRecords, 1, '延伸案件只帶待處理項目');
+  assertTrue(String(closeResult.toast).indexOf('20260825001-1') !== -1,
+    'toast 提示延伸案件編號', closeResult.toast);
+
+  const plainClose = await evaluate(`(function(){
+    window.__written = { cases: null, stores: null, toast: null };
+    var target = Object.assign({}, window.__origCase, {
+      id: 'C2', caseNumber: '20260825002', processStatus: '案件完成',
+      isClosed: false, isListClosed: false, closeDate: ''
+    });
+    var node = CaseList({
+      cases: [target],
+      setCases: function (next) { window.__written.cases = next; },
+      stores: [], setStores: function () {}, customers: [],
+      setEditingCase: function () {}, setView: function () {},
+      showToast: function (msg) { window.__written.toast = msg; },
+      statusFilter: '全部', setStatusFilter: function () {},
+      processMethods: [], deviceCategories: [], vehicles: [], vendors: []
+    });
+    document.body.appendChild(node);
+    window.__findCloseBtn(node, '20260825002').click();
+    var modalText = document.body.textContent;
+    window.__findBtnByText('確認').click();
+    var result = {
+      mentionsExtension: modalText.indexOf('延伸案件') !== -1,
+      total: (window.__written.cases || []).length,
+      toast: window.__written.toast
+    };
+    document.body.innerHTML = '';
+    return result;
+  })()`);
+  assertEq(plainClose.mentionsExtension, false, '案件完成的確認視窗不提延伸案件');
+  assertEq(plainClose.total, 1, '案件完成結案不產生延伸案件');
+  assertTrue(String(plainClose.toast).indexOf('延伸') === -1,
+    '案件完成的 toast 不提延伸', plainClose.toast);
 } catch (err) {
   console.error(err);
   failed++;
