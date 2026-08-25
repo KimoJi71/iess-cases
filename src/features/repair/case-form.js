@@ -536,6 +536,8 @@
       }
 
       var isOther = isOtherWorkCategory(formData.workCategory);
+      /* 維修結果原則上要先加入設備才可編輯；工項分類為「其他」時不受此限 */
+      var resultLocked = !formData.equipment && !isOther;
 
       return h("div", {
         className: "max-w-5xl mx-auto bg-white rounded-lg shadow-sm border border-gray-100"
@@ -844,7 +846,7 @@
       }, h("h3", {
         className: "text-lg font-bold text-blue-800 border-b pb-2 mb-4"
       }, "5. 維修結果"), h("div", {
-        className: "space-y-6 " + (!formData.equipment ? 'opacity-30 pointer-events-none' : '')
+        className: "space-y-6 " + (resultLocked ? 'opacity-30 pointer-events-none' : '')
       }, h("div", {
         className: "grid grid-cols-1 md:grid-cols-2 gap-6"
       }, h("div", null, h("label", {
@@ -853,12 +855,12 @@
         name: "processStatus",
         value: formData.processStatus || '',
         onChange: handleChange,
-        disabled: !formData.equipment,
+        disabled: resultLocked,
         className: "w-full p-2.5 border-2 border-blue-200 rounded-md font-medium text-blue-900 bg-blue-50/30 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
       }, h("option", {
         value: "",
         disabled: true
-      }, formData.equipment ? "請選擇" : "請先加入設備"), PROCESS_STATUS_OPTIONS.map(function (opt) { return h("option", {
+      }, resultLocked ? "請先加入設備" : "請選擇"), PROCESS_STATUS_OPTIONS.map(function (opt) { return h("option", {
         key: opt,
         value: opt
       }, opt); }))), h("div", null, h("label", {
@@ -868,7 +870,7 @@
       }, h("button", {
         type: "button",
         onClick: function () { signaturePad = { show: true }; rerender(); },
-        disabled: !formData.equipment,
+        disabled: resultLocked,
         className: "px-4 py-2.5 border border-blue-200 bg-blue-50 text-blue-700 rounded-md hover:bg-blue-100 transition-colors font-medium disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
       }, formData.customerSignature ? "重新簽收" : "客戶簽收"), formData.customerSignature ? h("img", {
         src: formData.customerSignature,
@@ -882,10 +884,10 @@
         name: "repairRemark",
         value: formData.repairRemark || '',
         onChange: handleChange,
-        disabled: !formData.equipment,
+        disabled: resultLocked,
         rows: "3",
         className: "w-full p-2.5 border rounded-md outline-none disabled:bg-gray-100 disabled:cursor-not-allowed",
-        placeholder: formData.equipment ? "請輸入維修備註..." : "請先加入設備"
+        placeholder: resultLocked ? "請先加入設備" : "請輸入維修備註..."
       })), h("div", {
         className: "pt-4 border-t border-gray-100"
       }, h("h4", {
