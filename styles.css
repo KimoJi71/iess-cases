@@ -150,6 +150,16 @@ body {
   color: #6b7280;
 }
 
+/* 危險動作（如刪除）：文字與圖示一致以紅色呈現 */
+.action-menu__item--danger,
+.action-menu__item--danger .action-menu__item-icon {
+  color: #dc2626;
+}
+
+.action-menu__item--danger:hover:not(:disabled) {
+  background: #fef2f2;
+}
+
 .searchable-select__option {
   display: flex;
   flex-direction: column;

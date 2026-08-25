@@ -191,8 +191,8 @@ try {
   console.log('\nSection 2｜點開更多選單');
   await evaluate('window.__moreBtn().click()');
   await sleep(100);
-  assertEq(await evaluate('window.__menuItems()'), ['下載 PDF', '複製URL'],
-    '選單含下載 PDF 與複製URL');
+  assertEq(await evaluate('window.__menuItems()'), ['下載 PDF', '複製URL', '刪除'],
+    '選單含下載 PDF、複製URL 與刪除');
   assertEq(await evaluate(`document.querySelector('.action-menu__menu').parentElement === document.body`),
     true, '選單掛在 document.body（不被表格 overflow 裁切）');
   assertEq(await evaluate(`getComputedStyle(document.querySelector('.action-menu__menu')).position`),
