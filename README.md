@@ -26,6 +26,7 @@ src/
 │   ├── repair/       維修服務：案件處理／叫修紀錄／銷案審核／保養進度
 │   │   ├── case-list.js     案件列表（未結案）
 │   │   ├── case-form.js     新增／編輯叫修案件
+│   │   ├── case-extension.js 延伸案件（待料件／尚未處理完成結案時複製新案）
 │   │   ├── case-record.js   叫修案件紀錄（日期查詢）
 │   │   ├── case-review.js   案件銷案審核
 │   │   ├── case-view.js     案件唯讀明細
