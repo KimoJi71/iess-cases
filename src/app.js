@@ -117,7 +117,7 @@
     viewingCase: null,
     historyStore: null,
     customerBackView: '',
-    prevCaseBackView: 'list',
+    prevCaseStack: [],
     statusFilter: '全部',
     currentAccountId: 'ACC1'
   });
@@ -143,8 +143,38 @@
   var setViewingCase = makeSetter('viewingCase');
   var setHistoryStore = makeSetter('historyStore');
   var setCustomerBackView = makeSetter('customerBackView');
-  var setPrevCaseBackView = makeSetter('prevCaseBackView');
+  var setPrevCaseStack = makeSetter('prevCaseStack');
   var setStatusFilter = makeSetter('statusFilter');
+
+  function openPrevCase(prevCase, fromView, fromCase) {
+    store.set(function (s) {
+      var stack = (s.prevCaseStack || []).concat([{
+        view: fromView,
+        caseId: fromCase ? fromCase.id : null
+      }]);
+      return {
+        prevCaseStack: stack,
+        viewingCase: prevCase,
+        view: 'prev-case-view'
+      };
+    });
+  }
+
+  function closePrevCase() {
+    store.set(function (s) {
+      var stack = (s.prevCaseStack || []).slice();
+      var frame = stack.pop();
+      if (!frame) {
+        return { prevCaseStack: stack, view: 'list' };
+      }
+      var next = { prevCaseStack: stack, view: frame.view };
+      if (frame.caseId) {
+        var found = (s.cases || []).filter(function (c) { return c.id === frame.caseId; })[0];
+        if (found) next.viewingCase = found;
+      }
+      return next;
+    });
+  }
 
   function openStoreHistory(storeRecord, backView) {
     store.set({
@@ -362,8 +392,7 @@
           deviceCategories: s.deviceCategories,
           processMethods: s.processMethods,
           setView: setView, showToast: showToast,
-          setViewingCase: setViewingCase,
-          setPrevCaseBackView: setPrevCaseBackView,
+          openPrevCase: openPrevCase,
           currentOperatorName: getCurrentOperatorName(s.accounts, s.currentAccountId)
         });
       case 'record-list':
@@ -375,8 +404,7 @@
           viewingCase: s.viewingCase, setView: setView, backView: 'record-list',
           processMethods: s.processMethods, deviceCategories: s.deviceCategories,
           vehicles: s.vehicles, vendors: s.vendors,
-          cases: s.cases, setViewingCase: setViewingCase,
-          setPrevCaseBackView: setPrevCaseBackView, currentView: 'record-view'
+          cases: s.cases, openPrevCase: openPrevCase, currentView: 'record-view'
         });
       case 'review-list':
         return h(CaseReviewList, {
@@ -391,16 +419,14 @@
           viewingCase: s.viewingCase, setView: setView, backView: 'review-list',
           processMethods: s.processMethods, deviceCategories: s.deviceCategories,
           vehicles: s.vehicles, vendors: s.vendors,
-          cases: s.cases, setViewingCase: setViewingCase,
-          setPrevCaseBackView: setPrevCaseBackView, currentView: 'review-view'
+          cases: s.cases, openPrevCase: openPrevCase, currentView: 'review-view'
         });
       case 'prev-case-view':
         return h(ViewCaseForm, {
           viewingCase: s.viewingCase, setView: setView,
-          backView: s.prevCaseBackView || 'list',
+          onClose: closePrevCase,
           currentView: 'prev-case-view',
-          cases: s.cases, setViewingCase: setViewingCase,
-          setPrevCaseBackView: setPrevCaseBackView,
+          cases: s.cases, openPrevCase: openPrevCase,
           processMethods: s.processMethods, deviceCategories: s.deviceCategories,
           vehicles: s.vehicles, vendors: s.vendors
         });
@@ -1029,4 +1055,11 @@
   }
   store.subscribe(draw);
   draw();
+
+  // 供驗證腳本直接呼叫真正的 openPrevCase / closePrevCase，避免測試重複實作 stack 邏輯。
+  window.__caseNavForTest = {
+    store: store,
+    openPrevCase: openPrevCase,
+    closePrevCase: closePrevCase
+  };
 })();

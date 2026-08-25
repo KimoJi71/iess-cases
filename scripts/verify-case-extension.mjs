@@ -382,14 +382,13 @@ try {
   console.log('\n先前案件按鈕');
   await evaluate(`
     window.__extCase = CaseExtensionUtils.buildExtensionCase(window.__origCase, [window.__origCase]);
-    window.__nav = { viewingCase: null, view: null, backView: null };
-    window.__mkView = function (target, currentView) {
+    window.__nav = { viewingCase: null, view: null, fromView: null, fromCaseId: null };
+    window.__mkView = function (target, currentView, openPrevCase) {
       var node = ViewCaseForm({
         viewingCase: target, setView: function (v) { window.__nav.view = v; },
         backView: 'record-list', currentView: currentView || 'record-view',
         cases: [window.__origCase, window.__extCase],
-        setViewingCase: function (c) { window.__nav.viewingCase = c; },
-        setPrevCaseBackView: function (v) { window.__nav.backView = v; },
+        openPrevCase: openPrevCase,
         processMethods: [], deviceCategories: [], vehicles: [], vendors: []
       });
       document.body.appendChild(node);
@@ -402,10 +401,11 @@ try {
     'ok'`);
 
   const viewBtn = await evaluate(`(function(){
-    var extNode = window.__mkView(window.__extCase);
+    var noop = function () {};
+    var extNode = window.__mkView(window.__extCase, 'record-view', noop);
     var hasBtnOnExt = !!window.__findPrevBtn(extNode);
     extNode.remove();
-    var origNode = window.__mkView(window.__origCase);
+    var origNode = window.__mkView(window.__origCase, 'record-view', noop);
     var hasBtnOnOrig = !!window.__findPrevBtn(origNode);
     origNode.remove();
     document.body.innerHTML = '';
@@ -415,33 +415,54 @@ try {
   assertEq(viewBtn.hasBtnOnOrig, false, '原始案件明細頁沒有「先前案件」按鈕');
 
   const viewNav = await evaluate(`(function(){
-    window.__nav = { viewingCase: null, view: null, backView: null };
-    var node = window.__mkView(window.__extCase, 'record-view');
+    window.__nav = { viewingCase: null, view: null, fromView: null, fromCaseId: null };
+    var node = window.__mkView(window.__extCase, 'record-view', function (prev, fromView, fromCase) {
+      window.__nav.viewingCase = prev;
+      window.__nav.fromView = fromView;
+      window.__nav.fromCaseId = fromCase && fromCase.id;
+    });
     window.__findPrevBtn(node).click();
     var result = {
       viewingId: window.__nav.viewingCase && window.__nav.viewingCase.id,
-      view: window.__nav.view,
-      backView: window.__nav.backView
+      fromView: window.__nav.fromView,
+      fromCaseId: window.__nav.fromCaseId
     };
     document.body.innerHTML = '';
     return result;
   })()`);
+  const extCaseId = await evaluate(`window.__extCase.id`);
   assertEq(viewNav.viewingId, 'C1', '點擊後切換到前一筆案件');
-  assertEq(viewNav.view, 'prev-case-view', '切換到 prev-case-view');
-  assertEq(viewNav.backView, 'record-view', '記錄來源 view 供返回');
+  assertEq(viewNav.fromView, 'record-view', 'openPrevCase 收到來源 view');
+  assertEq(viewNav.fromCaseId, extCaseId, 'openPrevCase 收到來源案件');
+
+  const noOpenPrevCase = await evaluate(`(function(){
+    var node = ViewCaseForm({
+      viewingCase: window.__extCase, setView: function () {},
+      backView: 'store-history', currentView: 'store-history-repair-view',
+      processMethods: [], deviceCategories: [], vehicles: [], vendors: []
+    });
+    document.body.appendChild(node);
+    var hasBtn = !!window.__findPrevBtn(node);
+    document.body.innerHTML = '';
+    return hasBtn;
+  })()`);
+  assertEq(noOpenPrevCase, false, '未傳 openPrevCase 時（如門市履歷）不顯示按鈕也不噴錯');
 
   const editBtn = await evaluate(`(function(){
-    window.__nav = { viewingCase: null, view: null, backView: null };
+    window.__nav = { viewingCase: null, fromView: null, fromCaseId: null };
     var node = EditCaseForm({
       editingCase: window.__extCase,
       cases: [window.__origCase, window.__extCase],
       setCases: function () {},
       stores: [], customers: [], equipments: [], vehicles: [], vendors: [],
       deviceCategories: [], processMethods: [],
-      setView: function (v) { window.__nav.view = v; },
+      setView: function () {},
       showToast: function () {},
-      setViewingCase: function (c) { window.__nav.viewingCase = c; },
-      setPrevCaseBackView: function (v) { window.__nav.backView = v; }
+      openPrevCase: function (prev, fromView, fromCase) {
+        window.__nav.viewingCase = prev;
+        window.__nav.fromView = fromView;
+        window.__nav.fromCaseId = fromCase && fromCase.id;
+      }
     });
     document.body.appendChild(node);
     var btn = Array.prototype.slice.call(node.querySelectorAll('button'))
@@ -451,25 +472,59 @@ try {
     var result = {
       hasBtn: hasBtn,
       viewingId: window.__nav.viewingCase && window.__nav.viewingCase.id,
-      view: window.__nav.view,
-      backView: window.__nav.backView
+      fromView: window.__nav.fromView,
+      fromCaseId: window.__nav.fromCaseId
     };
     document.body.innerHTML = '';
     return result;
   })()`);
   assertTrue(editBtn.hasBtn, '延伸案件編輯頁有「先前案件」按鈕');
   assertEq(editBtn.viewingId, 'C1', '編輯頁點擊後切換到前一筆案件');
-  assertEq(editBtn.view, 'prev-case-view', '編輯頁切換到 prev-case-view');
-  assertEq(editBtn.backView, 'edit', '編輯頁記錄來源為 edit');
+  assertEq(editBtn.fromView, 'edit', '編輯頁記錄來源為 edit');
+  assertEq(editBtn.fromCaseId, extCaseId, '編輯頁 openPrevCase 收到來源案件');
 
   const missingPrev = await evaluate(`(function(){
     var orphan = Object.assign({}, window.__extCase, { prevCaseId: 'C-NOT-EXIST' });
-    var node = window.__mkView(orphan);
+    var node = window.__mkView(orphan, 'record-view', function () {});
     var hasBtn = !!window.__findPrevBtn(node);
     document.body.innerHTML = '';
     return hasBtn;
   })()`);
   assertEq(missingPrev, false, '找不到前一筆案件時不顯示按鈕');
+
+  console.log('\n多層先前案件回溯（app.js 真正的 openPrevCase / closePrevCase）');
+  const multiHop = await evaluate(`(function(){
+    var nav = window.__caseNavForTest;
+    var orig = window.__origCase;
+    var ext1 = Object.assign({}, CaseExtensionUtils.buildExtensionCase(orig, [orig]), { id: 'X1' });
+    var ext2 = Object.assign({}, CaseExtensionUtils.buildExtensionCase(ext1, [orig, ext1]), { id: 'X2', prevCaseId: 'X1' });
+    var trace = [];
+    function snap() {
+      var s = nav.store.get();
+      trace.push({ view: s.view, viewingId: s.viewingCase && s.viewingCase.id });
+    }
+    nav.store.set({ cases: [orig, ext1, ext2], view: 'record-view', viewingCase: ext2, prevCaseStack: [] });
+    snap();
+    nav.openPrevCase(ext1, 'record-view', ext2);
+    snap();
+    nav.openPrevCase(orig, 'prev-case-view', ext1);
+    snap();
+    nav.closePrevCase();
+    snap();
+    nav.closePrevCase();
+    snap();
+    return { trace: trace, ext1Id: ext1.id, ext2Id: ext2.id };
+  })()`);
+  assertEq(multiHop.trace[0].view, 'record-view', '起點在 record-view');
+  assertEq(multiHop.trace[0].viewingId, multiHop.ext2Id, '起點檢視 -2 案件');
+  assertEq(multiHop.trace[1].view, 'prev-case-view', '第一次點先前案件切到 prev-case-view');
+  assertEq(multiHop.trace[1].viewingId, multiHop.ext1Id, '第一次點先前案件看到 -1');
+  assertEq(multiHop.trace[2].view, 'prev-case-view', '第二次點先前案件仍在 prev-case-view');
+  assertEq(multiHop.trace[2].viewingId, 'C1', '第二次點先前案件看到原案件');
+  assertEq(multiHop.trace[3].view, 'prev-case-view', '第一次關閉退回 prev-case-view');
+  assertEq(multiHop.trace[3].viewingId, multiHop.ext1Id, '第一次關閉看到 -1（未被上一層 backView 蓋掉）');
+  assertEq(multiHop.trace[4].view, 'record-view', '第二次關閉退回 record-view');
+  assertEq(multiHop.trace[4].viewingId, multiHop.ext2Id, '第二次關閉看到 -2');
 } catch (err) {
   console.error(err);
   failed++;

@@ -105,10 +105,33 @@
     };
   }
 
+  // 明細頁／編輯頁共用的「先前案件」按鈕：找不到來源案件或未提供 openPrevCase 時不顯示。
+  function buildPrevCaseAction(opts) {
+    opts = opts || {};
+    var cases = opts.cases || [];
+    var targetCase = opts.targetCase;
+    var currentView = opts.currentView;
+    var openPrevCase = opts.openPrevCase;
+    if (!targetCase || !targetCase.prevCaseId || !openPrevCase) return [];
+    var prev = cases.filter(function (c) { return c.id === targetCase.prevCaseId; })[0];
+    if (!prev) return [];
+    var h = IESS.h;
+    return [h('button', {
+      type: 'button',
+      className: 'px-3 py-1.5 text-sm border rounded-md text-blue-600 hover:bg-blue-50 ' +
+        'flex items-center gap-1.5 shrink-0',
+      title: '檢視先前案件 ' + prev.caseNumber,
+      onClick: function () {
+        openPrevCase(prev, currentView, targetCase);
+      }
+    }, IESS.Icons.History({ className: 'h-4 w-4' }), '先前案件')];
+  }
+
   window.CaseExtensionUtils = {
     getRootCaseNumber: getRootCaseNumber,
     getNextExtensionSeq: getNextExtensionSeq,
     getNextExtensionCaseNumber: getNextExtensionCaseNumber,
-    buildExtensionCase: buildExtensionCase
+    buildExtensionCase: buildExtensionCase,
+    buildPrevCaseAction: buildPrevCaseAction
   };
 })();

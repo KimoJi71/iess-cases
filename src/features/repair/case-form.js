@@ -377,8 +377,7 @@
     var processMethods = props.processMethods || [];
     var setView = props.setView;
     var showToast = props.showToast;
-    var setViewingCase = props.setViewingCase;
-    var setPrevCaseBackView = props.setPrevCaseBackView;
+    var openPrevCase = props.openPrevCase;
 
     var formData = CaseAssigneeUtils.normalizeRepairCase(
       JSON.parse(JSON.stringify(editingCase))
@@ -541,20 +540,12 @@
       var resultLocked = !formData.equipment && !isOther;
 
       function buildPrevCaseAction() {
-        if (!formData.prevCaseId || !setViewingCase) return [];
-        var prev = cases.filter(function (c) { return c.id === formData.prevCaseId; })[0];
-        if (!prev) return [];
-        return [h('button', {
-          type: 'button',
-          className: 'px-3 py-1.5 text-sm border rounded-md text-blue-600 hover:bg-blue-50 ' +
-            'flex items-center gap-1.5 shrink-0',
-          title: '檢視先前案件 ' + prev.caseNumber,
-          onClick: function () {
-            if (setPrevCaseBackView) setPrevCaseBackView('edit');
-            setViewingCase(prev);
-            setView('prev-case-view');
-          }
-        }, Icons.History({ className: 'h-4 w-4' }), '先前案件')];
+        return CaseExtensionUtils.buildPrevCaseAction({
+          cases: cases,
+          targetCase: formData,
+          currentView: 'edit',
+          openPrevCase: openPrevCase
+        });
       }
 
       return h("div", {
