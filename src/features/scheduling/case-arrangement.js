@@ -61,8 +61,21 @@
       }, '無設備資料');
     }
 
+    // 多筆設備一次只顯示一張卡片。目前是第幾張由呼叫端持有：派工明細任一欄位輸入
+    // 都會從外層重建整個彈窗，狀態放在這裡會在每次輸入後被重設回第一台。
+    var activeIndex = Math.min(Math.max(opts.activeIndex || 0, 0), items.length - 1);
+    function goTo(next) {
+      if (opts.onActiveIndexChange) opts.onActiveIndexChange(next);
+    }
+
     return h('div', { className: 'space-y-4' },
-      items.map(function (item, idx) {
+      h('div', { className: 'flex justify-end' },
+        h(RepairCaseServiceItemPager, {
+          h: h, index: activeIndex, total: items.length, onPrev: goTo, onNext: goTo
+        })
+      ),
+      [items[activeIndex]].map(function (item) {
+        var idx = activeIndex;
         return h('div', { key: item.id, className: 'bg-white border rounded-md p-3' },
           h('div', { className: 'font-semibold text-sm text-gray-700 mb-2' },
             RepairCaseServiceItems.formatItemTitle(idx, item)),
@@ -72,6 +85,8 @@
             caseContext: formData,
             deviceCategories: opts.deviceCategories,
             FieldComponent: opts.ReadOnlyField,
+            // 設備欄位多，預設收成一行重點，需要時再展開
+            collapsible: true,
             emptyText: '無設備資料'
           }),
           h('div', { className: 'mt-3' },
@@ -582,6 +597,13 @@
         rerender();
       }
 
+      // 一次只顯示一張設備卡片，目前是第幾張要跟著彈窗狀態走（見 renderScheduleServiceItems）
+      function setScheduleActiveItemIndex(index) {
+        if (!scheduleModal) return;
+        scheduleModal = Object.assign({}, scheduleModal, { activeItemIndex: index });
+        rerender();
+      }
+
       // 服務項目掛在各自的設備卡片下，故派工明細也逐卡片寫回
       function updateScheduleServiceItemField(itemId, name, value) {
         if (!scheduleModal) return;
@@ -799,7 +821,9 @@
                     },
                     onRemarksChange: function (itemId, value) {
                       updateScheduleServiceItemField(itemId, 'remarks', value);
-                    }
+                    },
+                    activeIndex: scheduleModal.activeItemIndex || 0,
+                    onActiveIndexChange: setScheduleActiveItemIndex
                   })
                 )
           )

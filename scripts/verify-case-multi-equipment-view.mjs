@@ -88,6 +88,45 @@ try {
         installer: '王小明', assetNumber: 'A-' + id, serialNumber: 'SN-' + id, status: '運轉中'
       };
     };
+
+    // 多筆設備改成一次只顯示一張卡片，測試需要能在卡片之間切換。
+    // 切換鈕是圖示按鈕，會被 icon-button 的 tooltip 包裝重建，故以 aria-label 定位。
+    window.__pagerOf = function (root) {
+      return root.querySelector('[data-role="service-item-pager"]');
+    };
+    window.__pagerTotal = function (root) {
+      var label = root.querySelector('[data-role="service-item-pager-label"]');
+      if (!label) return 1;
+      return Number(label.textContent.split('/')[1].trim());
+    };
+    window.__pagerIndex = function (root) {
+      var label = root.querySelector('[data-role="service-item-pager-label"]');
+      if (!label) return 0;
+      return Number(label.textContent.replace('設備', '').split('/')[0].trim()) - 1;
+    };
+    window.__gotoCard = function (root, target) {
+      for (var guard = 0; guard < 20; guard++) {
+        var cur = window.__pagerIndex(root);
+        if (cur === target) return true;
+        var pager = window.__pagerOf(root);
+        if (!pager) return false;
+        var label = cur < target ? '下一台設備' : '上一台設備';
+        var btn = pager.querySelector('button[aria-label="' + label + '"]');
+        if (!btn || btn.disabled) return false;
+        btn.click();
+      }
+      return false;
+    };
+    // 逐張切過去收集，回傳每張卡片經 collect(root) 得到的值
+    window.__eachCard = function (root, collect) {
+      var total = window.__pagerTotal(root);
+      var out = [];
+      for (var i = 0; i < total; i++) {
+        window.__gotoCard(root, i);
+        out.push(collect(root));
+      }
+      return out;
+    };
     window.__rec = function (id, cat3) {
       return { id: id, category1: '維修', category2: '空調', category3: cat3,
         specification: '標準', qty: 1, unit: '台', points: 2, status: '已處理' };
@@ -121,20 +160,29 @@ try {
     var hs = Array.prototype.map.call(wrap.querySelectorAll('h3'), function (n) {
       return n.textContent.replace(/\\s+/g, ' ').trim();
     });
-    var text = wrap.textContent.replace(/\\s+/g, ' ');
+    // 一次只顯示一張卡片，逐張切過去把兩台的內容都看過
+    var texts = window.__eachCard(wrap, function (root) {
+      return root.textContent.replace(/\\s+/g, ' ');
+    });
+    var text = texts.join(' ');
     var out = {
       headings: hs,
+      cardCount: texts.length,
       buttonsInCards: wrap.querySelectorAll('table button').length,
-      hasFirst: text.indexOf('第一台濾網堵塞') !== -1,
-      hasSecond: text.indexOf('第二台軸承磨損') !== -1,
-      hasFtxs: text.indexOf('FTXS') !== -1,
-      hasCh200: text.indexOf('CH-200') !== -1
+      hasFirst: texts[0].indexOf('第一台濾網堵塞') !== -1,
+      hasSecond: texts[1] && texts[1].indexOf('第二台軸承磨損') !== -1,
+      hasFtxs: texts[0].indexOf('FTXS') !== -1,
+      hasCh200: !!(texts[1] && texts[1].indexOf('CH-200') !== -1),
+      // 第一張卡片不得同時出現第二台的內容
+      firstHasNoSecond: texts[0].indexOf('CH-200') === -1
     };
     wrap.remove();
     return out;
   })()`);
   assertTrue(view.headings.some(t => t.indexOf('3. 設備與服務項目') === 0), '明細區塊 3 已合併', view.headings.join(' | '));
   assertTrue(view.headings.some(t => t === '4. 維修結果'), '明細維修結果遞補為 4', view.headings.join(' | '));
+  assertEq(view.cardCount, 2, '明細有兩張卡片可切換');
+  assertEq(view.firstHasNoSecond, true, '一次只顯示一張卡片');
   assertEq(view.hasFirst, true, '明細含第一台維修原因');
   assertEq(view.hasSecond, true, '明細含第二台維修原因');
   assertEq(view.hasFtxs, true, '明細含第一台型號');

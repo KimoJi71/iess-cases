@@ -111,6 +111,45 @@ try {
       return eq;
     })();
     window.__allEqs = window.__eqs.concat([window.__otherStoreEq]);
+
+    // 多筆設備改成一次只顯示一張卡片，測試需要能在卡片之間切換。
+    // 切換鈕是圖示按鈕，會被 icon-button 的 tooltip 包裝重建，故以 aria-label 定位。
+    window.__pagerOf = function (root) {
+      return root.querySelector('[data-role="service-item-pager"]');
+    };
+    window.__pagerTotal = function (root) {
+      var label = root.querySelector('[data-role="service-item-pager-label"]');
+      if (!label) return 1;
+      return Number(label.textContent.split('/')[1].trim());
+    };
+    window.__pagerIndex = function (root) {
+      var label = root.querySelector('[data-role="service-item-pager-label"]');
+      if (!label) return 0;
+      return Number(label.textContent.replace('設備', '').split('/')[0].trim()) - 1;
+    };
+    window.__gotoCard = function (root, target) {
+      for (var guard = 0; guard < 20; guard++) {
+        var cur = window.__pagerIndex(root);
+        if (cur === target) return true;
+        var pager = window.__pagerOf(root);
+        if (!pager) return false;
+        var label = cur < target ? '下一台設備' : '上一台設備';
+        var btn = pager.querySelector('button[aria-label="' + label + '"]');
+        if (!btn || btn.disabled) return false;
+        btn.click();
+      }
+      return false;
+    };
+    // 逐張切過去收集，回傳每張卡片經 collect(root) 得到的值
+    window.__eachCard = function (root, collect) {
+      var total = window.__pagerTotal(root);
+      var out = [];
+      for (var i = 0; i < total; i++) {
+        window.__gotoCard(root, i);
+        out.push(collect(root));
+      }
+      return out;
+    };
     window.__rowActions = function (node) {
       return Array.prototype.map.call(node.querySelectorAll('tbody tr'), function (tr) {
         var td = tr.querySelector('td');
@@ -230,14 +269,15 @@ try {
       firstActions: firstActions,
       secondActions: secondActions,
       toasts: toasts,
-      // 每張「設備＋服務項目」卡片標頭各有一顆「移除」按鈕
-      itemCount: Array.prototype.filter.call(wrap.querySelectorAll('button'), function (b) {
-        return b.textContent.replace(/\s+/g, ' ').trim() === '移除';
-      }).length,
-      serialNumbers: Array.prototype.filter.call(
-        wrap.querySelectorAll('div'),
-        function (n) { return /^SN-E\d$/.test(n.textContent.trim()); }
-      ).map(function (n) { return n.textContent.trim(); })
+      // 一次只顯示一張卡片，總張數看切換列；只有一張時沒有切換列
+      itemCount: window.__pagerTotal(wrap),
+      // 逐張切過去收集卡片內的流水序號，確認沒有混進他店設備
+      serialNumbers: window.__eachCard(wrap, function (root) {
+        return Array.prototype.filter.call(
+          root.querySelectorAll('div'),
+          function (n) { return /^SN-E\\d$/.test(n.textContent.trim()); }
+        ).map(function (n) { return n.textContent.trim(); }).join(',');
+      })
     };
     wrap.remove();
     return result;
@@ -259,6 +299,7 @@ try {
     '重複加入提示為錯誤色調'
   );
   assertEq(form.itemCount, 2, '本店兩筆設備加入後不再增加服務項目卡片');
+  assertEq(form.serialNumbers.length, 2, '兩張卡片都取得到內容');
   assertTrue(
     form.serialNumbers.every(sn => sn === 'SN-E1' || sn === 'SN-E2'),
     '卡片內不會出現他店設備',

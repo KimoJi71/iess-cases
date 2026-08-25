@@ -23,6 +23,44 @@
     var onClose = props.onClose;
     var notice = props.notice;
 
+    // 多筆設備一次只顯示一張卡片；index 是這個區塊自己的區域狀態，
+    // 用 stateful 包住區塊即可，不必為了換台重繪整份明細。
+    function renderServiceItemSection() {
+      var items = RepairCaseServiceItems.getItems(viewingCase);
+      var activeIndex = 0;
+      return IESS.stateful(function (rerender) {
+        if (activeIndex > items.length - 1) activeIndex = Math.max(items.length - 1, 0);
+        return h('section', { className: 'bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-100' },
+          h('div', { className: 'flex flex-wrap justify-between items-center gap-3 border-b pb-2 mb-4' },
+            h('h3', { className: 'text-lg font-bold text-blue-800' }, '3. 設備與服務項目'),
+            h(RepairCaseServiceItemPager, {
+              h: h,
+              index: activeIndex,
+              total: items.length,
+              onPrev: function (next) { activeIndex = next; rerender(); },
+              onNext: function (next) { activeIndex = next; rerender(); }
+            })
+          ),
+          items.length
+            ? h(RepairCaseServiceItemCard, {
+                key: items[activeIndex].id,
+                h: h,
+                index: activeIndex,
+                item: items[activeIndex],
+                caseContext: viewingCase,
+                deviceCategories: deviceCategories,
+                processMethods: processMethods,
+                isOther: isOther,
+                isClosed: viewingCase && viewingCase.isClosed,
+                readOnly: true
+              })
+            : h('div', {
+                className: 'text-center py-4 text-gray-400 bg-gray-50 rounded-md border border-dashed'
+              }, '無設備資料')
+        );
+      });
+    }
+
     function formatTimeRange(start, end) {
       if (!start) return '';
       return end && end !== start ? start + ' ~ ' + end : start;
@@ -119,27 +157,7 @@
             })
           )
         ),
-        h('section', { className: 'bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-100' },
-          h('h3', { className: 'text-lg font-bold text-blue-800 border-b pb-2 mb-4' }, '3. 設備與服務項目'),
-          RepairCaseServiceItems.getItems(viewingCase).length
-            ? RepairCaseServiceItems.getItems(viewingCase).map(function (item, idx) {
-                return h(RepairCaseServiceItemCard, {
-                  key: item.id,
-                  h: h,
-                  index: idx,
-                  item: item,
-                  caseContext: viewingCase,
-                  deviceCategories: deviceCategories,
-                  processMethods: processMethods,
-                  isOther: isOther,
-                  isClosed: viewingCase && viewingCase.isClosed,
-                  readOnly: true
-                });
-              })
-            : h('div', {
-                className: 'text-center py-4 text-gray-400 bg-gray-50 rounded-md border border-dashed'
-              }, '無設備資料')
-        ),
+        renderServiceItemSection(),
         h('section', { className: 'bg-white p-6 rounded-lg shadow-sm border border-gray-100' },
           h('h3', { className: 'text-lg font-bold text-blue-800 border-b pb-2 mb-4' }, '4. 維修結果'),
           h('div', { className: 'space-y-6' },

@@ -156,13 +156,28 @@
     );
   }
 
+  // 摘要列只留辨識一台設備最必要的幾項，其餘欄位收在 details 內
+  var SUMMARY_KEYS = ['category', 'deviceName', 'model', 'area', 'status'];
+
+  function getSummaryText(equipment, caseContext, deviceCategories) {
+    return SUMMARY_KEYS.map(function (key) {
+      var def = FIELD_DEFS.filter(function (d) { return d.key === key; })[0];
+      if (!def) return '';
+      var value = getFieldValue(equipment, caseContext, def, deviceCategories);
+      return key === 'status' ? EquipmentUtils.normalizeStatus(value) : value;
+    }).filter(Boolean).join(' · ');
+  }
+
   function Panel(props) {
     var h = props.h || IESS.h;
     var equipment = props.equipment;
     var caseContext = props.caseContext || {};
     var emptyText = props.emptyText || '無設備資料';
     var emptyClass = props.emptyClass || 'text-center py-4 text-gray-400 bg-gray-50 rounded-md border border-dashed';
-    var gridClass = props.gridClass || 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-sm bg-green-50/50 p-4 rounded-md border border-green-100';
+    // 收合版的外框由 details 提供，內層 grid 就不再自帶底色與外框，避免雙層框
+    var gridClass = props.gridClass || (props.collapsible
+      ? 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-sm p-4 pt-0'
+      : 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-sm bg-green-50/50 p-4 rounded-md border border-green-100');
     var FieldComponent = props.FieldComponent;
 
     if (!equipment) {
@@ -170,7 +185,7 @@
     }
 
     var fields = getDisplayFields(equipment, caseContext, props.deviceCategories);
-    return h('div', { className: gridClass },
+    var grid = h('div', { className: gridClass },
       fields.map(function (field) {
         if (FieldComponent) {
           return h(FieldComponent, { key: field.label, label: field.label, value: field.value });
@@ -187,12 +202,26 @@
         );
       })
     );
+
+    // 多筆設備時十二個唯讀欄位會把版面撐得很長，改預設收合成一行重點；
+    // 用原生 details 讓開合由瀏覽器自理，不必為了摺疊把狀態散到各個呼叫端。
+    if (!props.collapsible) return grid;
+    return h('details', { className: 'rounded-md border border-green-100 bg-green-50/50' },
+      // 不要對 summary 下 display:flex —— 會讓瀏覽器的展開三角形消失，
+      // 那是使用者唯一看得出「這行可以點開」的線索
+      h('summary', {
+        className: 'cursor-pointer select-none px-4 py-2.5 text-sm font-medium text-gray-700 '
+          + 'marker:text-gray-400'
+      }, getSummaryText(equipment, caseContext, props.deviceCategories)),
+      grid
+    );
   }
 
   window.RepairCaseEquipment = {
     FIELD_DEFS: FIELD_DEFS,
     getFieldValue: getFieldValue,
     getDisplayFields: getDisplayFields,
+    getSummaryText: getSummaryText,
     listForCase: listForCase,
     isAdded: isAdded,
     isSelectable: isSelectable,

@@ -394,6 +394,8 @@
     }
     var pickerOpen = false;
     var addEquipMenuOpen = false;
+    // 多筆設備一次只顯示一張卡片，目前看的是第幾張；宣告在 stateful 之外才不會被重繪重設
+    var activeItemIndex = 0;
     var signaturePad = { show: false };
 
     return stateful(function (rerender) {
@@ -436,6 +438,8 @@
         }
         formData.serviceItems = RepairCaseServiceItems.getItems(formData)
           .concat([RepairCaseServiceItems.createItem(eq)]);
+        // 加入後直接把畫面切到新卡片，否則使用者會以為沒加成功
+        activeItemIndex = formData.serviceItems.length - 1;
         pickerOpen = false;
         addEquipMenuOpen = false;
         rerender();
@@ -547,7 +551,12 @@
       }
 
       var isOther = isOtherWorkCategory(formData.workCategory);
-      var hasServiceItems = RepairCaseServiceItems.getItems(formData).length > 0;
+      var serviceItems = RepairCaseServiceItems.getItems(formData);
+      var hasServiceItems = serviceItems.length > 0;
+      // 卡片增減後 index 可能落在範圍外（例如移除最後一張），統一在此夾回來
+      var activeIndex = Math.min(Math.max(activeItemIndex, 0), Math.max(serviceItems.length - 1, 0));
+      activeItemIndex = activeIndex;
+      var activeItem = serviceItems[activeIndex];
       /* 維修結果原則上要先加入設備才可編輯；工項分類為「其他」時不受此限 */
       var resultLocked = !hasServiceItems && !isOther;
 
@@ -643,6 +652,14 @@
         },
           h("div", { className: "flex flex-wrap justify-between items-center gap-3 border-b pb-2 mb-4" },
             h("h3", { className: "text-lg font-bold text-blue-800" }, "3. 設備與服務項目"),
+            h("div", { className: "flex items-center gap-3" },
+            h(RepairCaseServiceItemPager, {
+              h: h,
+              index: activeIndex,
+              total: serviceItems.length,
+              onPrev: function (next) { activeItemIndex = next; rerender(); },
+              onNext: function (next) { activeItemIndex = next; rerender(); }
+            }),
             h("div", { className: "relative" },
               addEquipMenuOpen && h("div", {
                 className: "fixed inset-0 z-10",
@@ -679,9 +696,11 @@
                 }, Icons.QrCode({ className: "h-4 w-4" }), " 掃描 QR Code")
               )
             )
+            )
           ),
           hasServiceItems
-            ? RepairCaseServiceItems.getItems(formData).map(function (item, idx) {
+            ? [activeItem].map(function (item) {
+                var idx = activeIndex;
                 return h(RepairCaseServiceItemCard, {
                   key: item.id,
                   h: h,

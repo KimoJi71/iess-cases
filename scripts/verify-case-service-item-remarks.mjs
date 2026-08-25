@@ -128,6 +128,45 @@ try {
       return c;
     };
     window.__text = function (node) { return node.textContent.replace(/\\s+/g, ' '); };
+    // 多筆設備改成一次只顯示一張卡片，測試需要能在卡片之間切換。
+    // 切換鈕是圖示按鈕，會被 icon-button 的 tooltip 包裝重建，故以 aria-label 定位。
+    window.__pagerOf = function (root) {
+      return root.querySelector('[data-role="service-item-pager"]');
+    };
+    window.__pagerTotal = function (root) {
+      var label = root.querySelector('[data-role="service-item-pager-label"]');
+      if (!label) return 1;
+      return Number(label.textContent.split('/')[1].trim());
+    };
+    window.__pagerIndex = function (root) {
+      var label = root.querySelector('[data-role="service-item-pager-label"]');
+      if (!label) return 0;
+      return Number(label.textContent.replace('設備', '').split('/')[0].trim()) - 1;
+    };
+    window.__gotoCard = function (root, target) {
+      for (var guard = 0; guard < 20; guard++) {
+        var cur = window.__pagerIndex(root);
+        if (cur === target) return true;
+        var pager = window.__pagerOf(root);
+        if (!pager) return false;
+        var label = cur < target ? '下一台設備' : '上一台設備';
+        var btn = pager.querySelector('button[aria-label="' + label + '"]');
+        if (!btn || btn.disabled) return false;
+        btn.click();
+      }
+      return false;
+    };
+    // 逐張切過去收集，回傳每張卡片經 collect(root) 得到的值
+    window.__eachCard = function (root, collect) {
+      var total = window.__pagerTotal(root);
+      var out = [];
+      for (var i = 0; i < total; i++) {
+        window.__gotoCard(root, i);
+        out.push(collect(root));
+      }
+      return out;
+    };
+
   `);
 
   console.log('\n資料層：備註屬於卡片');
@@ -203,24 +242,30 @@ try {
       equipments: [], deviceCategories: [], processMethods: [],
       setView: function () {}, showToast: function () {}
     }));
-    var itemBoxes = wrap.querySelectorAll('textarea[name="serviceItemRemarks"]');
-    var before = Array.prototype.map.call(itemBoxes, function (t) { return t.value; });
+    // 一次只顯示一張卡片，逐張切過去讀寫
+    function remarkBox() {
+      return wrap.querySelector('textarea[name="serviceItemRemarks"]');
+    }
+    var before = window.__eachCard(wrap, function () { return remarkBox().value; });
     // 改第二張卡片的備註，第一張不得被牽動
-    var second = itemBoxes[1];
+    window.__gotoCard(wrap, 1);
+    var second = remarkBox();
     second.value = '改過的第二台備註';
     second.dispatchEvent(new Event('input', { bubbles: true }));
-    var afterBoxes = wrap.querySelectorAll('textarea[name="serviceItemRemarks"]');
     var out = {
-      itemCount: itemBoxes.length,
+      itemCount: window.__pagerTotal(wrap),
       before: before,
-      after: Array.prototype.map.call(afterBoxes, function (t) { return t.value; }),
+      after: window.__eachCard(wrap, function () { return remarkBox().value; }),
+      // 每張卡片同時只渲染一個備註欄
+      boxesPerCard: wrap.querySelectorAll('textarea[name="serviceItemRemarks"]').length,
       caseLevelCount: wrap.querySelectorAll('textarea[name="remarks"]').length,
       repairRemarkCount: wrap.querySelectorAll('textarea[name="repairRemark"]').length
     };
     wrap.remove();
     return out;
   })()`);
-  assertEq(form.itemCount, 2, '兩張卡片各有一個備註欄');
+  assertEq(form.itemCount, 2, '案件有兩張卡片');
+  assertEq(form.boxesPerCard, 1, '一次只渲染一張卡片的備註欄');
   assertEq(form.before, ['第一台備註', '第二台備註'], '每張卡片帶出自己的備註');
   assertEq(form.after, ['第一台備註', '改過的第二台備註'], '改第二張備註不影響第一張');
   assertEq(form.caseLevelCount, 0, '表單不再有案件層級備註欄');
@@ -235,11 +280,12 @@ try {
       processMethods: [], deviceCategories: [], vehicles: [], vendors: [],
       cases: [], openPrevCase: function () {}, currentView: 'case-view'
     }));
-    var text = window.__text(wrap);
+    // 一次只顯示一張卡片，逐張切過去確認各自的備註
+    var texts = window.__eachCard(wrap, function (root) { return window.__text(root); });
     var out = {
-      hasFirst: text.indexOf('第一台備註') !== -1,
-      hasSecond: text.indexOf('第二台備註') !== -1,
-      remarkLabels: (text.match(/備註/g) || []).length,
+      hasFirst: texts[0].indexOf('第一台備註') !== -1,
+      hasSecond: !!(texts[1] && texts[1].indexOf('第二台備註') !== -1),
+      firstHasNoSecond: texts[0].indexOf('第二台備註') === -1,
       editable: wrap.querySelectorAll('textarea').length
     };
     wrap.remove();
@@ -247,6 +293,7 @@ try {
   })()`);
   assertEq(view.hasFirst, true, '明細顯示第一台的備註');
   assertEq(view.hasSecond, true, '明細顯示第二台的備註');
+  assertEq(view.firstHasNoSecond, true, '明細一次只顯示一張卡片的備註');
   assertEq(view.editable, 0, '唯讀明細沒有可編輯的備註欄');
 
   console.log('\nPDF 逐設備備註');
@@ -276,37 +323,47 @@ try {
     var items = RepairCaseServiceItems.getItems(c);
     var h = IESS.h;
     var calls = [];
-    var node = CaseArrangement.renderScheduleServiceItems(c, {
-      h: h,
-      deviceCategories: [],
-      ReadOnlyField: function (p) {
-        return h('div', null, h('span', null, p.label), h('span', null, p.value));
-      },
-      renderScheduleFieldLabel: function (label) { return h('label', null, label); },
-      inputCls: 'w-full',
-      isClosed: false,
-      processMethods: [],
-      onReasonChange: function () {},
-      onRemarksChange: function (itemId, value) { calls.push({ itemId: itemId, value: value }); }
-    });
-    document.body.appendChild(node);
-    var boxes = node.querySelectorAll('textarea[name="serviceItemRemarks"]');
-    var values = Array.prototype.map.call(boxes, function (t) { return t.value; });
-    var second = boxes[1];
-    second.value = '派工改備註';
-    second.dispatchEvent(new Event('input', { bubbles: true }));
+    // 一次只顯示一張卡片，目前是第幾張由呼叫端以 activeIndex 帶入
+    function render(activeIndex) {
+      return CaseArrangement.renderScheduleServiceItems(c, {
+        h: h,
+        deviceCategories: [],
+        ReadOnlyField: function (p) {
+          return h('div', null, h('span', null, p.label), h('span', null, p.value));
+        },
+        renderScheduleFieldLabel: function (label) { return h('label', null, label); },
+        inputCls: 'w-full',
+        isClosed: false,
+        processMethods: [],
+        onReasonChange: function () {},
+        onRemarksChange: function (itemId, value) { calls.push({ itemId: itemId, value: value }); },
+        activeIndex: activeIndex,
+        onActiveIndexChange: function () {}
+      });
+    }
+    function boxes(node) { return node.querySelectorAll('textarea[name="serviceItemRemarks"]'); }
+    var first = render(0);
+    document.body.appendChild(first);
     var out = {
-      count: boxes.length,
-      values: values,
-      callCount: calls.length,
-      lastItemId: calls.length ? calls[calls.length - 1].itemId : null,
-      lastValue: calls.length ? calls[calls.length - 1].value : null,
-      secondItemId: items[1].id
+      count: boxes(first).length,
+      values: [boxes(first)[0].value]
     };
-    node.remove();
+    first.remove();
+
+    var second = render(1);
+    document.body.appendChild(second);
+    out.values.push(boxes(second)[0].value);
+    var box = boxes(second)[0];
+    box.value = '派工改備註';
+    box.dispatchEvent(new Event('input', { bubbles: true }));
+    out.callCount = calls.length;
+    out.lastItemId = calls.length ? calls[calls.length - 1].itemId : null;
+    out.lastValue = calls.length ? calls[calls.length - 1].value : null;
+    out.secondItemId = items[1].id;
+    second.remove();
     return out;
   })()`);
-  assertEq(arrangement.count, 2, '派工明細每張卡片各一個備註欄');
+  assertEq(arrangement.count, 1, '派工明細一次只渲染一張卡片的備註欄');
   assertEq(arrangement.values, ['第一台備註', '第二台備註'], '派工明細帶出各卡片自己的備註');
   assertEq(arrangement.callCount, 1, '改第二張備註觸發一次 onRemarksChange');
   assertEq(arrangement.lastItemId, arrangement.secondItemId, 'onRemarksChange 帶第二筆 item 的 id');

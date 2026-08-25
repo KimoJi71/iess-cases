@@ -150,7 +150,7 @@ surfaces.forEach(([rel, label]) => {
 });
 
 const viewSrc = readFileSync(join(ROOT, 'src/features/repair/case-view.js'), 'utf8');
-assertTrue(/RepairCaseServiceItemCard[\s\S]{0,400}readOnly:\s*true/.test(viewSrc),
+assertTrue(/RepairCaseServiceItemCard[\s\S]{0,600}readOnly:\s*true/.test(viewSrc),
   '案件明細：以 readOnly 重用設備卡片元件（狀態欄／排序／badge／不計分皆隨之共用）');
 const arrangeSrc = readFileSync(join(ROOT, 'src/features/scheduling/case-arrangement.js'), 'utf8');
 assertTrue(/colspan: String\(pmColumns\.length \+ 3\)/.test(arrangeSrc), '案件安排空列 colspan 已含狀態欄');

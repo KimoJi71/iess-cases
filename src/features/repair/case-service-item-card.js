@@ -212,6 +212,8 @@
           equipment: item.equipment,
           caseContext: props.caseContext || {},
           deviceCategories: props.deviceCategories,
+          // 設備欄位多，預設收成一行重點，需要時再展開
+          collapsible: true,
           emptyText: '此卡片尚未指定設備'
         }),
         renderReason(),

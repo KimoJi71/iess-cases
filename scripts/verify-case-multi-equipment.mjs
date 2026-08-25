@@ -127,9 +127,50 @@ try {
       rows[equipIndex].querySelector('button').click();
     };
     window.__cardTitles = function (wrap) {
-      return Array.prototype.map.call(wrap.querySelectorAll('div.border.border-gray-200.rounded-lg > div:first-child span'),
-        function (s) { return s.textContent.replace(/\\s+/g, ' ').trim(); });
+      return window.__eachCard(wrap, function (root) {
+        var s = root.querySelector('div.border.border-gray-200.rounded-lg > div:first-child span');
+        return s ? s.textContent.replace(/\\s+/g, ' ').trim() : '';
+      });
     };
+    // 多筆設備改成一次只顯示一張卡片，測試需要能在卡片之間切換。
+    // 切換鈕是圖示按鈕，會被 icon-button 的 tooltip 包裝重建，故以 aria-label 定位。
+    window.__pagerOf = function (root) {
+      return root.querySelector('[data-role="service-item-pager"]');
+    };
+    window.__pagerTotal = function (root) {
+      var label = root.querySelector('[data-role="service-item-pager-label"]');
+      if (!label) return 1;
+      return Number(label.textContent.split('/')[1].trim());
+    };
+    window.__pagerIndex = function (root) {
+      var label = root.querySelector('[data-role="service-item-pager-label"]');
+      if (!label) return 0;
+      return Number(label.textContent.replace('設備', '').split('/')[0].trim()) - 1;
+    };
+    window.__gotoCard = function (root, target) {
+      for (var guard = 0; guard < 20; guard++) {
+        var cur = window.__pagerIndex(root);
+        if (cur === target) return true;
+        var pager = window.__pagerOf(root);
+        if (!pager) return false;
+        var label = cur < target ? '下一台設備' : '上一台設備';
+        var btn = pager.querySelector('button[aria-label="' + label + '"]');
+        if (!btn || btn.disabled) return false;
+        btn.click();
+      }
+      return false;
+    };
+    // 逐張切過去收集，回傳每張卡片經 collect(root) 得到的值
+    window.__eachCard = function (root, collect) {
+      var total = window.__pagerTotal(root);
+      var out = [];
+      for (var i = 0; i < total; i++) {
+        window.__gotoCard(root, i);
+        out.push(collect(root));
+      }
+      return out;
+    };
+
   `);
 
   console.log('\n合併區塊標題');
@@ -166,16 +207,16 @@ try {
     var wrap = window.__mountEdit(JSON.parse(JSON.stringify(window.__baseCase)));
     window.__clickAdd(wrap, 0);
     window.__clickAdd(wrap, 1);
-    function reasonBoxes() {
+    function reasonBox() {
       return Array.prototype.filter.call(wrap.querySelectorAll('textarea'), function (t) {
         return t.previousSibling && t.previousSibling.textContent === '實際維修原因';
-      });
+      })[0];
     }
-    var boxes = reasonBoxes();
-    boxes[0].value = '第一台濾網堵塞';
-    boxes[0].dispatchEvent(new Event('input', { bubbles: true }));
-    var after = reasonBoxes();
-    var out = [after[0].value, after[1].value];
+    window.__gotoCard(wrap, 0);
+    var box = reasonBox();
+    box.value = '第一台濾網堵塞';
+    box.dispatchEvent(new Event('input', { bubbles: true }));
+    var out = window.__eachCard(wrap, function () { return reasonBox().value; });
     wrap.remove();
     return out;
   })()`);
@@ -190,10 +231,11 @@ try {
       { id: 'SIc', equipment: window.__mkEq('E3', '排風機', 'VF-10'), actualReason: 'C', processRecords: [] }
     ];
     var wrap = window.__mountEdit(base);
-    var removeBtns = Array.prototype.filter.call(wrap.querySelectorAll('button'), function (b) {
+    // 一次只顯示一張卡片，移除鈕作用在目前這張，故先切到第二張
+    window.__gotoCard(wrap, 1);
+    Array.prototype.find.call(wrap.querySelectorAll('button'), function (b) {
       return b.textContent.replace(/\\s+/g, ' ').trim() === '移除';
-    });
-    removeBtns[1].click();
+    }).click();
     var titles = window.__cardTitles(wrap);
     wrap.remove();
     return titles;

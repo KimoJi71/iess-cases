@@ -104,28 +104,45 @@ try {
     var items = RepairCaseServiceItems.getItems(c);
     var h = IESS.h;
     var calls = [];
-    var node = CaseArrangement.renderScheduleServiceItems(c, {
-      h: h,
-      deviceCategories: [],
-      ReadOnlyField: function (p) {
-        return h('div', null, h('span', null, p.label), h('span', null, p.value));
-      },
-      renderScheduleFieldLabel: function (label) { return h('label', null, label); },
-      inputCls: 'w-full',
-      isClosed: !!c.isClosed,
-      processMethods: (typeof INITIAL_PROCESS_METHODS !== 'undefined' ? INITIAL_PROCESS_METHODS : []),
-      onReasonChange: function (itemId, value) { calls.push({ itemId: itemId, value: value }); },
-      onRemarksChange: function () {}
-    });
-    document.body.appendChild(node);
-    var text = node.textContent.replace(/\\s+/g, ' ');
+    // 一次只顯示一張卡片，目前是第幾張由呼叫端以 activeIndex 帶入
+    function render(activeIndex) {
+      return CaseArrangement.renderScheduleServiceItems(c, {
+        h: h,
+        deviceCategories: [],
+        ReadOnlyField: function (p) {
+          return h('div', null, h('span', null, p.label), h('span', null, p.value));
+        },
+        renderScheduleFieldLabel: function (label) { return h('label', null, label); },
+        inputCls: 'w-full',
+        isClosed: !!c.isClosed,
+        processMethods: (typeof INITIAL_PROCESS_METHODS !== 'undefined' ? INITIAL_PROCESS_METHODS : []),
+        onReasonChange: function (itemId, value) { calls.push({ itemId: itemId, value: value }); },
+        onRemarksChange: function () {},
+        activeIndex: activeIndex,
+        onActiveIndexChange: function () {}
+      });
+    }
     // 每張卡片有「實際維修原因」與「備註」兩個 textarea，這裡只驗前者
-    var textareas = node.querySelectorAll('textarea[name="serviceItemActualReason"]');
+    function reasonBoxes(node) {
+      return node.querySelectorAll('textarea[name="serviceItemActualReason"]');
+    }
+    var text = '';
     // textarea 的值走 .value，不會出現在 textContent，故另外蒐集（見 assertion-honesty）；
     // 要在觸發 input 事件、覆寫第二張卡片的值之前先讀出來，否則驗證的就不是原始渲染結果
-    var textareaValues = Array.prototype.map.call(textareas, function (t) { return t.value; });
+    var textareaValues = [];
+    var perCardCounts = [];
+    for (var i = 0; i < items.length; i++) {
+      var node = render(i);
+      document.body.appendChild(node);
+      text += ' ' + node.textContent.replace(/\\s+/g, ' ');
+      perCardCounts.push(reasonBoxes(node).length);
+      textareaValues.push(reasonBoxes(node)[0].value);
+      node.remove();
+    }
     // 觸發第二張卡片的「實際維修原因」textarea input，驗證回呼帶的是第二筆 item 的 id
-    var second = textareas[1];
+    var secondNode = render(1);
+    document.body.appendChild(secondNode);
+    var second = reasonBoxes(secondNode)[0];
     second.value = '改過的原因';
     second.dispatchEvent(new Event('input', { bubbles: true }));
     var out = {
@@ -133,12 +150,12 @@ try {
       reasons: items.map(function (it) { return it.actualReason || ''; }),
       textareaValues: textareaValues,
       text: text,
-      textareaCount: textareas.length,
+      perCardCounts: perCardCounts,
       callCount: calls.length,
       lastCallItemId: calls.length ? calls[calls.length - 1].itemId : null,
       secondItemId: items[1].id
     };
-    node.remove();
+    secondNode.remove();
     return out;
   })()`);
   assertTrue(arrangement.models.length >= 2, '取得多設備案件', arrangement.models.join(' | '));
@@ -152,7 +169,12 @@ try {
     '派工明細列出每一台設備的實際維修原因',
     arrangement.textareaValues.join(' | ')
   );
-  assertEq(arrangement.textareaCount, arrangement.models.length, '每張卡片各有一個實際維修原因 textarea');
+  assertTrue(
+    arrangement.perCardCounts.length === arrangement.models.length
+      && arrangement.perCardCounts.every(function (n) { return n === 1; }),
+    '一次只渲染一張卡片，且各有一個實際維修原因 textarea',
+    arrangement.perCardCounts.join(' | ')
+  );
   assertEq(arrangement.callCount, 1, '第二張卡片觸發一次 onReasonChange');
   assertEq(arrangement.lastCallItemId, arrangement.secondItemId, 'onReasonChange 帶的是第二筆 item 的 id');
 
