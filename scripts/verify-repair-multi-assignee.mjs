@@ -86,6 +86,7 @@ function createSandbox() {
 function loadModules() {
   const sandbox = createSandbox();
   loadIife('src/features/permissions/process-method-utils.js', sandbox);
+  loadIife('src/features/repair/case-service-items.js', sandbox);
   loadIife('src/features/repair/case-assignee-utils.js', sandbox);
   loadIife('src/features/permissions/assignee-utils.js', sandbox);
   loadIife('src/features/permissions/service-level-utils.js', sandbox);
@@ -103,7 +104,8 @@ function makeRepairCase(overrides) {
   return Object.assign(
     {
       assignees: ['A組', 'B組'],
-      processRecords: [{ points: 30, qty: 1 }],
+      serviceItems: [{ id: 'SI1', equipment: null, actualReason: '',
+        processRecords: [{ points: 30, qty: 1 }] }],
       isPerformanceIncluded: true,
       serviceLevel: 'D 一般',
       completionDate: '2026-08-01',

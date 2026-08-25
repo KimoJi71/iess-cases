@@ -309,7 +309,13 @@
     var allCases = collectCaseArrays(cases, maintenanceCases, projectCases);
     return allCases.some(function (c) {
       if (c.isPerformanceIncluded) return false;
-      var records = c.processRecords || [];
+      // 叫修案件的處理紀錄已搬到各設備卡片；保養／工程案件沒有 serviceItems，維持原本欄位。
+      // 這個判斷用來擋刪除：案件是 serviceItems 結構卻找不到 RepairCaseServiceItems 時，
+      // 無法確認是否還有引用，寧可保守回 true（視為仍有引用、擋下刪除）。
+      if (Array.isArray(c.serviceItems) && !window.RepairCaseServiceItems) return true;
+      var records = Array.isArray(c.serviceItems)
+        ? RepairCaseServiceItems.getAllProcessRecords(c)
+        : (c.processRecords || []);
       return records.some(function (pr) {
         return recordMatchesProcessRecord(record, pr);
       });

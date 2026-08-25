@@ -14,11 +14,16 @@
   var appliedKeyword = '';
   var indicatorSortDir = 0;
 
+  // 實際原因彙整字串委由 RepairCaseServiceItems 統一產生，避免四處各自拼字串
+  function getActualReasonSummary(c) {
+    return window.RepairCaseServiceItems ? RepairCaseServiceItems.formatActualReasonSummary(c) : '';
+  }
+
   function matchKeyword(c, kw) {
     if (!kw) return true;
     return [
       c.caseNumber, c.customerName, c.storeName, c.workCategory,
-      c.repairItem, c.repairReason, c.faultDesc, c.actualReason,
+      c.repairItem, c.repairReason, c.faultDesc, getActualReasonSummary(c),
       StoreUtils.getRecordArea(c),
       CaseAssigneeUtils.formatAssignees(c),
       CaseAssigneeUtils.formatAssigneeMembers(c)
@@ -486,8 +491,8 @@
                   h('td', { className: 'p-3 max-w-[200px] truncate', title: c.faultDesc }, c.faultDesc),
                   h('td', {
                     className: 'p-3 max-w-[150px] truncate',
-                    title: c.actualReason || ''
-                  }, c.actualReason || '—'),
+                    title: getActualReasonSummary(c) || ''
+                  }, getActualReasonSummary(c) || '—'),
                   h('td', { className: 'p-3' }, CaseAssigneeUtils.formatAssignees(c)),
                   h('td', { className: 'p-3' }, CaseAssigneeUtils.formatAssigneeMembers(c) || '—'),
                   h('td', { className: 'p-3' }, formatExpectedDate(c)),

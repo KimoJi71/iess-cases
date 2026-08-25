@@ -65,6 +65,7 @@ function load(sandbox, relPath) {
 
 const sandbox = createSandbox();
 load(sandbox, 'src/features/permissions/process-method-utils.js');
+load(sandbox, 'src/features/repair/case-service-items.js');
 load(sandbox, 'src/features/repair/case-assignee-utils.js');
 load(sandbox, 'src/features/permissions/service-level-utils.js');
 load(sandbox, 'src/features/reports/performance-utils.js');
@@ -105,31 +106,39 @@ assertEq(records.map(r => r.id), [1, 2, 3, 4], '不改動原陣列');
 assertEq(PMU.sortCaseProcessRecords(null), [], 'null 回傳空陣列');
 
 console.log('\n積分只計已處理');
-const caseData = { processRecords: records };
+function withRecords(recs) {
+  return { serviceItems: [{ id: 'SI1', equipment: null, actualReason: '', processRecords: recs }] };
+}
+const caseData = withRecords(records);
 // 已處理：5*2 + 4*1 = 14；待處理 3、7 不計
 assertEq(PU.sumProcessPoints(caseData), 14, 'PerformanceUtils.sumProcessPoints');
 assertEq(CAU.sumProcessPoints(caseData), 14, 'CaseAssigneeUtils.sumProcessPoints');
-assertEq(PU.sumProcessPoints({ processRecords: [{ status: '待處理', points: 9, qty: 3 }] }), 0,
+assertEq(PU.sumProcessPoints(withRecords([{ status: '待處理', points: 9, qty: 3 }])), 0,
   '全部待處理時積分為 0');
-assertEq(PU.sumProcessPoints({ processRecords: [{ points: 9, qty: 3 }] }), 27,
+assertEq(PU.sumProcessPoints(withRecords([{ points: 9, qty: 3 }])), 27,
   '舊資料（無 status）仍計分');
 
 console.log('\n畫面：加入按鈕與狀態欄');
+// Task 5 起，編輯案件的處理方式表格已移入 RepairCaseServiceItemCard（每張設備卡各自一份）
 const formSrc = readFileSync(join(ROOT, 'src/features/repair/case-form.js'), 'utf8');
-assertTrue(!/onClick: handleAddRecord\b/.test(formSrc) && !/}, "新增"\)/.test(formSrc),
-  '編輯案件不再有單一「新增」按鈕');
-assertTrue(/PROCESS_RECORD_STATUS\.PENDING\); \}[\s\S]{0,220}"待處理"/.test(formSrc),
+const cardSrc = readFileSync(join(ROOT, 'src/features/repair/case-service-item-card.js'), 'utf8');
+assertTrue(!/onClick: handleAddRecord\b/.test(formSrc) && !/}, "新增"\)/.test(formSrc)
+  && !cardSrc.includes("'新增'") && cardSrc.includes("'待處理'") && cardSrc.includes("'已處理'"),
+  '編輯案件不再有單一「新增」按鈕，改為卡片上的「待處理／已處理」兩顆按鈕');
+assertTrue(/PROCESS_RECORD_STATUS\.PENDING\);[\s\S]{0,220}'待處理'/.test(cardSrc),
   '「待處理」按鈕以待處理狀態加入');
-assertTrue(/PROCESS_RECORD_STATUS\.DONE\); \}[\s\S]{0,220}"已處理"/.test(formSrc),
+assertTrue(/PROCESS_RECORD_STATUS\.DONE\);[\s\S]{0,220}'已處理'/.test(cardSrc),
   '「已處理」按鈕以已處理狀態加入');
-assertTrue(/handleToggleRecordStatus/.test(formSrc) && /"轉待處理"/.test(formSrc) && /"轉已處理"/.test(formSrc),
+assertTrue(/onToggleRecordStatus/.test(cardSrc) && /'轉待處理'/.test(cardSrc) && /'轉已處理'/.test(cardSrc),
   '表格內可切換狀態');
-assertTrue(/colspan: String\(pmColumns\.length \+ 4\)/.test(formSrc),
+assertTrue(/colCount = pmColumns\.length \+ \(readOnly \? 3 : 4\)/.test(cardSrc),
   '編輯案件空列 colspan 已含狀態欄');
 
+// Task 6 起，案件明細（case-view.js）不再自己畫表格，改成 readOnly:true 重用
+// RepairCaseServiceItemCard（跟編輯案件同一份元件），故狀態欄／排序／badge／
+// colspan 的實際檢查已經涵蓋在「編輯案件」那組；這裡改驗證案件明細確實有委派過去。
 const surfaces = [
-  ['src/features/repair/case-form.js', '編輯案件'],
-  ['src/features/repair/case-view.js', '案件明細'],
+  ['src/features/repair/case-service-item-card.js', '編輯案件'],
   ['src/features/scheduling/case-arrangement.js', '案件安排']
 ];
 surfaces.forEach(([rel, label]) => {
@@ -141,7 +150,8 @@ surfaces.forEach(([rel, label]) => {
 });
 
 const viewSrc = readFileSync(join(ROOT, 'src/features/repair/case-view.js'), 'utf8');
-assertTrue(/colspan: String\(pmColumns\.length \+ 3\)/.test(viewSrc), '案件明細空列 colspan 已含狀態欄');
+assertTrue(/RepairCaseServiceItemCard[\s\S]{0,400}readOnly:\s*true/.test(viewSrc),
+  '案件明細：以 readOnly 重用設備卡片元件（狀態欄／排序／badge／不計分皆隨之共用）');
 const arrangeSrc = readFileSync(join(ROOT, 'src/features/scheduling/case-arrangement.js'), 'utf8');
 assertTrue(/colspan: String\(pmColumns\.length \+ 3\)/.test(arrangeSrc), '案件安排空列 colspan 已含狀態欄');
 

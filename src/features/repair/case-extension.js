@@ -33,23 +33,29 @@
   }
 
   // 只承接「待處理」的服務項目；原案件的那份保留不動（歷史紀錄）。
-  function copyPendingRecords(original) {
-    var records = (original && original.processRecords) || [];
+  // 設備卡片全部帶過去，已全部完成的卡片會變成「有設備、無服務項目」，是預期行為。
+  function copyPendingServiceItems(original) {
     var stamp = Date.now();
-    return records.filter(function (r) {
-      return ProcessMethodUtils.getCaseRecordStatus(r) === '待處理';
-    }).map(function (r, idx) {
-      return Object.assign({}, r, { id: stamp + idx });
+    var recSeq = 0;
+    return RepairCaseServiceItems.getItems(original).map(function (item, idx) {
+      var pending = (item.processRecords || []).filter(function (r) {
+        return ProcessMethodUtils.getCaseRecordStatus(r) === '待處理';
+      }).map(function (r) {
+        recSeq += 1;
+        return Object.assign({}, r, { id: stamp + recSeq });
+      });
+      return {
+        id: 'SI' + stamp + '-' + (idx + 1),
+        equipment: item.equipment ? JSON.parse(JSON.stringify(item.equipment)) : null,
+        actualReason: item.actualReason || '',
+        processRecords: pending
+      };
     });
   }
 
-  function copyEquipment(original) {
-    var eq = original && original.equipment;
-    return eq ? JSON.parse(JSON.stringify(eq)) : null;
-  }
-
   /*
-   * 帶入：案件資料、設備、組別／人員／協力廠商／車輛、實際維修原因、待處理服務項目。
+   * 帶入：案件資料、全部設備卡片（每張只留待處理的服務項目）、
+   *       組別／人員／協力廠商／車輛。
    * 清空：處理狀態、時間紀錄、預計日期時間（需重新排程）、結案／績效／退回欄位。
    */
   function buildExtensionCase(original, cases) {
@@ -71,15 +77,13 @@
       repairReason: original.repairReason || '',
       faultDesc: original.faultDesc || '',
       reporter: original.reporter || '',
-      actualReason: original.actualReason || '',
 
       assignees: (original.assignees || []).slice(),
       assigneeMemberIds: (original.assigneeMemberIds || []).slice(),
       partnerVendorIds: (original.partnerVendorIds || []).slice(),
       vehicleId: original.vehicleId || '',
 
-      equipment: copyEquipment(original),
-      processRecords: copyPendingRecords(original),
+      serviceItems: copyPendingServiceItems(original),
 
       processStatus: null,
       completionDate: '',

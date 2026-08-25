@@ -129,25 +129,37 @@
     });
   }
 
+  // 一筆叫修案件可能掛多台設備，門市歷程仍是一案一列，逐台解析後用「、」串接顯示
   function resolveCaseEquipmentFields(caseItem, equipments) {
-    var eq = caseItem && caseItem.equipment;
-    if (!eq) return { category: '', name: '', area: '' };
-    if (eq.id && equipments) {
-      var full = equipments.find(function (e) { return e.id === eq.id; });
-      if (full) {
-        return {
-          category: full.category || '',
-          name: full.deviceName || full.name || '',
-          area: full.area || eq.area || '',
-          specification: full.specification || ''
-        };
+    var eqList = window.RepairCaseServiceItems ? RepairCaseServiceItems.getEquipments(caseItem) : [];
+    if (!eqList.length) return { category: '', name: '', area: '', specification: '' };
+    var resolved = eqList.map(function (eq) {
+      if (eq.id && equipments) {
+        var full = equipments.find(function (e) { return e.id === eq.id; });
+        if (full) {
+          return {
+            category: full.category || '',
+            name: full.deviceName || full.name || '',
+            area: full.area || eq.area || '',
+            specification: full.specification || ''
+          };
+        }
       }
+      return {
+        category: eq.category || '',
+        name: eq.deviceName || eq.name || eq.model || '',
+        area: eq.area || '',
+        specification: eq.specification || ''
+      };
+    });
+    function joinField(key) {
+      return resolved.map(function (r) { return r[key]; }).filter(Boolean).join('、');
     }
     return {
-      category: eq.category || '',
-      name: eq.deviceName || eq.name || eq.model || '',
-      area: eq.area || '',
-      specification: eq.specification || ''
+      category: joinField('category'),
+      name: joinField('name'),
+      area: joinField('area'),
+      specification: joinField('specification')
     };
   }
 

@@ -71,6 +71,7 @@ load('src/features/customer/equipment-utils.js');
 load('src/features/permissions/device-category-utils.js');
 load('src/features/permissions/service-level-utils.js');
 load('src/features/permissions/process-method-utils.js');
+load('src/features/repair/case-service-items.js');
 load('src/features/repair/case-assignee-utils.js');
 load('src/features/reports/performance-utils.js');
 
@@ -137,8 +138,12 @@ function caseWith(serviceLevel, level) {
     isPerformanceIncluded: true,
     completionDate: '2026-08-05',
     performanceAssignees: ['王小明'],
-    equipment: level === null ? null : { model: 'RAS-100', equipmentLevel: level },
-    processRecords: [{ processMethodId: 'PS1', points: 10, qty: 1 }]
+    serviceItems: [{
+      id: 'SI1',
+      equipment: level === null ? null : { model: 'RAS-100', equipmentLevel: level },
+      actualReason: '',
+      processRecords: [{ processMethodId: 'PS1', points: 10, qty: 1 }]
+    }]
   };
 }
 
@@ -171,13 +176,13 @@ assertEq(PU.isBonusEligible(caseWith('A 保修(一年四次)', null), sls), fals
 assertEq(PU.isBonusEligible(caseWith('', '增額設備'), sls), true,
   '服務等級為空 + 增額設備 計分');
 
-console.log('\ngetCaseEquipmentLevel null-safety');
-assertEq(PU.getCaseEquipmentLevel({ equipment: null }), '一般設備',
-  'equipment 為 null 不拋錯，視為一般設備');
-assertEq(PU.getCaseEquipmentLevel({}), '一般設備',
-  '案件完全沒有 equipment 鍵不拋錯，視為一般設備');
-assertEq(PU.getCaseEquipmentLevel(null), '一般設備',
-  'c 本身為 null 不拋錯，視為一般設備');
+console.log('\ngetCaseEquipmentLevels null-safety');
+assertEq(PU.getCaseEquipmentLevels({ serviceItems: [{ id: 'SI1', equipment: null, actualReason: '', processRecords: [] }] }).length, 0,
+  'equipment 為 null 的卡片不拋錯，且不列入等級');
+assertEq(PU.getCaseEquipmentLevels({}).length, 0,
+  '案件完全沒有 serviceItems 鍵不拋錯，視為無設備');
+assertEq(PU.getCaseEquipmentLevels(null).length, 0,
+  'c 本身為 null 不拋錯，視為無設備');
 
 console.log('\ncomputeAssigneePerformance');
 

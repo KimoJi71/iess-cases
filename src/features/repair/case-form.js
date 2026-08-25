@@ -184,9 +184,7 @@
           processStatus: null,
           indicator: payload.workCategory === '緊急叫修' ? 'urgent' : 'completed',
           isClosed: false,
-          actualReason: '',
-          processRecords: [],
-          equipment: null,
+          serviceItems: [],
           reRepairDate: '',
           completionDate: '',
           planDate: payload.expectedDate || '',
@@ -387,55 +385,21 @@
     if (!formData.expectedDate) formData.expectedDate = formData.planDate || '';
     if (!formData.remarks) formData.remarks = '';
     if (!formData.repairRemark) formData.repairRemark = '';
-    var newRecord = ProcessMethodUtils.normalizeProcessMethodSelection(processMethods, null);
-    var pmColumns = ProcessMethodUtils.CASE_DISPLAY_COLUMNS;
+    // 每張卡片各自暫存「新增處理方式」的挑選，切換卡片不互相干擾
+    var newRecordByItemId = {};
+    function getNewRecord(itemId) {
+      if (!newRecordByItemId[itemId]) {
+        newRecordByItemId[itemId] = ProcessMethodUtils.normalizeProcessMethodSelection(processMethods, null);
+      }
+      return newRecordByItemId[itemId];
+    }
     var pickerOpen = false;
     var addEquipMenuOpen = false;
     var signaturePad = { show: false };
 
     return stateful(function (rerender) {
-      var cat1Options = ProcessMethodUtils.getCat1OptionsFromMethods(processMethods);
-      var cat2Options = ProcessMethodUtils.getCat2OptionsFromMethods(processMethods, newRecord.category1);
-      var cat3Options = ProcessMethodUtils.getCat3OptionsFromMethods(
-        processMethods, newRecord.category1, newRecord.category2
-      );
-      var specOptions = ProcessMethodUtils.getSpecOptionsFromMethods(
-        processMethods, newRecord.category1, newRecord.category2, newRecord.category3
-      );
-      var selectedPm = ProcessMethodUtils.findProcessMethodForSelection(processMethods, newRecord);
-      var selectedUnit = selectedPm ? selectedPm.unit : '';
       var storeEquipments = RepairCaseEquipment.listForCase(equipments, formData);
 
-      function handleCat1Change(e) {
-        newRecord = ProcessMethodUtils.normalizeProcessMethodSelection(processMethods, Object.assign({}, newRecord, {
-          category1: e.target.value,
-          category2: '',
-          category3: '',
-          specification: ''
-        }));
-        rerender();
-      }
-      function handleCat2Change(e) {
-        newRecord = ProcessMethodUtils.normalizeProcessMethodSelection(processMethods, Object.assign({}, newRecord, {
-          category2: e.target.value,
-          category3: '',
-          specification: ''
-        }));
-        rerender();
-      }
-      function handleCat3Change(e) {
-        newRecord = ProcessMethodUtils.normalizeProcessMethodSelection(processMethods, Object.assign({}, newRecord, {
-          category3: e.target.value,
-          specification: ''
-        }));
-        rerender();
-      }
-      function handleSpecChange(e) {
-        newRecord = ProcessMethodUtils.normalizeProcessMethodSelection(processMethods, Object.assign({}, newRecord, {
-          specification: e.target.value
-        }));
-        rerender();
-      }
       function handleChange(e) {
         var name = e.target.name;
         var value = e.target.value;
@@ -458,11 +422,59 @@
           rerender();
           return false;
         }
-        formData.equipment = Object.assign({}, eq);
+        formData.serviceItems = RepairCaseServiceItems.getItems(formData)
+          .concat([RepairCaseServiceItems.createItem(eq)]);
         pickerOpen = false;
         addEquipMenuOpen = false;
         rerender();
         return true;
+      }
+      function handleRemoveItem(itemId) {
+        formData.serviceItems = RepairCaseServiceItems.removeItem(formData, itemId);
+        delete newRecordByItemId[itemId];
+        rerender();
+      }
+      function handleReasonChange(itemId, value) {
+        formData.serviceItems = RepairCaseServiceItems.updateItem(formData, itemId, { actualReason: value });
+        rerender();
+      }
+      function handleAddRecord(itemId, pm, qty, status) {
+        if (!pm) {
+          showToast('請選擇處理方式', 'error');
+          return;
+        }
+        var item = RepairCaseServiceItems.getItems(formData).filter(function (it) {
+          return it.id === itemId;
+        })[0];
+        formData.serviceItems = RepairCaseServiceItems.updateItem(formData, itemId, {
+          processRecords: (item.processRecords || []).concat([
+            ProcessMethodUtils.toCaseProcessRecord(pm, qty, null, status)
+          ])
+        });
+        rerender();
+      }
+      function handleRemoveRecord(itemId, recordId) {
+        var item = RepairCaseServiceItems.getItems(formData).filter(function (it) {
+          return it.id === itemId;
+        })[0];
+        formData.serviceItems = RepairCaseServiceItems.updateItem(formData, itemId, {
+          processRecords: (item.processRecords || []).filter(function (r) { return r.id !== recordId; })
+        });
+        rerender();
+      }
+      function handleToggleRecordStatus(itemId, recordId) {
+        var item = RepairCaseServiceItems.getItems(formData).filter(function (it) {
+          return it.id === itemId;
+        })[0];
+        formData.serviceItems = RepairCaseServiceItems.updateItem(formData, itemId, {
+          processRecords: (item.processRecords || []).map(function (r) {
+            if (r.id !== recordId) return r;
+            return Object.assign({}, r, {
+              status: ProcessMethodUtils.toggleCaseRecordStatus(ProcessMethodUtils.getCaseRecordStatus(r))
+            });
+          })
+        });
+        rerender();
       }
       function handleSimulateScan(e) {
         if (e) e.preventDefault();
@@ -493,37 +505,12 @@
       function handleSelectEquipment(eq) {
         if (assignEquipment(eq)) showToast('已帶入設備資料');
       }
-      function formatRecordPoints(r) {
-        var pts = ProcessMethodUtils.resolveCaseRecordPoints(r, processMethods, formData.isClosed);
-        return pts === null ? "—" : String(pts);
-      }
-      function handleAddRecord(status) {
-        var pm = ProcessMethodUtils.findProcessMethodForSelection(processMethods, newRecord);
-        if (!pm) {
-          showToast('請選擇處理方式', 'error');
-          return;
-        }
-        formData.processRecords = (formData.processRecords || []).concat([
-          ProcessMethodUtils.toCaseProcessRecord(pm, newRecord.qty, null, status)
-        ]);
-        rerender();
-      }
-      function handleRemoveRecord(id) {
-        formData.processRecords = formData.processRecords.filter(function (r) { return r.id !== id; });
-        rerender();
-      }
-      function handleToggleRecordStatus(id) {
-        formData.processRecords = (formData.processRecords || []).map(function (r) {
-          if (r.id !== id) return r;
-          return Object.assign({}, r, {
-            status: ProcessMethodUtils.toggleCaseRecordStatus(ProcessMethodUtils.getCaseRecordStatus(r))
-          });
-        });
-        rerender();
-      }
       function handleSubmit() {
-        if (caseStatus.hasProcessData(formData) && !formData.equipment) {
-          showToast('有服務項目時必須先加入設備', 'error');
+        var missingEquipment = RepairCaseServiceItems.getItems(formData).some(function (it) {
+          return !it.equipment;
+        });
+        if (missingEquipment) {
+          showToast('每份服務項目都必須對應一筆設備', 'error');
           return;
         }
         formData.planDate = formData.expectedDate || formData.planDate || '';
@@ -536,8 +523,9 @@
       }
 
       var isOther = isOtherWorkCategory(formData.workCategory);
+      var hasServiceItems = RepairCaseServiceItems.getItems(formData).length > 0;
       /* 維修結果原則上要先加入設備才可編輯；工項分類為「其他」時不受此限 */
-      var resultLocked = !formData.equipment && !isOther;
+      var resultLocked = !hasServiceItems && !isOther;
 
       function buildPrevCaseAction() {
         return CaseExtensionUtils.buildPrevCaseAction({
@@ -626,9 +614,11 @@
             })
           )
         ),
-        h("section", { className: "bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-100" },
+        h("section", {
+          className: "bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-100"
+        },
           h("div", { className: "flex flex-wrap justify-between items-center gap-3 border-b pb-2 mb-4" },
-            h("h3", { className: "text-lg font-bold text-blue-800" }, "3. 設備資料"),
+            h("h3", { className: "text-lg font-bold text-blue-800" }, "3. 設備與服務項目"),
             h("div", { className: "relative" },
               addEquipMenuOpen && h("div", {
                 className: "fixed inset-0 z-10",
@@ -666,14 +656,42 @@
               )
             )
           ),
-          h(RepairCaseEquipment.Panel, {
-            h: h,
-            equipment: formData.equipment,
-            caseContext: formData,
-            deviceCategories: deviceCategories,
-            emptyText: '請點擊「加入設備」手動選擇或掃描 QR Code',
-            emptyClass: 'text-center py-8 text-gray-400 bg-gray-50 rounded-md border border-dashed'
-          }),
+          hasServiceItems
+            ? RepairCaseServiceItems.getItems(formData).map(function (item, idx) {
+                return h(RepairCaseServiceItemCard, {
+                  key: item.id,
+                  h: h,
+                  index: idx,
+                  item: item,
+                  caseContext: formData,
+                  deviceCategories: deviceCategories,
+                  processMethods: processMethods,
+                  newRecord: getNewRecord(item.id),
+                  isOther: isOther,
+                  isClosed: formData.isClosed,
+                  onNewRecordChange: function (sel) { newRecordByItemId[item.id] = sel; rerender(); },
+                  onReasonChange: function (v) { handleReasonChange(item.id, v); },
+                  onAddRecord: function (pm, qty, status) { handleAddRecord(item.id, pm, qty, status); },
+                  onToggleRecordStatus: function (rid) { handleToggleRecordStatus(item.id, rid); },
+                  onRemoveRecord: function (rid) { handleRemoveRecord(item.id, rid); },
+                  onRemoveItem: function () { handleRemoveItem(item.id); }
+                });
+              })
+            : h("div", {
+                className: "text-center py-8 text-gray-400 bg-gray-50 rounded-md border border-dashed"
+              }, "請點擊「加入設備」手動選擇或掃描 QR Code"),
+          h("div", { className: "mt-4" },
+            h("label", { className: "block text-sm mb-1" }, "備註"),
+            h("textarea", {
+              name: "remarks",
+              value: formData.remarks || '',
+              onChange: handleChange,
+              disabled: !hasServiceItems,
+              rows: "4",
+              className: "w-full p-2.5 border rounded-md outline-none disabled:bg-gray-100 disabled:cursor-not-allowed",
+              placeholder: hasServiceItems ? "請輸入備註..." : "請先加入設備"
+            })
+          ),
           pickerOpen && h(RepairCaseEquipment.PickerModal, {
             h: h,
             items: storeEquipments,
@@ -685,177 +703,7 @@
         className: "bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-100 relative overflow-hidden"
       }, h("h3", {
         className: "text-lg font-bold text-blue-800 border-b pb-2 mb-4"
-      }, "4. 服務項目"), h("div", {
-        className: "space-y-6 " + (!formData.equipment ? 'opacity-30 pointer-events-none' : '')
-      }, !isOther && h("div", null, h("label", {
-        className: "block text-sm mb-1"
-      }, "實際維修原因"), h("textarea", {
-        name: "actualReason",
-        value: formData.actualReason || '',
-        onChange: handleChange,
-        rows: "2",
-        className: "w-full p-2.5 border rounded-md outline-none"
-      })), h("div", null, h("label", {
-        className: "block text-sm font-medium text-gray-700 mb-2"
-      }, "處理方式"), h("div", {
-        className: "flex flex-wrap gap-3 items-end bg-gray-50 p-4 rounded-md border border-gray-200 mb-4"
-      }, h("div", {
-        className: "flex-1 min-w-[100px]"
-      }, h("span", {
-        className: "text-xs text-gray-500 block mb-1"
-      }, "大類"), h("select", {
-        value: newRecord.category1,
-        onChange: handleCat1Change,
-        disabled: !processMethods.length,
-        className: "w-full p-2 border rounded outline-none text-sm"
-      }, cat1Options.map(function (c) { return h("option", {
-        key: c,
-        value: c
-      }, c); }))), h("div", {
-        className: "flex-1 min-w-[100px]"
-      }, h("span", {
-        className: "text-xs text-gray-500 block mb-1"
-      }, "中類"), h("select", {
-        value: newRecord.category2,
-        onChange: handleCat2Change,
-        disabled: !processMethods.length,
-        className: "w-full p-2 border rounded outline-none text-sm"
-      }, cat2Options.map(function (c) { return h("option", {
-        key: c,
-        value: c
-      }, c); }))), h("div", {
-        className: "flex-1 min-w-[120px]"
-      }, h("span", {
-        className: "text-xs text-gray-500 block mb-1"
-      }, "小類"), h("select", {
-        value: newRecord.category3,
-        onChange: handleCat3Change,
-        disabled: !processMethods.length,
-        className: "w-full p-2 border rounded outline-none text-sm"
-      }, cat3Options.map(function (c) { return h("option", {
-        key: c,
-        value: c
-      }, c); }))), h("div", {
-        className: "flex-1 min-w-[120px]"
-      }, h("span", {
-        className: "text-xs text-gray-500 block mb-1"
-      }, "規格"), h("select", {
-        value: newRecord.specification,
-        onChange: handleSpecChange,
-        disabled: !processMethods.length,
-        className: "w-full p-2 border rounded outline-none text-sm"
-      }, specOptions.map(function (c) { return h("option", {
-        key: c,
-        value: c
-      }, c); }))), h("div", {
-        className: "w-20"
-      }, h("span", {
-        className: "text-xs text-gray-500 block mb-1"
-      }, "積分數"), h("div", {
-        className: "p-2 text-sm text-gray-700 text-center"
-      }, selectedPm && selectedPm.points != null ? String(selectedPm.points) : "—")), h("div", {
-        className: "flex items-end gap-2"
-      }, h("div", {
-        className: "w-20"
-      }, h("span", {
-        className: "text-xs text-gray-500 block mb-1"
-      }, "數量"), h("input", {
-        type: "number",
-        min: "1",
-        value: newRecord.qty,
-        onChange: function (e) {
-          newRecord = Object.assign({}, newRecord, {
-            qty: e.target.value
-          });
-          rerender();
-        },
-        className: "w-full p-2 border rounded outline-none text-sm text-center"
-      })), h("span", {
-        className: "text-sm text-gray-600 pb-2 min-w-[2rem]"
-      }, selectedUnit || "—")), h("div", {
-        className: "flex items-end gap-2"
-      }, h("button", {
-        type: "button",
-        onClick: function () { handleAddRecord(ProcessMethodUtils.PROCESS_RECORD_STATUS.PENDING); },
-        className: "bg-white text-amber-700 border border-amber-400 px-4 py-2 rounded text-sm hover:bg-amber-50 h-[38px]"
-      }, "待處理"), h("button", {
-        type: "button",
-        onClick: function () { handleAddRecord(ProcessMethodUtils.PROCESS_RECORD_STATUS.DONE); },
-        className: "bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700 h-[38px]"
-      }, "已處理"))), h("div", {
-        className: "border rounded-md overflow-x-auto table-scroll-hint"
-      }, h("table", {
-        className: "w-full text-left text-sm whitespace-nowrap"
-      }, h("thead", {
-        className: "bg-gray-100"
-      }, h("tr", null, pmColumns.map(function (col) { return h("th", {
-        key: col.key,
-        className: "p-2 pl-4 first:pl-4"
-      }, col.label); }), h("th", {
-        className: "p-2"
-      }, "狀態"), h("th", {
-        className: "p-2"
-      }, "積分數"), h("th", {
-        className: "p-2"
-      }, "數量"), h("th", {
-        className: "p-2 text-right pr-4"
-      }, "操作"))), h("tbody", {
-        className: "divide-y"
-      }, !formData.processRecords || formData.processRecords.length === 0 ? h("tr", null, h("td", {
-        colspan: String(pmColumns.length + 4),
-        className: "p-4 text-center text-gray-400"
-      }, processMethods.length ? "尚未加入處理項目" : "請至系統權限建立處理方式")) : ProcessMethodUtils.sortCaseProcessRecords(formData.processRecords).map(function (r, idx) {
-        var isDone = ProcessMethodUtils.isCaseRecordDone(r);
-        return h("tr", {
-        key: r.id || idx
-      }, pmColumns.map(function (col) { return h("td", {
-        key: col.key,
-        className: "p-2 pl-4 first:pl-4"
-      }, r[col.key] || "—"); }), h("td", {
-        className: "p-2"
-      }, h("span", {
-        className: ProcessMethodUtils.getCaseRecordStatusBadgeClass(r)
-      }, ProcessMethodUtils.getCaseRecordStatus(r))), h("td", {
-        className: "p-2 " + (isDone ? "" : "text-gray-400")
-      }, formatRecordPoints(r), isDone ? null : h("span", {
-        className: "text-xs text-gray-400 ml-1"
-      }, "不計分")), h("td", {
-        className: "p-2"
-      }, r.qty, r.unit ? h("span", {
-        className: "text-gray-500 ml-1"
-      }, r.unit) : null), h("td", {
-        className: "p-2 text-right pr-4"
-      }, h("div", {
-        className: "flex items-center justify-end gap-2"
-      }, h("button", {
-        type: "button",
-        onClick: function () { handleToggleRecordStatus(r.id); },
-        title: isDone ? "轉為待處理" : "轉為已處理",
-        className: "px-2 py-1 rounded border text-xs " + (isDone
-          ? "border-amber-400 text-amber-700 hover:bg-amber-50"
-          : "border-blue-500 text-blue-600 hover:bg-blue-50")
-      }, isDone ? "轉待處理" : "轉已處理"), h("button", {
-        type: "button",
-        onClick: function () { handleRemoveRecord(r.id); },
-        title: "移除此處理方式",
-        className: "text-red-500"
-      }, Icons.X({
-        className: "h-4 w-4"
-      }))))); }))))), h("div", null, h("label", {
-        className: "block text-sm mb-1"
-      }, "備註"), h("textarea", {
-        name: "remarks",
-        value: formData.remarks || '',
-        onChange: handleChange,
-        disabled: !formData.equipment,
-        rows: "4",
-        className: "w-full p-2.5 border rounded-md outline-none disabled:bg-gray-100 disabled:cursor-not-allowed",
-        placeholder: formData.equipment ? "請輸入備註..." : "請先加入設備"
-      })))), h("section", {
-        className: "bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-100 relative overflow-hidden"
-      }, h("h3", {
-        className: "text-lg font-bold text-blue-800 border-b pb-2 mb-4"
-      }, "5. 維修結果"), h("div", {
+      }, "4. 維修結果"), h("div", {
         className: "space-y-6 " + (resultLocked ? 'opacity-30 pointer-events-none' : '')
       }, h("div", {
         className: "grid grid-cols-1 md:grid-cols-2 gap-6"

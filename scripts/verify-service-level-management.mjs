@@ -562,7 +562,9 @@ try {
     // 設備等級存在設備紀錄上（設備管理設定），不再反查設備分類
     window.__case = function (level, equipLevel) {
       return { id: 'X', serviceLevel: level,
-        equipment: equipLevel ? { model: 'M-1', equipmentLevel: equipLevel } : null };
+        serviceItems: [{ id: 'SI1',
+          equipment: equipLevel ? { model: 'M-1', equipmentLevel: equipLevel } : null,
+          actualReason: '', processRecords: [] }] };
     };
     'ok'`);
   const SLS = 'INITIAL_SERVICE_LEVELS';
@@ -594,10 +596,12 @@ try {
     var cases = [
       { id: 'R1', caseNumber: 'SL001', customerName: '甲', storeName: '甲一', serviceLevel: 'A 保修(一年四次)',
         workCategory: '一般叫修', isClosed: true, closeDate: todayDate + ' 10:00',
-        processRecords: [{ points: 5, qty: 2 }] },
+        serviceItems: [{ id: 'SI1', equipment: null, actualReason: '',
+          processRecords: [{ points: 5, qty: 2 }] }] },
       { id: 'R2', caseNumber: 'SL002', customerName: '乙', storeName: '乙一', serviceLevel: 'C 保養(一年一次)',
         workCategory: '一般叫修', isClosed: true, closeDate: todayDate + ' 10:00',
-        processRecords: [{ points: 7, qty: 1 }] }
+        serviceItems: [{ id: 'SI1', equipment: null, actualReason: '',
+          processRecords: [{ points: 7, qty: 1 }] }] }
     ];
     var node = CaseReviewList({
       cases: cases, setCases: function () {},
@@ -1039,17 +1043,20 @@ try {
       // A組：countsBonusPoints=true 的 D 級，無增額設備仍應計分
       { id: 'PD1', customerName: '甲', storeName: '甲一', serviceLevel: 'D 維修(無簽約客戶)',
         workCategory: '一般叫修', isPerformanceIncluded: true, completionDate: quarter.start,
-        performanceAssignee: 'A組', equipment: null, processRecords: [{ points: 8, qty: 1 }] },
+        performanceAssignee: 'A組', serviceItems: [{ id: 'SI1', equipment: null,
+          actualReason: '', processRecords: [{ points: 8, qty: 1 }] }] },
       // B組：countsBonusPoints=false 的 A 級 + 一般設備，不應計分
       { id: 'PA1', customerName: '乙', storeName: '乙一', serviceLevel: 'A 保修(一年四次)',
         workCategory: '一般叫修', isPerformanceIncluded: true, completionDate: quarter.start,
-        performanceAssignee: 'B組', equipment: { model: 'M-1', equipmentLevel: '一般設備' },
-        processRecords: [{ points: 5, qty: 1 }] },
+        performanceAssignee: 'B組', serviceItems: [{ id: 'SI1',
+          equipment: { model: 'M-1', equipmentLevel: '一般設備' },
+          actualReason: '', processRecords: [{ points: 5, qty: 1 }] }] },
       // B組：countsBonusPoints=false 的 A 級 + 增額設備，應計分
       { id: 'PA2', customerName: '乙', storeName: '乙一', serviceLevel: 'A 保修(一年四次)',
         workCategory: '一般叫修', isPerformanceIncluded: true, completionDate: quarter.start,
-        performanceAssignee: 'B組', equipment: { model: 'M-1', equipmentLevel: '增額設備' },
-        processRecords: [{ points: 6, qty: 1 }] }
+        performanceAssignee: 'B組', serviceItems: [{ id: 'SI1',
+          equipment: { model: 'M-1', equipmentLevel: '增額設備' },
+          actualReason: '', processRecords: [{ points: 6, qty: 1 }] }] }
     ];
     var container = document.createElement('div');
     document.body.appendChild(container);

@@ -48,12 +48,17 @@
   }
 
   // 案件的設備等級來自建案當下的設備快照（設備管理設定），不再反查設備分類
-  function getCaseEquipmentLevel(c) {
-    return EquipmentUtils.getLevel((c && c.equipment) || null);
+  function getCaseEquipmentLevels(c) {
+    return RepairCaseServiceItems.getEquipments(c).map(function (eq) {
+      return EquipmentUtils.getLevel(eq);
+    });
   }
 
+  // 積分是案件層級的加總，故任一設備為增額設備即整案適用
   function isAddOnEquipmentCase(c) {
-    return getCaseEquipmentLevel(c) === '增額設備';
+    return getCaseEquipmentLevels(c).some(function (level) {
+      return level === '增額設備';
+    });
   }
 
   // 服務等級勾選「計算增額積分」者一律計分；未勾選者僅在設備為增額設備時計分
@@ -104,10 +109,10 @@
     return StoreUtils.getRecordArea(record) || '';
   }
 
-  // 只有「已處理」的處理方式計入積分（舊資料無 status 視為已處理）。
+  // 只有「已處理」的處理方式計入積分（舊資料無 status 視為已處理）；跨所有設備卡片加總。
   function sumProcessPoints(c) {
     var total = 0;
-    ((c && c.processRecords) || []).forEach(function (r) {
+    RepairCaseServiceItems.getAllProcessRecords(c).forEach(function (r) {
       if (!ProcessMethodUtils.isCaseRecordDone(r)) return;
       var points = Number(r.points) || 0;
       var qty = Number(r.qty) > 0 ? Number(r.qty) : 1;
@@ -257,7 +262,7 @@
     getQuarterRange: getQuarterRange,
     getQuarterMonths: getQuarterMonths,
     achievementRate: achievementRate,
-    getCaseEquipmentLevel: getCaseEquipmentLevel,
+    getCaseEquipmentLevels: getCaseEquipmentLevels,
     isAddOnEquipmentCase: isAddOnEquipmentCase,
     isBonusEligible: isBonusEligible,
     toDateKey: toDateKey,

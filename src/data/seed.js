@@ -920,6 +920,80 @@ const INITIAL_CASES = [{
   planTimeEnd: '',
   isPerformanceIncluded: false
 }, {
+  id: 'C-MULTI-1',
+  indicator: 'normal',
+  repairDate: yesterdayDate,
+  caseNumber: '20260825900',
+  customerName: '萊爾富',
+  storeName: '高雄左營店',
+  workCategory: '一般叫修',
+  repairItem: '室內機',
+  repairReason: '不冷',
+  faultDesc: '室內機出風不冷，另一台冷媒管有滲漏',
+  assignees: ['B組'],
+  assigneeMemberIds: ['ACC3'],
+  processStatus: '案件完成',
+  isClosed: false,
+  serviceLevel: 'C 保養(一年一次)',
+  storeAddress: '高雄市左營區博愛路X號',
+  reporter: '張小姐',
+  // 展示一案多設備：兩台設備各自帶一份服務項目
+  serviceItems: [
+    {
+      id: 'SI-MULTI-1',
+      equipment: {
+        id: 'E-MULTI-1',
+        customerName: '萊爾富',
+        storeName: '高雄左營店',
+        category: '分離式',
+        brand: '日立',
+        deviceName: '分離式冷氣',
+        name: '分離式冷氣',
+        specification: '3.5匹',
+        model: 'RAS-100',
+        equipmentLevel: '一般設備',
+        area: '賣場區',
+        acceptanceDate: '2022-04-01',
+        installer: '王小明',
+        assetNumber: 'AST-MULTI-001',
+        serialNumber: 'SN-MULTI-001',
+        status: '運轉中'
+      },
+      actualReason: '室內機濾網堵塞導致風量不足',
+      processRecords: [caseProcessRecordFromPm('MS0001', 1, 1)]
+    },
+    {
+      id: 'SI-MULTI-2',
+      equipment: {
+        id: 'E-MULTI-2',
+        customerName: '萊爾富',
+        storeName: '高雄左營店',
+        category: '分離式',
+        brand: '大金',
+        deviceName: '分離式冷氣',
+        name: '分離式冷氣',
+        specification: '5.0匹',
+        model: 'FXMQ125',
+        equipmentLevel: '一般設備',
+        area: '倉儲區',
+        acceptanceDate: '2021-09-01',
+        installer: '李美華',
+        assetNumber: 'AST-MULTI-002',
+        serialNumber: 'SN-MULTI-002',
+        status: '運轉中'
+      },
+      actualReason: '冷媒管保溫破損',
+      processRecords: [caseProcessRecordFromPm('MC0012', 1, 2, '待處理')]
+    }
+  ],
+  reRepairDate: '',
+  completionDate: todayDate,
+  expectedDate: todayDate,
+  planDate: '',
+  planTimeStart: '',
+  planTimeEnd: '',
+  isPerformanceIncluded: false
+}, {
   id: 'C20260706004',
   indicator: 'normal',
   repairDate: twoDaysAgoDate,
@@ -1392,17 +1466,22 @@ INITIAL_CASES.forEach(function (c, i) {
   if (c.isClosed && !c.closeDate) {
     c.closeDate = c.completionDate || c.repairDate || '';
   }
-  if (c.equipment) {
-    c.equipment = snapshotCaseEquipment(c.equipment);
-  }
-  if (!c.equipment) {
-    if (!c.isClosed) c.processStatus = null;
-    if (caseHasProcessData(c)) {
-      c.actualReason = '';
-      c.processRecords = [];
-      c.processStatus = null;
-      c.reRepairDate = '';
-      c.completionDate = '';
+  // 這段只處理舊版「案件層級單一設備」的資料；已經是 serviceItems 結構的案件
+  // （例如展示多設備的示範案件）沒有 c.equipment 可言，不該被當成「沒設備」而清空
+  // processStatus——那是遷移前才需要的補救邏輯。
+  if (!Array.isArray(c.serviceItems)) {
+    if (c.equipment) {
+      c.equipment = snapshotCaseEquipment(c.equipment);
+    }
+    if (!c.equipment) {
+      if (!c.isClosed) c.processStatus = null;
+      if (caseHasProcessData(c)) {
+        c.actualReason = '';
+        c.processRecords = [];
+        c.processStatus = null;
+        c.reRepairDate = '';
+        c.completionDate = '';
+      }
     }
   }
   if (c.isListClosed == null) c.isListClosed = false;

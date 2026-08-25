@@ -107,16 +107,20 @@ try {
         customerName: '測試客戶', storeName: '測試門市',
         companyCity: '台北市', companyDistrict: '中山區', storeAddress: '中山北路一段1號',
         serviceLevel: 'A', repairItem: '室內機', repairReason: '不冷',
-        faultDesc: '出風不冷', reporter: '王小明', actualReason: '缺冷媒',
+        faultDesc: '出風不冷', reporter: '王小明',
         assignees: ['北區一組'], assigneeMemberIds: ['M1'], partnerVendorIds: ['V1'],
         vehicleId: 'VH1',
-        equipment: { id: 'E1', category: '分離式', brand: '日立', specification: '3.5匹' },
-        processRecords: [
-          { id: 1, processMethodId: 'PM1', category1: '冷氣', category2: '維修',
-            category3: '加冷媒', specification: 'R410', unit: '式', points: 3, qty: 1, status: '已處理' },
-          { id: 2, processMethodId: 'PM2', category1: '冷氣', category2: '更換',
-            category3: '壓縮機', specification: '3.5匹', unit: '台', points: 8, qty: 2, status: '待處理' }
-        ],
+        serviceItems: [{
+          id: 'SI1',
+          equipment: { id: 'E1', category: '分離式', brand: '日立', specification: '3.5匹' },
+          actualReason: '缺冷媒',
+          processRecords: [
+            { id: 1, processMethodId: 'PM1', category1: '冷氣', category2: '維修',
+              category3: '加冷媒', specification: 'R410', unit: '式', points: 3, qty: 1, status: '已處理' },
+            { id: 2, processMethodId: 'PM2', category1: '冷氣', category2: '更換',
+              category3: '壓縮機', specification: '3.5匹', unit: '台', points: 8, qty: 2, status: '待處理' }
+          ]
+        }],
         processStatus: status, completionDate: '2026-08-25 15:00', reRepairDate: '',
         expectedDate: '2026-08-25', expectedTimeStart: '13:00', expectedTimeEnd: '15:00',
         planDate: '', planTimeStart: '', planTimeEnd: '',
@@ -197,7 +201,8 @@ try {
         extPrev: ext && ext.prevCaseId,
         extStatus: ext && ext.processStatus,
         extClosed: ext && ext.isClosed,
-        extRecords: ext && ext.processRecords.map(function (p) { return p.category3; }),
+        extRecords: ext && window.RepairCaseServiceItems.getAllProcessRecords(ext)
+          .map(function (p) { return p.category3; }),
         message: res.message
       };
     })()`);

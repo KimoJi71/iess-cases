@@ -103,16 +103,19 @@ try {
       customerName: '測試客戶', storeName: '測試門市',
       companyCity: '台北市', companyDistrict: '中山區', storeAddress: '中山北路一段1號',
       serviceLevel: 'A', repairItem: '室內機', repairReason: '不冷',
-      faultDesc: '出風不冷', reporter: '王小明', actualReason: '缺冷媒',
+      faultDesc: '出風不冷', reporter: '王小明',
       assignees: ['北區一組'], assigneeMemberIds: ['M1'], partnerVendorIds: ['V1'],
       vehicleId: 'VH1',
-      equipment: { id: 'E1', category: '分離式', brand: '日立', specification: '3.5匹' },
-      processRecords: [
-        { id: 1, processMethodId: 'PM1', category1: '冷氣', category2: '維修',
-          category3: '加冷媒', specification: 'R410', unit: '式', points: 3, qty: 1, status: '已處理' },
-        { id: 2, processMethodId: 'PM2', category1: '冷氣', category2: '更換',
-          category3: '壓縮機', specification: '3.5匹', unit: '台', points: 8, qty: 2, status: '待處理' }
-      ],
+      serviceItems: [{
+        id: 'SI1', equipment: { id: 'E1', category: '分離式', brand: '日立', specification: '3.5匹' },
+        actualReason: '缺冷媒',
+        processRecords: [
+          { id: 1, processMethodId: 'PM1', category1: '冷氣', category2: '維修',
+            category3: '加冷媒', specification: 'R410', unit: '式', points: 3, qty: 1, status: '已處理' },
+          { id: 2, processMethodId: 'PM2', category1: '冷氣', category2: '更換',
+            category3: '壓縮機', specification: '3.5匹', unit: '台', points: 8, qty: 2, status: '待處理' }
+        ]
+      }],
       processStatus: '待料件', completionDate: '2026-08-25 15:00', reRepairDate: '2026-08-25 13:00',
       expectedDate: '2026-08-25', expectedTimeStart: '13:00', expectedTimeEnd: '15:00',
       planDate: '2026-08-25', planTimeStart: '13:00', planTimeEnd: '15:00',
@@ -148,18 +151,23 @@ try {
       storeName: ext.storeName,
       storeAddress: ext.storeAddress,
       faultDesc: ext.faultDesc,
-      actualReason: ext.actualReason,
+      actualReason: RepairCaseServiceItems.getItems(ext)[0].actualReason,
       assignees: ext.assignees.join(','),
       memberIds: ext.assigneeMemberIds.join(','),
       vendorIds: ext.partnerVendorIds.join(','),
       vehicleId: ext.vehicleId,
-      equipmentId: ext.equipment && ext.equipment.id,
-      equipmentIsCopy: ext.equipment !== window.__origCase.equipment,
-      recordCount: ext.processRecords.length,
-      recordCategory3: ext.processRecords[0] && ext.processRecords[0].category3,
-      recordStatus: ext.processRecords[0] && ext.processRecords[0].status,
-      recordQty: ext.processRecords[0] && ext.processRecords[0].qty,
-      recordIdIsNew: ext.processRecords[0] && ext.processRecords[0].id !== 2,
+      equipmentId: RepairCaseServiceItems.getItems(ext)[0].equipment && RepairCaseServiceItems.getItems(ext)[0].equipment.id,
+      equipmentIsCopy: RepairCaseServiceItems.getItems(ext)[0].equipment
+        !== RepairCaseServiceItems.getItems(window.__origCase)[0].equipment,
+      recordCount: RepairCaseServiceItems.getItems(ext)[0].processRecords.length,
+      recordCategory3: RepairCaseServiceItems.getItems(ext)[0].processRecords[0]
+        && RepairCaseServiceItems.getItems(ext)[0].processRecords[0].category3,
+      recordStatus: RepairCaseServiceItems.getItems(ext)[0].processRecords[0]
+        && RepairCaseServiceItems.getItems(ext)[0].processRecords[0].status,
+      recordQty: RepairCaseServiceItems.getItems(ext)[0].processRecords[0]
+        && RepairCaseServiceItems.getItems(ext)[0].processRecords[0].qty,
+      recordIdIsNew: RepairCaseServiceItems.getItems(ext)[0].processRecords[0]
+        && RepairCaseServiceItems.getItems(ext)[0].processRecords[0].id !== 2,
       processStatus: ext.processStatus,
       completionDate: ext.completionDate,
       reRepairDate: ext.reRepairDate,
@@ -171,7 +179,7 @@ try {
       closeDate: ext.closeDate,
       isPerformanceIncluded: ext.isPerformanceIncluded,
       hasReturnReason: Object.prototype.hasOwnProperty.call(ext, 'returnReason'),
-      originRecordsUntouched: window.__origCase.processRecords.length === 2
+      originRecordsUntouched: RepairCaseServiceItems.getItems(window.__origCase)[0].processRecords.length === 2
     };
   })()`);
   assertEq(built.caseNumber, '20260825001-1', '延伸案件編號');
@@ -215,7 +223,10 @@ try {
     var ext2 = CaseExtensionUtils.buildExtensionCase(closed1, [window.__origCase, closed1]);
     var noPending = Object.assign({}, window.__origCase, {
       id: 'C9', caseNumber: '20260825009',
-      processRecords: [{ id: 7, category3: '加冷媒', status: '已處理', qty: 1 }]
+      serviceItems: [{
+        id: 'SI9', equipment: { id: 'E1' }, actualReason: '缺冷媒',
+        processRecords: [{ id: 7, category3: '加冷媒', status: '已處理', qty: 1 }]
+      }]
     });
     var ext3 = CaseExtensionUtils.buildExtensionCase(noPending, [noPending]);
     return {
@@ -225,7 +236,7 @@ try {
       seq2PrevMatchesClosed1: ext2.prevCaseId === closed1.id,
       seq2Seq: ext2.extensionSeq,
       emptyNumber: ext3.caseNumber,
-      emptyRecords: ext3.processRecords.length
+      emptyRecords: RepairCaseServiceItems.getItems(ext3)[0].processRecords.length
     };
   })()`);
   assertEq(chain.seq2Number, '20260825001-2', '第二次延伸為 -2（非 -1-1）');
@@ -294,11 +305,11 @@ try {
       originClosed: origin && origin.isClosed,
       originIsListClosed: origin && !!origin.isListClosed,
       originHasCloseDate: !!(origin && origin.closeDate),
-      originRecords: origin && origin.processRecords.length,
+      originRecords: origin && RepairCaseServiceItems.getItems(origin)[0].processRecords.length,
       hasExtension: !!ext,
       extPrev: ext && ext.prevCaseId,
       extStatus: ext && ext.processStatus,
-      extRecords: ext && ext.processRecords.length,
+      extRecords: ext && RepairCaseServiceItems.getItems(ext)[0].processRecords.length,
       toast: window.__written.toast
     };
     document.body.innerHTML = '';

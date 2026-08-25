@@ -106,12 +106,17 @@
       performanceAssignees: performanceAssignees,
       vehicleId: record.vehicleId || '',
       partnerVendorIds: asStringArray(record.partnerVendorIds),
+      // 設備與服務項目改以卡片陣列承載；舊案件的三個單一欄位在此摺疊後移除
+      serviceItems: RepairCaseServiceItems.normalizeServiceItems(record),
       processStatus: Object.prototype.hasOwnProperty.call(record, 'processStatus')
         ? normalizeProcessStatus(record.processStatus)
         : record.processStatus
     });
     delete next.assignee;
     delete next.collaborators;
+    delete next.equipment;
+    delete next.actualReason;
+    delete next.processRecords;
     return next;
   }
 
@@ -135,10 +140,10 @@
     return formatAssignees(record) || '尚未指派';
   }
 
-  // 只有「已處理」的處理方式計入積分（舊資料無 status 視為已處理）。
+  // 只有「已處理」的處理方式計入積分（舊資料無 status 視為已處理）；跨所有設備卡片加總。
   function sumProcessPoints(record) {
     var total = 0;
-    ((record && record.processRecords) || []).forEach(function (r) {
+    RepairCaseServiceItems.getAllProcessRecords(record).forEach(function (r) {
       if (!ProcessMethodUtils.isCaseRecordDone(r)) return;
       var points = Number(r.points) || 0;
       var qty = Number(r.qty) > 0 ? Number(r.qty) : 1;

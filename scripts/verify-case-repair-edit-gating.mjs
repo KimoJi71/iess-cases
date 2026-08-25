@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 /**
  * 案件處理「編輯案件」設備前置條件驗證：
- * 「4. 服務項目」與「5. 維修結果」原則上要先加入設備才可編輯；
- * 但工項分類為「其他」時，「5. 維修結果」不受設備限制，隨時可編輯。
+ * 「3. 設備與服務項目」本身不再整體鎖定（可隨時加入設備）；
+ * 「4. 維修結果」原則上要先加入至少一筆設備才可編輯；
+ * 但工項分類為「其他」時，「4. 維修結果」不受設備限制，隨時可編輯。
  */
 import { spawn } from 'node:child_process';
 import { setTimeout as sleep } from 'node:timers/promises';
@@ -105,10 +106,10 @@ try {
         id: 'C1', caseNumber: '20260814001', customerName: '測試客戶', storeName: '測試門市',
         companyCity: '台北市', companyDistrict: '中山區', workCategory: '一般叫修',
         repairItem: '室內機', repairReason: '不冷', faultDesc: '出風不冷',
-        actualReason: '', assignees: [], isClosed: false, processStatus: null,
+        assignees: [], isClosed: false, processStatus: null,
         createdAt: '${todayDate} 09:00:00', repairDate: '${todayDate} 09:00:00',
         expectedDate: '${todayDate}', expectedTimeStart: '09:00', expectedTimeEnd: '11:00',
-        processRecords: [], equipment: window.__mkEq()
+        serviceItems: [{ id: 'SI1', equipment: window.__mkEq(), actualReason: '', processRecords: [] }]
       }, overrides || {});
     };
     window.__mountEdit = function (overrides) {
@@ -140,9 +141,15 @@ try {
       if (!sec) return null;
       return !!sec.querySelector('.pointer-events-none');
     };
-    /* 5. 維修結果內個別欄位的 disabled 狀態 */
+    /* 3. 設備與服務項目：是否已顯示任何一張設備卡片 */
+    window.__hasCards = function () {
+      var sec = window.__sectionByTitle('3. 設備與服務項目');
+      if (!sec) return null;
+      return sec.querySelectorAll('div.border.border-gray-200.rounded-lg').length > 0;
+    };
+    /* 4. 維修結果內個別欄位的 disabled 狀態 */
     window.__resultFields = function () {
-      var sec = window.__sectionByTitle('5. 維修結果');
+      var sec = window.__sectionByTitle('4. 維修結果');
       if (!sec) return null;
       var signBtn = Array.prototype.slice.call(sec.querySelectorAll('button'))
         .filter(function (b) { return /簽收$/.test(b.textContent.trim()); })[0];
@@ -160,39 +167,43 @@ try {
     true;
   `);
 
-  console.log('\nSection 1｜一般工項 × 未加入設備：兩區皆鎖定');
-  await evaluate(`window.__mountEdit({ equipment: null })`);
-  assertEq(await evaluate('window.__blocked("4. 服務項目")'), true, '服務項目鎖定');
-  assertEq(await evaluate('window.__blocked("5. 維修結果")'), true, '維修結果鎖定');
+  console.log('\nSection 1｜一般工項 × 未加入設備：設備區顯示提示、維修結果鎖定');
+  await evaluate(`window.__mountEdit({ serviceItems: [] })`);
+  assertEq(await evaluate('window.__blocked("3. 設備與服務項目")'), false,
+    '設備與服務項目區塊本身不整體鎖定（隨時可點「加入設備」）');
+  assertEq(await evaluate('window.__hasCards()'), false, '尚未加入設備時不顯示任何卡片');
+  assertEq(await evaluate('window.__blocked("4. 維修結果")'), true, '維修結果鎖定');
   assertEq(await evaluate('window.__resultFields()'),
     { status: true, statusPlaceholder: '請先加入設備', sign: true,
       remark: true, remarkPlaceholder: '請先加入設備' },
     '維修結果三個欄位皆 disabled 且提示「請先加入設備」');
 
-  console.log('\nSection 2｜一般工項 × 已加入設備：兩區皆可編輯');
+  console.log('\nSection 2｜一般工項 × 已加入設備：卡片顯示、維修結果可編輯');
   await evaluate(`window.__mountEdit()`);
-  assertEq(await evaluate('window.__blocked("4. 服務項目")'), false, '服務項目可編輯');
-  assertEq(await evaluate('window.__blocked("5. 維修結果")'), false, '維修結果可編輯');
+  assertEq(await evaluate('window.__hasCards()'), true, '已加入設備時顯示卡片');
+  assertEq(await evaluate('window.__blocked("4. 維修結果")'), false, '維修結果可編輯');
   assertEq(await evaluate('window.__resultFields()'),
     { status: false, statusPlaceholder: '請選擇', sign: false,
       remark: false, remarkPlaceholder: '請輸入維修備註...' },
     '維修結果三個欄位皆可編輯');
 
   console.log('\nSection 3｜工項「其他」× 未加入設備：僅維修結果解鎖');
-  await evaluate(`window.__mountEdit({ workCategory: '其他', equipment: null })`);
-  assertEq(await evaluate('window.__blocked("4. 服務項目")'), true,
-    '服務項目仍鎖定（其他不豁免服務項目）');
-  assertEq(await evaluate('window.__blocked("5. 維修結果")'), false,
-    '維修結果不受設備限制');
+  await evaluate(`window.__mountEdit({ workCategory: '其他', serviceItems: [] })`);
+  assertEq(await evaluate('window.__blocked("4. 維修結果")'), false,
+    '維修結果不受設備限制（與 Section 1 的一般叫修相比，resultLocked 不因無卡片而鎖住）');
   assertEq(await evaluate('window.__resultFields()'),
     { status: false, statusPlaceholder: '請選擇', sign: false,
       remark: false, remarkPlaceholder: '請輸入維修備註...' },
     '其他案件未加設備時維修結果欄位仍可編輯');
 
-  console.log('\nSection 4｜工項「其他」× 已加入設備：兩區皆可編輯');
+  console.log('\nSection 4｜工項「其他」× 已加入設備：卡片顯示、維修結果可編輯');
   await evaluate(`window.__mountEdit({ workCategory: '其他' })`);
-  assertEq(await evaluate('window.__blocked("4. 服務項目")'), false, '服務項目可編輯');
-  assertEq(await evaluate('window.__blocked("5. 維修結果")'), false, '維修結果可編輯');
+  assertEq(await evaluate('window.__hasCards()'), true, '已加入設備時顯示卡片');
+  assertEq(await evaluate('window.__blocked("4. 維修結果")'), false, '維修結果可編輯');
+  assertEq(await evaluate(`(function () {
+    var sec = window.__sectionByTitle('3. 設備與服務項目');
+    return sec.textContent.indexOf('實際維修原因') !== -1;
+  })()`), false, '工項為「其他」時卡片內不顯示實際維修原因欄位');
 
   console.log('\nSection 5｜種子資料有一筆未結案的「其他」案件');
   assertTrue(await evaluate(`

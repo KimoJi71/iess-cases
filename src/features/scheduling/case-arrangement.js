@@ -42,6 +42,95 @@
     };
   }
 
+  // 設備＋服務項目逐卡片渲染，供派工明細與其測試共用；抽成頂層函式是因為
+  // renderRepairScheduleDetails 原本被包在 CaseArrangement(props) 的閉包內，
+  // 無法單獨掛出測試用的 seam，改以 opts 帶入呼叫端閉包內原有的輔助函式。
+  function renderScheduleServiceItems(formData, opts) {
+    var h = opts.h;
+    var pmColumns = ProcessMethodUtils.CASE_DISPLAY_COLUMNS;
+    var items = RepairCaseServiceItems.getItems(formData);
+
+    function formatRecordPoints(r) {
+      var pts = ProcessMethodUtils.resolveCaseRecordPoints(r, opts.processMethods, opts.isClosed);
+      return pts === null ? '—' : String(pts);
+    }
+
+    if (!items.length) {
+      return h('div', {
+        className: 'text-center py-4 text-gray-400 bg-white rounded-md border border-dashed'
+      }, '無設備資料');
+    }
+
+    return h('div', { className: 'space-y-4' },
+      items.map(function (item, idx) {
+        return h('div', { key: item.id, className: 'bg-white border rounded-md p-3' },
+          h('div', { className: 'font-semibold text-sm text-gray-700 mb-2' },
+            RepairCaseServiceItems.formatItemTitle(idx, item)),
+          h(RepairCaseEquipment.Panel, {
+            h: h,
+            equipment: item.equipment,
+            caseContext: formData,
+            deviceCategories: opts.deviceCategories,
+            FieldComponent: opts.ReadOnlyField,
+            emptyText: '無設備資料'
+          }),
+          h('div', { className: 'mt-3' },
+            opts.renderScheduleFieldLabel('實際維修原因'),
+            h('textarea', {
+              value: item.actualReason || '',
+              onChange: function (e) { opts.onReasonChange(item.id, e.target.value); },
+              rows: 2,
+              className: opts.inputCls
+            })
+          ),
+          h('div', { className: 'mt-3' },
+            opts.renderScheduleFieldLabel('處理方式'),
+            h('div', { className: 'border rounded-md overflow-x-auto bg-white' },
+              h('table', { className: 'w-full text-left text-sm whitespace-nowrap' },
+                h('thead', { className: 'bg-gray-100' },
+                  h('tr', null,
+                    pmColumns.map(function (col) {
+                      return h('th', { key: col.key, className: 'p-2 pl-4' }, col.label);
+                    }),
+                    h('th', { className: 'p-2' }, '狀態'),
+                    h('th', { className: 'p-2' }, '積分數'),
+                    h('th', { className: 'p-2' }, '數量')
+                  )
+                ),
+                h('tbody', { className: 'divide-y' },
+                  (!item.processRecords || !item.processRecords.length)
+                    ? h('tr', null,
+                        h('td', { colspan: String(pmColumns.length + 3), className: 'p-4 text-center text-gray-400' }, '無處理方式紀錄')
+                      )
+                    : ProcessMethodUtils.sortCaseProcessRecords(item.processRecords).map(function (r, ridx) {
+                        var isDone = ProcessMethodUtils.isCaseRecordDone(r);
+                        return h('tr', { key: r.id || ridx },
+                          pmColumns.map(function (col) {
+                            return h('td', { key: col.key, className: 'p-2 pl-4' }, r[col.key] || '—');
+                          }),
+                          h('td', { className: 'p-2' },
+                            h('span', { className: ProcessMethodUtils.getCaseRecordStatusBadgeClass(r) },
+                              ProcessMethodUtils.getCaseRecordStatus(r))
+                          ),
+                          h('td', { className: 'p-2 ' + (isDone ? '' : 'text-gray-400') },
+                            formatRecordPoints(r),
+                            isDone ? null : h('span', { className: 'text-xs text-gray-400 ml-1' }, '不計分')
+                          ),
+                          h('td', { className: 'p-2' },
+                            r.qty,
+                            r.unit ? h('span', { className: 'text-gray-500 ml-1' }, r.unit) : null
+                          )
+                        );
+                      })
+                )
+              )
+            )
+          )
+        );
+      })
+    );
+  }
+
   function CaseArrangement(props) {
     var maintenanceCases = props.maintenanceCases;
     var setMaintenanceCases = props.setMaintenanceCases;
@@ -481,6 +570,19 @@
         rerender();
       }
 
+      // 服務項目掛在各自的設備卡片下，故派工明細也逐卡片寫回
+      function updateScheduleServiceItemField(itemId, name, value) {
+        if (!scheduleModal) return;
+        var patch = {};
+        patch[name] = value;
+        scheduleModal = Object.assign({}, scheduleModal, {
+          formData: Object.assign({}, scheduleModal.formData, {
+            serviceItems: RepairCaseServiceItems.updateItem(scheduleModal.formData, itemId, patch)
+          })
+        });
+        rerender();
+      }
+
       function confirmScheduleModal() {
         if (!scheduleModal) return;
         var item = scheduleModal.item;
@@ -566,7 +668,6 @@
       }
 
       function renderRepairScheduleDetails(formData) {
-        var pmColumns = ProcessMethodUtils.CASE_DISPLAY_COLUMNS;
         var isOther = formData.workCategory === '其他';
         var customerOptions = CustomerUtils.getCustomerNameOptions(customers, formData.customerName);
         var storeOptions = ScheduleUtils.getStoreNamesForCustomer(stores, formData.customerName, formData.storeName);
@@ -574,11 +675,6 @@
 
         function ReadOnlyField(p) {
           return renderScheduleReadOnly(p.label, p.value, p.fullWidth);
-        }
-
-        function formatRecordPoints(r) {
-          var pts = ProcessMethodUtils.resolveCaseRecordPoints(r, processMethods, formData.isClosed);
-          return pts === null ? '—' : String(pts);
         }
 
         return h('div', { className: 'space-y-4' },
@@ -665,19 +761,8 @@
             )
           ),
           h('section', { className: 'bg-gray-50 border border-gray-200 rounded-md p-4' },
-            h('h4', { className: 'text-sm font-bold text-blue-800 border-b pb-2 mb-3' }, '2. 設備資料'),
-            h(RepairCaseEquipment.Panel, {
-              h: h,
-              equipment: formData.equipment,
-              caseContext: formData,
-              deviceCategories: deviceCategories,
-              FieldComponent: ReadOnlyField,
-              emptyText: '無設備資料'
-            })
-          ),
-          h('section', { className: 'bg-gray-50 border border-gray-200 rounded-md p-4' },
             h('h4', { className: 'text-sm font-bold text-blue-800 border-b pb-2 mb-3' },
-              isOther ? '3. 備註' : '3. 服務項目'),
+              isOther ? '2. 備註' : '2. 設備與服務項目'),
             isOther
               ? h('div', null,
                   renderScheduleFieldLabel('備註'),
@@ -689,15 +774,18 @@
                   })
                 )
               : h('div', { className: 'space-y-4' },
-                  h('div', null,
-                    renderScheduleFieldLabel('實際維修原因'),
-                    h('textarea', {
-                      value: formData.actualReason || '',
-                      onChange: function (e) { updateScheduleFormField('actualReason', e.target.value); },
-                      rows: 2,
-                      className: inputCls
-                    })
-                  ),
+                  renderScheduleServiceItems(formData, {
+                    h: h,
+                    deviceCategories: deviceCategories,
+                    ReadOnlyField: ReadOnlyField,
+                    renderScheduleFieldLabel: renderScheduleFieldLabel,
+                    inputCls: inputCls,
+                    isClosed: formData.isClosed,
+                    processMethods: processMethods,
+                    onReasonChange: function (itemId, value) {
+                      updateScheduleServiceItemField(itemId, 'actualReason', value);
+                    }
+                  }),
                   h('div', null,
                     renderScheduleFieldLabel('備註'),
                     h('textarea', {
@@ -706,49 +794,6 @@
                       rows: 3,
                       className: inputCls
                     })
-                  ),
-                  h('div', null,
-                    renderScheduleFieldLabel('處理方式'),
-                    h('div', { className: 'border rounded-md overflow-x-auto bg-white' },
-                      h('table', { className: 'w-full text-left text-sm whitespace-nowrap' },
-                        h('thead', { className: 'bg-gray-100' },
-                          h('tr', null,
-                            pmColumns.map(function (col) {
-                              return h('th', { key: col.key, className: 'p-2 pl-4' }, col.label);
-                            }),
-                            h('th', { className: 'p-2' }, '狀態'),
-                            h('th', { className: 'p-2' }, '積分數'),
-                            h('th', { className: 'p-2' }, '數量')
-                          )
-                        ),
-                        h('tbody', { className: 'divide-y' },
-                          (!formData.processRecords || !formData.processRecords.length)
-                            ? h('tr', null,
-                                h('td', { colspan: String(pmColumns.length + 3), className: 'p-4 text-center text-gray-400' }, '無處理方式紀錄')
-                              )
-                            : ProcessMethodUtils.sortCaseProcessRecords(formData.processRecords).map(function (r, idx) {
-                              var isDone = ProcessMethodUtils.isCaseRecordDone(r);
-                              return h('tr', { key: r.id || idx },
-                                pmColumns.map(function (col) {
-                                  return h('td', { key: col.key, className: 'p-2 pl-4' }, r[col.key] || '—');
-                                }),
-                                h('td', { className: 'p-2' },
-                                  h('span', { className: ProcessMethodUtils.getCaseRecordStatusBadgeClass(r) },
-                                    ProcessMethodUtils.getCaseRecordStatus(r))
-                                ),
-                                h('td', { className: 'p-2 ' + (isDone ? '' : 'text-gray-400') },
-                                  formatRecordPoints(r),
-                                  isDone ? null : h('span', { className: 'text-xs text-gray-400 ml-1' }, '不計分')
-                                ),
-                                h('td', { className: 'p-2' },
-                                  r.qty,
-                                  r.unit ? h('span', { className: 'text-gray-500 ml-1' }, r.unit) : null
-                                )
-                              );
-                            })
-                        )
-                      )
-                    )
                   )
                 )
           )
@@ -1079,5 +1124,6 @@
     });
   }
 
+  CaseArrangement.renderScheduleServiceItems = renderScheduleServiceItems;
   window.CaseArrangement = CaseArrangement;
 })();
