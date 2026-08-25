@@ -19,9 +19,12 @@
   function isEquipmentUsedInRepair(equipmentId, repairCases) {
     if (equipmentId == null || equipmentId === '') return false;
     var target = String(equipmentId);
+    // 這個判斷用來擋刪除：找不到 RepairCaseServiceItems 時無法確認設備是否還在用，
+    // 寧可保守回 true（視為仍在使用、擋下刪除），也不要因缺依賴而誤判成可刪除。
+    if (!window.RepairCaseServiceItems) return true;
     return (repairCases || []).some(function (c) {
       // 一筆叫修案件可能掛多台設備，逐張卡片比對
-      return window.RepairCaseServiceItems && RepairCaseServiceItems.getEquipments(c).some(function (eq) {
+      return RepairCaseServiceItems.getEquipments(c).some(function (eq) {
         return eq && String(eq.id) === target;
       });
     });

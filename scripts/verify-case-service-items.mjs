@@ -79,6 +79,20 @@ assertTrue(!SI.hasAnyProcessData({ serviceItems: [{ id: 'SI9', equipment: mkEq('
 assertEq(SI.getEquipments({ serviceItems: [{ id: 'SI9', equipment: null, actualReason: '', processRecords: [] }] }), [],
   'getEquipments 略過沒有設備的卡片');
 
+console.log('\nformatActualReasonSummary（案件列表／紀錄／銷案審核／資料調閱四處共用）');
+// 三張卡片、含一張空 actualReason，驗證真的是把多張卡片的原因用「、」串起來——
+// 不是拿現成的手打字串比對，是真的呼叫 join 邏輯。
+const threeCard = { serviceItems: [
+  { id: 'SI1', equipment: mkEq('E1'), actualReason: '壓縮機異音', processRecords: [] },
+  { id: 'SI2', equipment: mkEq('E2'), actualReason: '', processRecords: [] },
+  { id: 'SI3', equipment: mkEq('E3'), actualReason: '濾網堵塞', processRecords: [] }
+] };
+assertEq(SI.formatActualReasonSummary(threeCard), '壓縮機異音、濾網堵塞',
+  '多張卡片依序串接，空原因的卡片跳過');
+assertEq(SI.formatActualReasonSummary(multi), '壓縮機異音', '單張有原因、單張空時只留有內容的那張');
+assertEq(SI.formatActualReasonSummary({ serviceItems: [] }), '', '沒有卡片時回空字串');
+assertEq(SI.formatActualReasonSummary(null), '', '案件為 null 時回空字串');
+
 console.log('\nremoveItem / updateItem');
 assertEq(SI.removeItem(multi, 'SI1').map(function (it) { return it.id; }), ['SI2'], 'removeItem 移除指定卡片');
 assertEq(SI.getItems(multi).length, 2, 'removeItem 不改動原案件');

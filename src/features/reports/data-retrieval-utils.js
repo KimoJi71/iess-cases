@@ -220,12 +220,9 @@
     return store ? StoreUtils.getStoreArea(store) : '';
   }
 
-  // 實際原因已改成逐設備卡片，匯出報表沿用一列一案件的格式，彙整所有卡片文字
+  // 實際原因彙整字串委由 RepairCaseServiceItems 統一產生，匯出報表沿用一列一案件的格式
   function getActualReasonSummary(c) {
-    if (!c || !window.RepairCaseServiceItems) return '';
-    return RepairCaseServiceItems.getItems(c).map(function (it) {
-      return it.actualReason;
-    }).filter(Boolean).join('、');
+    return window.RepairCaseServiceItems ? RepairCaseServiceItems.formatActualReasonSummary(c) : '';
   }
 
   function mapRepairRow(c, stores) {

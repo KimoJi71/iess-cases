@@ -94,6 +94,14 @@
     return '設備 ' + (index + 1) + '　' + name + (eq.model ? ' ' + eq.model : '');
   }
 
+  // 實際原因彙整字串（案件列表／紀錄／銷案審核／資料調閱四處共用），
+  // 避免各處各自拼字串走樣；沒有卡片或案件為空時回空字串。
+  function formatActualReasonSummary(c) {
+    return getItems(c).map(function (it) {
+      return it.actualReason;
+    }).filter(Boolean).join('、');
+  }
+
   window.RepairCaseServiceItems = {
     createItem: createItem,
     normalizeItem: normalizeItem,
@@ -104,6 +112,7 @@
     hasAnyProcessData: hasAnyProcessData,
     removeItem: removeItem,
     updateItem: updateItem,
-    formatItemTitle: formatItemTitle
+    formatItemTitle: formatItemTitle,
+    formatActualReasonSummary: formatActualReasonSummary
   };
 })();

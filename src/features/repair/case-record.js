@@ -6,12 +6,9 @@
   'use strict';
   var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful;
 
-  // 實際原因已改成逐設備卡片，彙整所有卡片的文字供搜尋與列表顯示
+  // 實際原因彙整字串委由 RepairCaseServiceItems 統一產生，避免四處各自拼字串
   function getActualReasonSummary(c) {
-    if (!c || !window.RepairCaseServiceItems) return '';
-    return RepairCaseServiceItems.getItems(c).map(function (it) {
-      return it.actualReason;
-    }).filter(Boolean).join('、');
+    return window.RepairCaseServiceItems ? RepairCaseServiceItems.formatActualReasonSummary(c) : '';
   }
 
   function matchKeyword(c, kw) {

@@ -11,12 +11,9 @@
     return c && c.sourceType === 'maintenance';
   }
 
-  // 叫修案件的實際原因已改成逐設備卡片；保養案件沒有 serviceItems，getItems 會自然回空陣列
+  // 實際原因彙整字串委由 RepairCaseServiceItems 統一產生；保養案件沒有 serviceItems，回空字串
   function getActualReasonSummary(c) {
-    if (!c || !window.RepairCaseServiceItems) return '';
-    return RepairCaseServiceItems.getItems(c).map(function (it) {
-      return it.actualReason;
-    }).filter(Boolean).join('、');
+    return window.RepairCaseServiceItems ? RepairCaseServiceItems.formatActualReasonSummary(c) : '';
   }
 
   // 增額任務：服務等級設定為計算增額積分的叫修案件，或雖未設定但設備為增額設備的叫修案件。
