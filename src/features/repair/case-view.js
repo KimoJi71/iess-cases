@@ -166,8 +166,25 @@
           h('h3', { className: 'text-lg font-bold text-blue-800 border-b pb-2 mb-4' }, '5. 維修結果'),
           h('div', { className: 'space-y-6' },
             h('div', { className: 'grid grid-cols-1 md:grid-cols-2 gap-6' },
-              h(ReadOnlyField, { label: '處理狀態', value: (viewingCase && viewingCase.processStatus) || '—' })
+              h(ReadOnlyField, { label: '處理狀態', value: (viewingCase && viewingCase.processStatus) || '—' }),
+              h('div', null,
+                h('span', { className: 'text-gray-500 block mb-1 text-xs' }, '客戶簽收'),
+                viewingCase && viewingCase.customerSignature
+                  ? h('img', {
+                      src: viewingCase.customerSignature,
+                      alt: '客戶簽名',
+                      className: 'h-[42px] bg-white border border-gray-100 rounded-md'
+                    })
+                  : h('div', {
+                      className: 'font-medium bg-gray-50 p-2.5 rounded-md border border-gray-100 min-h-[42px] flex items-center'
+                    }, '尚未簽收')
+              )
             ),
+            h(ReadOnlyField, {
+              label: '維修備註',
+              value: viewingCase && viewingCase.repairRemark,
+              fullWidth: true
+            }),
             h('div', { className: 'pt-4 border-t border-gray-100' },
               h('h4', { className: 'text-sm font-semibold text-gray-800 mb-4' }, '時間紀錄'),
               h('div', {

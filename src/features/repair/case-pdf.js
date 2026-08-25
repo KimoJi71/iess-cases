@@ -169,7 +169,14 @@
       ) +
       fieldTable([{ label: '備註', value: c.remarks, full: true }]);
 
-    var result = fieldTable([{ label: '處理狀態', value: c.processStatus }]) +
+    var caseSignature = c.customerSignature
+      ? '<img class="sign" src="' + esc(c.customerSignature) + '" alt="客戶簽名"/>'
+      : '尚未簽收';
+    var result = '<table>' +
+      '<tr><td class="lbl">處理狀態</td><td class="val">' + cell(c.processStatus) + '</td>' +
+      '<td class="lbl">客戶簽收</td><td class="val" colspan="5">' + caseSignature + '</td></tr>' +
+      '</table>' +
+      fieldTable([{ label: '維修備註', value: c.repairRemark, full: true }]) +
       '<div class="sub-title">時間紀錄</div>' +
       fieldTable([
         { label: '叫修時間', value: caseDT.format(c.createdAt || c.repairDate) },

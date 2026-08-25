@@ -385,11 +385,13 @@
     if (!formData.expectedTimeEnd) formData.expectedTimeEnd = formData.planTimeEnd || '';
     if (!formData.expectedDate) formData.expectedDate = formData.planDate || '';
     if (!formData.remarks) formData.remarks = '';
+    if (!formData.repairRemark) formData.repairRemark = '';
     var savedProcessStatus = editingCase.processStatus || null;
     var newRecord = ProcessMethodUtils.normalizeProcessMethodSelection(processMethods, null);
     var pmColumns = ProcessMethodUtils.CASE_DISPLAY_COLUMNS;
     var pickerOpen = false;
     var addEquipMenuOpen = false;
+    var signaturePad = { show: false };
 
     return stateful(function (rerender) {
       var cat1Options = ProcessMethodUtils.getCat1OptionsFromMethods(processMethods);
@@ -859,7 +861,32 @@
       }, formData.equipment ? "請選擇" : "請先加入設備"), PROCESS_STATUS_OPTIONS.map(function (opt) { return h("option", {
         key: opt,
         value: opt
-      }, opt); })))), h("div", {
+      }, opt); }))), h("div", null, h("label", {
+        className: "block text-sm mb-1"
+      }, "客戶簽收"), h("div", {
+        className: "flex items-center gap-3"
+      }, h("button", {
+        type: "button",
+        onClick: function () { signaturePad = { show: true }; rerender(); },
+        disabled: !formData.equipment,
+        className: "px-4 py-2.5 border border-blue-200 bg-blue-50 text-blue-700 rounded-md hover:bg-blue-100 transition-colors font-medium disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
+      }, formData.customerSignature ? "重新簽收" : "客戶簽收"), formData.customerSignature ? h("img", {
+        src: formData.customerSignature,
+        alt: "客戶簽名",
+        className: "h-[42px] bg-white border border-gray-200 rounded-md"
+      }) : h("span", {
+        className: "text-gray-400 text-sm"
+      }, "尚未簽收")))), h("div", null, h("label", {
+        className: "block text-sm mb-1"
+      }, "維修備註"), h("textarea", {
+        name: "repairRemark",
+        value: formData.repairRemark || '',
+        onChange: handleChange,
+        disabled: !formData.equipment,
+        rows: "3",
+        className: "w-full p-2.5 border rounded-md outline-none disabled:bg-gray-100 disabled:cursor-not-allowed",
+        placeholder: formData.equipment ? "請輸入維修備註..." : "請先加入設備"
+      })), h("div", {
         className: "pt-4 border-t border-gray-100"
       }, h("h4", {
         className: "text-sm font-semibold text-gray-800 mb-4"
@@ -889,7 +916,17 @@
         className: "px-8 py-2.5 bg-blue-600 text-white rounded-md flex items-center gap-2"
       }, Icons.Save({
         className: "h-5 w-5"
-      }), " 儲存")))));
+      }), " 儲存")))), signaturePad.show && IESS.SignaturePadModal({
+        title: '客戶簽收',
+        value: formData.customerSignature,
+        onConfirm: function (dataUrl) {
+          formData.customerSignature = dataUrl;
+          signaturePad = { show: false };
+          showToast(dataUrl ? '客戶簽收已暫存，請記得儲存' : '已清除客戶簽名');
+          rerender();
+        },
+        onClose: function () { signaturePad = { show: false }; rerender(); }
+      }));
     });
   }
 
