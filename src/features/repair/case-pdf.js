@@ -145,29 +145,38 @@
       { label: isOther ? '工作描述' : '故障描述', value: c.faultDesc, full: true }
     ]);
 
-    var equipment = c.equipment
-      ? fieldTable(RepairCaseEquipment.getDisplayFields(c.equipment, c, opts.deviceCategories))
-      : '<div class="empty">無設備資料</div>';
-
     var pmColumns = ProcessMethodUtils.CASE_DISPLAY_COLUMNS;
-    var records = ProcessMethodUtils.sortCaseProcessRecords(c.processRecords || []);
-    var pmRows = records.map(function (r) {
-      var isDone = ProcessMethodUtils.isCaseRecordDone(r);
-      var pts = ProcessMethodUtils.resolveCaseRecordPoints(r, processMethods, !!c.isClosed);
-      return pmColumns.map(function (col) { return r[col.key]; }).concat([
-        ProcessMethodUtils.getCaseRecordStatus(r),
-        (pts === null ? '—' : String(pts)) + (isDone ? '' : '（不計分）'),
-        [r.qty, r.unit].filter(function (v) { return v != null && v !== ''; }).join(' ')
-      ]);
-    });
-    var service = (isOther ? '' : fieldTable([{ label: '實際維修原因', value: c.actualReason, full: true }])) +
-      '<div class="sub-title">處理方式</div>' +
-      dataTable(
-        pmColumns.map(function (col) { return col.label; }).concat(['狀態', '積分數', '數量']),
-        pmRows,
-        '無處理方式紀錄'
-      ) +
-      fieldTable([{ label: '備註', value: c.remarks, full: true }]);
+    var items = RepairCaseServiceItems.getItems(c);
+    // 一台設備一個小節：設備欄位 → 實際維修原因 → 處理方式表
+    var serviceItems = items.length
+      ? items.map(function (item, idx) {
+          var eq = item.equipment || {};
+          var title = '設備 ' + (idx + 1) + '　'
+            + (eq.deviceName || eq.name || '未指定設備')
+            + (eq.model ? ' ' + eq.model : '');
+          var records = ProcessMethodUtils.sortCaseProcessRecords(item.processRecords || []);
+          var pmRows = records.map(function (r) {
+            var isDone = ProcessMethodUtils.isCaseRecordDone(r);
+            var pts = ProcessMethodUtils.resolveCaseRecordPoints(r, processMethods, !!c.isClosed);
+            return pmColumns.map(function (col) { return r[col.key]; }).concat([
+              ProcessMethodUtils.getCaseRecordStatus(r),
+              (pts === null ? '—' : String(pts)) + (isDone ? '' : '（不計分）'),
+              [r.qty, r.unit].filter(function (v) { return v != null && v !== ''; }).join(' ')
+            ]);
+          });
+          return '<div class="sub-title">' + esc(title) + '</div>'
+            + (item.equipment
+              ? fieldTable(RepairCaseEquipment.getDisplayFields(item.equipment, c, opts.deviceCategories))
+              : '<div class="empty">無設備資料</div>')
+            + (isOther ? '' : fieldTable([{ label: '實際維修原因', value: item.actualReason, full: true }]))
+            + dataTable(
+                pmColumns.map(function (col) { return col.label; }).concat(['狀態', '積分數', '數量']),
+                pmRows,
+                '無處理方式紀錄'
+              );
+        }).join('')
+      : '<div class="empty">無設備資料</div>';
+    var service = serviceItems + fieldTable([{ label: '備註', value: c.remarks, full: true }]);
 
     var caseSignature = c.customerSignature
       ? '<img class="sign" src="' + esc(c.customerSignature) + '" alt="客戶簽名"/>'
@@ -194,9 +203,8 @@
       docHead('案件明細', c.caseNumber) +
       section('1. 排程資料', schedule) +
       section('2. 案件資料', info) +
-      section('3. 設備資料', equipment) +
-      section('4. 服務項目', service) +
-      section('5. 維修結果', result)
+      section('3. 設備與服務項目', service) +
+      section('4. 維修結果', result)
     );
   }
 

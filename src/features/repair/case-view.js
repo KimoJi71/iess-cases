@@ -23,17 +23,9 @@
     var onClose = props.onClose;
     var notice = props.notice;
 
-    var pmColumns = ProcessMethodUtils.CASE_DISPLAY_COLUMNS;
-
     function formatTimeRange(start, end) {
       if (!start) return '';
       return end && end !== start ? start + ' ~ ' + end : start;
-    }
-
-    function formatRecordPoints(r) {
-      var isClosed = !!(viewingCase && viewingCase.isClosed);
-      var pts = ProcessMethodUtils.resolveCaseRecordPoints(r, processMethods, isClosed);
-      return pts === null ? '—' : String(pts);
     }
 
     function ReadOnlyField(p) {
@@ -128,66 +120,29 @@
           )
         ),
         h('section', { className: 'bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-100' },
-          h('h3', { className: 'text-lg font-bold text-blue-800 border-b pb-2 mb-4' }, '3. 設備資料'),
-          h(RepairCaseEquipment.Panel, {
-            h: h,
-            equipment: viewingCase && viewingCase.equipment,
-            caseContext: viewingCase,
-            deviceCategories: deviceCategories,
-            FieldComponent: ReadOnlyField,
-            emptyText: '無設備資料'
-          })
+          h('h3', { className: 'text-lg font-bold text-blue-800 border-b pb-2 mb-4' }, '3. 設備與服務項目'),
+          RepairCaseServiceItems.getItems(viewingCase).length
+            ? RepairCaseServiceItems.getItems(viewingCase).map(function (item, idx) {
+                return h(RepairCaseServiceItemCard, {
+                  key: item.id,
+                  h: h,
+                  index: idx,
+                  item: item,
+                  caseContext: viewingCase,
+                  deviceCategories: deviceCategories,
+                  processMethods: processMethods,
+                  isOther: isOther,
+                  isClosed: viewingCase && viewingCase.isClosed,
+                  readOnly: true
+                });
+              })
+            : h('div', {
+                className: 'text-center py-4 text-gray-400 bg-gray-50 rounded-md border border-dashed'
+              }, '無設備資料'),
+          h(ReadOnlyField, { label: '備註', value: viewingCase && viewingCase.remarks, fullWidth: true })
         ),
         h('section', { className: 'bg-white p-6 rounded-lg shadow-sm border border-gray-100' },
-          h('h3', { className: 'text-lg font-bold text-blue-800 border-b pb-2 mb-4' }, '4. 服務項目'),
-          h('div', { className: 'space-y-6' },
-            !isOther && h(ReadOnlyField, { label: '實際維修原因', value: viewingCase && viewingCase.actualReason, fullWidth: true }),
-            h('div', null,
-              h('span', { className: 'text-gray-500 block mb-2 text-sm' }, '處理方式'),
-              h('div', { className: 'border rounded-md overflow-x-auto table-scroll-hint' },
-                h('table', { className: 'w-full text-left text-sm whitespace-nowrap' },
-                  h('thead', { className: 'bg-gray-100' },
-                    h('tr', null,
-                      pmColumns.map(function (col) {
-                        return h('th', { key: col.key, className: 'p-2 pl-4' }, col.label);
-                      }),
-                      h('th', { className: 'p-2' }, '狀態'),
-                      h('th', { className: 'p-2' }, '積分數'),
-                      h('th', { className: 'p-2' }, '數量')
-                    )
-                  ),
-                  h('tbody', { className: 'divide-y' },
-                    (!viewingCase || !viewingCase.processRecords || viewingCase.processRecords.length === 0) ? h('tr', null,
-                      h('td', { colspan: String(pmColumns.length + 3), className: 'p-4 text-center text-gray-400' }, '無處理方式紀錄')
-                    ) : ProcessMethodUtils.sortCaseProcessRecords(viewingCase.processRecords).map(function (r, idx) {
-                      var isDone = ProcessMethodUtils.isCaseRecordDone(r);
-                      return h('tr', { key: r.id || idx },
-                        pmColumns.map(function (col) {
-                          return h('td', { key: col.key, className: 'p-2 pl-4' }, r[col.key] || '—');
-                        }),
-                        h('td', { className: 'p-2' },
-                          h('span', { className: ProcessMethodUtils.getCaseRecordStatusBadgeClass(r) },
-                            ProcessMethodUtils.getCaseRecordStatus(r))
-                        ),
-                        h('td', { className: 'p-2 ' + (isDone ? '' : 'text-gray-400') },
-                          formatRecordPoints(r),
-                          isDone ? null : h('span', { className: 'text-xs text-gray-400 ml-1' }, '不計分')
-                        ),
-                        h('td', { className: 'p-2' },
-                          r.qty,
-                          r.unit ? h('span', { className: 'text-gray-500 ml-1' }, r.unit) : null
-                        )
-                      );
-                    })
-                  )
-                )
-              )
-            ),
-            h(ReadOnlyField, { label: '備註', value: viewingCase && viewingCase.remarks, fullWidth: true })
-          )
-        ),
-        h('section', { className: 'bg-white p-6 rounded-lg shadow-sm border border-gray-100' },
-          h('h3', { className: 'text-lg font-bold text-blue-800 border-b pb-2 mb-4' }, '5. 維修結果'),
+          h('h3', { className: 'text-lg font-bold text-blue-800 border-b pb-2 mb-4' }, '4. 維修結果'),
           h('div', { className: 'space-y-6' },
             h('div', { className: 'grid grid-cols-1 md:grid-cols-2 gap-6' },
               h(ReadOnlyField, { label: '處理狀態', value: (viewingCase && viewingCase.processStatus) || '—' }),
