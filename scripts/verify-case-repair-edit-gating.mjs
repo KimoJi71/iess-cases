@@ -189,10 +189,8 @@ try {
 
   console.log('\nSection 3｜工項「其他」× 未加入設備：僅維修結果解鎖');
   await evaluate(`window.__mountEdit({ workCategory: '其他', serviceItems: [] })`);
-  assertEq(await evaluate('window.__hasCards()'), false,
-    '其他案件未加設備時仍不顯示卡片（其他不豁免服務項目）');
   assertEq(await evaluate('window.__blocked("4. 維修結果")'), false,
-    '維修結果不受設備限制');
+    '維修結果不受設備限制（與 Section 1 的一般叫修相比，resultLocked 不因無卡片而鎖住）');
   assertEq(await evaluate('window.__resultFields()'),
     { status: false, statusPlaceholder: '請選擇', sign: false,
       remark: false, remarkPlaceholder: '請輸入維修備註...' },
@@ -202,6 +200,10 @@ try {
   await evaluate(`window.__mountEdit({ workCategory: '其他' })`);
   assertEq(await evaluate('window.__hasCards()'), true, '已加入設備時顯示卡片');
   assertEq(await evaluate('window.__blocked("4. 維修結果")'), false, '維修結果可編輯');
+  assertEq(await evaluate(`(function () {
+    var sec = window.__sectionByTitle('3. 設備與服務項目');
+    return sec.textContent.indexOf('實際維修原因') !== -1;
+  })()`), false, '工項為「其他」時卡片內不顯示實際維修原因欄位');
 
   console.log('\nSection 5｜種子資料有一筆未結案的「其他」案件');
   assertTrue(await evaluate(`

@@ -123,8 +123,8 @@ console.log('\n畫面：加入按鈕與狀態欄');
 const formSrc = readFileSync(join(ROOT, 'src/features/repair/case-form.js'), 'utf8');
 const cardSrc = readFileSync(join(ROOT, 'src/features/repair/case-service-item-card.js'), 'utf8');
 assertTrue(!/onClick: handleAddRecord\b/.test(formSrc) && !/}, "新增"\)/.test(formSrc)
-  && !/onClick: handleAddRecord\b/.test(cardSrc) && !/}, "新增"\)/.test(cardSrc),
-  '編輯案件不再有單一「新增」按鈕');
+  && !cardSrc.includes("'新增'") && cardSrc.includes("'待處理'") && cardSrc.includes("'已處理'"),
+  '編輯案件不再有單一「新增」按鈕，改為卡片上的「待處理／已處理」兩顆按鈕');
 assertTrue(/PROCESS_RECORD_STATUS\.PENDING\);[\s\S]{0,220}'待處理'/.test(cardSrc),
   '「待處理」按鈕以待處理狀態加入');
 assertTrue(/PROCESS_RECORD_STATUS\.DONE\);[\s\S]{0,220}'已處理'/.test(cardSrc),

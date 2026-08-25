@@ -173,7 +173,7 @@ try {
     }
     var boxes = reasonBoxes();
     boxes[0].value = '第一台濾網堵塞';
-    boxes[0].dispatchEvent(new Event('change', { bubbles: true }));
+    boxes[0].dispatchEvent(new Event('input', { bubbles: true }));
     var after = reasonBoxes();
     var out = [after[0].value, after[1].value];
     wrap.remove();
