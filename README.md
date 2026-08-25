@@ -13,6 +13,7 @@ src/
 ├── core/             基礎設施
 │   ├── dom.js        h() 建立 DOM 的 helper、stateful 元件基座
 │   ├── icons.js      內嵌 SVG 圖示（取代 lucide-react）
+│   ├── action-menu.js 列表操作欄「更多」選單（浮動於表格之外）
 │   ├── store.js      極簡全域狀態容器（訂閱／通知重繪）
 │   └── toast.js      右上角提示訊息
 ├── data/             純資料
