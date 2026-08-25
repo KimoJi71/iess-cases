@@ -383,7 +383,6 @@
     if (!formData.expectedTimeStart) formData.expectedTimeStart = formData.planTimeStart || '';
     if (!formData.expectedTimeEnd) formData.expectedTimeEnd = formData.planTimeEnd || '';
     if (!formData.expectedDate) formData.expectedDate = formData.planDate || '';
-    if (!formData.remarks) formData.remarks = '';
     if (!formData.repairRemark) formData.repairRemark = '';
     // 每張卡片各自暫存「新增處理方式」的挑選，切換卡片不互相干擾
     var newRecordByItemId = {};
@@ -449,6 +448,10 @@
       }
       function handleReasonChange(itemId, value) {
         formData.serviceItems = RepairCaseServiceItems.updateItem(formData, itemId, { actualReason: value });
+        rerender();
+      }
+      function handleRemarksChange(itemId, value) {
+        formData.serviceItems = RepairCaseServiceItems.updateItem(formData, itemId, { remarks: value });
         rerender();
       }
       function handleAddRecord(itemId, pm, qty, status) {
@@ -692,6 +695,7 @@
                   isClosed: formData.isClosed,
                   onNewRecordChange: function (sel) { newRecordByItemId[item.id] = sel; rerender(); },
                   onReasonChange: function (v) { handleReasonChange(item.id, v); },
+                  onRemarksChange: function (v) { handleRemarksChange(item.id, v); },
                   onAddRecord: function (pm, qty, status) { handleAddRecord(item.id, pm, qty, status); },
                   onToggleRecordStatus: function (rid) { handleToggleRecordStatus(item.id, rid); },
                   onRemoveRecord: function (rid) { handleRemoveRecord(item.id, rid); },
@@ -701,18 +705,6 @@
             : h("div", {
                 className: "text-center py-8 text-gray-400 bg-gray-50 rounded-md border border-dashed"
               }, "請點擊「加入設備」手動選擇或掃描 QR Code"),
-          h("div", { className: "mt-4" },
-            h("label", { className: "block text-sm mb-1" }, "備註"),
-            h("textarea", {
-              name: "remarks",
-              value: formData.remarks || '',
-              onChange: handleChange,
-              disabled: !hasServiceItems,
-              rows: "4",
-              className: "w-full p-2.5 border rounded-md outline-none disabled:bg-gray-100 disabled:cursor-not-allowed",
-              placeholder: hasServiceItems ? "請輸入備註..." : "請先加入設備"
-            })
-          ),
           pickerOpen && h(RepairCaseEquipment.PickerModal, {
             h: h,
             items: storeEquipments,

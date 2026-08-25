@@ -117,6 +117,9 @@
     delete next.equipment;
     delete next.actualReason;
     delete next.processRecords;
+    // 備註已跟著設備走：有卡片就代表案件層級的舊備註已併入卡片，清掉避免兩處各存一份。
+    // 沒有卡片的案件（例如工項分類「其他」的派工明細）仍保留案件層級備註。
+    if (next.serviceItems.length) delete next.remarks;
     return next;
   }
 

@@ -170,10 +170,12 @@
                 pmColumns.map(function (col) { return col.label; }).concat(['狀態', '積分數', '數量']),
                 pmRows,
                 '無處理方式紀錄'
-              );
+              )
+            + fieldTable([{ label: '備註', value: item.remarks, full: true }]);
         }).join('')
       : '<div class="empty">無設備資料</div>';
-    var service = serviceItems + fieldTable([{ label: '備註', value: c.remarks, full: true }]);
+    // 備註跟著設備走，已在各設備小節內輸出，此處不再附加案件層級的整張備註
+    var service = serviceItems;
 
     var caseSignature = c.customerSignature
       ? '<img class="sign" src="' + esc(c.customerSignature) + '" alt="客戶簽名"/>'

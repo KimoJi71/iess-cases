@@ -138,8 +138,7 @@
               })
             : h('div', {
                 className: 'text-center py-4 text-gray-400 bg-gray-50 rounded-md border border-dashed'
-              }, '無設備資料'),
-          h(ReadOnlyField, { label: '備註', value: viewingCase && viewingCase.remarks, fullWidth: true })
+              }, '無設備資料')
         ),
         h('section', { className: 'bg-white p-6 rounded-lg shadow-sm border border-gray-100' },
           h('h3', { className: 'text-lg font-bold text-blue-800 border-b pb-2 mb-4' }, '4. 維修結果'),

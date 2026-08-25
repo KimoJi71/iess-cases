@@ -170,11 +170,12 @@ try {
       // 設備欄位與處理方式確實有渲染，而非只驗到「無設備資料」的空狀態。
       viewingCase: window.__mkCase({
         workCategory: '其他',
-        remarks: '安裝完成',
         serviceItems: [{
           id: 'SI1',
           equipment: { id: 'E1', category: '分離式', deviceName: '室內機', model: 'FTXS' },
           actualReason: '',
+          // 備註跟著設備走，掛在卡片上而非案件層級
+          remarks: '安裝完成',
           processRecords: [{
             id: 1, processMethodId: 'PM1', category1: '冷氣', category2: '安裝',
             category3: '新機安裝', specification: '', unit: '式', points: 5, qty: 1, status: '已處理'
@@ -211,7 +212,7 @@ try {
   assertEq(otherView.hasActualReason, false, '其他案件不顯示實際維修原因');
   assertTrue(otherView.hasProcessMethods, '顯示處理方式');
   assertTrue(otherView.hasProcessStatus, '顯示處理狀態');
-  assertTrue(otherView.hasRemarks, '仍顯示備註內容');
+  assertTrue(otherView.hasRemarks, '仍顯示備註內容（改由設備卡片呈現）');
   assertTrue(otherView.hasWorkDesc, '其他案件描述欄仍為「工作描述」');
   assertEq(otherView.hasRepairItemLabel, false, '其他案件不顯示叫修項目欄位');
 
@@ -220,7 +221,14 @@ try {
     var wrap = document.createElement('div');
     document.body.appendChild(wrap);
     wrap.appendChild(EditCaseForm({
-      editingCase: window.__mkCase({ workCategory: '其他' }),
+      editingCase: window.__mkCase({
+        workCategory: '其他',
+        serviceItems: [{
+          id: 'SI1',
+          equipment: { id: 'E1', category: '分離式', deviceName: '室內機', model: 'FTXS' },
+          actualReason: '', remarks: '安裝完成', processRecords: []
+        }]
+      }),
       cases: [], setCases: function () {}, stores: [], customers: [], equipments: [],
       deviceCategories: [], processMethods: [],
       setView: function () {}, showToast: function () {}
@@ -240,7 +248,9 @@ try {
     });
     var result = {
       hasActualReason: hasActualReasonBox,
-      hasRemarks: !!node.querySelector('textarea[name="remarks"]'),
+      // 備註跟著設備走，欄位在設備卡片內而非案件層級
+      hasRemarks: !!node.querySelector('textarea[name="serviceItemRemarks"]'),
+      hasCaseLevelRemarks: !!node.querySelector('textarea[name="remarks"]'),
       // 原生 <select> 會被 searchable-select 攔截成 input[role=combobox]
       hasProcessStatus: !!node.querySelector('[name="processStatus"]'),
       hasProcessMethodTable: node.textContent.indexOf('處理方式') !== -1,
@@ -256,7 +266,8 @@ try {
   })()`);
   assertEq(otherEdit.hasActualReason, false, '編輯表單不顯示實際維修原因欄');
   assertTrue(otherEdit.hasProcessMethodTable, '編輯表單有處理方式');
-  assertTrue(otherEdit.hasRemarks, '編輯表單保留備註欄');
+  assertTrue(otherEdit.hasRemarks, '編輯表單的備註欄掛在設備卡片內');
+  assertEq(otherEdit.hasCaseLevelRemarks, false, '編輯表單不再有案件層級備註欄');
   assertTrue(otherEdit.hasProcessStatus, '編輯表單有處理狀態');
   assertTrue(otherEdit.hasTimeRecords, '編輯表單有時間紀錄');
   assertTrue(otherEdit.hasScheduleSection, '編輯表單有排程資料區塊');

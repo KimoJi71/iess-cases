@@ -114,11 +114,13 @@ try {
       inputCls: 'w-full',
       isClosed: !!c.isClosed,
       processMethods: (typeof INITIAL_PROCESS_METHODS !== 'undefined' ? INITIAL_PROCESS_METHODS : []),
-      onReasonChange: function (itemId, value) { calls.push({ itemId: itemId, value: value }); }
+      onReasonChange: function (itemId, value) { calls.push({ itemId: itemId, value: value }); },
+      onRemarksChange: function () {}
     });
     document.body.appendChild(node);
     var text = node.textContent.replace(/\\s+/g, ' ');
-    var textareas = node.querySelectorAll('textarea');
+    // 每張卡片有「實際維修原因」與「備註」兩個 textarea，這裡只驗前者
+    var textareas = node.querySelectorAll('textarea[name="serviceItemActualReason"]');
     // textarea 的值走 .value，不會出現在 textContent，故另外蒐集（見 assertion-honesty）；
     // 要在觸發 input 事件、覆寫第二張卡片的值之前先讀出來，否則驗證的就不是原始渲染結果
     var textareaValues = Array.prototype.map.call(textareas, function (t) { return t.value; });

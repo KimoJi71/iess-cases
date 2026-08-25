@@ -21,6 +21,7 @@
       id: nextId(),
       equipment: deepCopy(equipment),
       actualReason: '',
+      remarks: '',
       processRecords: []
     };
   }
@@ -31,23 +32,40 @@
       id: item.id || nextId(),
       equipment: item.equipment || null,
       actualReason: item.actualReason || '',
+      remarks: item.remarks || '',
       processRecords: Array.isArray(item.processRecords) ? item.processRecords.slice() : []
     };
   }
 
-  // 舊案件把設備與服務項目攤在案件層級，摺成單筆卡片；三者皆空視為尚未加入設備。
+  // 備註改為跟著設備走：案件層級的舊備註併進第一張卡片，且只在所有卡片都還沒有
+  // 備註時才併，避免重複遷移蓋掉使用者後來填的內容。沒有卡片就原封不動留在案件層級。
+  function mergeLegacyRemarks(items, record) {
+    var legacy = record && record.remarks ? String(record.remarks) : '';
+    if (!items.length || !legacy.trim()) return items;
+    var hasItemRemarks = items.some(function (it) {
+      return !!(it.remarks && String(it.remarks).trim());
+    });
+    if (hasItemRemarks) return items;
+    return items.map(function (it, idx) {
+      return idx === 0 ? Object.assign({}, it, { remarks: legacy }) : it;
+    });
+  }
+
+  // 舊案件把設備與服務項目攤在案件層級，摺成單筆卡片；四者皆空視為尚未加入設備。
   function normalizeServiceItems(record) {
     if (!record) return [];
-    if (Array.isArray(record.serviceItems)) return record.serviceItems.map(normalizeItem);
+    if (Array.isArray(record.serviceItems)) {
+      return mergeLegacyRemarks(record.serviceItems.map(normalizeItem), record);
+    }
     var hasLegacy = !!record.equipment
       || !!(record.actualReason && String(record.actualReason).trim())
       || !!(Array.isArray(record.processRecords) && record.processRecords.length);
     if (!hasLegacy) return [];
-    return [normalizeItem({
+    return mergeLegacyRemarks([normalizeItem({
       equipment: record.equipment || null,
       actualReason: record.actualReason || '',
       processRecords: record.processRecords || []
-    })];
+    })], record);
   }
 
   function getItems(c) {

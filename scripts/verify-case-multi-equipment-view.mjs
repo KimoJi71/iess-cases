@@ -95,14 +95,16 @@ try {
     window.__case = {
       id: 'C1', caseNumber: '20260825001', customerName: '測試客戶', storeName: '測試門市',
       workCategory: '一般叫修', repairItem: '室內機', repairReason: '不冷', faultDesc: '出風不冷',
-      isClosed: false, processStatus: null, remarks: '案件備註',
+      isClosed: false, processStatus: null,
       createdAt: '2026-08-25 09:00:00', repairDate: '2026-08-25 09:00:00',
       assignees: [],
       serviceItems: [
         { id: 'SI1', equipment: window.__eq('E1', '室內機', 'FTXS'),
-          actualReason: '第一台濾網堵塞', processRecords: [window.__rec(1, '清洗')] },
+          actualReason: '第一台濾網堵塞', remarks: '第一台備註',
+          processRecords: [window.__rec(1, '清洗')] },
         { id: 'SI2', equipment: window.__eq('E2', '冰水主機', 'CH-200'),
-          actualReason: '第二台軸承磨損', processRecords: [window.__rec(2, '更換')] }
+          actualReason: '第二台軸承磨損', remarks: '第二台備註',
+          processRecords: [window.__rec(2, '更換')] }
       ]
     };
   `);
@@ -152,7 +154,8 @@ try {
       hasSecond: html.indexOf('第二台軸承磨損') !== -1,
       hasFtxs: html.indexOf('FTXS') !== -1,
       hasCh200: html.indexOf('CH-200') !== -1,
-      hasRemarks: html.indexOf('案件備註') !== -1
+      hasFirstRemarks: html.indexOf('第一台備註') !== -1,
+      hasSecondRemarks: html.indexOf('第二台備註') !== -1
     };
   })()`);
   assertEq(pdf.hasMerged, true, 'PDF 有合併後的區塊標題');
@@ -162,7 +165,8 @@ try {
   assertEq(pdf.hasSecond, true, 'PDF 含第二台維修原因');
   assertEq(pdf.hasFtxs, true, 'PDF 含第一台型號');
   assertEq(pdf.hasCh200, true, 'PDF 含第二台型號');
-  assertEq(pdf.hasRemarks, true, 'PDF 保留案件備註');
+  assertEq(pdf.hasFirstRemarks, true, 'PDF 含第一台的備註');
+  assertEq(pdf.hasSecondRemarks, true, 'PDF 含第二台的備註');
 
   assertEq(consoleErrors.length, 0, '全程無 JS 錯誤');
 } catch (e) {

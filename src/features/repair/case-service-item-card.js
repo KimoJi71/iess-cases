@@ -166,9 +166,32 @@
       return h('div', null,
         h('label', { className: 'block text-sm mb-1' }, '實際維修原因'),
         h('textarea', {
+          name: 'serviceItemActualReason',
           value: item.actualReason || '',
           onChange: function (e) { props.onReasonChange(e.target.value); },
           rows: '2',
+          className: 'w-full p-2.5 border rounded-md outline-none'
+        })
+      );
+    }
+
+    // 備註跟著設備走：一張卡片一個備註，不再由全部設備共用案件層級的那一個
+    function renderRemarks() {
+      if (readOnly) {
+        return h('div', null,
+          h('span', { className: 'text-gray-500 block mb-1 text-xs' }, '備註'),
+          h('div', {
+            className: 'font-medium p-2.5 rounded-md border bg-gray-50 border-gray-100 min-h-[42px]'
+          }, item.remarks || '-')
+        );
+      }
+      return h('div', null,
+        h('label', { className: 'block text-sm mb-1' }, '備註'),
+        h('textarea', {
+          name: 'serviceItemRemarks',
+          value: item.remarks || '',
+          onChange: function (e) { props.onRemarksChange(e.target.value); },
+          rows: '3',
           className: 'w-full p-2.5 border rounded-md outline-none'
         })
       );
@@ -211,7 +234,8 @@
               h('tbody', { className: 'divide-y' }, renderRows())
             )
           )
-        )
+        ),
+        renderRemarks()
       )
     );
   }

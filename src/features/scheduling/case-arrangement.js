@@ -77,6 +77,7 @@
           h('div', { className: 'mt-3' },
             opts.renderScheduleFieldLabel('實際維修原因'),
             h('textarea', {
+              name: 'serviceItemActualReason',
               value: item.actualReason || '',
               onChange: function (e) { opts.onReasonChange(item.id, e.target.value); },
               rows: 2,
@@ -125,6 +126,17 @@
                 )
               )
             )
+          ),
+          // 備註跟著設備走：一張卡片一個備註
+          h('div', { className: 'mt-3' },
+            opts.renderScheduleFieldLabel('備註'),
+            h('textarea', {
+              name: 'serviceItemRemarks',
+              value: item.remarks || '',
+              onChange: function (e) { opts.onRemarksChange(item.id, e.target.value); },
+              rows: 3,
+              className: opts.inputCls
+            })
           )
         );
       })
@@ -784,17 +796,11 @@
                     processMethods: processMethods,
                     onReasonChange: function (itemId, value) {
                       updateScheduleServiceItemField(itemId, 'actualReason', value);
+                    },
+                    onRemarksChange: function (itemId, value) {
+                      updateScheduleServiceItemField(itemId, 'remarks', value);
                     }
-                  }),
-                  h('div', null,
-                    renderScheduleFieldLabel('備註'),
-                    h('textarea', {
-                      value: formData.remarks || '',
-                      onChange: function (e) { updateScheduleFormField('remarks', e.target.value); },
-                      rows: 3,
-                      className: inputCls
-                    })
-                  )
+                  })
                 )
           )
         );
