@@ -125,8 +125,9 @@
   function isRepairCaseOpen(c) {
     if (!c) return false;
     if (!c.isClosed) return true;
+    // 待報價／轉汰換／轉原廠結案後仍滯留處理列表，等後續處理才真正結束，期間繼續佔用資源。
     if (c.isListClosed && global.IESS && IESS.caseStatus
-      && IESS.caseStatus.isTransferStatus(c.processStatus)) {
+      && IESS.caseStatus.isListRetainedStatus(c.processStatus)) {
       return true;
     }
     return false;

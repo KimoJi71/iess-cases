@@ -61,12 +61,12 @@
     var vehicles = props.vehicles || [];
     var vendors = props.vendors || [];
 
-    var closeConfirmModal = { show: false, caseId: null, mode: 'close' };
+    var closeConfirmModal = { show: false, caseId: null, mode: 'close', actionKey: null };
     var listPagination = IESS.createListPagination();
 
     function isActiveInList(c) {
       if (!c.isClosed) return true;
-      return caseStatus.isTransferStatus(c.processStatus) && c.isListClosed;
+      return caseStatus.isListRetainedStatus(c.processStatus) && c.isListClosed;
     }
 
     function matchStatus(c) {
@@ -125,7 +125,7 @@
       updateStoreLastRepairDate(target);
       var stamp = IESS.caseDateTime.now();
 
-      if (caseStatus.isTransferStatus(target.processStatus)) {
+      if (caseStatus.isListRetainedStatus(target.processStatus)) {
         setCases(cases.map(function (c) {
           if (c.id !== caseId) return c;
           return Object.assign({}, c, {
@@ -134,8 +134,8 @@
             closeDate: stamp
           });
         }));
-        showToast('案件已結案，並移至「案件銷案審核」列表，請完成後點選「' +
-          caseStatus.getInterimCompleteLabel(target.processStatus) + '」');
+        showToast('案件已結案，並移至「案件銷案審核」列表，仍保留於本列表，' +
+          '請於有結果後點選「後續處理」');
         return;
       }
 
@@ -178,12 +178,11 @@
       showToast('案件已結案，並移至「案件銷案審核」列表');
     }
 
-    function handleInterimComplete(caseId) {
-      setCases(cases.map(function (c) {
-        if (c.id !== caseId) return c;
-        return Object.assign({}, c, { isListClosed: false });
-      }));
-      showToast('案件已完成，已自案件處理列表移除');
+    function handleFollowUp(caseId, actionKey) {
+      var result = caseStatus.applyFollowUpAction(cases, caseId, actionKey);
+      if (!result) return;
+      setCases(result.cases);
+      showToast(result.message);
     }
 
     function handleExportPdf(c) {
@@ -231,16 +230,23 @@
         icon: Icons.CheckCircle({ className: 'h-4 w-4' })
       }));
 
-      if (caseStatus.showsInterimCompleteButton(c)) {
-        var completeLabel = caseStatus.getInterimCompleteLabel(c.processStatus);
-        actions.push(iconActionBtn({
-          label: completeLabel,
+      if (caseStatus.showsFollowUpButton(c)) {
+        actions.push(IESS.actionMenuBtn({
+          label: '後續處理',
           className: 'p-1.5 text-indigo-600 hover:bg-indigo-100 rounded',
-          onClick: function () {
-            closeConfirmModal = { show: true, caseId: c.id, mode: 'complete' };
-            rerender();
-          },
-          icon: Icons.CheckCircle({ className: 'h-4 w-4' })
+          icon: Icons.CheckCircle({ className: 'h-4 w-4' }),
+          items: caseStatus.getFollowUpActions(c).map(function (action) {
+            return {
+              label: action.label,
+              icon: Icons.CheckCircle({ className: 'h-4 w-4' }),
+              onClick: function () {
+                closeConfirmModal = {
+                  show: true, caseId: c.id, mode: 'followUp', actionKey: action.key
+                };
+                rerender();
+              }
+            };
+          })
         }));
       }
 
@@ -271,6 +277,36 @@
       var modalCase = closeConfirmModal.show
         ? cases.find(function (c) { return c.id === closeConfirmModal.caseId; })
         : null;
+      var modalAction = modalCase && closeConfirmModal.mode === 'followUp'
+        ? caseStatus.getFollowUpAction(modalCase, closeConfirmModal.actionKey)
+        : null;
+
+      function closeModalTitle() {
+        if (modalAction) return '確認' + modalAction.label;
+        return '確認結案';
+      }
+
+      function closeModalMessage() {
+        if (modalAction) {
+          if (modalAction.kind === 'extend') {
+            return '確定要標記為「' + modalAction.label + '」嗎？將自動建立一筆延伸案件（編號 ' +
+              CaseExtensionUtils.getNextExtensionCaseNumber(modalCase, cases) +
+              '）於案件處理列表，本案件則自列表移除（仍保留於案件銷案審核）。';
+          }
+          return '確定要標記為「' + modalAction.label +
+            '」嗎？完成後將自案件處理列表移除（仍保留於案件銷案審核）。';
+        }
+        if (modalCase && caseStatus.isListRetainedStatus(modalCase.processStatus)) {
+          return '確定要將此案件結案嗎？結案後將同步移至「案件銷案審核」列表，並保留於本列表，' +
+            '待有結果後請點選「後續處理」。';
+        }
+        if (modalCase && caseStatus.isExtensionStatus(modalCase.processStatus)) {
+          return '確定要將此案件結案嗎？結案後將移至「案件銷案審核」列表，並自動建立一筆延伸案件（編號 ' +
+            CaseExtensionUtils.getNextExtensionCaseNumber(modalCase, cases) +
+            '）於案件處理列表。';
+        }
+        return '確定要將此案件結案嗎？結案後將移至「案件銷案審核」列表。';
+      }
 
       function statusFilterBtn(status, label) {
         return h('button', {
@@ -437,36 +473,25 @@
           h('div', { className: 'bg-white rounded-lg shadow-xl p-6 w-96 max-w-full m-4' },
             h('div', { className: 'flex items-center space-x-3 text-yellow-600 mb-4' },
               Icons.AlertCircle({ className: 'h-6 w-6' }),
-              h('h3', { className: 'text-lg font-bold text-gray-800' },
-                closeConfirmModal.mode === 'complete' && modalCase
-                  ? '確認' + caseStatus.getInterimCompleteLabel(modalCase.processStatus)
-                  : '確認結案'
-              )
+              h('h3', { className: 'text-lg font-bold text-gray-800' }, closeModalTitle())
             ),
-            h('p', { className: 'text-gray-600 mb-6' },
-              closeConfirmModal.mode === 'complete'
-                ? '確定要標記為已完成嗎？完成後將自案件處理列表移除（仍保留於案件銷案審核）。'
-                : modalCase && caseStatus.isTransferStatus(modalCase.processStatus)
-                  ? '確定要將此案件結案嗎？結案後將同步移至「案件銷案審核」列表，並保留於本列表，待完成後請點選對應完成按鈕。'
-                  : modalCase && caseStatus.isExtensionStatus(modalCase.processStatus)
-                    ? '確定要將此案件結案嗎？結案後將移至「案件銷案審核」列表，並自動建立一筆延伸案件（編號 ' +
-                      CaseExtensionUtils.getNextExtensionCaseNumber(modalCase, cases) +
-                      '）於案件處理列表。'
-                    : '確定要將此案件結案嗎？結案後將移至「案件銷案審核」列表。'
-            ),
+            h('p', { className: 'text-gray-600 mb-6' }, closeModalMessage()),
             h('div', { className: 'flex justify-end space-x-3' },
               h('button', {
-                onClick: function () { closeConfirmModal = { show: false, caseId: null, mode: 'close' }; rerender(); },
+                onClick: function () {
+                  closeConfirmModal = { show: false, caseId: null, mode: 'close', actionKey: null };
+                  rerender();
+                },
                 className: 'px-4 py-2 border rounded-md text-gray-600 hover:bg-gray-50 transition-colors'
               }, '取消'),
               h('button', {
                 onClick: function () {
-                  if (closeConfirmModal.mode === 'complete') {
-                    handleInterimComplete(closeConfirmModal.caseId);
+                  if (closeConfirmModal.mode === 'followUp') {
+                    handleFollowUp(closeConfirmModal.caseId, closeConfirmModal.actionKey);
                   } else {
                     handleCloseCase(closeConfirmModal.caseId);
                   }
-                  closeConfirmModal = { show: false, caseId: null, mode: 'close' };
+                  closeConfirmModal = { show: false, caseId: null, mode: 'close', actionKey: null };
                   rerender();
                 },
                 className: 'px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors'

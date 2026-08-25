@@ -6,12 +6,38 @@
  * - 完成時間：只要變更「處理狀態」（任一狀態）即押上當下時間，再次變更則覆蓋為最新一次；
  *   仍可由維修人員手動修改，未儲存就離開表單則不生效。
  * 押上完成時間後，列表即出現「案件結案」按鈕。
+ *
+ * 待報價／轉汰換／轉原廠結案後仍留在案件處理列表，改由「後續處理」選單收尾，
+ * 詳見 LIST_RETAINED_STATUSES 與 FOLLOW_UP_ACTIONS。
  */
 (function (global) {
   'use strict';
 
-  var TRANSFER_STATUSES = ['轉汰換', '轉原廠'];
   var EXTENSION_STATUSES = ['待料件', '尚未處理完成'];
+
+  /*
+   * 結案後仍保留於「案件處理」列表的處理狀態：案子雖已送進銷案審核，實際還在等外部
+   * 回覆（報價、汰換、原廠），要等後續處理有結果才真正離開列表。
+   *
+   * 每個狀態的後續處理動作分兩類：
+   * - finish：外部流程結束，isListClosed 轉 false 自處理列表移除（銷案審核那筆不動）
+   * - extend：案件還要繼續做，比照「待料件」複製一筆延伸案件回列表重新派工
+   */
+  var LIST_RETAINED_STATUSES = ['待報價', '轉汰換', '轉原廠'];
+
+  var FOLLOW_UP_ACTIONS = {
+    '待報價': [
+      { key: 'quoteAccept', label: '接受報價', kind: 'extend' },
+      { key: 'quoteReject', label: '拒絕報價', kind: 'finish' }
+    ],
+    '轉汰換': [
+      { key: 'toRepair', label: '轉維修', kind: 'extend' },
+      { key: 'replaceDone', label: '汰換完成', kind: 'finish' }
+    ],
+    '轉原廠': [
+      { key: 'vendorDone', label: '轉原廠完成', kind: 'finish' }
+    ]
+  };
 
   var UNASSIGNED_ASSIGNEES = ['', '案件待辦', '尚未指派'];
 
@@ -113,10 +139,6 @@
     return 'bg-gray-100 text-gray-600 border-gray-200';
   }
 
-  function isTransferStatus(status) {
-    return TRANSFER_STATUSES.indexOf(status) !== -1;
-  }
-
   // 延伸狀態：結案時要複製出一筆延伸案件，承接尚未完成的服務項目。
   function isExtensionStatus(status) {
     return EXTENSION_STATUSES.indexOf(status) !== -1;
@@ -134,14 +156,68 @@
     return '';
   }
 
-  function showsInterimCompleteButton(c) {
-    return !!(c.isClosed && c.isListClosed && isTransferStatus(c.processStatus));
+  function isListRetainedStatus(status) {
+    return LIST_RETAINED_STATUSES.indexOf(status) !== -1;
   }
 
-  function getInterimCompleteLabel(status) {
-    if (status === '轉汰換') return '汰換完成';
-    if (status === '轉原廠') return '轉原廠完成';
-    return '';
+  // 只有「已結案且仍滯留列表」的案件才有後續處理可選；離開列表後不再重複觸發。
+  function getFollowUpActions(c) {
+    if (!c || !c.isClosed || !c.isListClosed) return [];
+    return FOLLOW_UP_ACTIONS[c.processStatus] || [];
+  }
+
+  function showsFollowUpButton(c) {
+    return getFollowUpActions(c).length > 0;
+  }
+
+  function getFollowUpAction(c, actionKey) {
+    return getFollowUpActions(c).filter(function (a) { return a.key === actionKey; })[0] || null;
+  }
+
+  /*
+   * 套用一個後續處理動作，回傳 { cases, action, message }；案件不存在或動作與處理狀態
+   * 不相符時回 null（呼叫端不應更動任何資料）。
+   */
+  function applyFollowUpAction(cases, caseId, actionKey) {
+    var list = cases || [];
+    var target = list.filter(function (c) { return c && c.id === caseId; })[0];
+    if (!target) return null;
+    var action = getFollowUpAction(target, actionKey);
+    if (!action) return null;
+
+    function leaveList(patch) {
+      return list.map(function (c) {
+        return c.id === caseId ? Object.assign({}, c, { isListClosed: false }, patch || {}) : c;
+      });
+    }
+
+    if (action.kind === 'finish') {
+      return {
+        cases: leaveList(),
+        action: action,
+        message: '案件已標記「' + action.label + '」，已自案件處理列表移除'
+      };
+    }
+
+    // extend：退回重開後再次點選時，沿用既有的延伸案件而不重複建立。
+    var existing = global.CaseExtensionUtils.findExistingExtensionCase(target, list);
+    if (existing) {
+      return {
+        cases: leaveList(),
+        action: action,
+        message: '已標記「' + action.label + '」，延伸案件 ' + existing.caseNumber +
+          ' 已存在，不再重複建立'
+      };
+    }
+
+    var extensionCase = global.CaseExtensionUtils.buildExtensionCase(target, list);
+    return {
+      // 原案件與延伸案件在同一次寫入，避免兩次重繪讓序號重算。
+      cases: leaveList({ extensionCaseId: extensionCase.id }).concat([extensionCase]),
+      action: action,
+      message: '已標記「' + action.label + '」，已建立延伸案件 ' + extensionCase.caseNumber +
+        ' 於案件處理列表'
+    };
   }
 
   function hasProcessData(c) {
@@ -164,12 +240,14 @@
 
   global.IESS = global.IESS || {};
   global.IESS.caseStatus = {
-    isTransferStatus: isTransferStatus,
     isExtensionStatus: isExtensionStatus,
     canCloseCase: canCloseCase,
     getCaseCloseDisabledReason: getCaseCloseDisabledReason,
-    showsInterimCompleteButton: showsInterimCompleteButton,
-    getInterimCompleteLabel: getInterimCompleteLabel,
+    isListRetainedStatus: isListRetainedStatus,
+    getFollowUpActions: getFollowUpActions,
+    getFollowUpAction: getFollowUpAction,
+    showsFollowUpButton: showsFollowUpButton,
+    applyFollowUpAction: applyFollowUpAction,
     applyProcessStatusChange: applyProcessStatusChange,
     hasProcessData: hasProcessData,
     getCaseListDispatchStatus: getCaseListDispatchStatus,

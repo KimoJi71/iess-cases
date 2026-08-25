@@ -141,12 +141,14 @@ try {
     IESS.caseStatus.getCaseCloseDisabledReason({ processStatus: '待料件', isClosed: false })
   ]`), ['請先於維修結果選擇處理狀態', '此案件已結案', ''], '停用原因文字');
 
-  console.log('\nSection 4｜轉汰換／轉原廠的期中完成按鈕維持原行為');
+  console.log('\nSection 4｜待報價／轉汰換／轉原廠結案後留在列表等待後續處理');
   assertEq(await evaluate(`[
-    IESS.caseStatus.showsInterimCompleteButton({ processStatus: '轉汰換', isClosed: true, isListClosed: true }),
-    IESS.caseStatus.showsInterimCompleteButton({ processStatus: '待料件', isClosed: true, isListClosed: true }),
-    IESS.caseStatus.getInterimCompleteLabel('轉原廠')
-  ]`), [true, false, '轉原廠完成'], '僅轉汰換／轉原廠結案後留在列表等待完成');
+    IESS.caseStatus.showsFollowUpButton({ processStatus: '轉汰換', isClosed: true, isListClosed: true }),
+    IESS.caseStatus.showsFollowUpButton({ processStatus: '待報價', isClosed: true, isListClosed: true }),
+    IESS.caseStatus.showsFollowUpButton({ processStatus: '待料件', isClosed: true, isListClosed: true }),
+    IESS.caseStatus.getFollowUpActions({ processStatus: '轉原廠', isClosed: true, isListClosed: true })
+      .map(function (a) { return a.label; })
+  ]`), [true, true, false, ['轉原廠完成']], '僅待報價／轉汰換／轉原廠結案後留在列表等待後續處理');
 
   console.log('\nSection 5｜編輯表單選狀態後完成時間欄位有值');
   await evaluate(`(function () {
