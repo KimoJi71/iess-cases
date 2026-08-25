@@ -188,17 +188,19 @@
         })
       ];
 
-      if (caseStatus.showsCaseCloseButton(c)) {
-        actions.push(iconActionBtn({
-          label: '案件結案',
-          className: 'p-1.5 text-green-600 hover:bg-green-100 rounded',
-          onClick: function () {
-            closeConfirmModal = { show: true, caseId: c.id, mode: 'close' };
-            rerender();
-          },
-          icon: Icons.CheckCircle({ className: 'h-4 w-4' })
-        }));
-      }
+      var canClose = caseStatus.canCloseCase(c);
+      actions.push(iconActionBtn({
+        label: canClose ? '案件結案' : caseStatus.getCaseCloseDisabledReason(c),
+        disabled: !canClose,
+        className: 'p-1.5 text-green-600 hover:bg-green-100 rounded ' +
+          'disabled:text-gray-300 disabled:hover:bg-transparent disabled:cursor-not-allowed',
+        onClick: function () {
+          if (!canClose) return;
+          closeConfirmModal = { show: true, caseId: c.id, mode: 'close' };
+          rerender();
+        },
+        icon: Icons.CheckCircle({ className: 'h-4 w-4' })
+      }));
 
       if (caseStatus.showsInterimCompleteButton(c)) {
         var completeLabel = caseStatus.getInterimCompleteLabel(c.processStatus);
@@ -213,18 +215,21 @@
         }));
       }
 
-      actions.push(iconActionBtn({
-        label: '下載 PDF',
-        className: 'p-1.5 text-emerald-600 hover:bg-emerald-100 rounded',
-        onClick: function () { handleExportPdf(c); },
-        icon: Icons.Download({ className: 'h-4 w-4' })
-      }));
-
-      actions.push(iconActionBtn({
-        label: '複製URL',
+      actions.push(IESS.actionMenuBtn({
+        label: '更多',
         className: 'p-1.5 text-gray-500 hover:bg-gray-200 rounded',
-        onClick: function () { handleCopyUrl(c.caseNumber); },
-        icon: Icons.Copy({ className: 'h-4 w-4' })
+        items: [
+          {
+            label: '下載 PDF',
+            icon: Icons.Download({ className: 'h-4 w-4' }),
+            onClick: function () { handleExportPdf(c); }
+          },
+          {
+            label: '複製URL',
+            icon: Icons.Copy({ className: 'h-4 w-4' }),
+            onClick: function () { handleCopyUrl(c.caseNumber); }
+          }
+        ]
       }));
 
       return actions;

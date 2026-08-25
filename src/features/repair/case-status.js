@@ -1,16 +1,15 @@
 /*
  * features/repair/case-status.js — 案件處理狀態邏輯
  *
- * 時間欄位保留規則（savedProcessStatus = 進入編輯當下已儲存的狀態）：
+ * 時間欄位規則：
  * - 到店時間：由維修人員自行填寫，系統不自動押上也不清空
- * - 完成時間：僅在 saved 為案件完成 時保留
- * 同一次編輯中未儲存的切換，會清空尚未儲存對應狀態所押的完成時間。
+ * - 完成時間：只要變更「處理狀態」（任一狀態）即押上當下時間，再次變更則覆蓋為最新一次；
+ *   仍可由維修人員手動修改，未儲存就離開表單則不生效。
+ * 押上完成時間後，列表即出現「案件結案」按鈕。
  */
 (function (global) {
   'use strict';
 
-  var RE_REPAIR_STATUSES = ['待料件', '待報價', '尚未處理完成'];
-  var CLOSE_BUTTON_STATUSES = ['轉汰換', '轉原廠', '案件完成'];
   var TRANSFER_STATUSES = ['轉汰換', '轉原廠'];
 
   var UNASSIGNED_ASSIGNEES = ['', '案件待辦', '尚未指派'];
@@ -113,16 +112,20 @@
     return 'bg-gray-100 text-gray-600 border-gray-200';
   }
 
-  function isReRepairPendingStatus(status) {
-    return RE_REPAIR_STATUSES.indexOf(status) !== -1;
-  }
-
   function isTransferStatus(status) {
     return TRANSFER_STATUSES.indexOf(status) !== -1;
   }
 
-  function showsCaseCloseButton(c) {
-    return CLOSE_BUTTON_STATUSES.indexOf(c.processStatus) !== -1 && !c.isClosed;
+  // 結案按鈕一律顯示，以停用狀態控制：選過處理狀態（不分哪一種）且尚未結案才可結案。
+  function canCloseCase(c) {
+    return !!(c && c.processStatus) && !c.isClosed;
+  }
+
+  // 停用時的說明，同時作為按鈕的 tooltip。
+  function getCaseCloseDisabledReason(c) {
+    if (c && c.isClosed) return '此案件已結案';
+    if (!c || !c.processStatus) return '請先於維修結果選擇處理狀態';
+    return '';
   }
 
   function showsInterimCompleteButton(c) {
@@ -135,21 +138,6 @@
     return '';
   }
 
-  function clearCompletionIfNotSaved(formData, savedProcessStatus) {
-    if (savedProcessStatus !== '案件完成') {
-      formData.completionDate = '';
-    }
-  }
-
-  function clearScheduleFields(formData) {
-    formData.expectedDate = '';
-    formData.expectedTimeStart = '';
-    formData.expectedTimeEnd = '';
-    formData.planDate = '';
-    formData.planTimeStart = '';
-    formData.planTimeEnd = '';
-  }
-
   function hasProcessData(c) {
     if (!c) return false;
     if (c.actualReason && String(c.actualReason).trim()) return true;
@@ -160,33 +148,19 @@
     return false;
   }
 
-  function applyProcessStatusChange(formData, newStatus, savedProcessStatus, now) {
-    var stamp = now || global.IESS.caseDateTime.now();
-
-    if (isReRepairPendingStatus(newStatus)) {
-      clearScheduleFields(formData);
-      clearCompletionIfNotSaved(formData, savedProcessStatus);
+  function applyProcessStatusChange(formData, newStatus, now) {
+    if (!newStatus) {
+      formData.completionDate = '';
       return;
     }
-
-    if (isTransferStatus(newStatus)) {
-      clearCompletionIfNotSaved(formData, savedProcessStatus);
-      return;
-    }
-
-    if (newStatus === '案件完成') {
-      formData.completionDate = stamp;
-      return;
-    }
-
-    clearCompletionIfNotSaved(formData, savedProcessStatus);
+    formData.completionDate = now || global.IESS.caseDateTime.now();
   }
 
   global.IESS = global.IESS || {};
   global.IESS.caseStatus = {
-    isReRepairPendingStatus: isReRepairPendingStatus,
     isTransferStatus: isTransferStatus,
-    showsCaseCloseButton: showsCaseCloseButton,
+    canCloseCase: canCloseCase,
+    getCaseCloseDisabledReason: getCaseCloseDisabledReason,
     showsInterimCompleteButton: showsInterimCompleteButton,
     getInterimCompleteLabel: getInterimCompleteLabel,
     applyProcessStatusChange: applyProcessStatusChange,
@@ -197,8 +171,6 @@
     getCaseListIndicatorRank: getCaseListIndicatorRank,
     getOvertimeDeadline: getOvertimeDeadline,
     getOvertimeState: getOvertimeState,
-    OVERTIME_WARNING_HOURS: OVERTIME_WARNING_HOURS,
-    RE_REPAIR_STATUSES: RE_REPAIR_STATUSES,
-    CLOSE_BUTTON_STATUSES: CLOSE_BUTTON_STATUSES
+    OVERTIME_WARNING_HOURS: OVERTIME_WARNING_HOURS
   };
 })(window);

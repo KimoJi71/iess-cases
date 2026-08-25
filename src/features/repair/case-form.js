@@ -386,7 +386,6 @@
     if (!formData.expectedDate) formData.expectedDate = formData.planDate || '';
     if (!formData.remarks) formData.remarks = '';
     if (!formData.repairRemark) formData.repairRemark = '';
-    var savedProcessStatus = editingCase.processStatus || null;
     var newRecord = ProcessMethodUtils.normalizeProcessMethodSelection(processMethods, null);
     var pmColumns = ProcessMethodUtils.CASE_DISPLAY_COLUMNS;
     var pickerOpen = false;
@@ -445,7 +444,7 @@
         formData[name] = value;
         if (name === 'processStatus') {
           formData.processStatus = value || null;
-          caseStatus.applyProcessStatusChange(formData, value || null, savedProcessStatus, caseDT.now());
+          caseStatus.applyProcessStatusChange(formData, value || null, caseDT.now());
         }
         rerender();
       }
