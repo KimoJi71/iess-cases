@@ -2,9 +2,9 @@
  * features/repair/case-status.js — 案件處理狀態邏輯
  *
  * 時間欄位保留規則（savedProcessStatus = 進入編輯當下已儲存的狀態）：
- * - 維修時間：僅在 saved 為待料件／待報價／尚未處理完成 時保留
+ * - 到店時間：由維修人員自行填寫，系統不自動押上也不清空
  * - 完成時間：僅在 saved 為案件完成 時保留
- * 同一次編輯中未儲存的切換，會清空尚未儲存對應狀態所押的時間。
+ * 同一次編輯中未儲存的切換，會清空尚未儲存對應狀態所押的完成時間。
  */
 (function (global) {
   'use strict';
@@ -141,12 +141,6 @@
     }
   }
 
-  function clearReRepairIfNotSaved(formData, savedProcessStatus) {
-    if (!isReRepairPendingStatus(savedProcessStatus)) {
-      formData.reRepairDate = '';
-    }
-  }
-
   function clearScheduleFields(formData) {
     formData.expectedDate = '';
     formData.expectedTimeStart = '';
@@ -170,25 +164,21 @@
     var stamp = now || global.IESS.caseDateTime.now();
 
     if (isReRepairPendingStatus(newStatus)) {
-      formData.reRepairDate = stamp;
       clearScheduleFields(formData);
       clearCompletionIfNotSaved(formData, savedProcessStatus);
       return;
     }
 
     if (isTransferStatus(newStatus)) {
-      clearReRepairIfNotSaved(formData, savedProcessStatus);
       clearCompletionIfNotSaved(formData, savedProcessStatus);
       return;
     }
 
     if (newStatus === '案件完成') {
       formData.completionDate = stamp;
-      clearReRepairIfNotSaved(formData, savedProcessStatus);
       return;
     }
 
-    clearReRepairIfNotSaved(formData, savedProcessStatus);
     clearCompletionIfNotSaved(formData, savedProcessStatus);
   }
 
