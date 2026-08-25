@@ -64,6 +64,7 @@
     var vendors = props.vendors || [];
 
     var closeConfirmModal = { show: false, caseId: null, mode: 'close', actionKey: null };
+    var deleteConfirmModal = { show: false, caseId: null };
     var listPagination = IESS.createListPagination();
 
     function isActiveInList(c) {
@@ -187,6 +188,14 @@
       showToast(result.message);
     }
 
+    function handleDeleteCase(caseId) {
+      var target = cases.find(function (c) { return c.id === caseId; });
+      // 只允許刪除未結案案件；已結案者僅保留於列表供後續處理，不可刪除。
+      if (!target || target.isClosed) return;
+      setCases(cases.filter(function (c) { return c.id !== caseId; }));
+      showToast('案件 ' + target.caseNumber + ' 已刪除');
+    }
+
     function handleExportPdf(c) {
       if (typeof exportCasePdf !== 'function') {
         showToast('PDF 匯出功能尚未載入', 'error');
@@ -277,6 +286,15 @@
             label: '複製URL',
             icon: Icons.Copy({ className: 'h-4 w-4' }),
             onClick: function () { handleCopyUrl(c.caseNumber); }
+          },
+          !c.isClosed && {
+            label: '刪除',
+            icon: Icons.Trash2({ className: 'h-4 w-4' }),
+            className: 'action-menu__item--danger',
+            onClick: function () {
+              deleteConfirmModal = { show: true, caseId: c.id };
+              rerender();
+            }
           }
         ]
       }));
@@ -290,6 +308,9 @@
       var statusCounts = getStatusCounts();
       var modalCase = closeConfirmModal.show
         ? cases.find(function (c) { return c.id === closeConfirmModal.caseId; })
+        : null;
+      var deleteModalCase = deleteConfirmModal.show
+        ? cases.find(function (c) { return c.id === deleteConfirmModal.caseId; })
         : null;
       var modalAction = modalCase && closeConfirmModal.mode === 'followUp'
         ? caseStatus.getFollowUpAction(modalCase, closeConfirmModal.actionKey)
@@ -510,6 +531,36 @@
                 },
                 className: 'px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors'
               }, '確認')
+            )
+          )
+        ),
+        deleteConfirmModal.show && h('div', {
+          className: 'app-modal-overlay'
+        },
+          h('div', { className: 'bg-white rounded-lg shadow-xl p-6 w-96 max-w-full m-4' },
+            h('div', { className: 'flex items-center space-x-3 text-red-600 mb-4' },
+              Icons.AlertCircle({ className: 'h-6 w-6' }),
+              h('h3', { className: 'text-lg font-bold text-gray-800' }, '確認刪除')
+            ),
+            h('p', { className: 'text-gray-600 mb-6' },
+              '確定要刪除案件「' + ((deleteModalCase && deleteModalCase.caseNumber) || '') +
+              '」嗎？刪除後將無法復原。'),
+            h('div', { className: 'flex justify-end space-x-3' },
+              h('button', {
+                onClick: function () {
+                  deleteConfirmModal = { show: false, caseId: null };
+                  rerender();
+                },
+                className: 'px-4 py-2 border rounded-md text-gray-600 hover:bg-gray-50 transition-colors'
+              }, '取消'),
+              h('button', {
+                onClick: function () {
+                  handleDeleteCase(deleteConfirmModal.caseId);
+                  deleteConfirmModal = { show: false, caseId: null };
+                  rerender();
+                },
+                className: 'px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors'
+              }, '確認刪除')
             )
           )
         )
