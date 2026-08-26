@@ -216,6 +216,33 @@
     return occupied;
   }
 
+  // 負責行政區存的是「縣市＋行政區」串接（例：台北市信義區），兩者缺一不可：
+  // 只靠區名會把「台北市中山區」與「基隆市中山區」對成同一組。
+  function findGroupByDistrict(assignees, city, district) {
+    if (!city || !district) return null;
+    var key = String(city) + String(district);
+    // 一區只歸一組由 findConflictingDistricts 在存檔時把關，這裡取第一筆即可。
+    return (assignees || []).find(function (a) {
+      return a && (a.districts || []).indexOf(key) !== -1;
+    }) || null;
+  }
+
+  /* 依門市所在行政區推出預設的組別與指派人員，供保養單開單時帶入。
+   * 成員只取啟用中的帳號，與指派人員下拉（syncAssigneeMemberGroups）同一個口徑，
+   * 免得預設帶進一個選單裡根本挑不到的人。查無負責組別時回 null，由呼叫端決定留白。 */
+  function getDefaultAssignment(assignees, accounts, city, district) {
+    var group = findGroupByDistrict(assignees, city, district);
+    if (!group) return null;
+    var enabled = {};
+    (accounts || []).forEach(function (a) {
+      if (a && a.enabled) enabled[a.id] = true;
+    });
+    return {
+      assignees: [group.name],
+      assigneeMemberIds: getMemberIds(group).filter(function (id) { return enabled[id]; })
+    };
+  }
+
   function findConflictingDistricts(assignees, districts, excludeId) {
     var occupiedSet = {};
     getOccupiedDistricts(assignees, excludeId).forEach(function (d) {
@@ -340,6 +367,8 @@
     findDuplicateName: findDuplicateName,
     getOccupiedDistricts: getOccupiedDistricts,
     findConflictingDistricts: findConflictingDistricts,
+    findGroupByDistrict: findGroupByDistrict,
+    getDefaultAssignment: getDefaultAssignment,
     applyMemberIds: applyMemberIds,
     removeMemberFromAll: removeMemberFromAll,
     updateAssigneeReferences: updateAssigneeReferences

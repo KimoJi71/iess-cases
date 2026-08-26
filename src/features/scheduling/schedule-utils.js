@@ -205,23 +205,45 @@
     });
   }
 
+  /* 未指派的保養單，依門市所在行政區帶入負責組別與該組成員。
+   * 只補空白：已經有組別的（不論是人工挑的還是先前帶入的）一律不動，已結案的也不碰，
+   * 免得回頭改寫歷史資料。查不到負責組別時維持空白，列表照舊顯示「尚未指派」。
+   * assignees 未傳時整段跳過，既有的四參數呼叫端行為完全不變。 */
+  function applyDefaultMaintenanceAssignees(cases, assignees, accounts) {
+    if (!assignees || !assignees.length) return cases;
+    if (typeof AssigneeUtils === 'undefined') return cases;
+    return (cases || []).map(function (c) {
+      if (!c || c.isClosed) return c;
+      if ((c.assignees || []).length) return c;
+      var preset = AssigneeUtils.getDefaultAssignment(
+        assignees, accounts, c.companyCity, c.companyDistrict
+      );
+      if (!preset) return c;
+      return Object.assign({}, c, {
+        assignees: preset.assignees,
+        assigneeMemberIds: preset.assigneeMemberIds
+      });
+    });
+  }
+
   /**
    * 依客戶的保養區間產生保養單：每個門市在「參考月份所在的區間」各一筆。
    * 不論上一個區間是否完成，進入下一個區間都會重新建一筆。
    * referenceMonth 為選填的 'YYYY-MM'，省略時取當月。
    * serviceLevels 為選填，用來推導門市未設定「是否保養」時的預設值（見 StoreUtils.getStoreMaintenanceFlag）。
+   * assignees／accounts 為選填的組別與帳號主檔，用來把未指派的保養單依行政區補上預設組別。
    */
-  function generateDueMaintenanceCases(customers, stores, existingCases, referenceMonth, serviceLevels) {
+  function generateDueMaintenanceCases(customers, stores, existingCases, referenceMonth, serviceLevels, assignees, accounts) {
     var refMonth = referenceMonth || new Date().toISOString().slice(0, 7);
     var refYear = parseInt(String(refMonth).slice(0, 4), 10);
     var monthNumber = parseInt(String(refMonth).slice(5, 7), 10);
     var result = backfillCasePeriods(existingCases, customers);
-    if (!refYear || !monthNumber) return result;
 
     var customerMap = {};
     (customers || []).forEach(function (c) { customerMap[c.name] = c; });
 
-    (stores || []).forEach(function (store) {
+    // 參考月份無效時不開新單，但既有未指派的仍要補預設組別，故不在此提前 return。
+    if (refYear && monthNumber) (stores || []).forEach(function (store) {
       // 「整裝」「撤店」，或「正常營業」但「是否保養」為否的門市都不開保養單。
       if (!StoreUtils.isMaintainableStore(store, serviceLevels)) return;
       var cust = customerMap[store.customerName];
@@ -264,7 +286,7 @@
         storeAddress: StoreUtils.buildFullAddress(store)
       });
     });
-    return result;
+    return applyDefaultMaintenanceAssignees(result, assignees, accounts);
   }
 
   function resolveStore(stores, customerName, storeName) {
@@ -769,6 +791,7 @@
 
   window.ScheduleUtils = {
     generateDueMaintenanceCases: generateDueMaintenanceCases,
+    applyDefaultMaintenanceAssignees: applyDefaultMaintenanceAssignees,
     getPendingCases: getPendingCases,
     getScheduledEvents: getScheduledEvents,
     applyScheduleUpdate: applyScheduleUpdate,

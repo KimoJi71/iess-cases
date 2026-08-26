@@ -199,12 +199,14 @@
 
     return h('div', { className: 'border border-gray-200 rounded-lg overflow-hidden mb-4' },
       h('div', { className: 'flex justify-between items-center bg-gray-50 border-b px-4 py-2' },
-        h('span', { className: 'font-semibold text-gray-700 text-sm' }, RepairCaseServiceItems.formatItemTitle(props.index, item)),
-        readOnly ? null : h('button', {
-          type: 'button',
+        h('span', { className: 'font-semibold text-gray-700 text-sm min-w-0 truncate' }, RepairCaseServiceItems.formatItemTitle(props.index, item)),
+        readOnly ? null : IESS.iconActionBtn({
+          label: '移除此設備',
+          wrapperClassName: 'shrink-0',
           onClick: function () { props.onRemoveItem(); },
-          className: 'text-red-600 border border-red-200 px-3 py-1 rounded text-sm hover:bg-red-50'
-        }, '移除')
+          className: 'p-1.5 text-red-500 hover:bg-red-100 rounded transition-colors',
+          icon: Icons.Trash2({ className: 'h-4 w-4' })
+        })
       ),
       h('div', { className: 'p-4 space-y-4' },
         h(RepairCaseEquipment.Panel, {
