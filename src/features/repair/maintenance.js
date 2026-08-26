@@ -185,7 +185,7 @@
         return h("option", { key: opt, value: opt }, opt);
       }))), h("div", { className: "min-w-0" }, h("label", {
         className: "block text-xs text-gray-500 mb-1"
-      }, "公司區域"), h("select", {
+      }, "行政區域"), h("select", {
         value: filterStoreArea,
         onChange: function (e) { filterStoreArea = e.target.value; rerender(); },
         className: "w-full p-2.5 border rounded-md outline-none bg-white"
@@ -223,7 +223,7 @@
         className: "p-3 font-semibold"
       }, "門市名稱"), h("th", {
         className: "p-3 font-semibold"
-      }, "公司區域"), h("th", {
+      }, "行政區域"), h("th", {
         className: "p-3 font-semibold text-center"
       }, "服務等級"), h("th", {
         className: "p-3 font-semibold text-center"
