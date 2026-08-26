@@ -9,16 +9,10 @@
   var h = IESS.h, Fragment = IESS.Fragment, Icons = IESS.Icons,
       stateful = IESS.stateful;
 
-  function getMaintenanceStatusBadgeClass(status) {
-    if (status === '已完成') return 'bg-green-100 text-green-700';
-    if (status === '已預約') return 'bg-blue-100 text-blue-700';
-    return 'bg-gray-100 text-gray-600';
-  }
-
-  function getMaintenanceStatusBadgeClass(status) {
-    if (status === '已完成') return 'bg-green-100 text-green-700';
-    if (status === '已預約') return 'bg-blue-100 text-blue-700';
-    return 'bg-gray-100 text-gray-600';
+  function getMaintenanceStatusTone(status) {
+    if (status === '已完成') return 'green';
+    if (status === '已預約') return 'blue';
+    return 'gray';
   }
 
   function closeMaintenanceCase(id, cases, setCases, stores, setStores, showToast) {
@@ -278,13 +272,9 @@
           className: "p-3"
         }, StoreUtils.getRecordArea(c) || '—'), h("td", {
           className: "p-3 text-center"
-        }, h("span", {
-          className: "px-2 py-0.5 rounded text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200"
-        }, c.serviceLevel)), h("td", {
+        }, c.serviceLevel || '—'), h("td", {
           className: "p-3 text-center"
-        }, h("span", {
-          className: "px-2 py-1 rounded-full text-xs font-medium " + getMaintenanceStatusBadgeClass(c.status)
-        }, c.status)), h("td", {
+        }, IESS.statusBadge(c.status, getMaintenanceStatusTone(c.status))), h("td", {
           className: "p-3"
         }, ScheduleUtils.formatPeriodRange(getCasePeriod(c))), h("td", {
           className: "p-3"
@@ -378,11 +368,7 @@
         if (updatedData.status === '已完成' && !updatedData.completionDate) {
           updatedData.completionDate = IESS.caseDateTime.now();
         }
-        // 保養計劃進度不顯示案件編號，但銷案審核仍需要，故沿用保養日期在背景補上編號
-        if (!updatedData.caseNumber && updatedData.planDate) {
-          updatedData.caseNumber = updatedData.planDate.replace(/-/g, '')
-            + String(Math.floor(Math.random() * 1000)).padStart(3, '0');
-        }
+
         showToast('保養狀態已更新');
         // 保養完成同時押上門市的「上次保養日期」
         if (updatedData.status === '已完成') {

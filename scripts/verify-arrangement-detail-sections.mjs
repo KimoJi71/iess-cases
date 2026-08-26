@@ -668,7 +668,7 @@ try {
 
   console.log('\nSection 8｜保養案件資料改為唯讀');
   assertEq(await evaluate(`window.__modalEditableCount('1. 案件資料')`), 0,
-    '客戶／門市／行政區域／服務等級／門市地址皆為唯讀');
+    '客戶／門市／服務等級／行政區域／門市備註皆為唯讀');
 
   console.log('\nSection 8.5｜保養彈窗頂端補齊派工資源欄位（指派人員／協力廠商）');
   assertDeep(await evaluate(`(function () {

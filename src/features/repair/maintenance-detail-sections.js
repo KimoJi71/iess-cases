@@ -69,14 +69,15 @@
     return (dispatched && formData.planDate) ? '已預約' : '未保養';
   }
 
+  // 樣式與案件處理編輯／明細頁的唯讀欄位一致（含垂直置中與文字色）
   function ReadOnlyField(p) {
     var label = p.label;
     var value = p.value;
-    return h("div", null, label && h("span", {
+    return h("div", { className: p.fullWidth ? 'col-span-full' : '' }, label && h("span", {
       className: "text-gray-500 block mb-1 text-xs"
     }, label), h("div", {
-      className: "font-medium bg-gray-50 p-2.5 rounded-md border border-gray-100 min-h-[42px]"
-    }, value || '-'));
+      className: "font-medium bg-gray-50 p-2.5 rounded-md border border-gray-100 min-h-[42px] flex items-center text-gray-700"
+    }, value || '—'));
   }
 
   function sectionCard(title, extraHeader, body) {
@@ -150,7 +151,7 @@
       type: "date",
       value: formData.planDate || '',
       onChange: function (e) { applyChange(ctx, { planDate: e.target.value }); },
-      className: "w-full p-2.5 border rounded outline-none"
+      className: "w-full p-2.5 border rounded-md outline-none"
     }) : h(ReadOnlyField, { value: formData.planDate })),
       h("div", null, fieldLabel('保養開始時間'), isEdit ? h(TimeInput24, {
         value: formData.planTimeStart || '',
@@ -211,7 +212,7 @@
   function renderCaseSection(ctx, include) {
     var formData = ctx.formData;
     return sectionCard(sectionTitle(include, 'case'), null, h("div", {
-      className: "grid grid-cols-2 md:grid-cols-4 gap-4"
+      className: "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-sm items-start"
     }, h(ReadOnlyField, {
       label: "客戶名稱",
       value: formData.customerName
@@ -219,17 +220,19 @@
       label: "門市名稱",
       value: formData.storeName
     }), h(ReadOnlyField, {
-      label: "行政區域",
-      value: StoreUtils.getRecordArea(formData) || '—'
-    }), h(ReadOnlyField, {
       label: "服務等級",
       value: formData.serviceLevel
     }), h(ReadOnlyField, {
+      label: "行政區域",
+      value: StoreUtils.getRecordArea(formData)
+    }), h(ReadOnlyField, {
+      // 門市備註要從門市主檔查，保養單本身沒有存這個欄位
+      label: "門市備註",
+      value: StoreUtils.resolveStoreRemarks(ctx.data.stores || [], formData),
+      fullWidth: true
+    }), h(ReadOnlyField, {
       label: "保養區間",
       value: getMaintenancePeriodLabel(ctx, formData)
-    }), h(ReadOnlyField, {
-      label: "門市地址",
-      value: (getStoreForCase(ctx, formData) && StoreUtils.buildFullAddress(getStoreForCase(ctx, formData))) || formData.storeAddress
     }), h(ReadOnlyField, {
       label: "室內機高度",
       value: (getStoreForCase(ctx, formData) || {}).indoorHeight
@@ -282,7 +285,7 @@
     }, h("div", null, fieldLabel('保養狀態'), isEdit ? h("select", {
       value: formData.status,
       onChange: function (e) { handleStatusChange(ctx, e.target.value); },
-      className: "w-full p-2.5 border rounded outline-none"
+      className: "w-full p-2.5 border rounded-md outline-none"
     }, MAINTENANCE_STATUS_OPTIONS.map(function (opt) {
       return h("option", { key: opt, value: opt }, opt);
     })) : h(ReadOnlyField, { value: formData.status })),
@@ -313,7 +316,7 @@
         // 就地寫入且不重繪：重繪會讓游標跳掉，stateful 的還原機制只在有 rerender 時作用
         onChange: function (e) { ctx.formData.remark = e.target.value; },
         placeholder: '請輸入保養備註...',
-        className: "w-full p-2.5 border rounded outline-none resize-none"
+        className: "w-full p-2.5 border rounded-md outline-none resize-none"
       }) : h(ReadOnlyField, { value: formData.remark }))
     ));
   }

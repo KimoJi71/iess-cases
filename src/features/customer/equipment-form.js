@@ -56,7 +56,6 @@
       : DeviceCategoryUtils.defaultEquipRecord();
 
     var inputCls = IESS.inputCls;
-    var disabledCls = 'w-full p-2.5 border rounded-md bg-gray-100 text-gray-600';
 
     return stateful(function (rerender) {
       function handleChange(e) {
@@ -142,20 +141,12 @@
           title: isEdit ? '編輯設備' : '新增設備',
           badge: (customerName || '') + ' / ' + (storeName || ''),
           onClose: function () { setView('equipment-list'); },
-          wrapperClass: 'flex justify-between items-center p-6 border-b border-gray-200 sticky top-0 z-10 bg-white rounded-t-lg'
+          wrapperClass: 'page-header-sticky flex justify-between items-center p-4 sm:p-6 border-b border-gray-200 sticky top-0 z-10 bg-white rounded-t-lg'
         }),
-        h('form', { onSubmit: handleSubmit, className: 'p-6' },
-          h('div', { className: 'space-y-6' },
+        h('form', { onSubmit: handleSubmit, className: 'p-4 sm:p-6 space-y-6 sm:space-y-8 bg-gray-50 rounded-b-lg' },
+          h('section', { className: 'bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-100' },
+            h('h3', { className: 'text-lg font-bold text-blue-800 border-b pb-2 mb-4' }, '1. 基本資料'),
             h('div', { className: 'grid grid-cols-1 md:grid-cols-3 gap-6' },
-              h('div', { className: 'col-span-full font-semibold text-lg text-blue-800 border-b pb-2 mb-2' }, '基本資料'),
-              h('div', null,
-                h('label', { className: 'block text-sm mb-1' }, '客戶名稱'),
-                h('input', { type: 'text', value: customerName || '', disabled: true, className: disabledCls })
-              ),
-              h('div', null,
-                h('label', { className: 'block text-sm mb-1' }, '門市名稱'),
-                h('input', { type: 'text', value: storeName || '', disabled: true, className: disabledCls })
-              ),
               renderEquipSelect('設備分類', 'category', fieldOptions.category, formData, handleChange, {
                 required: true,
                 emptyHint: '尚無設備分類資料'
@@ -224,16 +215,16 @@
                 )
               )
             ),
-            h('div', { className: 'flex justify-end gap-3 pt-4 border-t' },
+            h('div', { className: 'mt-8 pt-6 border-t flex justify-end gap-3' },
               h('button', {
                 type: 'button',
                 onClick: function () { setView('equipment-list'); },
-                className: 'px-4 py-2 border rounded-md text-gray-600 hover:bg-gray-50 transition-colors'
+                className: 'px-6 py-2.5 border rounded-md text-gray-600 hover:bg-gray-50 transition-colors'
               }, '取消'),
               h('button', {
                 type: 'submit',
-                className: 'flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors'
-              }, Icons.Save({ className: 'h-4 w-4' }), ' 儲存')
+                className: 'flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md shadow-sm transition-colors'
+              }, Icons.Save({ className: 'h-5 w-5' }), ' 儲存')
             )
           )
         )

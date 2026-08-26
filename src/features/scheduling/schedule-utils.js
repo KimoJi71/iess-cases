@@ -266,7 +266,6 @@
 
       result.push({
         id: 'M' + Date.now() + String(Math.floor(Math.random() * 10000)),
-        caseNumber: '',
         customerName: store.customerName,
         storeName: store.storeName,
         companyCity: store.companyCity,

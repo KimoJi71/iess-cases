@@ -113,7 +113,7 @@ try {
         storeName: '測試門市', serviceLevel: 'A', workCategory: '一般叫修', repairItem: '冷氣',
         repairReason: '不冷', actualReason: '缺冷媒', isClosed: true, isListClosed: true,
         processStatus: '轉原廠', closeDate: '${todayDate} 10:00', repairDate: '${todayDate}' };
-      var maintCase = { id: 'M1', caseNumber: '20260807002', customerName: '保養客戶',
+      var maintCase = { id: 'M1', caseNumber: '保養門市', customerName: '保養客戶',
         storeName: '保養門市', serviceLevel: 'B', status: '已完成', isClosed: true,
         closeDate: '${todayDate} 11:00', repairDate: '${todayDate}', planDate: '${todayDate}' };
       window.__written = { cases: null, maintenanceCases: null, toast: null };
@@ -141,7 +141,7 @@ try {
   const btnCheck = await evaluate(`(function(){
     var node = window.__mkReview();
     var btn = window.__findReturnBtn(node, '20260807001');
-    var maintBtn = window.__findReturnBtn(node, '20260807002');
+    var maintBtn = window.__findReturnBtn(node, '保養門市');
     var result = { hasRepairBtn: !!btn, hasMaintBtn: !!maintBtn,
       modalBefore: !!node.querySelector('textarea[name="returnReason"]') };
     node.remove();
@@ -212,7 +212,7 @@ try {
   console.log('\n銷案審核 — 退回保養案件');
   const maintReturn = await evaluate(`(function(){
     var node = window.__mkReview();
-    window.__findReturnBtn(node, '20260807002').click();
+    window.__findReturnBtn(node, '保養門市').click();
     var ta = document.body.querySelector('textarea[name="returnReason"]');
     ta.value = '保養照片未附';
     ta.dispatchEvent(new Event('input', { bubbles: true }));
@@ -250,7 +250,7 @@ try {
     });
     var result = {
       repairGone: !window.__findReturnBtn(node, '20260807001'),
-      maintGone: !window.__findReturnBtn(node, '20260807002')
+      maintGone: !window.__findReturnBtn(node, '保養門市')
     };
     node.remove();
     return result;

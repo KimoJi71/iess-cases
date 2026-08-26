@@ -194,10 +194,6 @@
         if (merged.status === '已完成' && !merged.completionDate) {
           merged.completionDate = IESS.caseDateTime.now();
         }
-        if (!merged.caseNumber && merged.planDate) {
-          merged.caseNumber = merged.planDate.replace(/-/g, '') +
-            String(Math.floor(Math.random() * 1000)).padStart(3, '0');
-        }
       } else if (sourceType === 'project') {
         // 與 ScheduleUtils.applyScheduleUpdate 一致：只動點到的那一段階段，
         // 目前階段才連帶更新案件層級的 stageDate／stageAssignee。
@@ -861,7 +857,7 @@
                   )
                 ),
                 h('div', null,
-                  h('label', { className: 'block text-xs text-gray-500 mb-1' }, '公司區域'),
+                  h('label', { className: 'block text-xs text-gray-500 mb-1' }, '行政區域'),
                   h('div', {
                     className: 'border border-gray-200 rounded-md bg-white p-2 max-h-36 overflow-y-auto space-y-1'
                   },

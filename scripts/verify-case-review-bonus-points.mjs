@@ -127,7 +127,7 @@ try {
           processRecords: [{ points: 6, qty: 1 }] }] }
     ];
     window.__fixtureMaintenance = [
-      { id: 'M1', caseNumber: 'BP005', customerName: 'C級客戶', storeName: '門市五',
+      { id: 'M1', customerName: 'C級客戶', storeName: '門市五',
         serviceLevel: 'C 保養(一年一次)', status: '已完成', isClosed: true,
         closeDate: '${todayDate} 11:00', planDate: '${todayDate}',
         processRecords: [{ points: 7, qty: 1 }] }
@@ -169,7 +169,9 @@ try {
     Array.prototype.forEach.call(node.querySelectorAll('tbody tr'), function (tr) {
       var tds = tr.querySelectorAll('td');
       if (!tds.length) return;
+      // 保養計劃沒有案件編號，改以門市名稱辨識該列
       var num = tds[2].textContent.trim();
+      if (!num || num === '—') num = tds[4].textContent.trim();
       out[num] = tds[idx].textContent.trim();
     });
     node.remove();
@@ -179,7 +181,7 @@ try {
   assertEq(cells.BP002, '4', 'A 級 + 增額設備顯示總積分 4');
   assertEq(cells.BP003, '', 'B 級 + 基礎設備留空');
   assertEq(cells.BP004, '0', 'D 級但無處理方式顯示 0（非空白）');
-  assertEq(cells.BP005, '', 'C 級保養計劃案件留空');
+  assertEq(cells['門市五'], '', 'C 級保養計劃案件留空');
   assertEq(cells.BP006, '', 'A 級且無 equipment 欄位留空');
 
   console.log('\n空資料列');

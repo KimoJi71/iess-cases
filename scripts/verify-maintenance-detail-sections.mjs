@@ -169,8 +169,8 @@ try {
 
   console.log('\nSection 3｜案件資料（唯讀，門市資料自動帶入）');
   assertDeep(await evaluate('window.__labelsIn("2. 案件資料")'),
-    ['客戶名稱', '門市名稱', '行政區域', '服務等級', '保養區間', '門市地址', '室內機高度', '室外機高度'],
-    '案件資料欄位齊全，區域欄名為「行政區域」');
+    ['客戶名稱', '門市名稱', '服務等級', '行政區域', '門市備註', '保養區間', '室內機高度', '室外機高度'],
+    '案件資料欄位齊全，區域欄名為「行政區域」且改顯示門市備註（不再顯示門市地址）');
   assertDeep(await evaluate(`(function () {
     var section = Array.prototype.slice.call(document.querySelectorAll('#detail-host section'))
       .filter(function (s) { return s.querySelector('h3').textContent.trim() === '2. 案件資料'; })[0];

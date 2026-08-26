@@ -32,7 +32,7 @@
     if (!kw) return true;
     var isMaintenance = isMaintenancePlanCase(c);
     return [
-      c.caseNumber, c.customerName, c.storeName,
+      isMaintenance ? '' : c.caseNumber, c.customerName, c.storeName,
       StoreUtils.getRecordArea(c), c.serviceLevel,
       isMaintenance ? '例行保養' : c.workCategory,
       isMaintenance ? '' : c.repairItem,
@@ -215,7 +215,7 @@
                 h('th', { className: 'p-3 font-semibold' }, '案件編號'),
                 h('th', { className: 'p-3 font-semibold' }, '客戶名稱'),
                 h('th', { className: 'p-3 font-semibold' }, '門市名稱'),
-                h('th', { className: 'p-3 font-semibold' }, '公司區域'),
+                h('th', { className: 'p-3 font-semibold' }, '行政區域'),
                 h('th', { className: 'p-3 font-semibold' }, '服務等級'),
                 h('th', { className: 'p-3 font-semibold' }, '總積分'),
                 h('th', { className: 'p-3 font-semibold' }, '工項分類'),
@@ -263,7 +263,7 @@
                     )
                   ),
                   h('td', { className: 'p-3' }, IESS.caseDateTime.format(getReviewCaseDate(c))),
-                  h('td', { className: 'p-3 font-medium text-blue-700' }, c.caseNumber),
+                  h('td', { className: 'p-3 font-medium text-blue-700' }, isMaintenance ? '—' : c.caseNumber),
                   h('td', { className: 'p-3' }, c.customerName),
                   h('td', { className: 'p-3' }, c.storeName),
                   h('td', { className: 'p-3' }, StoreUtils.getRecordArea(c) || '—'),

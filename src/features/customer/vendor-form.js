@@ -102,12 +102,12 @@
         PageHeader({
           title: isEdit ? '編輯廠商' : '新增廠商',
           onClose: function () { setView('vendor-list'); },
-          wrapperClass: 'flex justify-between items-center p-6 border-b border-gray-200 sticky top-0 z-10 bg-white rounded-t-lg'
+          wrapperClass: 'page-header-sticky flex justify-between items-center p-4 sm:p-6 border-b border-gray-200 sticky top-0 z-10 bg-white rounded-t-lg'
         }),
-        h('form', { onSubmit: handleSubmit, className: 'p-6' },
-          h('div', { className: 'space-y-6' },
+        h('form', { onSubmit: handleSubmit, className: 'p-4 sm:p-6 space-y-6 sm:space-y-8 bg-gray-50 rounded-b-lg' },
+          h('section', { className: 'bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-100' },
+            h('h3', { className: 'text-lg font-bold text-blue-800 border-b pb-2 mb-4' }, '1. 基本資料'),
             h('div', { className: 'grid grid-cols-1 md:grid-cols-3 gap-6' },
-              h('div', { className: 'col-span-full font-semibold text-lg text-blue-800 border-b pb-2 mb-2' }, '基本資料'),
               h('div', null,
                 h('label', { className: 'block text-sm mb-1' }, '廠商名稱 ', h('span', { className: 'text-red-500' }, '*')),
                 h('input', {
@@ -190,72 +190,72 @@
                   className: 'w-full p-2.5 border rounded-md outline-none'
                 })
               )
-            ),
-            h('div', null,
-              h('div', { className: 'flex items-center justify-between border-b pb-2 mb-4' },
-                h('h3', { className: 'font-semibold text-lg text-blue-800' },
-                  '承辦資料 ', h('span', { className: 'text-sm font-normal text-gray-400' }, '(可多筆)')
-                ),
-                h('button', {
-                  type: 'button',
-                  onClick: openAddContact,
-                  className: 'flex items-center gap-1.5 text-sm bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 px-3 py-1.5 rounded-md transition-colors'
-                }, Icons.Plus({ className: 'h-4 w-4' }), ' 加入承辦資料')
-              ),
-              contacts.length === 0
-                ? h('div', { className: 'text-center text-gray-400 py-6 border border-dashed rounded-md' }, '尚未加入承辦資料')
-                : h('div', { className: 'overflow-x-auto border rounded-lg' },
-                    h('table', { className: 'w-full text-left text-sm text-gray-600' },
-                      h('thead', { className: 'bg-gray-50 text-gray-700 border-b' },
-                        h('tr', null,
-                          h('th', { className: 'p-3 font-semibold' }, '承辦職稱'),
-                          h('th', { className: 'p-3 font-semibold' }, '承辦姓名'),
-                          h('th', { className: 'p-3 font-semibold' }, '承辦電話'),
-                          h('th', { className: 'p-3 font-semibold' }, '承辦Mail'),
-                          h('th', { className: 'p-3 font-semibold text-center w-24' }, '操作')
-                        )
-                      ),
-                      h('tbody', { className: 'divide-y divide-gray-100' },
-                        contacts.map(function (ct) {
-                          return h('tr', { key: ct.id, className: 'hover:bg-blue-50/50' },
-                            h('td', { className: 'p-3' }, ct.title || '—'),
-                            h('td', { className: 'p-3 font-medium text-gray-800' }, ct.name),
-                            h('td', { className: 'p-3' }, ct.phone || '—'),
-                            h('td', { className: 'p-3' }, ct.email || '—'),
-                            h('td', { className: 'p-3' },
-                              h('div', { className: 'flex items-center justify-center space-x-2' },
-                                h('button', {
-                                  type: 'button',
-                                  onClick: function () { openEditContact(ct); },
-                                  className: 'p-1.5 text-blue-600 hover:bg-blue-100 rounded',
-                                  title: '編輯承辦資料'
-                                }, Icons.Edit({ className: 'h-4 w-4' })),
-                                iconActionBtn({
-                                  label: '刪除承辦資料',
-                                  type: 'button',
-                                  onClick: function () { handleDeleteContact(ct.id); },
-                                  className: 'p-1.5 text-red-600 hover:bg-red-100 rounded',
-                                  icon: Icons.Trash2({ className: 'h-4 w-4' })
-                                })
-                              )
-                            )
-                          );
-                        })
-                      )
-                    )
-                  )
             )
           ),
-          h('div', { className: 'mt-8 pt-6 border-t flex justify-end gap-3' },
-            h('button', {
-              type: 'button',
-              onClick: function () { setView('vendor-list'); },
-              className: 'px-6 py-2.5 border rounded-md text-gray-600 hover:bg-gray-50 transition-colors'
-            }, '取消'),
-            h('button', {
-              type: 'submit',
-              className: 'flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md shadow-sm transition-colors'
-            }, Icons.Save({ className: 'h-5 w-5' }), ' 儲存')
+          h('section', { className: 'bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-100' },
+            h('div', { className: 'flex items-center justify-between border-b pb-2 mb-4' },
+              h('h3', { className: 'text-lg font-bold text-blue-800' },
+                '2. 承辦資料 ', h('span', { className: 'text-sm font-normal text-gray-400' }, '(可多筆)')
+              ),
+              h('button', {
+                type: 'button',
+                onClick: openAddContact,
+                className: 'flex items-center gap-1.5 text-sm bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 px-3 py-1.5 rounded-md transition-colors'
+              }, Icons.Plus({ className: 'h-4 w-4' }), ' 加入承辦資料')
+            ),
+            contacts.length === 0
+              ? h('div', { className: 'text-center text-gray-400 py-6 border border-dashed rounded-md' }, '尚未加入承辦資料')
+              : h('div', { className: 'overflow-x-auto border rounded-lg' },
+                  h('table', { className: 'w-full text-left text-sm text-gray-600' },
+                    h('thead', { className: 'bg-gray-50 text-gray-700 border-b' },
+                      h('tr', null,
+                        h('th', { className: 'p-3 font-semibold' }, '承辦職稱'),
+                        h('th', { className: 'p-3 font-semibold' }, '承辦姓名'),
+                        h('th', { className: 'p-3 font-semibold' }, '承辦電話'),
+                        h('th', { className: 'p-3 font-semibold' }, '承辦Mail'),
+                        h('th', { className: 'p-3 font-semibold text-center w-24' }, '操作')
+                      )
+                    ),
+                    h('tbody', { className: 'divide-y divide-gray-100' },
+                      contacts.map(function (ct) {
+                        return h('tr', { key: ct.id, className: 'hover:bg-blue-50/50' },
+                          h('td', { className: 'p-3' }, ct.title || '—'),
+                          h('td', { className: 'p-3 font-medium text-gray-800' }, ct.name),
+                          h('td', { className: 'p-3' }, ct.phone || '—'),
+                          h('td', { className: 'p-3' }, ct.email || '—'),
+                          h('td', { className: 'p-3' },
+                            h('div', { className: 'flex items-center justify-center space-x-2' },
+                              h('button', {
+                                type: 'button',
+                                onClick: function () { openEditContact(ct); },
+                                className: 'p-1.5 text-blue-600 hover:bg-blue-100 rounded',
+                                title: '編輯承辦資料'
+                              }, Icons.Edit({ className: 'h-4 w-4' })),
+                              iconActionBtn({
+                                label: '刪除承辦資料',
+                                type: 'button',
+                                onClick: function () { handleDeleteContact(ct.id); },
+                                className: 'p-1.5 text-red-600 hover:bg-red-100 rounded',
+                                icon: Icons.Trash2({ className: 'h-4 w-4' })
+                              })
+                            )
+                          )
+                        );
+                      })
+                    )
+                  )
+                ),
+            h('div', { className: 'mt-8 pt-6 border-t flex justify-end gap-3' },
+              h('button', {
+                type: 'button',
+                onClick: function () { setView('vendor-list'); },
+                className: 'px-6 py-2.5 border rounded-md text-gray-600 hover:bg-gray-50 transition-colors'
+              }, '取消'),
+              h('button', {
+                type: 'submit',
+                className: 'flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md shadow-sm transition-colors'
+              }, Icons.Save({ className: 'h-5 w-5' }), ' 儲存')
+            )
           )
         ),
         contactModal.show && h('div', {

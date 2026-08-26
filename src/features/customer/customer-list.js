@@ -9,10 +9,7 @@
 
   function enabledBadge(enabled) {
     var isEnabled = enabled !== false;
-    return h('span', {
-      className: 'px-2 py-0.5 rounded-full text-xs font-medium ' +
-        (isEnabled ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600')
-    }, isEnabled ? '啟用' : '停用');
+    return IESS.statusBadge(isEnabled ? '啟用' : '停用', isEnabled ? 'green' : 'gray');
   }
 
   // 區間欄：驗證不過只標示、不阻擋（設定本身允許先存後補）
@@ -137,7 +134,7 @@
                           }, Icons.Edit({ className: 'h-4 w-4' }))
                         )
                       ),
-                      h('td', { className: 'p-3 font-medium text-gray-800' }, c.name),
+                      h('td', { className: 'p-3' }, c.name),
                       h('td', { className: 'p-3' }, periodsCell(c, serviceLevels)),
                       h('td', { className: 'p-3' }, enabledBadge(c.enabled))
                     );

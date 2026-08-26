@@ -243,161 +243,162 @@
         PageHeader({
           title: isEdit ? '編輯客戶' : '新增客戶',
           onClose: function () { setView('customer-list'); },
-          wrapperClass: 'flex justify-between items-center p-6 border-b border-gray-200 sticky top-0 z-10 bg-white rounded-t-lg'
+          wrapperClass: 'page-header-sticky flex justify-between items-center p-4 sm:p-6 border-b border-gray-200 sticky top-0 z-10 bg-white rounded-t-lg'
         }),
-        h('form', { onSubmit: handleSubmit, className: 'p-6' },
-          h('div', { className: 'space-y-6' },
-          h('div', { className: 'grid grid-cols-1 md:grid-cols-3 gap-6' },
-            h('div', { className: 'col-span-full font-semibold text-lg text-blue-800 border-b pb-2 mb-2' }, '基本資料'),
-            h('div', null,
-              h('label', { className: 'block text-sm mb-1' }, '客戶名稱 ', h('span', { className: 'text-red-500' }, '*')),
-              h('input', {
-                type: 'text',
-                name: 'name',
-                value: formData.name,
-                onChange: handleChange,
-                required: true,
-                className: 'w-full p-2.5 border rounded-md outline-none'
-              })
-            ),
-            h('div', null,
-              h('label', { className: 'block text-sm mb-1' }, '統一編號'),
-              h('input', {
-                type: 'text',
-                name: 'taxId',
-                value: formData.taxId,
-                onChange: handleChange,
-                className: 'w-full p-2.5 border rounded-md outline-none'
-              })
-            ),
-            h('div', null,
-              h('label', { className: 'block text-sm mb-1' }, '負責人'),
-              h('input', {
-                type: 'text',
-                name: 'principal',
-                value: formData.principal,
-                onChange: handleChange,
-                className: 'w-full p-2.5 border rounded-md outline-none'
-              })
-            ),
-            h('div', null,
-              h('label', { className: 'block text-sm mb-1' }, '服務等級'),
-              h('select', {
-                name: 'serviceLevel',
-                value: formData.serviceLevel,
-                onChange: handleServiceLevelChange,
-                className: 'w-full p-2.5 border rounded-md outline-none'
-              }, SERVICE_LEVEL_OPTIONS.map(function (opt) {
-                return h('option', { key: opt, value: opt }, opt);
-              }))
-            ),
-            h('div', null,
-              h('label', { className: 'block text-sm mb-1' }, '開始保養時間'),
-              h('div', { className: 'flex items-center gap-2' },
-                h('span', { className: 'text-sm text-gray-500 whitespace-nowrap' }, '於開幕'),
+        h('form', { onSubmit: handleSubmit, className: 'p-4 sm:p-6 space-y-6 sm:space-y-8 bg-gray-50 rounded-b-lg' },
+          h('section', { className: 'bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-100' },
+            h('h3', { className: 'text-lg font-bold text-blue-800 border-b pb-2 mb-4' }, '1. 基本資料'),
+            h('div', { className: 'grid grid-cols-1 md:grid-cols-3 gap-6' },
+              h('div', null,
+                h('label', { className: 'block text-sm mb-1' }, '客戶名稱 ', h('span', { className: 'text-red-500' }, '*')),
+                h('input', {
+                  type: 'text',
+                  name: 'name',
+                  value: formData.name,
+                  onChange: handleChange,
+                  required: true,
+                  className: 'w-full p-2.5 border rounded-md outline-none'
+                })
+              ),
+              h('div', null,
+                h('label', { className: 'block text-sm mb-1' }, '統一編號'),
+                h('input', {
+                  type: 'text',
+                  name: 'taxId',
+                  value: formData.taxId,
+                  onChange: handleChange,
+                  className: 'w-full p-2.5 border rounded-md outline-none'
+                })
+              ),
+              h('div', null,
+                h('label', { className: 'block text-sm mb-1' }, '負責人'),
+                h('input', {
+                  type: 'text',
+                  name: 'principal',
+                  value: formData.principal,
+                  onChange: handleChange,
+                  className: 'w-full p-2.5 border rounded-md outline-none'
+                })
+              ),
+              h('div', null,
+                h('label', { className: 'block text-sm mb-1' }, '服務等級'),
+                h('select', {
+                  name: 'serviceLevel',
+                  value: formData.serviceLevel,
+                  onChange: handleServiceLevelChange,
+                  className: 'w-full p-2.5 border rounded-md outline-none'
+                }, SERVICE_LEVEL_OPTIONS.map(function (opt) {
+                  return h('option', { key: opt, value: opt }, opt);
+                }))
+              ),
+              h('div', null,
+                h('label', { className: 'block text-sm mb-1' }, '開始保養時間'),
+                h('div', { className: 'flex items-center gap-2' },
+                  h('span', { className: 'text-sm text-gray-500 whitespace-nowrap' }, '於開幕'),
+                  h('input', {
+                    type: 'number',
+                    name: 'maintenanceStartMonths',
+                    inputMode: 'numeric',
+                    min: '0',
+                    step: '1',
+                    value: formData.maintenanceStartMonths,
+                    onChange: handleNumberChange,
+                    className: 'w-24 p-2.5 border rounded-md outline-none'
+                  }),
+                  h('span', { className: 'text-sm text-gray-500 whitespace-nowrap' }, '個月後開始保養')
+                )
+              ),
+              h('div', null,
+                h('label', { className: 'block text-sm mb-1' }, '逾時時間(時)'),
                 h('input', {
                   type: 'number',
-                  name: 'maintenanceStartMonths',
+                  name: 'overtimeHours',
                   inputMode: 'numeric',
                   min: '0',
                   step: '1',
-                  value: formData.maintenanceStartMonths,
+                  value: formData.overtimeHours,
                   onChange: handleNumberChange,
-                  className: 'w-24 p-2.5 border rounded-md outline-none'
-                }),
-                h('span', { className: 'text-sm text-gray-500 whitespace-nowrap' }, '個月後開始保養')
-              )
-            ),
-            h('div', null,
-              h('label', { className: 'block text-sm mb-1' }, '逾時時間(時)'),
-              h('input', {
-                type: 'number',
-                name: 'overtimeHours',
-                inputMode: 'numeric',
-                min: '0',
-                step: '1',
-                value: formData.overtimeHours,
-                onChange: handleNumberChange,
-                className: 'w-full p-2.5 border rounded-md outline-none'
-              })
-            ),
-            h('div', null,
-              h('label', { className: 'block text-sm mb-1' }, '汰換年限(年)'),
-              h('input', {
-                type: 'number',
-                name: 'replacementYears',
-                inputMode: 'numeric',
-                min: '0',
-                step: '1',
-                value: formData.replacementYears,
-                onChange: handleNumberChange,
-                className: 'w-full p-2.5 border rounded-md outline-none'
-              })
-            ),
-            h('div', null,
-              h('label', { className: 'block text-sm mb-1' }, '啟用狀態'),
-              h('select', {
-                name: 'enabled',
-                value: formData.enabled ? 'true' : 'false',
-                onChange: function (e) {
-                  formData.enabled = e.target.value === 'true';
-                  rerender();
+                  className: 'w-full p-2.5 border rounded-md outline-none'
+                })
+              ),
+              h('div', null,
+                h('label', { className: 'block text-sm mb-1' }, '汰換年限(年)'),
+                h('input', {
+                  type: 'number',
+                  name: 'replacementYears',
+                  inputMode: 'numeric',
+                  min: '0',
+                  step: '1',
+                  value: formData.replacementYears,
+                  onChange: handleNumberChange,
+                  className: 'w-full p-2.5 border rounded-md outline-none'
+                })
+              ),
+              h('div', null,
+                h('label', { className: 'block text-sm mb-1' }, '啟用狀態'),
+                h('select', {
+                  name: 'enabled',
+                  value: formData.enabled ? 'true' : 'false',
+                  onChange: function (e) {
+                    formData.enabled = e.target.value === 'true';
+                    rerender();
+                  },
+                  className: 'w-full p-2.5 border rounded-md outline-none bg-white'
                 },
-                className: 'w-full p-2.5 border rounded-md outline-none bg-white'
-              },
-                h('option', { value: 'true' }, '啟用'),
-                h('option', { value: 'false' }, '停用')
+                  h('option', { value: 'true' }, '啟用'),
+                  h('option', { value: 'false' }, '停用')
+                )
+              ),
+              h('div', null,
+                h('label', { className: 'block text-sm mb-1' }, '公司電話'),
+                h('input', {
+                  type: 'text',
+                  name: 'phone',
+                  value: formData.phone,
+                  onChange: handleChange,
+                  className: 'w-full p-2.5 border rounded-md outline-none'
+                })
+              ),
+              h('div', null,
+                h('label', { className: 'block text-sm mb-1' }, '公司傳真'),
+                h('input', {
+                  type: 'text',
+                  name: 'fax',
+                  value: formData.fax,
+                  onChange: handleChange,
+                  className: 'w-full p-2.5 border rounded-md outline-none'
+                })
+              ),
+              h('div', { className: 'col-span-full md:col-span-2' },
+                h('label', { className: 'block text-sm mb-1' }, '公司地址'),
+                h('input', {
+                  type: 'text',
+                  name: 'address',
+                  value: formData.address,
+                  onChange: handleChange,
+                  className: 'w-full p-2.5 border rounded-md outline-none'
+                })
+              ),
+              h('div', { className: 'col-span-full' },
+                h('label', { className: 'block text-sm mb-1' }, '備註說明'),
+                h('textarea', {
+                  name: 'remarks',
+                  value: formData.remarks,
+                  onChange: handleChange,
+                  rows: 3,
+                  className: 'w-full p-2.5 border rounded-md outline-none'
+                })
               )
-            ),
-            h('div', null,
-              h('label', { className: 'block text-sm mb-1' }, '公司電話'),
-              h('input', {
-                type: 'text',
-                name: 'phone',
-                value: formData.phone,
-                onChange: handleChange,
-                className: 'w-full p-2.5 border rounded-md outline-none'
-              })
-            ),
-            h('div', null,
-              h('label', { className: 'block text-sm mb-1' }, '公司傳真'),
-              h('input', {
-                type: 'text',
-                name: 'fax',
-                value: formData.fax,
-                onChange: handleChange,
-                className: 'w-full p-2.5 border rounded-md outline-none'
-              })
-            ),
-            h('div', { className: 'col-span-full md:col-span-2' },
-              h('label', { className: 'block text-sm mb-1' }, '公司地址'),
-              h('input', {
-                type: 'text',
-                name: 'address',
-                value: formData.address,
-                onChange: handleChange,
-                className: 'w-full p-2.5 border rounded-md outline-none'
-              })
-            ),
-            h('div', { className: 'col-span-full' },
-              h('label', { className: 'block text-sm mb-1' }, '備註說明'),
-              h('textarea', {
-                name: 'remarks',
-                value: formData.remarks,
-                onChange: handleChange,
-                rows: 3,
-                className: 'w-full p-2.5 border rounded-md outline-none'
-              })
             )
           ),
-          h('div', null,
-            h('h3', { className: 'font-semibold text-lg text-blue-800 border-b pb-2 mb-4' }, '保養區間'),
+          h('section', { className: 'bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-100' },
+            h('h3', { className: 'text-lg font-bold text-blue-800 border-b pb-2 mb-4' }, '2. 保養區間'),
             renderPeriodRows()
           ),
-          h('div', null,
+          h('section', { className: 'bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-100' },
             h('div', { className: 'flex items-center justify-between border-b pb-2 mb-4' },
-              h('h3', { className: 'font-semibold text-lg text-blue-800' },
-                '承辦資料 ', h('span', { className: 'text-sm font-normal text-gray-400' }, '(可多筆)')
+              h('h3', { className: 'text-lg font-bold text-blue-800' },
+                '3. 承辦資料 ', h('span', { className: 'text-sm font-normal text-gray-400' }, '(可多筆)')
               ),
               h('button', {
                 type: 'button',
@@ -442,18 +443,18 @@
                       })
                     )
                   )
-                )
-          )),
-          h('div', { className: 'mt-8 pt-6 border-t flex justify-end gap-3' },
-            h('button', {
-              type: 'button',
-              onClick: function () { setView('customer-list'); },
-              className: 'px-6 py-2.5 border rounded-md text-gray-600 hover:bg-gray-50 transition-colors'
-            }, '取消'),
-            h('button', {
-              type: 'submit',
-              className: 'flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md shadow-sm transition-colors'
-            }, Icons.Save({ className: 'h-5 w-5' }), ' 儲存')
+                ),
+            h('div', { className: 'mt-8 pt-6 border-t flex justify-end gap-3' },
+              h('button', {
+                type: 'button',
+                onClick: function () { setView('customer-list'); },
+                className: 'px-6 py-2.5 border rounded-md text-gray-600 hover:bg-gray-50 transition-colors'
+              }, '取消'),
+              h('button', {
+                type: 'submit',
+                className: 'flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md shadow-sm transition-colors'
+              }, Icons.Save({ className: 'h-5 w-5' }), ' 儲存')
+            )
           )
         ),
         contactModal.show && h('div', {

@@ -8,10 +8,7 @@
   var iconActionBtn = IESS.iconActionBtn;
 
   function enabledBadge(enabled) {
-    return h('span', {
-      className: 'px-2 py-0.5 rounded-full text-xs font-medium ' +
-        (enabled ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600')
-    }, AccountUtils.formatEnabled(enabled));
+    return IESS.statusBadge(AccountUtils.formatEnabled(enabled), enabled ? 'green' : 'gray');
   }
 
   function AccountList(props) {

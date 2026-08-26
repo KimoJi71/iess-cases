@@ -8,13 +8,22 @@
   var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful, TimeInput24 = IESS.TimeInput24;
   var iconActionBtn = IESS.iconActionBtn;
 
+  /* 欄位標準樣式：與「案件處理」編輯頁一致（小間距、text-sm、灰色標題） */
+  var PROJECT_FIELD_GRID = 'grid grid-cols-1 md:grid-cols-3 gap-4 text-sm items-start';
+  var PROJECT_LABEL_CLS = 'text-gray-500 block mb-1';
+  var PROJECT_READONLY_BOX = 'font-medium bg-gray-50 p-2.5 rounded-md border border-gray-100 min-h-[42px] flex items-center text-gray-700';
+
+  function projectFieldLabel(label, required) {
+    return h('label', { className: PROJECT_LABEL_CLS },
+      label, required ? h('span', { className: 'text-red-500' }, ' *') : null);
+  }
+
+  // 自動帶入（不可編輯）的欄位：新增、編輯、詳細頁一律用同一種區塊
   function projectReadOnlyField(label, value, opts) {
     opts = opts || {};
-    return h('div', { className: opts.fullWidth ? 'col-span-full' : '' },
-      h('span', { className: 'text-gray-500 block mb-1 text-xs' }, label),
-      h('div', {
-        className: 'font-medium bg-gray-50 p-2.5 rounded-md border border-gray-100 min-h-[42px] flex items-center'
-      }, value || '—')
+    return h('div', { className: opts.fullWidth ? 'col-span-full' : (opts.wrapClass || '') },
+      h('span', { className: PROJECT_LABEL_CLS }, label),
+      h('div', { className: PROJECT_READONLY_BOX }, value || '—')
     );
   }
 
@@ -293,18 +302,31 @@
     return stages;
   }
 
-  function projectStageDoneBadge(done) {
-    return h('div', null,
-      h('span', { className: 'text-gray-500 block mb-1 text-xs' }, '完成狀態'),
-      h('div', {
-        className: 'font-medium p-2.5 rounded-md border min-h-[42px] flex items-center gap-1.5 ' + (
-          done
-            ? 'bg-green-50 border-green-200 text-green-700'
-            : 'bg-gray-50 border-gray-100 text-gray-500'
-        )
-      }, done ? Icons.CheckCircle({ className: 'h-4 w-4 shrink-0' }) : null,
-        done ? '已完成' : '未完成')
-    );
+  // 完成狀態改放到階段標題右側，讓下方欄位有完整寬度
+  function projectStageDonePill(done) {
+    return h('span', {
+      className: 'shrink-0 px-2.5 py-1 rounded-full border text-xs font-medium flex items-center gap-1 ' + (
+        done
+          ? 'bg-green-100 border-green-200 text-green-700'
+          : 'bg-white border-gray-200 text-gray-500'
+      )
+    }, done ? Icons.CheckCircle({ className: 'h-3.5 w-3.5 shrink-0' }) : null,
+      done ? '已完成' : '未完成');
+  }
+
+  function projectStageDoneToggle(done, onChange) {
+    return h('label', {
+      className: 'shrink-0 px-3 py-1.5 rounded-full border text-xs font-medium flex items-center gap-2 cursor-pointer transition-colors ' + (
+        done
+          ? 'bg-green-100 border-green-200 text-green-700'
+          : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-50'
+      )
+    }, h('input', {
+      type: 'checkbox',
+      checked: done,
+      onChange: onChange,
+      className: 'h-4 w-4 accent-green-600 shrink-0'
+    }), done ? '已完成' : '未完成');
   }
 
   function projectEquipmentList(detailsData, deviceCategories) {
@@ -332,16 +354,15 @@
   }
 
   function projectCaseFieldsView(formData, detailsData) {
-    return h('div', { className: 'grid grid-cols-1 md:grid-cols-3 gap-6' },
+    return h('div', { className: PROJECT_FIELD_GRID },
       projectReadOnlyField('工項分類', formData.workCategory),
       projectReadOnlyField('客戶名稱', formData.customerName),
       projectReadOnlyField('門市名稱', formData.storeName),
-      projectReadOnlyField('門市地址', detailsData.storeAddress, { fullWidth: true }),
       projectReadOnlyField('服務等級', detailsData.serviceLevel),
-      projectReadOnlyField('負責人員', detailsData.contactPerson),
+      projectReadOnlyField('門市地址', detailsData.storeAddress, { wrapClass: 'col-span-full md:col-span-2' }),
       projectReadOnlyField('施作單位', detailsData.suggestedContractor),
       projectReadOnlyField('進場日期', detailsData.entryDate),
-      projectReadOnlyField('立案日期', formData.creationDate),
+      projectReadOnlyField('負責人員', detailsData.contactPerson),
       projectReadOnlyField('其他事項說明', detailsData.remarks, { fullWidth: true })
     );
   }
@@ -378,8 +399,7 @@
       projectReadOnlyField('作業日期', stagesData[stage].date),
       projectReadOnlyField('開始時間', stagesData[stage].timeStart),
       projectReadOnlyField('結束時間', stagesData[stage].timeEnd),
-      projectReadOnlyField('負責人員', stagesData[stage].assignee || '尚未指派'),
-      projectStageDoneBadge(stagesData[stage].done)
+      projectReadOnlyField('負責人員', stagesData[stage].assignee || '尚未指派')
     ];
   }
 
@@ -394,24 +414,27 @@
         var toneClass = done
           ? 'bg-green-50 border-green-200'
           : (highlighted ? 'bg-indigo-50 border-indigo-300' : 'bg-gray-50 border-gray-200');
+        // 階段名稱與完成狀態獨立成標題列，下方欄位才有足夠寬度不擁擠
         return h('div', {
           key: stage,
-          className: 'flex flex-col md:flex-row md:items-center gap-4 p-4 rounded-lg border ' + toneClass + (
+          className: 'p-4 rounded-lg border ' + toneClass + (
             highlighted ? ' ring-2 ring-indigo-200 border-indigo-300' : ''
           )
-        }, h('div', { className: 'flex items-center gap-3 w-48 shrink-0' },
+        }, h('div', {
+          className: 'flex items-center justify-between gap-3 mb-3'
+        }, h('div', { className: 'flex items-center gap-3 min-w-0' },
           h('div', {
-            className: 'w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ' + (
+            className: 'w-6 h-6 shrink-0 rounded-full flex items-center justify-center text-xs font-bold ' + (
               done ? 'bg-green-100 text-green-700' : 'bg-indigo-100 text-indigo-700'
             )
           }, idx + 1),
           highlighted
-            ? h('div', null,
+            ? h('div', { className: 'min-w-0' },
                 h('span', { className: 'font-medium text-gray-800' }, stage),
                 h('span', { className: 'block text-xs text-indigo-600' }, '本次排程階段'))
             : h('span', { className: 'font-medium text-gray-800' }, stage)
-        ), h('div', {
-          className: 'flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4'
+        ), opts.renderDone ? opts.renderDone(stage, done) : null), h('div', {
+          className: 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm items-start'
         }, renderFields(stage, idx)));
       })
     );
@@ -436,7 +459,11 @@
       projectSectionCard({ title: '3. 工程項目進度', indigo: true },
         projectStageList(function (stage) {
           return projectStageViewFields(stage, stagesData);
-        }, { highlightStage: opts.highlightStage, stagesData: stagesData }))
+        }, {
+          highlightStage: opts.highlightStage,
+          stagesData: stagesData,
+          renderDone: function (stage, done) { return projectStageDonePill(done); }
+        }))
     ];
   }
 
@@ -454,7 +481,7 @@
       workCategory: '新開',
       customerName: '',
       storeName: '',
-      storeAddress: '自動帶入地址',
+      storeAddress: '',
       serviceLevel: '',
       contactPerson: '',
       suggestedContractor: '',
@@ -606,103 +633,74 @@
       }, h('section', null, h('h3', {
         className: 'text-lg font-bold text-blue-800 border-b pb-2 mb-4'
       }, '1. 案件資料'), h('div', {
-        className: 'grid grid-cols-1 md:grid-cols-3 gap-6'
-      }, h('div', null, h('label', {
-        className: 'block text-sm font-medium text-gray-700 mb-1'
-      }, '工項分類'), h('select', {
+        className: PROJECT_FIELD_GRID
+      }, h('div', null, projectFieldLabel('工項分類'), h('select', {
         name: 'workCategory',
         value: formData.workCategory,
         onChange: handleChange,
-        className: 'w-full p-2.5 border rounded-md outline-none'
+        className: IESS.inputCls
       }, PROJECT_WORK_CATEGORIES.map(function (opt) {
         return h('option', { key: opt, value: opt }, opt);
-      }))), h('div', null, h('label', {
-        className: 'block text-sm font-medium text-gray-700 mb-1'
-      }, '客戶名稱 ', h('span', {
-        className: 'text-red-500'
-      }, '*')), h('select', {
+      }))), h('div', null, projectFieldLabel('客戶名稱', true), h('select', {
         required: true,
         name: 'customerName',
         value: formData.customerName,
         onChange: handleChange,
-        className: 'w-full p-2.5 border rounded-md outline-none'
+        className: IESS.inputCls
       }, h('option', {
         value: '',
         disabled: true
       }, '請選擇'), customerOptions.map(function (opt) {
         return h('option', { key: opt, value: opt }, opt);
-      }))), h('div', null, h('label', {
-        className: 'block text-sm font-medium text-gray-700 mb-1'
-      }, '門市名稱 ', h('span', {
-        className: 'text-red-500'
-      }, '*')), h('select', {
+      }))), h('div', null, projectFieldLabel('門市名稱', true), h('select', {
         required: true,
         name: 'storeName',
         value: formData.storeName,
         onChange: handleChange,
-        className: 'w-full p-2.5 border rounded-md outline-none'
+        className: IESS.inputCls
       }, h('option', {
         value: '',
         disabled: true
       }, '請選擇'), storeOptions.map(function (opt) {
         return h('option', { key: opt, value: opt }, opt);
-      }))), h('div', {
-        className: 'col-span-full md:col-span-2'
-      }, h('label', {
-        className: 'block text-sm font-medium text-gray-500 mb-1'
-      }, '門市地址 (根據門市自動帶入)'), h('input', {
-        type: 'text',
-        disabled: true,
-        value: formData.storeAddress,
-        className: 'w-full p-2.5 bg-gray-50 border rounded-md text-gray-500 cursor-not-allowed'
-      })), h('div', null, h('label', {
-        className: 'block text-sm font-medium text-gray-700 mb-1'
-      }, '服務等級'), h('input', {
-        type: 'text',
-        disabled: true,
-        value: formData.serviceLevel || '—',
-        className: 'w-full p-2.5 bg-gray-50 border rounded-md text-gray-500 cursor-not-allowed'
-      })), h('div', null, h('label', {
-        className: 'block text-sm font-medium text-gray-700 mb-1'
-      }, '負責人員'), h('select', {
-        name: 'contactPerson',
-        value: formData.contactPerson,
-        onChange: handleChange,
-        className: 'w-full p-2.5 border rounded-md outline-none'
-      }, h('option', {
-        value: ''
-      }, '請選擇'), PROJECT_ASSIGNEES.map(function (opt) {
-        return h('option', { key: opt, value: opt }, opt);
-      }))), h('div', null, h('label', {
-        className: 'block text-sm font-medium text-gray-700 mb-1'
-      }, '施作單位'), h('select', {
+      }))), projectReadOnlyField('服務等級', formData.serviceLevel),
+      projectReadOnlyField('門市地址', formData.storeAddress || '請先選擇客戶與門市', {
+        wrapClass: 'col-span-full md:col-span-2'
+      }), projectReadOnlyField('門市備註', StoreUtils.resolveStoreRemarks(stores, formData), {
+        fullWidth: true
+      }), h('div', null, projectFieldLabel('施作單位'), h('select', {
         name: 'suggestedContractor',
         value: formData.suggestedContractor,
         onChange: handleChange,
-        className: 'w-full p-2.5 border rounded-md outline-none'
+        className: IESS.inputCls
       }, h('option', {
         value: ''
       }, '請選擇單位'), contractors.map(function (c) {
         return CaseAssigneeFields.renderGroupOption(c);
-      }))), h('div', null, h('label', {
-        className: 'block text-sm font-medium text-gray-700 mb-1'
-      }, '進場日期'), h('input', {
+      }))), h('div', null, projectFieldLabel('進場日期'), h('input', {
         type: 'date',
         name: 'entryDate',
         value: formData.entryDate,
         onChange: handleChange,
-        className: 'w-full p-2.5 border rounded-md outline-none'
-      })), h('div', {
+        className: IESS.inputClsDate
+      })), h('div', null, projectFieldLabel('負責人員'), h('select', {
+        name: 'contactPerson',
+        value: formData.contactPerson,
+        onChange: handleChange,
+        className: IESS.inputCls
+      }, h('option', {
+        value: ''
+      }, '請選擇'), PROJECT_ASSIGNEES.map(function (opt) {
+        return h('option', { key: opt, value: opt }, opt);
+      }))), h('div', {
         className: 'col-span-full'
-      }, h('label', {
-        className: 'block text-sm font-medium text-gray-700 mb-1'
-      }, '其他事項說明'), h('textarea', {
+      }, projectFieldLabel('其他事項說明'), h('textarea', {
         name: 'remarks',
         value: formData.remarks,
         onChange: handleChange,
         rows: '3',
         placeholder: '請輸入其他補充事項...',
-        className: 'w-full p-2.5 border rounded-md outline-none resize-none'
+        className: IESS.inputCls + ' resize-none'
       })))), h('section', null, h('div', {
         className: 'flex justify-between items-center border-b pb-2 mb-4'
       }, h('h3', {
@@ -787,7 +785,6 @@
     var showToast = props.showToast;
     var backView = props.backView === undefined ? 'project-list' : props.backView;
     var isEdit = props.mode !== 'view';
-    var viewFieldCls = 'w-full p-2.5 bg-gray-50 border rounded-md text-gray-700 cursor-not-allowed';
 
     var formData = JSON.parse(JSON.stringify(editingCase));
     if (!formData.details) formData.details = {};
@@ -802,8 +799,7 @@
     var equipPicker = { show: false };
     var categoryConfirm = { show: false, nextCategory: '' };
     var stagesData = projectStagesData(formData);
-    var inputCls = IESS.inputCls;
-    var fieldCls = isEdit ? inputCls : viewFieldCls;
+    var fieldCls = IESS.inputCls;
 
     return stateful(function (rerender) {
       var storeOptions = ScheduleUtils.getStoreNamesForCustomer(stores, formData.customerName, formData.storeName);
@@ -990,21 +986,15 @@
       }, h('h3', {
         className: 'text-lg font-bold text-blue-800 border-b pb-2 mb-4'
       }, '1. 案件資料'), isEdit ? h('div', {
-        className: 'grid grid-cols-1 md:grid-cols-3 gap-6'
-      }, h('div', null, h('label', {
-        className: 'block text-sm font-medium text-gray-700 mb-1'
-      }, '工項分類'), h('select', {
+        className: PROJECT_FIELD_GRID
+      }, h('div', null, projectFieldLabel('工項分類'), h('select', {
         name: 'workCategory',
         value: formData.workCategory,
         onChange: handleChange,
         className: fieldCls
       }, PROJECT_WORK_CATEGORIES.map(function (opt) {
         return h('option', { key: opt, value: opt }, opt);
-      }))), h('div', null, h('label', {
-        className: 'block text-sm font-medium text-gray-700 mb-1'
-      }, '客戶名稱 ', h('span', {
-        className: 'text-red-500'
-      }, '*')), h('select', {
+      }))), h('div', null, projectFieldLabel('客戶名稱', true), h('select', {
         required: true,
         name: 'customerName',
         value: formData.customerName,
@@ -1015,11 +1005,7 @@
         disabled: true
       }, '請選擇'), customerOptions.map(function (opt) {
         return h('option', { key: opt, value: opt }, opt);
-      }))), h('div', null, h('label', {
-        className: 'block text-sm font-medium text-gray-700 mb-1'
-      }, '門市名稱 ', h('span', {
-        className: 'text-red-500'
-      }, '*')), h('select', {
+      }))), h('div', null, projectFieldLabel('門市名稱', true), h('select', {
         required: true,
         name: 'storeName',
         value: formData.storeName,
@@ -1030,36 +1016,12 @@
         disabled: true
       }, '請選擇'), storeOptions.map(function (opt) {
         return h('option', { key: opt, value: opt }, opt);
-      }))), h('div', {
-        className: 'col-span-full md:col-span-2'
-      }, h('label', {
-        className: 'block text-sm font-medium text-gray-500 mb-1'
-      }, '門市地址 (根據門市自動帶入)'), h('input', {
-        type: 'text',
-        disabled: true,
-        value: detailsData.storeAddress || '',
-        className: 'w-full p-2.5 bg-gray-50 border rounded-md text-gray-500 cursor-not-allowed'
-      })), h('div', null, h('label', {
-        className: 'block text-sm font-medium text-gray-700 mb-1'
-      }, '服務等級'), h('input', {
-        type: 'text',
-        disabled: true,
-        value: detailsData.serviceLevel || '—',
-        className: 'w-full p-2.5 bg-gray-50 border rounded-md text-gray-500 cursor-not-allowed'
-      })), h('div', null, h('label', {
-        className: 'block text-sm font-medium text-gray-700 mb-1'
-      }, '負責人員'), h('select', {
-        name: 'details.contactPerson',
-        value: detailsData.contactPerson || '',
-        onChange: handleChange,
-        className: fieldCls
-      }, h('option', {
-        value: ''
-      }, '請選擇'), contactPersonOptions.map(function (opt) {
-        return h('option', { key: opt, value: opt }, opt);
-      }))), h('div', null, h('label', {
-        className: 'block text-sm font-medium text-gray-700 mb-1'
-      }, '施作單位'), h('select', {
+      }))), projectReadOnlyField('服務等級', detailsData.serviceLevel),
+      projectReadOnlyField('門市地址', detailsData.storeAddress, {
+        wrapClass: 'col-span-full md:col-span-2'
+      }), projectReadOnlyField('門市備註', StoreUtils.resolveStoreRemarks(stores, formData), {
+        fullWidth: true
+      }), h('div', null, projectFieldLabel('施作單位'), h('select', {
         name: 'details.suggestedContractor',
         value: detailsData.suggestedContractor || '',
         onChange: handleChange,
@@ -1068,26 +1030,24 @@
         value: ''
       }, '請選擇單位'), contractors.map(function (c) {
         return CaseAssigneeFields.renderGroupOption(c);
-      }))), h('div', null, h('label', {
-        className: 'block text-sm font-medium text-gray-700 mb-1'
-      }, '進場日期'), h('input', {
+      }))), h('div', null, projectFieldLabel('進場日期'), h('input', {
         type: 'date',
         name: 'details.entryDate',
         value: detailsData.entryDate || '',
         onChange: handleChange,
+        className: IESS.inputClsDate
+      })), h('div', null, projectFieldLabel('負責人員'), h('select', {
+        name: 'details.contactPerson',
+        value: detailsData.contactPerson || '',
+        onChange: handleChange,
         className: fieldCls
-      })), h('div', null, h('label', {
-        className: 'block text-sm font-medium text-gray-500 mb-1'
-      }, '立案日期'), h('input', {
-        type: 'text',
-        disabled: true,
-        value: formData.creationDate || '',
-        className: 'w-full p-2.5 bg-gray-50 border rounded-md text-gray-500 cursor-not-allowed'
-      })), h('div', {
+      }, h('option', {
+        value: ''
+      }, '請選擇'), contactPersonOptions.map(function (opt) {
+        return h('option', { key: opt, value: opt }, opt);
+      }))), h('div', {
         className: 'col-span-full'
-      }, h('label', {
-        className: 'block text-sm font-medium text-gray-700 mb-1'
-      }, '其他事項說明'), h('textarea', {
+      }, projectFieldLabel('其他事項說明'), h('textarea', {
         name: 'details.remarks',
         value: detailsData.remarks || '',
         onChange: handleChange,
@@ -1116,50 +1076,42 @@
       }, h('h3', {
         className: 'text-lg font-bold text-indigo-800 border-b border-indigo-100 pb-2 mb-6'
       }, '3. 工程項目進度'), projectStageList(function (stage) {
-        return isEdit ? [h('div', { key: stage + '-date' }, h('label', {
-          className: 'block text-xs text-gray-500 mb-1'
-        }, '作業日期'), h('input', {
-          type: 'date',
-          value: stagesData[stage].date,
-          onChange: function (e) { handleStageChange(stage, 'date', e.target.value); },
-          className: 'w-full p-2.5 border rounded-md outline-none'
-        })), h('div', { key: stage + '-start' }, h('label', {
-          className: 'block text-xs text-gray-500 mb-1'
-        }, '開始時間'), h(TimeInput24, {
-          value: stagesData[stage].timeStart,
-          onChange: function (e) { handleStageChange(stage, 'timeStart', e.target.value); },
-          className: 'w-full'
-        })), h('div', { key: stage + '-end' }, h('label', {
-          className: 'block text-xs text-gray-500 mb-1'
-        }, '結束時間'), h(TimeInput24, {
-          value: stagesData[stage].timeEnd,
-          onChange: function (e) { handleStageChange(stage, 'timeEnd', e.target.value); },
-          className: 'w-full'
-        })), h('div', { key: stage + '-assignee' }, h('label', {
-          className: 'block text-xs text-gray-500 mb-1'
-        }, '負責人員'), h('select', {
-          value: stagesData[stage].assignee,
-          onChange: function (e) { handleStageChange(stage, 'assignee', e.target.value); },
-          className: 'w-full p-2.5 border rounded-md outline-none'
-        }, h('option', {
-          value: ''
-        }, '尚未指派'), stagePersonOptions.map(function (opt) {
-          return h('option', { key: opt, value: opt }, opt);
-        }))), h('div', { key: stage + '-done' }, h('label', {
-          className: 'block text-xs text-gray-500 mb-1'
-        }, '完成狀態'), h('label', {
-          className: 'w-full p-2.5 border rounded-md min-h-[42px] flex items-center gap-2 cursor-pointer transition-colors ' + (
-            stagesData[stage].done
-              ? 'bg-green-50 border-green-200 text-green-700 font-medium'
-              : 'bg-white text-gray-600'
-          )
-        }, h('input', {
-          type: 'checkbox',
-          checked: stagesData[stage].done,
-          onChange: function (e) { handleStageChange(stage, 'done', e.target.checked); },
-          className: 'h-4 w-4 accent-green-600 shrink-0'
-        }), stagesData[stage].done ? '已完成' : '未完成'))] : projectStageViewFields(stage, stagesData);
-      }, { stagesData: stagesData })), isEdit && h('div', {
+        return isEdit ? [h('div', { key: stage + '-date' },
+          h('label', { className: PROJECT_LABEL_CLS }, '作業日期'), h('input', {
+            type: 'date',
+            value: stagesData[stage].date,
+            onChange: function (e) { handleStageChange(stage, 'date', e.target.value); },
+            className: IESS.inputClsDate
+          })), h('div', { key: stage + '-start' },
+          h('label', { className: PROJECT_LABEL_CLS }, '開始時間'), h(TimeInput24, {
+            value: stagesData[stage].timeStart,
+            onChange: function (e) { handleStageChange(stage, 'timeStart', e.target.value); },
+            className: 'w-full'
+          })), h('div', { key: stage + '-end' },
+          h('label', { className: PROJECT_LABEL_CLS }, '結束時間'), h(TimeInput24, {
+            value: stagesData[stage].timeEnd,
+            onChange: function (e) { handleStageChange(stage, 'timeEnd', e.target.value); },
+            className: 'w-full'
+          })), h('div', { key: stage + '-assignee' },
+          h('label', { className: PROJECT_LABEL_CLS }, '負責人員'), h('select', {
+            value: stagesData[stage].assignee,
+            onChange: function (e) { handleStageChange(stage, 'assignee', e.target.value); },
+            className: IESS.inputCls
+          }, h('option', {
+            value: ''
+          }, '尚未指派'), stagePersonOptions.map(function (opt) {
+            return h('option', { key: opt, value: opt }, opt);
+          })))] : projectStageViewFields(stage, stagesData);
+      }, {
+        stagesData: stagesData,
+        renderDone: function (stage, done) {
+          return isEdit
+            ? projectStageDoneToggle(done, function (e) {
+                handleStageChange(stage, 'done', e.target.checked);
+              })
+            : projectStageDonePill(done);
+        }
+      })), isEdit && h('div', {
         className: 'mt-8 pt-6 border-t flex justify-end gap-4'
       }, h('button', {
         type: 'button',

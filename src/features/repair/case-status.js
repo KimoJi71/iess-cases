@@ -153,10 +153,10 @@
     return '未派工';
   }
 
-  function getCaseListDispatchBadgeClass(status) {
-    if (status === '已完成') return 'bg-green-100 text-green-700 border-green-200';
-    if (status === '已派工') return 'bg-blue-100 text-blue-700 border-blue-200';
-    return 'bg-gray-100 text-gray-600 border-gray-200';
+  function getCaseListDispatchTone(status) {
+    if (status === '已完成') return 'green';
+    if (status === '已派工') return 'blue';
+    return 'gray';
   }
 
   // 延伸狀態：結案時要複製出一筆延伸案件，承接尚未完成的服務項目。
@@ -293,7 +293,7 @@
     applyProcessStatusChange: applyProcessStatusChange,
     hasProcessData: hasProcessData,
     getCaseListDispatchStatus: getCaseListDispatchStatus,
-    getCaseListDispatchBadgeClass: getCaseListDispatchBadgeClass,
+    getCaseListDispatchTone: getCaseListDispatchTone,
     getCaseListIndicatorClass: getCaseListIndicatorClass,
     getCaseListIndicatorRank: getCaseListIndicatorRank,
     getOvertimeDeadline: getOvertimeDeadline,

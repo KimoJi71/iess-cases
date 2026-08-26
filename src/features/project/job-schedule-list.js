@@ -118,7 +118,7 @@
                           })
                         )
                       ),
-                      h('td', { className: 'p-3 font-medium text-gray-800' }, displayCell(row.name)),
+                      h('td', { className: 'p-3' }, displayCell(row.name)),
                       h('td', { className: 'p-3' }, displayCell(row.estimatedDate)),
                       h('td', { className: 'p-3' }, displayCell(row.estimatedTime)),
                       h('td', { className: 'p-3' }, displayCell(row.assigneeName))

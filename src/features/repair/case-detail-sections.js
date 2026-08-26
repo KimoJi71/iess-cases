@@ -370,6 +370,8 @@
 
   function renderCaseSection(ctx, include) {
     var formData = ctx.formData;
+    // 門市備註要從門市主檔查，案件本身沒有存這個欄位
+    var stores = (ctx.data && ctx.data.stores) || [];
     var isOther = isOtherWorkCategory(formData.workCategory);
     return h("section", { className: "bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-100" },
       h("h3", { className: "text-lg font-bold text-blue-800 border-b pb-2 mb-4" }, sectionTitle(include, 'case')),
@@ -381,6 +383,11 @@
         CaseReadOnlyField({ label: '門市名稱', value: formData.storeName }),
         CaseReadOnlyField({ label: '服務等級', value: formData.serviceLevel }),
         CaseReadOnlyField({ label: '門市地址', value: formData.storeAddress, fullWidth: true }),
+        CaseReadOnlyField({
+          label: '門市備註',
+          value: StoreUtils.resolveStoreRemarks(stores, formData),
+          fullWidth: true
+        }),
         !isOther && CaseReadOnlyField({ label: '叫修項目', value: formData.repairItem }),
         !isOther && CaseReadOnlyField({ label: '叫修原因', value: formData.repairReason }),
         CaseReadOnlyField({
