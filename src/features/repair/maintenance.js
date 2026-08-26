@@ -445,10 +445,6 @@
           updatedData.completionDate = IESS.caseDateTime.now();
         }
 
-        // 保養計劃進度不顯示案件編號，但銷案審核仍需要，故沿用保養日期在背景補上編號
-        if (!updatedData.caseNumber && updatedData.planDate) {
-          updatedData.caseNumber = updatedData.planDate.replace(/-/g, '') + String(Math.floor(Math.random() * 1000)).padStart(3, '0');
-        }
         showToast('保養狀態已更新');
         // 保養完成同時押上門市的「上次保養日期」
         if (updatedData.status === '已完成') {

@@ -1490,7 +1490,6 @@ INITIAL_CASES.forEach(function (c, i) {
 // --- 初始模擬保養計畫列表 ---
 const INITIAL_MAINTENANCE_CASES = [{
   id: 'M2026070001',
-  caseNumber: `${todayDate.replace(/-/g, '')}001`,
   customerName: '屈臣氏',
   storeName: '台北信義店',
   serviceLevel: 'A 保修(一年四次)',
@@ -1508,7 +1507,6 @@ const INITIAL_MAINTENANCE_CASES = [{
   storeAddress: '台北市信義區松智路X號'
 }, {
   id: 'M2026070002',
-  caseNumber: `${todayDate.replace(/-/g, '')}002`,
   customerName: '星巴克',
   storeName: '中山店',
   serviceLevel: 'B 保修(一年兩次)',
@@ -1525,7 +1523,6 @@ const INITIAL_MAINTENANCE_CASES = [{
   storeAddress: '台北市中山區中山北路X號'
 }, {
   id: 'M2026070003',
-  caseNumber: `${yesterdayDate.replace(/-/g, '')}003`,
   customerName: '萊爾富',
   storeName: '左營重愛店',
   serviceLevel: 'C 保養(一年一次)',
@@ -1541,7 +1538,6 @@ const INITIAL_MAINTENANCE_CASES = [{
   storeAddress: '高雄市左營區重愛路X號'
 }, {
   id: 'M2026070004',
-  caseNumber: `${yesterdayDate.replace(/-/g, '')}004`,
   customerName: '屈臣氏',
   storeName: '台中旗艦店',
   serviceLevel: 'A 保修(一年四次)',
@@ -1557,7 +1553,6 @@ const INITIAL_MAINTENANCE_CASES = [{
   storeAddress: '台中市西屯區台灣大道X號'
 }, {
   id: 'M2026070005',
-  caseNumber: `${twoDaysAgoDate.replace(/-/g, '')}005`,
   customerName: '星巴克',
   // 北屯崇德店本月才開幕、且要等 6 個月後才保養，不可能有已完成的保養紀錄，
   // 因此這筆歷史紀錄改掛在同客戶、早已開幕的站前店（績效統計數字不變）。
@@ -1575,7 +1570,6 @@ const INITIAL_MAINTENANCE_CASES = [{
   storeAddress: '台中市中區建國路X號'
 }, {
   id: 'M2026070006',
-  caseNumber: '',
   customerName: '屈臣氏',
   storeName: '大安忠孝店',
   serviceLevel: 'A 保修(一年四次)',
@@ -1590,7 +1584,6 @@ const INITIAL_MAINTENANCE_CASES = [{
   storeAddress: '台北市大安區忠孝東路X號'
 }, {
   id: 'M2026070007',
-  caseNumber: `${todayDate.replace(/-/g, '')}007`,
   customerName: '萊爾富',
   storeName: '左營重愛店',
   serviceLevel: 'C 保養(一年一次)',
@@ -1606,7 +1599,6 @@ const INITIAL_MAINTENANCE_CASES = [{
   storeAddress: '高雄市左營區重愛路X號'
 }, {
   id: 'M2026070008',
-  caseNumber: `${yesterdayDate.replace(/-/g, '')}008`,
   customerName: '星巴克',
   storeName: '中山店',
   serviceLevel: 'B 保修(一年兩次)',
@@ -1622,7 +1614,6 @@ const INITIAL_MAINTENANCE_CASES = [{
   storeAddress: '台北市中山區中山北路X號'
 }, {
   id: 'M2026070009',
-  caseNumber: `${twoDaysAgoDate.replace(/-/g, '')}009`,
   customerName: '屈臣氏',
   storeName: '台北信義店',
   serviceLevel: 'A 保修(一年四次)',
@@ -1638,7 +1629,6 @@ const INITIAL_MAINTENANCE_CASES = [{
   storeAddress: '台北市信義區松智路X號'
 }, {
   id: 'M2026070010',
-  caseNumber: `${todayDate.replace(/-/g, '')}010`,
   customerName: '屈臣氏',
   storeName: '台中旗艦店',
   serviceLevel: 'A 保修(一年四次)',
@@ -1658,7 +1648,6 @@ const INITIAL_MAINTENANCE_CASES = [{
   // 這筆單尚未排定日期、狀態仍是「未保養」，因此不適用「已進入作業流程」的豁免，
   // 應被保養計劃進度的列表端過濾擋下，用來驗證該過濾確實有效。
   id: 'M2026070011',
-  caseNumber: '',
   customerName: '星巴克',
   storeName: '北屯崇德店',
   serviceLevel: 'B 保修(一年兩次)',

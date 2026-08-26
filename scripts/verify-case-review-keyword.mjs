@@ -105,7 +105,7 @@ try {
         serviceItems: [{ id: 'SI2', equipment: null, actualReason: '軸承磨損', processRecords: [] }] }
     ];
     window.__fixtureMaintenance = [
-      { id: 'M1', caseNumber: 'KW003', customerName: '全家便利商店', storeName: '大安門市',
+      { id: 'M1', customerName: '全家便利商店', storeName: '大安門市',
         serviceLevel: 'C 保養(一年一次)', status: '已完成', isClosed: true,
         closeDate: '${todayDate} 11:00', planDate: '${todayDate}', processRecords: [] }
     ];
@@ -132,7 +132,10 @@ try {
       var host = document.getElementById('__reviewHost');
       return Array.prototype.map.call(host.querySelectorAll('tbody tr'), function (tr) {
         var tds = tr.querySelectorAll('td');
-        return tds.length > 2 ? tds[2].textContent.trim() : '';
+        if (tds.length <= 2) return '';
+        // 保養計劃沒有案件編號，改以門市名稱辨識該列
+        var num = tds[2].textContent.trim();
+        return num && num !== '—' ? num : tds[4].textContent.trim();
       }).filter(Boolean);
     };
     window.__search = function (kw) {
@@ -159,19 +162,19 @@ try {
 
   console.log('\n未輸入關鍵字時');
   const all = await evaluate('window.__caseNumbers()');
-  assertEq(all.slice().sort(), ['KW001', 'KW002', 'KW003'], '顯示區間內全部案件');
+  assertEq(all.slice().sort(), ['KW001', 'KW002', '大安門市'], '顯示區間內全部案件');
 
   console.log('\n關鍵字過濾');
-  assertEq((await evaluate(`window.__search('全家')`)).slice().sort(), ['KW001', 'KW003'],
+  assertEq((await evaluate(`window.__search('全家')`)).slice().sort(), ['KW001', '大安門市'],
     '客戶名稱可搜尋（叫修與保養案件皆命中）');
   assertEq(await evaluate(`window.__search('中山門市')`), ['KW002'], '門市名稱可搜尋');
   assertEq(await evaluate(`window.__search('kw002')`), ['KW002'], '案件編號可搜尋（不分大小寫）');
   assertEq(await evaluate(`window.__search('冰箱')`), ['KW002'], '叫修項目可搜尋');
   assertEq(await evaluate(`window.__search('軸承磨損')`), ['KW002'], '實際原因可搜尋');
-  assertEq(await evaluate(`window.__search('例行保養')`), ['KW003'], '保養案件工項分類顯示值可搜尋');
+  assertEq(await evaluate(`window.__search('例行保養')`), ['大安門市'], '保養案件工項分類顯示值可搜尋');
   assertEq(await evaluate(`window.__search('不存在的關鍵字')`), [], '無相符時列表為空');
   assertEq((await evaluate(`window.__search('')`)).slice().sort(),
-    ['KW001', 'KW002', 'KW003'], '清空關鍵字後恢復全部');
+    ['KW001', 'KW002', '大安門市'], '清空關鍵字後恢復全部');
 
   console.log('\n輸入中尚未按搜尋');
   const typingOnly = await evaluate(`(function(){
@@ -181,7 +184,7 @@ try {
     input.dispatchEvent(new Event('input', { bubbles: true }));
     return window.__caseNumbers();
   })()`);
-  assertEq(typingOnly.slice().sort(), ['KW001', 'KW002', 'KW003'], '僅輸入未按搜尋時不套用過濾');
+  assertEq(typingOnly.slice().sort(), ['KW001', 'KW002', '大安門市'], '僅輸入未按搜尋時不套用過濾');
 
   console.log('\nEnter 觸發搜尋');
   const enterResult = await evaluate(`(function(){

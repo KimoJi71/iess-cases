@@ -298,10 +298,6 @@
       }
       if (sourceType === 'maintenance') {
         merged.status = ScheduleUtils.resolveMaintenanceStatus(merged.status, payload.planDate);
-        if (!merged.caseNumber && merged.planDate) {
-          merged.caseNumber = merged.planDate.replace(/-/g, '') +
-            String(Math.floor(Math.random() * 1000)).padStart(3, '0');
-        }
       } else if (sourceType === 'project') {
         // 與 ScheduleUtils.applyScheduleUpdate 一致：只動點到的那一段階段，
         // 目前階段才連帶更新案件層級的 stageDate／stageAssignee。
@@ -844,7 +840,6 @@
           h('section', { className: 'bg-gray-50 border border-gray-200 rounded-md p-4' },
             h('h4', { className: 'text-sm font-bold text-blue-800 border-b pb-2 mb-3' }, '案件與門市資訊'),
             h('div', { className: 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4' },
-              renderScheduleReadOnly('案件編號', formData.caseNumber || '(依保養日期自動產生)'),
               h('div', null,
                 renderScheduleFieldLabel('客戶名稱'),
                 h('input', {

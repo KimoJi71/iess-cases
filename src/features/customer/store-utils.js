@@ -233,7 +233,8 @@
         sourceType: 'maintenance',
         sourceId: c.id,
         sortDate: finishTime.slice(0, 10),
-        caseNumber: c.caseNumber || '—',
+        // 保養計劃不編案件編號
+        caseNumber: '—',
         storeName: c.storeName || store.storeName,
         workCategory: '例行保養',
         equipmentCategory: '—',

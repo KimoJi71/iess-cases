@@ -32,7 +32,7 @@
     if (!kw) return true;
     var isMaintenance = isMaintenancePlanCase(c);
     return [
-      c.caseNumber, c.customerName, c.storeName,
+      isMaintenance ? '' : c.caseNumber, c.customerName, c.storeName,
       StoreUtils.getRecordArea(c), c.serviceLevel,
       isMaintenance ? '例行保養' : c.workCategory,
       isMaintenance ? '' : c.repairItem,
@@ -263,7 +263,7 @@
                     )
                   ),
                   h('td', { className: 'p-3' }, IESS.caseDateTime.format(getReviewCaseDate(c))),
-                  h('td', { className: 'p-3 font-medium text-blue-700' }, c.caseNumber),
+                  h('td', { className: 'p-3 font-medium text-blue-700' }, isMaintenance ? '—' : c.caseNumber),
                   h('td', { className: 'p-3' }, c.customerName),
                   h('td', { className: 'p-3' }, c.storeName),
                   h('td', { className: 'p-3' }, StoreUtils.getRecordArea(c) || '—'),
