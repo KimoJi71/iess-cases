@@ -7,8 +7,10 @@
   <link rel="stylesheet" href="styles.css" />
   <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css" rel="stylesheet" />
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- standard bundle 已內含 interaction（FullCalendar.Draggable 也由它提供）；
+       另外再載入 @fullcalendar/interaction 會讓外掛註冊兩次，
+       之後每建立一個 Calendar 就會印一次 Duplicate plugin 警示。 -->
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/interaction@6.1.11/index.global.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 <body class="h-full bg-slate-100">
