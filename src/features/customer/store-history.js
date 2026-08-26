@@ -199,7 +199,7 @@
                       h('th', { className: 'p-3 font-semibold' }, '工項分類'),
                       h('th', { className: 'p-3 font-semibold' }, '負責人員'),
                       h('th', { className: 'p-3 font-semibold' }, '立案時間'),
-                      h('th', { className: 'p-3 font-semibold' }, '完成時間')
+                      h('th', { className: 'p-3 font-semibold' }, '結案時間')
                     )
                   : h('tr', null,
                       h('th', { className: 'p-3 w-20 text-center font-semibold' }, '操作'),
@@ -213,7 +213,7 @@
                       h('th', { className: 'p-3 font-semibold' }, '叫修原因'),
                       h('th', { className: 'p-3 font-semibold' }, '維修人員'),
                       h('th', { className: 'p-3 font-semibold' }, '立案時間'),
-                      h('th', { className: 'p-3 font-semibold' }, '完成時間')
+                      h('th', { className: 'p-3 font-semibold' }, '結案時間')
                     )
               ),
               h('tbody', { className: 'divide-y divide-gray-100 whitespace-nowrap' },
