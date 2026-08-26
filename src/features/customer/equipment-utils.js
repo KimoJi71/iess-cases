@@ -80,7 +80,7 @@
   var LIST_COLUMNS = [
     { key: 'category', label: '設備分類' },
     { key: 'brand', label: '品牌' },
-    { key: 'deviceName', label: '設備名稱', altKey: 'name', cellClass: 'p-3 font-medium text-gray-800' },
+    { key: 'deviceName', label: '設備名稱', altKey: 'name' },
     { key: 'specification', label: '設備規格' },
     { key: 'model', label: '型號' },
     { key: 'equipmentLevel', label: '設備等級', kind: 'level' },
@@ -102,17 +102,6 @@
     return h('span', {
       className: 'px-2 py-0.5 rounded-full text-xs font-medium ' + (map[label] || 'bg-gray-100 text-gray-600')
     }, label);
-  }
-
-  function renderLevelBadge(h, eq) {
-    if (!eq || !String(eq.model || '').trim()) return '—';
-    var level = getLevel(eq);
-    var cls = level === '增額設備'
-      ? 'bg-amber-100 text-amber-700'
-      : 'bg-gray-100 text-gray-600';
-    return h('span', {
-      className: 'px-2 py-0.5 rounded-full text-xs font-medium ' + cls
-    }, level);
   }
 
   function listCellText(eq, col) {
@@ -143,7 +132,7 @@
   function renderListDataCells(h, eq) {
     return LIST_COLUMNS.map(function (col) {
       var cls = col.cellClass || 'p-3';
-      if (col.kind === 'level') return h('td', { className: cls }, renderLevelBadge(h, eq));
+      // 設備狀態保留色塊徽章，其餘欄位一律純文字
       if (col.kind === 'status') return h('td', { className: cls }, renderStatusBadge(h, eq && eq.status));
       return h('td', { className: cls }, listCellText(eq, col) || '—');
     });
@@ -246,7 +235,6 @@
     getLevel: getLevel,
     formatLevel: formatLevel,
     renderStatusBadge: renderStatusBadge,
-    renderLevelBadge: renderLevelBadge,
     listRowText: listRowText,
     renderListHeaderCells: renderListHeaderCells,
     renderListDataCells: renderListDataCells,
