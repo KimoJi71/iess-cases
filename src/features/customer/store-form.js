@@ -195,7 +195,7 @@
 
       return h('div', { className: 'max-w-5xl mx-auto bg-white rounded-lg shadow-sm border border-gray-100 relative' },
         isEdit
-          ? h('div', { className: 'flex flex-wrap justify-between items-center gap-3 p-6 border-b border-gray-200 sticky top-0 z-10 bg-white rounded-t-lg' },
+          ? h('div', { className: 'page-header-sticky flex flex-wrap justify-between items-center gap-3 p-4 sm:p-6 border-b border-gray-200 sticky top-0 z-10 bg-white rounded-t-lg' },
               h('div', { className: 'flex items-center gap-3 min-w-0' },
                 h('h2', { className: 'text-2xl font-bold text-gray-800 whitespace-nowrap' }, '編輯門市'),
                 h('span', {
@@ -226,114 +226,115 @@
           : PageHeader({
               title: '新增門市',
               onClose: navigateBack,
-              wrapperClass: 'flex justify-between items-center p-6 border-b border-gray-200 sticky top-0 z-10 bg-white rounded-t-lg'
+              wrapperClass: 'page-header-sticky flex justify-between items-center p-4 sm:p-6 border-b border-gray-200 sticky top-0 z-10 bg-white rounded-t-lg'
             }),
-        h('form', { onSubmit: handleSubmit, className: 'p-6' },
-          h('div', { className: 'space-y-6' },
-          h('div', { className: 'grid grid-cols-1 md:grid-cols-3 gap-6' },
-            h('div', { className: 'col-span-full font-semibold text-lg text-blue-800 border-b pb-2 mb-2' }, '基本資料'),
-            h('div', null,
-              h('label', { className: 'block text-sm mb-1' }, '客戶名稱'),
-              h('input', {
-                type: 'text',
-                value: customerName || '',
-                disabled: true,
-                className: 'w-full p-2.5 border rounded-md bg-gray-100 text-gray-600'
-              })
-            ),
-            field('門市店編', 'storeCode'),
-            field('門市名稱', 'storeName', { required: true }),
-            h('div', null,
-              h('label', { className: 'block text-sm mb-1' }, '公司縣市'),
-              h('select', {
-                name: 'companyCity',
-                value: formData.companyCity,
-                onChange: handleChange,
-                className: 'w-full p-2.5 border rounded-md outline-none bg-white'
-              }, TAIWAN_CITY_OPTIONS.map(function (opt) { return h('option', { key: opt, value: opt }, opt); }))
-            ),
-            h('div', null,
-              h('label', { className: 'block text-sm mb-1' }, '公司行政區'),
-              h('select', {
-                name: 'companyDistrict',
-                value: formData.companyDistrict,
-                onChange: handleChange,
-                className: 'w-full p-2.5 border rounded-md outline-none bg-white'
-              }, StoreUtils.getDistrictsForCity(formData.companyCity).map(function (opt) {
-                return h('option', { key: opt, value: opt }, opt);
-              }))
-            ),
-            h('div', null,
-              h('label', { className: 'block text-sm mb-1' }, '服務等級 '),
-              h('input', {
-                type: 'text',
-                value: autoServiceLevel || '—',
-                disabled: true,
-                className: 'w-full p-2.5 border rounded-md bg-gray-100 text-gray-600'
-              })
-            ),
-            h('div', null,
-              h('label', { className: 'block text-sm mb-1' }, '是否保養'),
-              h('div', { className: 'flex items-center gap-6 py-2.5' },
-                STORE_MAINTENANCE_OPTIONS.map(function (opt) {
-                  return h('label', {
-                    key: opt,
-                    className: 'flex items-center gap-2 text-sm text-gray-700 cursor-pointer'
-                  },
-                    h('input', {
-                      type: 'radio',
-                      name: 'maintenanceFlag',
-                      value: opt,
-                      checked: formData.maintenanceFlag === opt,
-                      onChange: handleChange,
-                      className: 'h-4 w-4 accent-blue-600'
-                    }),
-                    opt
-                  );
+        h('form', { onSubmit: handleSubmit, className: 'p-4 sm:p-6 space-y-6 sm:space-y-8 bg-gray-50 rounded-b-lg' },
+          h('section', { className: 'bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-100' },
+            h('h3', { className: 'text-lg font-bold text-blue-800 border-b pb-2 mb-4' }, '1. 基本資料'),
+            h('div', { className: 'grid grid-cols-1 md:grid-cols-3 gap-6' },
+              h('div', null,
+                h('label', { className: 'block text-sm mb-1' }, '客戶名稱'),
+                h('input', {
+                  type: 'text',
+                  value: customerName || '',
+                  disabled: true,
+                  className: 'w-full p-2.5 border rounded-md bg-gray-100 text-gray-600'
+                })
+              ),
+              field('門市店編', 'storeCode'),
+              field('門市名稱', 'storeName', { required: true }),
+              h('div', null,
+                h('label', { className: 'block text-sm mb-1' }, '公司縣市'),
+                h('select', {
+                  name: 'companyCity',
+                  value: formData.companyCity,
+                  onChange: handleChange,
+                  className: 'w-full p-2.5 border rounded-md outline-none bg-white'
+                }, TAIWAN_CITY_OPTIONS.map(function (opt) { return h('option', { key: opt, value: opt }, opt); }))
+              ),
+              h('div', null,
+                h('label', { className: 'block text-sm mb-1' }, '公司行政區'),
+                h('select', {
+                  name: 'companyDistrict',
+                  value: formData.companyDistrict,
+                  onChange: handleChange,
+                  className: 'w-full p-2.5 border rounded-md outline-none bg-white'
+                }, StoreUtils.getDistrictsForCity(formData.companyCity).map(function (opt) {
+                  return h('option', { key: opt, value: opt }, opt);
+                }))
+              ),
+              h('div', null,
+                h('label', { className: 'block text-sm mb-1' }, '服務等級 '),
+                h('input', {
+                  type: 'text',
+                  value: autoServiceLevel || '—',
+                  disabled: true,
+                  className: 'w-full p-2.5 border rounded-md bg-gray-100 text-gray-600'
+                })
+              ),
+              h('div', null,
+                h('label', { className: 'block text-sm mb-1' }, '是否保養'),
+                h('div', { className: 'flex items-center gap-6 py-2.5' },
+                  STORE_MAINTENANCE_OPTIONS.map(function (opt) {
+                    return h('label', {
+                      key: opt,
+                      className: 'flex items-center gap-2 text-sm text-gray-700 cursor-pointer'
+                    },
+                      h('input', {
+                        type: 'radio',
+                        name: 'maintenanceFlag',
+                        value: opt,
+                        checked: formData.maintenanceFlag === opt,
+                        onChange: handleChange,
+                        className: 'h-4 w-4 accent-blue-600'
+                      }),
+                      opt
+                    );
+                  })
+                )
+              ),
+              field('公司電話', 'companyPhone'),
+              field('公司傳真', 'companyFax'),
+              field('公司地址', 'companyAddress', { wrap: 'col-span-full md:col-span-2' }),
+              field('開幕日期', 'openDate', { type: 'date', required: true }),
+              field('撤店日期', 'closeDate', { type: 'date' }),
+              h('div', null,
+                h('label', { className: 'block text-sm mb-1' }, '門市狀態'),
+                h('select', {
+                  name: 'storeStatus',
+                  value: formData.storeStatus,
+                  onChange: handleChange,
+                  className: 'w-full p-2.5 border rounded-md outline-none bg-white'
+                }, STORE_STATUS_OPTIONS.map(function (opt) { return h('option', { key: opt, value: opt }, opt); }))
+              ),
+              h('div', null,
+                h('label', { className: 'block text-sm mb-1' }, '工單申請'),
+                h('select', {
+                  name: 'workOrderApply',
+                  value: formData.workOrderApply,
+                  onChange: handleChange,
+                  className: 'w-full p-2.5 border rounded-md outline-none bg-white'
+                }, WORK_ORDER_APPLY_OPTIONS.map(function (opt) { return h('option', { key: opt, value: opt }, opt); }))
+              ),
+              field('上次維修日期', 'lastRepairDate', { type: 'date' }),
+              field('上次保養日期', 'lastMaintenanceDate', { type: 'date' }),
+              field('室內高度', 'indoorHeight'),
+              field('室外高度', 'outdoorHeight'),
+              h('div', { className: 'col-span-full' },
+                h('label', { className: 'block text-sm mb-1' }, '備註說明'),
+                h('textarea', {
+                  name: 'remarks',
+                  value: formData.remarks,
+                  onChange: handleChange,
+                  rows: 3,
+                  className: inputCls
                 })
               )
-            ),
-            field('公司電話', 'companyPhone'),
-            field('公司傳真', 'companyFax'),
-            field('公司地址', 'companyAddress', { wrap: 'col-span-full md:col-span-2' }),
-            field('開幕日期', 'openDate', { type: 'date', required: true }),
-            field('撤店日期', 'closeDate', { type: 'date' }),
-            h('div', null,
-              h('label', { className: 'block text-sm mb-1' }, '門市狀態'),
-              h('select', {
-                name: 'storeStatus',
-                value: formData.storeStatus,
-                onChange: handleChange,
-                className: 'w-full p-2.5 border rounded-md outline-none bg-white'
-              }, STORE_STATUS_OPTIONS.map(function (opt) { return h('option', { key: opt, value: opt }, opt); }))
-            ),
-            h('div', null,
-              h('label', { className: 'block text-sm mb-1' }, '工單申請'),
-              h('select', {
-                name: 'workOrderApply',
-                value: formData.workOrderApply,
-                onChange: handleChange,
-                className: 'w-full p-2.5 border rounded-md outline-none bg-white'
-              }, WORK_ORDER_APPLY_OPTIONS.map(function (opt) { return h('option', { key: opt, value: opt }, opt); }))
-            ),
-            field('上次維修日期', 'lastRepairDate', { type: 'date' }),
-            field('上次保養日期', 'lastMaintenanceDate', { type: 'date' }),
-            field('室內高度', 'indoorHeight'),
-            field('室外高度', 'outdoorHeight'),
-            h('div', { className: 'col-span-full' },
-              h('label', { className: 'block text-sm mb-1' }, '備註說明'),
-              h('textarea', {
-                name: 'remarks',
-                value: formData.remarks,
-                onChange: handleChange,
-                rows: 3,
-                className: inputCls
-              })
             )
           ),
-          h('div', null,
+          h('section', { className: 'bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-100' },
             h('div', { className: 'flex items-center justify-between border-b pb-2 mb-4' },
-              h('h3', { className: 'font-semibold text-lg text-blue-800' }, '承辦資料 ',
+              h('h3', { className: 'text-lg font-bold text-blue-800' }, '2. 承辦資料 ',
                 h('span', { className: 'text-sm font-normal text-gray-400' }, '(可多筆)')),
               h('button', {
                 type: 'button',
@@ -380,9 +381,9 @@
                   )
                 )
           ),
-          h('div', null,
+          h('section', { className: 'bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-100' },
             h('div', { className: 'flex items-center justify-between border-b pb-2 mb-4' },
-              h('h3', { className: 'font-semibold text-lg text-blue-800' }, '檔案資料 ',
+              h('h3', { className: 'text-lg font-bold text-blue-800' }, '3. 檔案資料 ',
                 h('span', { className: 'text-sm font-normal text-gray-400' },
                   '(png / jpg / jpeg / PDF，最多 ' + MAX_FILES + ' 個 ' + photos.length + '/' + MAX_FILES + ')')),
               h('label', {
@@ -435,18 +436,18 @@
                       })
                     );
                   })
-                )
-          )),
-          h('div', { className: 'mt-8 pt-6 border-t flex justify-end gap-3' },
-            h('button', {
-              type: 'button',
-              onClick: navigateBack,
-              className: 'px-6 py-2.5 border rounded-md text-gray-600 hover:bg-gray-50 transition-colors'
-            }, '取消'),
-            h('button', {
-              type: 'submit',
-              className: 'flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md shadow-sm transition-colors'
-            }, Icons.Save({ className: 'h-5 w-5' }), ' 儲存')
+                ),
+            h('div', { className: 'mt-8 pt-6 border-t flex justify-end gap-3' },
+              h('button', {
+                type: 'button',
+                onClick: navigateBack,
+                className: 'px-6 py-2.5 border rounded-md text-gray-600 hover:bg-gray-50 transition-colors'
+              }, '取消'),
+              h('button', {
+                type: 'submit',
+                className: 'flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md shadow-sm transition-colors'
+              }, Icons.Save({ className: 'h-5 w-5' }), ' 儲存')
+            )
           )
         ),
         contactModal.show && h('div', {
