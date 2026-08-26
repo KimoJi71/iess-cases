@@ -489,7 +489,7 @@ git commit -m "refactor: 維修案件編輯區塊抽成 RepairCaseDetailSections
 
 **Files:**
 - Create: `src/features/repair/maintenance-detail-sections.js`
-- Modify: `src/features/repair/maintenance.js`（`MaintenanceViewEditForm`：363-665，以及檔尾匯出）
+- Modify: `src/features/repair/maintenance.js`（`MaintenanceViewEditForm`：359-664，以及檔尾匯出）
 - Modify: `index.html`（第 74 行 `maintenance.js` 之前插入新 script）
 - Test: `scripts/verify-maintenance-detail-sections.mjs`（既有，作為安全網，內容不改）
 
@@ -588,16 +588,16 @@ Expected: PASS。把輸出最後一行的「通過 N」記下來，Step 6 要比
 |---|---|---|
 | 24-26 | `resolveMaintenanceCompletionDate` | 直接搬，簽章不變 |
 | 28-36 | `updateStoreLastMaintenanceDate(stores, setStores, maintenanceCase)` | 直接搬，簽章不變，並匯出 |
-| 356-361 | `resolveProgressStatus(formData)`（原 `resolveMaintenanceProgressStatus`） | 直接搬，改名並匯出 |
-| 394-402 | `ReadOnlyField` | 直接搬 |
-| 404-412 | `sectionCard` | 直接搬 |
-| 414-416 | `fieldLabel` | 直接搬 |
-| 385-388 | `getStoreForCase(ctx, c)` | `stores` → `ctx.data.stores` |
-| 390-392 | `getMaintenancePeriodLabel(ctx, c)` | `customers` → `ctx.data.customers` |
-| 419-424 | `applyChange(ctx, patch)` | `formData` 改為就地 mutate `ctx.formData`（見下） |
-| 426-436 | `handleStatusChange(ctx, value)` | 同上 |
-| 439-447 | `handlePickerConfirm(ctx, picked)` | 寫回 `ctx.formData.equipmentList` |
-| 449-452 | `handleRemoveEquipment(ctx, id)` | 寫回 `ctx.formData.equipmentList` |
+| 352-357 | `resolveProgressStatus(formData)`（原 `resolveMaintenanceProgressStatus`） | 直接搬，改名並匯出 |
+| 390-398 | `ReadOnlyField` | 直接搬 |
+| 400-408 | `sectionCard` | 直接搬 |
+| 410-412 | `fieldLabel` | 直接搬 |
+| 381-384 | `getStoreForCase(ctx, c)` | `stores` → `ctx.data.stores` |
+| 386-388 | `getMaintenancePeriodLabel(ctx, c)` | `customers` → `ctx.data.customers` |
+| 415-420 | `applyChange(ctx, patch)` | `formData` 改為就地 mutate `ctx.formData`（見下） |
+| 422-432 | `handleStatusChange(ctx, value)` | 同上 |
+| 435-443 | `handlePickerConfirm(ctx, picked)` | 寫回 `ctx.formData.equipmentList` |
+| 445-448 | `handleRemoveEquipment(ctx, id)` | 寫回 `ctx.formData.equipmentList` |
 
 `applyChange` 原本用 `formData = Object.assign({}, formData, patch)` 重新指派區域變數。搬到模組後無法重新指派呼叫端的變數，改為就地寫入：
 
@@ -686,14 +686,14 @@ Expected: PASS。把輸出最後一行的「通過 N」記下來，Step 6 要比
 
 | 來源行號 | 新函式 | 邊界說明 |
 |---|---|---|
-| 488-529 | `renderScheduleSection` | `sectionCard('1. 排程資料', ...)` → `sectionCard(sectionTitle(include, 'schedule'), ...)` |
-| 530-557 | `renderCaseSection` | 同上，key 為 `'case'` |
-| 558-587 | `renderEquipmentSection` | 同上，key 為 `'equipment'`；`equipmentList` → `getEquipmentList(ctx)` |
-| 588-625 | `renderResultSection` | 同上，key 為 `'result'` |
+| 484-525 | `renderScheduleSection` | `sectionCard('1. 排程資料', ...)` → `sectionCard(sectionTitle(include, 'schedule'), ...)` |
+| 526-553 | `renderCaseSection` | 同上，key 為 `'case'` |
+| 554-583 | `renderEquipmentSection` | 同上，key 為 `'equipment'`；`equipmentList` → `getEquipmentList(ctx)` |
+| 584-621 | `renderResultSection` | 同上，key 為 `'result'` |
 
 機械式替換：`isEdit` → `ctx.mode !== 'view'`；`formData` → `ctx.formData`；`rerender` → `ctx.rerender`；`equipPicker` / `signaturePad` → `ctx.ui.*`；`vendors` / `equipments` → `ctx.data.*`；`'maintenance-assignees'` 等 id → `fieldId(ctx, 'assignees')`、`fieldId(ctx, 'assignee-members')`、`fieldId(ctx, 'partner-vendors')`；handler 呼叫補第一個 `ctx` 參數。
 
-保養結果段的備註 textarea（原 620-624）原本用 `formData = Object.assign({}, formData, {...})` 重新指派且**不觸發重繪**，改為就地寫入並保持不重繪（重繪會讓游標跳掉，且 `stateful` 的還原機制只在有 rerender 時作用）：
+保養結果段的備註 textarea（原 616-620）原本用 `formData = Object.assign({}, formData, {...})` 重新指派且**不觸發重繪**，改為就地寫入並保持不重繪（重繪會讓游標跳掉，且 `stateful` 的還原機制只在有 rerender 時作用）：
 
 ```js
             onChange: function (e) { ctx.formData.remark = e.target.value; },
@@ -701,7 +701,7 @@ Expected: PASS。把輸出最後一行的「通過 N」記下來，Step 6 要比
 
 - [ ] **Step 5: `MaintenanceViewEditForm` 改為呼叫新模組**
 
-`maintenance.js:363-665` 改成：
+`maintenance.js:359-664` 改成：
 
 ```js
   function MaintenanceViewEditForm(props) {
@@ -1418,7 +1418,7 @@ Run:
 ```bash
 grep -c "" src/features/repair/case-form.js src/features/repair/maintenance.js src/features/scheduling/case-arrangement.js
 ```
-Expected: 三個檔案的行數都應明顯低於改動前（`case-form.js` 833、`maintenance.js` 665、`case-arrangement.js` 1185）。若沒有變短，代表區塊是被複製而非搬移，回頭刪掉重複的那一份。
+Expected: 三個檔案的行數都應明顯低於改動前（`case-form.js` 833、`maintenance.js` 664、`case-arrangement.js` 1185）。若沒有變短，代表區塊是被複製而非搬移，回頭刪掉重複的那一份。
 
 - [ ] **Step 3: 更新 README 檔案結構樹**
 
