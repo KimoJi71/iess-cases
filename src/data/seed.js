@@ -1681,7 +1681,7 @@ const INITIAL_PROJECT_CASES = [{
   customerName: '全家便利商店',
   storeName: '中山店',
   workCategory: '新開',
-  currentStage: '現勘',
+  currentStage: '工程發包作業',
   stageDate: todayDate,
   stageAssignee: '王小明',
   planDate: '',
@@ -1691,7 +1691,8 @@ const INITIAL_PROJECT_CASES = [{
   history: [{
     stage: '立案時間',
     date: todayDate,
-    assignee: '系統管理員'
+    assignee: '系統管理員',
+    done: true
   }, {
     stage: '工程發包作業',
     date: todayDate,
@@ -1699,7 +1700,8 @@ const INITIAL_PROJECT_CASES = [{
   }, {
     stage: '現勘',
     date: todayDate,
-    assignee: '王小明'
+    assignee: '王小明',
+    done: true
   }],
   comments: [{
     id: 1,
@@ -1786,19 +1788,20 @@ const INITIAL_PROJECT_CASES = [{
   customerName: '萊爾富',
   storeName: '高雄左營店',
   workCategory: '汰換',
-  currentStage: '現勘',
+  currentStage: '立案時間',
   stageDate: todayDate,
-  stageAssignee: '',
+  stageAssignee: '系統管理員',
   planDate: '',
   planTimeStart: '',
   planTimeEnd: '',
   isClosed: false,
-  history: [{ stage: '立案時間', date: todayDate, assignee: '系統管理員' }],
+  history: [{ stage: '現勘', date: todayDate, assignee: '王小明', done: true },
+    { stage: '立案時間', date: todayDate, assignee: '系統管理員' }],
   comments: [],
   details: {
     storeAddress: '高雄市左營區博愛路X號',
     serviceLevel: 'C 保養(一年一次)',
-    contactPerson: '',
+    contactPerson: '王小明',
     suggestedContractor: '',
     entryDate: todayDate,
     remarks: '',
