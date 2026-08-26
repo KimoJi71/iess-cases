@@ -90,8 +90,11 @@
     cases: INITIAL_CASES,
     // 僅在 store 建構時執行一次：之後編輯客戶的保養區間不會回頭重新產生保養案件
     // （這是記憶體版 demo 可接受的限制，需重新整理頁面才會依最新設定重算）
+    // 未指派的保養單在此依門市行政區補上負責組別，同樣只在建構時算一次：
+    // 之後在組別管理調整負責行政區，既有保養單要重新整理頁面才會套用。
     maintenanceCases: ScheduleUtils.generateDueMaintenanceCases(
-      INITIAL_CUSTOMERS, INITIAL_STORES, INITIAL_MAINTENANCE_CASES, null, INITIAL_SERVICE_LEVELS
+      INITIAL_CUSTOMERS, INITIAL_STORES, INITIAL_MAINTENANCE_CASES, null, INITIAL_SERVICE_LEVELS,
+      INITIAL_ASSIGNEES, INITIAL_ACCOUNTS
     ),
     projectCases: INITIAL_PROJECT_CASES,
     surveyCases: INITIAL_SURVEY_CASES,
