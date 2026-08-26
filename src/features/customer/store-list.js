@@ -44,14 +44,8 @@
     }
 
     function statusBadge(status) {
-      var map = {
-        正常營業: 'bg-green-100 text-green-700',
-        整裝: 'bg-amber-100 text-amber-700',
-        撤店: 'bg-gray-200 text-gray-600'
-      };
-      return h('span', {
-        className: 'px-2 py-0.5 rounded-full text-xs font-medium ' + (map[status] || 'bg-gray-100 text-gray-600')
-      }, status);
+      var map = { 正常營業: 'green', 整裝: 'amber', 撤店: 'gray' };
+      return IESS.statusBadge(status, map[status]);
     }
 
     return stateful(function (rerender) {
@@ -269,7 +263,7 @@
                           )
                         ),
                         h('td', { className: 'p-3' }, s.storeCode || '—'),
-                        h('td', { className: 'p-3 font-medium text-gray-800' }, s.storeName),
+                        h('td', { className: 'p-3' }, s.storeName),
                         h('td', { className: 'p-3' }, s.companyPhone || '—'),
                         h('td', { className: 'p-3' }, s.serviceLevel || '—'),
                         h('td', { className: 'p-3' }, statusBadge(s.storeStatus))

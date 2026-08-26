@@ -93,15 +93,9 @@
   ];
 
   function renderStatusBadge(h, status) {
-    var map = {
-      運轉中: 'bg-green-100 text-green-700',
-      達年限: 'bg-red-100 text-red-700',
-      已汰換: 'bg-gray-200 text-gray-600'
-    };
+    var map = { 運轉中: 'green', 達年限: 'red', 已汰換: 'gray' };
     var label = normalizeStatus(status);
-    return h('span', {
-      className: 'px-2 py-0.5 rounded-full text-xs font-medium ' + (map[label] || 'bg-gray-100 text-gray-600')
-    }, label);
+    return IESS.statusBadge(label, map[label]);
   }
 
   function listCellText(eq, col) {

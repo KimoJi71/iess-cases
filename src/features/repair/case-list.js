@@ -469,10 +469,7 @@
                   h('td', { className: 'p-3' },
                     (function () {
                       var dispatchStatus = caseStatus.getCaseListDispatchStatus(c);
-                      return h('span', {
-                        className: 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ' +
-                          caseStatus.getCaseListDispatchBadgeClass(dispatchStatus)
-                      }, dispatchStatus);
+                      return IESS.statusBadge(dispatchStatus, caseStatus.getCaseListDispatchTone(dispatchStatus));
                     })()
                   ),
                   h('td', { className: 'p-3' }, c.customerName),

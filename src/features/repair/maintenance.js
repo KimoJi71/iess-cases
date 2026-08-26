@@ -9,16 +9,10 @@
   var h = IESS.h, Fragment = IESS.Fragment, Icons = IESS.Icons,
       stateful = IESS.stateful, TimeInput24 = IESS.TimeInput24;
 
-  function getMaintenanceStatusBadgeClass(status) {
-    if (status === '已完成') return 'bg-green-100 text-green-700';
-    if (status === '已預約') return 'bg-blue-100 text-blue-700';
-    return 'bg-gray-100 text-gray-600';
-  }
-
-  function getMaintenanceStatusBadgeClass(status) {
-    if (status === '已完成') return 'bg-green-100 text-green-700';
-    if (status === '已預約') return 'bg-blue-100 text-blue-700';
-    return 'bg-gray-100 text-gray-600';
+  function getMaintenanceStatusTone(status) {
+    if (status === '已完成') return 'green';
+    if (status === '已預約') return 'blue';
+    return 'gray';
   }
 
   function resolveMaintenanceCompletionDate(maintenanceCase) {
@@ -293,9 +287,7 @@
           className: "p-3 text-center"
         }, c.serviceLevel || '—'), h("td", {
           className: "p-3 text-center"
-        }, h("span", {
-          className: "px-2 py-1 rounded-full text-xs font-medium " + getMaintenanceStatusBadgeClass(c.status)
-        }, c.status)), h("td", {
+        }, IESS.statusBadge(c.status, getMaintenanceStatusTone(c.status))), h("td", {
           className: "p-3"
         }, ScheduleUtils.formatPeriodRange(getCasePeriod(c))), h("td", {
           className: "p-3"

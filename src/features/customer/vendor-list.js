@@ -112,7 +112,7 @@
                           })
                         )
                       ),
-                      h('td', { className: 'p-3 font-medium text-gray-800' }, v.name),
+                      h('td', { className: 'p-3' }, v.name),
                       h('td', { className: 'p-3' }, v.type || '—')
                     );
                   })
