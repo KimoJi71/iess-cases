@@ -33,6 +33,8 @@ src/
 │   │   ├── case-pdf.js      案件明細／保養明細 PDF 匯出（列表操作欄「下載 PDF」）
 │   │   ├── case-service-items.js      案件設備＋服務項目卡片集合（含舊資料遷移）
 │   │   ├── case-service-item-card.js  單張「設備＋服務項目」卡片元件
+│   │   ├── case-detail-sections.js        案件區塊渲染器（編輯頁與排程彈窗共用）
+│   │   ├── maintenance-detail-sections.js 保養區塊渲染器（保養明細與排程彈窗共用）
 │   │   └── maintenance.js   保養計劃進度（依客戶保養區間列示 + 檢視／編輯）
 │   ├── project/      工程服務：工程立案／現勘表收集
 │   │   ├── project-list.js     工程立案列表
@@ -53,6 +55,8 @@ src/
 - **無框架、無建置**：以多個 `<script>` 依序載入，全部掛在單一全域命名空間 `window.IESS`（基礎設施）與少數 `window.*` 元件；可直接雙擊 `index.html` 開啟。
 - **狀態管理**：跨頁資料（各案件集、目前選單、編輯中案件…）集中於 `store`，變動即整頁重繪；各表單的欄位暫存則由元件自身的 `stateful` 閉包管理。
 - **輸入不跳游標**：`stateful` 在重繪後會依節點路徑還原聚焦與游標位置，故受控輸入每次變更皆可安全重繪。
+- **區塊共用**：維修／保養／工程的案件內容區塊各有一支渲染器（`*-detail-sections.js`、
+  `ProjectDetailView`），編輯頁與「案件安排」排程彈窗呼叫同一份實作，版面與功能不會各自漂移。
 
 ## 功能說明
 
