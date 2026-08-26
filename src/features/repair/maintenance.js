@@ -291,9 +291,7 @@
           className: "p-3"
         }, StoreUtils.getRecordArea(c) || '—'), h("td", {
           className: "p-3 text-center"
-        }, h("span", {
-          className: "px-2 py-0.5 rounded text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200"
-        }, c.serviceLevel)), h("td", {
+        }, c.serviceLevel || '—'), h("td", {
           className: "p-3 text-center"
         }, h("span", {
           className: "px-2 py-1 rounded-full text-xs font-medium " + getMaintenanceStatusBadgeClass(c.status)
