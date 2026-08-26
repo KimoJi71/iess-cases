@@ -127,6 +127,7 @@ try {
       text: text,
       buttons: buttons,
       reasonValue: reason ? reason.value : null,
+      hasRemoveBtn: !!wrap.querySelector('button[aria-label="移除此設備"]'),
       rowCount: wrap.querySelectorAll('tbody tr').length
     };
     wrap.remove();
@@ -137,7 +138,7 @@ try {
   assertTrue(edit.text.indexOf('FTXS') !== -1, '標題含型號');
   assertTrue(edit.text.indexOf('大金') !== -1, '卡片含設備欄位（品牌）');
   assertEq(edit.reasonValue, '濾網堵塞', '維修原因帶入 textarea');
-  assertTrue(edit.buttons.some(b => b === '移除'), '有移除卡片按鈕', edit.buttons.join(' | '));
+  assertTrue(edit.hasRemoveBtn, '有移除卡片按鈕（垃圾桶圖示）');
   assertTrue(edit.buttons.some(b => b === '待處理'), '有「待處理」加入鈕');
   assertTrue(edit.buttons.some(b => b === '已處理'), '有「已處理」加入鈕');
   assertEq(edit.rowCount, 1, '處理方式表有一列');
@@ -146,9 +147,7 @@ try {
   const removed = await evaluate(`(function () {
     var called = 0;
     var wrap = window.__render({ onRemoveItem: function () { called += 1; } });
-    var btn = Array.prototype.find.call(wrap.querySelectorAll('button'), function (b) {
-      return b.textContent.replace(/\\s+/g, ' ').trim() === '移除';
-    });
+    var btn = wrap.querySelector('button[aria-label="移除此設備"]');
     if (btn) btn.click();
     wrap.remove();
     return called;

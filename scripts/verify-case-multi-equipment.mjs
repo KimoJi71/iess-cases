@@ -233,9 +233,7 @@ try {
     var wrap = window.__mountEdit(base);
     // 一次只顯示一張卡片，移除鈕作用在目前這張，故先切到第二張
     window.__gotoCard(wrap, 1);
-    Array.prototype.find.call(wrap.querySelectorAll('button'), function (b) {
-      return b.textContent.replace(/\\s+/g, ' ').trim() === '移除';
-    }).click();
+    wrap.querySelector('button[aria-label="移除此設備"]').click();
     var titles = window.__cardTitles(wrap);
     wrap.remove();
     return titles;

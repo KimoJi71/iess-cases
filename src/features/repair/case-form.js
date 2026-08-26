@@ -672,8 +672,12 @@
                   addEquipMenuOpen = !addEquipMenuOpen;
                   rerender();
                 },
-                className: "bg-indigo-50 text-indigo-700 hover:bg-indigo-100 px-4 py-2 rounded-md flex items-center gap-2 font-medium transition-colors border border-indigo-200"
-              }, Icons.Plus({ className: "h-4 w-4" }), " 加入設備", Icons.ChevronDown({ className: "h-4 w-4" })),
+                'aria-label': "加入設備",
+                // 手機版寬度不夠，按鈕只留「＋」與下拉箭頭，文字在 sm 以上才出現
+                className: "bg-indigo-50 text-indigo-700 hover:bg-indigo-100 px-2 sm:px-4 py-2 rounded-md flex items-center gap-1 sm:gap-2 font-medium transition-colors border border-indigo-200 whitespace-nowrap"
+              }, Icons.Plus({ className: "h-4 w-4" }),
+                h("span", { className: "hidden sm:inline" }, "加入設備"),
+                Icons.ChevronDown({ className: "h-4 w-4" })),
               addEquipMenuOpen && h("div", {
                 className: "absolute right-0 mt-1 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-20 py-1"
               },

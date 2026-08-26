@@ -248,9 +248,7 @@ try {
     window.__pagerBtn(wrap, 'prev').click();
     snap('上一台');
     // 移除目前這張（第 2 台）後，index 需夾在範圍內且改顯示其他卡片
-    Array.prototype.find.call(wrap.querySelectorAll('button'), function (b) {
-      return b.textContent.replace(/\\s+/g, ' ').trim() === '移除';
-    }).click();
+    wrap.querySelector('button[aria-label="移除此設備"]').click();
     snap('移除目前卡片');
     wrap.remove();
     return out;
