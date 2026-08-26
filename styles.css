@@ -1034,3 +1034,68 @@ input[type="number"] {
   text-align: center;
   font-size: 0.875rem;
 }
+
+/* ===== 排程日曆（手機版壓縮） =====
+   案件安排／人員動向在手機仍保留週檢視，靠縮字與縮高把 7 欄塞進一屏；
+   時間軸左欄同步讓位，375px 寬下每一天約有 47px 可用。 */
+@media (max-width: 767px) {
+  .fc .fc-toolbar.fc-header-toolbar {
+    display: grid;
+    grid-template-columns: auto auto;
+    justify-content: space-between;
+    align-items: center;
+    row-gap: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  /* 標題自成一列，左右兩組按鈕才不會被中間的年月擠掉 */
+  .fc .fc-toolbar-chunk:nth-child(2) {
+    grid-column: 1 / -1;
+    order: 3;
+    text-align: center;
+  }
+
+  .fc .fc-toolbar-title {
+    font-size: 1rem;
+  }
+
+  .fc .fc-button {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+  }
+
+  .fc .fc-timegrid-axis-cushion,
+  .fc .fc-timegrid-slot-label-cushion {
+    font-size: 0.625rem;
+    padding-left: 2px;
+    padding-right: 2px;
+  }
+
+  .fc .fc-col-header-cell-cushion {
+    font-size: 0.6875rem;
+    padding: 2px;
+  }
+
+  .fc-schedule-event {
+    font-size: 0.625rem;
+    line-height: 1.15;
+  }
+
+  .fc .fc-timegrid-event .fc-event-main,
+  .fc .fc-daygrid-event .fc-event-main {
+    padding: 1px 2px;
+  }
+
+  .fc .fc-more-link {
+    font-size: 0.625rem;
+  }
+
+  /* 事件標題是「工項／組別／客戶／門市」四行，在約 47px 寬的欄位裡會直排成
+     一長條，整天列因此被撐到吃掉半個畫面；手機截成兩行，其餘收進「+N 筆」。 */
+  .fc .fc-daygrid-event .fc-schedule-event {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}

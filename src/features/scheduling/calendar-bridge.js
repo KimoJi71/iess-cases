@@ -6,6 +6,15 @@
 
   var DEFAULT_CALENDAR_HEIGHT = 700;
   var DEFAULT_DAY_MAX_EVENTS = 2;
+  // 手機仍是週檢視，但 700px 高會把下方內容整個推出畫面；壓到 480 並讓整天列
+  // 只留一筆，時間格才在第一屏就看得到。斷點與 styles.css 的 767px 對齊。
+  var MOBILE_CALENDAR_HEIGHT = 480;
+  var MOBILE_DAY_MAX_EVENTS = 1;
+
+  function isMobileViewport() {
+    return typeof window !== 'undefined' && !!window.matchMedia
+      && window.matchMedia('(max-width: 767px)').matches;
+  }
 
   function pad(n) { return String(n).padStart(2, '0'); }
 
@@ -59,6 +68,7 @@
         ? new Date(new Date(options.rangeEnd).getTime() + 86400000).toISOString().split('T')[0]
         : undefined;
 
+      var mobile = isMobileViewport();
       var timeFormat = { hour: '2-digit', minute: '2-digit', hour12: false };
       var startEditable = options.eventStartEditable !== undefined
         ? options.eventStartEditable
@@ -81,9 +91,11 @@
         allDayText: '整天',
         // 整天列預設會隨事件數無限長高，把下方時間格擠掉並撐破容器；
         // 限制筆數後多的收進「+N」浮層，整天列高度才固定得住
-        dayMaxEvents: options.dayMaxEvents || DEFAULT_DAY_MAX_EVENTS,
+        dayMaxEvents: options.dayMaxEvents
+          || (mobile ? MOBILE_DAY_MAX_EVENTS : DEFAULT_DAY_MAX_EVENTS),
         moreLinkText: function (n) { return '+' + n + ' 筆'; },
-        height: options.height || DEFAULT_CALENDAR_HEIGHT,
+        height: options.height
+          || (mobile ? MOBILE_CALENDAR_HEIGHT : DEFAULT_CALENDAR_HEIGHT),
         slotLabelFormat: timeFormat,
         eventTimeFormat: timeFormat,
         editable: startEditable || durationEditable,
@@ -208,6 +220,7 @@
   window.IESS = window.IESS || {};
   window.IESS.CalendarBridge = {
     createBridge: createBridge,
+    isMobileViewport: isMobileViewport,
     getWeekRange: getWeekRange,
     formatDate: formatDate,
     formatTime: formatTime

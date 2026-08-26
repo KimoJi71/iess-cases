@@ -107,13 +107,14 @@
 
       return h('div', { className: 'bg-white p-6 rounded-lg shadow-sm border border-gray-100' },
         h('div', { className: 'bg-gray-50 p-4 rounded-lg border border-gray-200 mb-6' },
-        h('div', { className: 'flex flex-wrap items-end gap-3' },
+        // 手機兩欄網格、查詢鈕獨占一列滿版；sm 以上維持原本的單排 flex
+        h('div', { className: 'grid grid-cols-2 items-end gap-3 sm:flex sm:flex-wrap' },
           h('div', { className: 'min-w-0' },
             h('label', { className: 'block text-xs text-gray-500 mb-1' }, '指定日期'),
             h('input', {
               type: 'date', value: calDate,
               onChange: function (e) { calDate = e.target.value; rerender(); },
-              className: 'p-2.5 border rounded-md outline-none bg-white'
+              className: 'w-full p-2.5 border rounded-md outline-none bg-white sm:w-auto'
             })
           ),
           h('div', { className: 'min-w-0' },
@@ -121,7 +122,7 @@
             h('select', {
               value: calAssignee,
               onChange: function (e) { calAssignee = e.target.value; rerender(); },
-              className: 'p-2.5 border rounded-md outline-none bg-white min-w-[120px]'
+              className: 'w-full p-2.5 border rounded-md outline-none bg-white sm:w-auto sm:min-w-[120px]'
             },
               h('option', { value: '全部' }, '全部'),
               SCHEDULE_ASSIGNEE_OPTIONS.map(function (a) {
@@ -131,7 +132,7 @@
           ),
           h('button', {
             onClick: handleSearch,
-            className: 'px-5 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center gap-1.5 min-h-[42px]'
+            className: 'col-span-2 w-full px-5 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center justify-center gap-1.5 min-h-[42px] sm:col-span-1 sm:w-auto'
           }, Icons.Search({ className: 'h-4 w-4' }), '查詢')
         )),
 
@@ -140,8 +141,9 @@
           ref: initCalendar
         }),
 
-        h('div', { className: 'overflow-x-auto' },
-          h('table', { className: 'w-full text-sm text-left border-collapse' },
+        // 手機沿用列表既有慣例：橫向捲動 + 捲動提示，欄位不折行
+        h('div', { className: 'overflow-x-auto border rounded-lg table-scroll-hint' },
+          h('table', { className: 'w-full text-sm text-left border-collapse whitespace-nowrap' },
             h('thead', null,
               h('tr', { className: 'bg-gray-50 text-gray-600 border-b border-gray-200' },
                 h('th', { className: 'px-4 py-3 font-medium' }, '日期'),
