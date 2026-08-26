@@ -1402,7 +1402,10 @@ for f in scripts/verify-*.mjs; do
   node "$f" || echo "FAILED: $f"
 done
 ```
-Expected: 無任何 `FAILED:` 輸出。
+Expected: 只有 `scripts/verify-maintenance-period-column.mjs` 一支 FAILED，其餘全部通過。
+
+該支在本分支建立前就是紅的（外部 commit `3ea4ecb` 移除了保養列表的「工項類別」欄，但沒同步
+更新斷言），與本計畫無關——把它當成已知基準，出現**任何其他**失敗才算回歸。
 
 有些 script 會同時搶 Chrome debugging port；若出現連線失敗，逐支重跑確認，不要以「偶發」帶過。
 
