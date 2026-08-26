@@ -56,7 +56,6 @@
       : DeviceCategoryUtils.defaultEquipRecord();
 
     var inputCls = IESS.inputCls;
-    var disabledCls = 'w-full p-2.5 border rounded-md bg-gray-100 text-gray-600';
 
     return stateful(function (rerender) {
       function handleChange(e) {
@@ -148,14 +147,6 @@
           h('section', { className: 'bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-100' },
             h('h3', { className: 'text-lg font-bold text-blue-800 border-b pb-2 mb-4' }, '1. 基本資料'),
             h('div', { className: 'grid grid-cols-1 md:grid-cols-3 gap-6' },
-              h('div', null,
-                h('label', { className: 'block text-sm mb-1' }, '客戶名稱'),
-                h('input', { type: 'text', value: customerName || '', disabled: true, className: disabledCls })
-              ),
-              h('div', null,
-                h('label', { className: 'block text-sm mb-1' }, '門市名稱'),
-                h('input', { type: 'text', value: storeName || '', disabled: true, className: disabledCls })
-              ),
               renderEquipSelect('設備分類', 'category', fieldOptions.category, formData, handleChange, {
                 required: true,
                 emptyHint: '尚無設備分類資料'
