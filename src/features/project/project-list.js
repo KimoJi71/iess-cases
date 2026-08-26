@@ -192,9 +192,9 @@
       }, '案件編號'), h('th', {
         className: 'p-3 font-semibold bg-gray-100/50'
       }, '客戶名稱'), h('th', {
-        className: 'p-3 font-semibold bg-gray-100/50 border-r'
+        className: 'p-3 font-semibold bg-gray-100/50'
       }, '門市名稱'), h('th', {
-        className: 'p-3 font-semibold bg-gray-100/50 border-r'
+        className: 'p-3 font-semibold bg-gray-100/50'
       }, '工項分類'), h('th', {
         className: 'p-3 font-semibold bg-gray-100/50 border-r'
       }, '負責人員'), PROJECT_STAGES.map(function (stage) {
@@ -235,14 +235,12 @@
         }, c.projectNumber), h('td', {
           className: 'p-3'
         }, c.customerName), h('td', {
-          className: 'p-3 border-r'
+          className: 'p-3'
         }, c.storeName), h('td', {
+          className: 'p-3'
+        }, c.workCategory || '—'), h('td', {
           className: 'p-3 border-r'
-        }, h('span', {
-          className: 'px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-700'
-        }, c.workCategory)), h('td', {
-          className: 'p-3 border-r'
-        }, (c.details && c.details.contactPerson) || '-'), PROJECT_STAGES.map(function (stage) {
+        }, (c.details && c.details.contactPerson) || '—'), PROJECT_STAGES.map(function (stage) {
           var stageData = c.history && c.history.find(function (item) { return item.stage === stage; });
           // 已完成綠底（附勾勾，不只靠顏色辨識）／未完成但已排程琥珀底／無資料灰「-」
           var done = !!(stageData && stageData.done);
