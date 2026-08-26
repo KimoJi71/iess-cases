@@ -122,7 +122,6 @@ console.log('\n[7] 日曆設定與畫面串接');
 const bridgeSrc = readFileSync(join(ROOT, 'src/features/scheduling/calendar-bridge.js'), 'utf8');
 assertTrue(/allDaySlot:\s*true/.test(bridgeSrc), '日曆已開啟整天列 allDaySlot');
 assertTrue(/allDayText:\s*'整天'/.test(bridgeSrc), '整天列標籤為「整天」');
-assertTrue(/info\.allDay/.test(bridgeSrc), '外部拖曳有依 info.allDay 分流');
 const pmSrc = readFileSync(join(ROOT, 'src/features/scheduling/personnel-movement.js'), 'utf8');
 assertTrue(/formatScheduleTimeRange\(row\.timeStart, row\.timeEnd\)/.test(pmSrc),
   '人員動向清單時間欄改用 formatScheduleTimeRange');

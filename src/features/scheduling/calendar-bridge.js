@@ -6,6 +6,15 @@
 
   var DEFAULT_CALENDAR_HEIGHT = 700;
   var DEFAULT_DAY_MAX_EVENTS = 2;
+  // 手機仍是週檢視，但 700px 高會把下方內容整個推出畫面；壓到 480 並讓整天列
+  // 只留一筆，時間格才在第一屏就看得到。斷點與 styles.css 的 767px 對齊。
+  var MOBILE_CALENDAR_HEIGHT = 480;
+  var MOBILE_DAY_MAX_EVENTS = 1;
+
+  function isMobileViewport() {
+    return typeof window !== 'undefined' && !!window.matchMedia
+      && window.matchMedia('(max-width: 767px)').matches;
+  }
 
   function pad(n) { return String(n).padStart(2, '0'); }
 
@@ -30,13 +39,8 @@
 
   function createBridge(containerEl, options) {
     var calendar = null;
-    var draggableInstances = [];
 
     function destroy() {
-      draggableInstances.forEach(function (d) {
-        if (d && d.destroy) d.destroy();
-      });
-      draggableInstances = [];
       if (calendar) {
         calendar.destroy();
         calendar = null;
@@ -59,6 +63,7 @@
         ? new Date(new Date(options.rangeEnd).getTime() + 86400000).toISOString().split('T')[0]
         : undefined;
 
+      var mobile = isMobileViewport();
       var timeFormat = { hour: '2-digit', minute: '2-digit', hour12: false };
       var startEditable = options.eventStartEditable !== undefined
         ? options.eventStartEditable
@@ -81,15 +86,16 @@
         allDayText: '整天',
         // 整天列預設會隨事件數無限長高，把下方時間格擠掉並撐破容器；
         // 限制筆數後多的收進「+N」浮層，整天列高度才固定得住
-        dayMaxEvents: options.dayMaxEvents || DEFAULT_DAY_MAX_EVENTS,
+        dayMaxEvents: options.dayMaxEvents
+          || (mobile ? MOBILE_DAY_MAX_EVENTS : DEFAULT_DAY_MAX_EVENTS),
         moreLinkText: function (n) { return '+' + n + ' 筆'; },
-        height: options.height || DEFAULT_CALENDAR_HEIGHT,
+        height: options.height
+          || (mobile ? MOBILE_CALENDAR_HEIGHT : DEFAULT_CALENDAR_HEIGHT),
         slotLabelFormat: timeFormat,
         eventTimeFormat: timeFormat,
         editable: startEditable || durationEditable,
         eventStartEditable: startEditable,
         eventDurationEditable: durationEditable,
-        droppable: !options.readOnly && !!options.onDrop,
         eventContent: function (info) {
           var wrap = document.createElement('div');
           wrap.className = 'fc-schedule-event';
@@ -113,78 +119,11 @@
         eventResize: function (info) {
           if (!options.onEventChange) return;
           options.onEventChange(info.event);
-        },
-        drop: function (info) {
-          if (!options.onDrop) return;
-          var ds = info.draggedEl.dataset;
-          var dateStr = formatDate(info.date);
-          // 丟進「整天」列時不帶時間，交由後續流程視為整天案件
-          var timeStr = info.allDay
-            ? ''
-            : pad(info.date.getHours()) + ':' + pad(info.date.getMinutes());
-          options.onDrop({
-            sourceType: ds.sourceType,
-            sourceId: ds.sourceId,
-            customerName: ds.customerName,
-            storeName: ds.storeName,
-            workCategory: ds.workCategory,
-            assignee: ds.assignee
-          }, dateStr, timeStr);
-          calendar.getEvents().forEach(function (ev) {
-            var p = ev.extendedProps || {};
-            if (p.isPreview && p.sourceId === ds.sourceId) {
-              ev.remove();
-            }
-          });
         }
       });
       calendar.render();
       var initialDate = options.focusDate || options.rangeStart;
       if (initialDate) calendar.gotoDate(initialDate);
-    }
-
-    function buildPreviewTitle(ds) {
-      if (window.ScheduleUtils && ScheduleUtils.formatScheduleEventTitle) {
-        return ScheduleUtils.formatScheduleEventTitle(
-          ds.workCategory, ds.assignee, ds.customerName, ds.storeName
-        );
-      }
-      return '[' + (ds.workCategory || '其他') + ']\n' + (ds.assignee || '未指派') + '\n' +
-        ds.customerName + '\n' + ds.storeName;
-    }
-
-    function initExternalDrag(containerEl) {
-      draggableInstances.forEach(function (d) {
-        if (d && d.destroy) d.destroy();
-      });
-      draggableInstances = [];
-      if (typeof FullCalendar === 'undefined' || !FullCalendar.Draggable || !containerEl) return;
-
-      var draggable = new FullCalendar.Draggable(containerEl, {
-        itemSelector: '.pending-item',
-        eventData: function (eventEl) {
-          var ds = eventEl.dataset;
-          var color = window.ScheduleUtils && ScheduleUtils.getAssigneeColor
-            ? ScheduleUtils.getAssigneeColor(ds.assignee)
-            : undefined;
-          return {
-            title: buildPreviewTitle(ds),
-            duration: '02:00',
-            backgroundColor: color,
-            borderColor: color,
-            extendedProps: {
-              isPreview: true,
-              sourceType: ds.sourceType,
-              sourceId: ds.sourceId,
-              customerName: ds.customerName,
-              storeName: ds.storeName,
-              workCategory: ds.workCategory,
-              assignee: ds.assignee || ''
-            }
-          };
-        }
-      });
-      draggableInstances.push(draggable);
     }
 
     // focusDate：使用者實際查詢的那一天。日檢視要停在這一天，
@@ -200,7 +139,6 @@
     return {
       destroy: destroy,
       setEvents: setEvents,
-      initExternalDrag: initExternalDrag,
       gotoRange: gotoRange
     };
   }
@@ -208,6 +146,7 @@
   window.IESS = window.IESS || {};
   window.IESS.CalendarBridge = {
     createBridge: createBridge,
+    isMobileViewport: isMobileViewport,
     getWeekRange: getWeekRange,
     formatDate: formatDate,
     formatTime: formatTime
