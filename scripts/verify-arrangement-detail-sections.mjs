@@ -195,13 +195,92 @@ const SETUP = String.raw`(function () {
     var wrap = s.querySelectorAll('.searchable-select')[idx || 0];
     return wrap ? wrap.querySelector('input').value : null;
   };
+  // 共用區塊的欄位標題是 <span>，控制項沒有 name 可錨；以標題定位它後面的控制項，
+  // 才不會像 querySelector('textarea') 那樣抓到區塊裡任何一個同型別元素。
+  window.__modalFieldEl = function (title, label) {
+    var s = window.__modalSectionByTitle(title);
+    if (!s) return null;
+    var span = Array.prototype.slice.call(s.querySelectorAll('span'))
+      .filter(function (e) { return e.textContent.trim() === label; })[0];
+    return (span && span.nextElementSibling) || null;
+  };
+  window.__openFieldSelect = function (title, label) {
+    var el = window.__modalFieldEl(title, label);
+    if (!el || !el.classList.contains('searchable-select')) {
+      throw new Error('欄位不是下拉：' + title + ' / ' + label);
+    }
+    var input = el.querySelector('input');
+    input.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+    input.focus();
+    return true;
+  };
+  window.__modalFieldSelectValue = function (title, label) {
+    var el = window.__modalFieldEl(title, label);
+    var input = el && el.querySelector('input');
+    return input ? input.value : null;
+  };
+  window.__typeInto = function (el, text) {
+    if (!el) throw new Error('找不到可輸入的欄位');
+    el.value = text;
+    // dom.js 的 onChange 對文字類欄位掛的是原生 input 事件
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    return true;
+  };
+  window.__clickTextInOverlay = function (idx, text) {
+    var root = document.querySelectorAll('.app-modal-overlay')[idx];
+    if (!root) throw new Error('沒有第 ' + idx + ' 層 overlay');
+    var el = Array.prototype.slice.call(root.querySelectorAll('button'))
+      .filter(function (b) { return b.textContent.trim().indexOf(text) === 0; })[0];
+    if (!el) throw new Error('第 ' + idx + ' 層 overlay 找不到按鈕：' + text);
+    el.click();
+    return true;
+  };
+  window.__clickTextStarting = function (text, scope) {
+    var root = scope ? document.querySelector(scope) : document;
+    var el = Array.prototype.slice.call(root.querySelectorAll('button'))
+      .filter(function (b) { return b.textContent.trim().indexOf(text) === 0; })[0];
+    if (!el) throw new Error('找不到按鈕：' + text);
+    el.click();
+    return true;
+  };
+  // 簽名板把筆跡存在 canvas 上，只能用合成 PointerEvent 畫；
+  // setPointerCapture 對合成事件會丟例外，元件本身已 try/catch 掉。
+  window.__signOnPad = function () {
+    var pads = document.querySelectorAll('.app-modal-overlay');
+    var canvas = pads[pads.length - 1].querySelector('canvas');
+    if (!canvas) throw new Error('簽名板沒有 canvas');
+    var r = canvas.getBoundingClientRect();
+    function fire(type, dx, dy) {
+      canvas.dispatchEvent(new PointerEvent(type, {
+        bubbles: true, pointerId: 1, pointerType: 'mouse',
+        clientX: r.left + dx, clientY: r.top + dy
+      }));
+    }
+    fire('pointerdown', 40, 40);
+    fire('pointermove', 120, 90);
+    fire('pointermove', 220, 40);
+    fire('pointerup', 220, 40);
+    return true;
+  };
+  // 設備表在空清單時會畫一列 colspan 的「尚未加入任何設備資料」，計數要排掉
+  window.__equipRowCount = function () {
+    var s = window.__modalSectionByTitle('2. 設備資料');
+    if (!s) return -1;
+    return Array.prototype.slice.call(s.querySelectorAll('tbody tr'))
+      .filter(function (tr) { return !tr.querySelector('td[colspan]'); }).length;
+  };
   window.__savedStoreName = '';
   window.__savedCustomerName = '';
   window.__savedPlanDate = '';
-  window.__openCalendarEventByText = function (text) {
+  // 事件標題是「[工項分類]\n組別\n客戶\n門市」，同一門市可能同時有維修與保養兩張卡片，
+  // 因此要求所有關鍵字都命中才算對。
+  window.__openCalendarEventByText = function (texts) {
+    var list = [].concat(texts);
     var el = Array.prototype.slice.call(document.querySelectorAll('.fc-event, .fc-event-title'))
-      .filter(function (e) { return e.textContent.indexOf(text) !== -1; })[0];
-    if (!el) throw new Error('日曆上找不到事件：' + text);
+      .filter(function (e) {
+        return list.every(function (t) { return e.textContent.indexOf(t) !== -1; });
+      })[0];
+    if (!el) throw new Error('日曆上找不到事件：' + list.join(' + '));
     el.click();
     return true;
   };
@@ -458,14 +537,18 @@ try {
   assertDeep(await evaluate(`(function () {
     var s = window.__modalSectionByTitle('3. 保養結果');
     if (!s) return null;
+    var status = window.__modalFieldEl('3. 保養結果', '保養狀態');
+    var remark = window.__modalFieldEl('3. 保養結果', '備註');
+    var sign = window.__modalFieldEl('3. 保養結果', '客戶簽收');
     return {
-      status: !!s.querySelector('.searchable-select input'),
-      remark: !!s.querySelector('textarea'),
-      signButton: Array.prototype.slice.call(s.querySelectorAll('button'))
-        .some(function (b) { return b.textContent.trim().indexOf('客戶簽收') !== -1; })
+      status: !!(status && status.classList.contains('searchable-select')
+        && status.querySelector('input')),
+      remark: !!(remark && remark.tagName === 'TEXTAREA'),
+      signButton: !!(sign && Array.prototype.slice.call(sign.querySelectorAll('button'))
+        .some(function (b) { return b.textContent.trim().indexOf('客戶簽收') !== -1; }))
     };
   })()`), { status: true, remark: true, signButton: true },
-    '保養狀態、備註、客戶簽收皆可操作');
+    '保養狀態、備註、客戶簽收各自錨在自己的欄位標題上');
 
   console.log('\nSection 10｜手選「已完成」不被 planDate 推算覆寫');
   // 儲存前先把門市／客戶／預計日期記下來，之後要拿去比對門市的「上次保養日期」
@@ -490,29 +573,112 @@ try {
     await evaluate(`window.__pickOptionExact('00')`);
     await sleep(300);
   }
-  await evaluate(`window.__openSectionSelect('3. 保養結果', 0)`);
+
+  console.log('\nSection 11｜保養浮層由保養模組渲染，且是彈窗的兄弟節點');
+  // 這裡才是 renderScheduleModal 那條 sourceType 三元的唯一驗證點：
+  // 若分派給 RepairCaseDetailSections.renderOverlays，它讀的是 ctx.ui.pickerOpen，
+  // 保養 ui 只有 equipPicker，挑選器就不會出現。
+  await evaluate(`window.__clickText('加入設備', '.app-modal-overlay')`);
+  await sleep(600);
+  assertEq(await evaluate(`document.querySelectorAll('.app-modal-overlay').length`), 2,
+    '保養設備挑選器另開一層 overlay（＝走到 MaintenanceDetailSections.renderOverlays）');
+  assertEq(await evaluate(`(function () {
+    var all = document.querySelectorAll('.app-modal-overlay');
+    return all.length >= 2 ? all[0].contains(all[1]) : null;
+  })()`), false, '挑選器是排程彈窗的兄弟節點，不在其捲動容器內');
+  // 這筆待安排案件的門市（屈臣氏／大安忠孝店）在 seed 裡沒有設備主檔，
+  // 設備清單的整包 round-trip 改在 Section 14 用一筆有設備的案件驗。
+  await evaluate(`window.__clickTextInOverlay(1, '取消')`);
+  await sleep(400);
+  assertEq(await evaluate(`document.querySelectorAll('.app-modal-overlay').length`), 1,
+    '關掉挑選器後只剩排程彈窗');
+
+  console.log('\nSection 12｜備註與客戶簽收寫得進去');
+  await evaluate(`window.__typeInto(window.__modalFieldEl('3. 保養結果', '備註'), '排程彈窗寫入的保養備註')`);
+  await sleep(200);
+  await evaluate(`window.__clickTextStarting('客戶簽收', '.app-modal-overlay')`);
+  await sleep(500);
+  assertEq(await evaluate(`document.querySelectorAll('.app-modal-overlay').length`), 2,
+    '簽名板另開一層 overlay（同樣出自保養模組的 renderOverlays）');
+  await evaluate(`window.__signOnPad()`);
+  await sleep(200);
+  await evaluate(`window.__clickTextInOverlay(1, '確認簽收')`);
+  await sleep(500);
+  assertTrue(await evaluate(`(function () {
+    var s = window.__modalSectionByTitle('3. 保養結果');
+    return !!(s && s.querySelector('img[alt="客戶簽名"]'));
+  })()`), '簽名回填到保養結果區塊');
+
+  console.log('\nSection 13｜手選「已完成」不被 planDate 推算覆寫，且整包欄位跟著存回去');
+  await evaluate(`window.__openFieldSelect('3. 保養結果', '保養狀態')`);
   await sleep(250);
   await evaluate(`window.__pickOptionExact('已完成')`);
   await sleep(400);
-  assertEq(await evaluate(`window.__modalSectionSelectValue('3. 保養結果', 0)`), '已完成',
+  assertEq(await evaluate(`window.__modalFieldSelectValue('3. 保養結果', '保養狀態')`), '已完成',
     '將保養狀態手動改為「已完成」');
   await evaluate(`window.__clickText('確認', '.app-modal-overlay')`);
   await sleep(600);
   assertEq(await evaluate('window.__modal() === null'), true, '排程已儲存，彈窗關閉');
   // app.js 的 store 是 IIFE 內的區域變數，測試讀不到；改以「重新點開日曆上同一筆案件」
   // 從 UI 讀回儲存結果，這也更貼近使用者實際會看到的東西。
-  await evaluate(`window.__openCalendarEventByText(window.__savedStoreName)`);
+  await evaluate(`window.__openCalendarEventByText(['[保養]', window.__savedStoreName])`);
   await sleep(700);
-  assertEq(await evaluate(`window.__modalSectionSelectValue('3. 保養結果', 0)`), '已完成',
+  assertEq(await evaluate(`window.__modalFieldSelectValue('3. 保養結果', '保養狀態')`), '已完成',
     '重新開啟後狀態仍為「已完成」，未被 planDate 推算覆寫');
   assertTrue(await evaluate(`(function () {
     var v = window.__modalReadOnlyValue('3. 保養結果', '完成時間');
     return !!v && v !== '-' && v !== '—';
   })()`), '已完成同時押上完成時間');
+  // buildScheduledRecord 是整包 formData merge，備註／簽名／設備清單都得原樣回來
+  assertEq(await evaluate(`(function () {
+    var el = window.__modalFieldEl('3. 保養結果', '備註');
+    return el ? el.value : null;
+  })()`), '排程彈窗寫入的保養備註', '重新開啟後備註仍在');
+  assertTrue(await evaluate(`(function () {
+    var s = window.__modalSectionByTitle('3. 保養結果');
+    return !!(s && s.querySelector('img[alt="客戶簽名"]'));
+  })()`), '重新開啟後客戶簽名仍在');
 
-  console.log('\nSection 11｜門市「上次保養日期」同步更新');
+  console.log('\nSection 14｜設備清單也跟著整包存回去');
+  // 待安排的兩筆保養案件所在門市都沒有設備主檔，改從日曆點開一筆有設備的保養案件
+  // （屈臣氏／台北信義店），走同一條 buildScheduledRecord 整包 merge 的儲存路徑。
   await evaluate(`window.__clickText('取消', '.app-modal-overlay')`);
   await sleep(400);
+  await evaluate(`window.__openCalendarEventByText(['[保養]', '台北信義店'])`);
+  await sleep(700);
+  const equipBefore = await evaluate('window.__equipRowCount()');
+  await evaluate(`window.__clickText('加入設備', '.app-modal-overlay')`);
+  await sleep(600);
+  const equipPicked = await evaluate(`(function () {
+    var picker = document.querySelectorAll('.app-modal-overlay')[1];
+    if (!picker) return false;
+    var cb = Array.prototype.slice.call(picker.querySelectorAll('tbody input[type="checkbox"]'))[0];
+    if (!cb) return false;
+    cb.click();
+    return true;
+  })()`);
+  assertTrue(equipPicked, '挑選器有可選的設備並勾選第一台');
+  await sleep(300);
+  await evaluate(`window.__clickTextInOverlay(1, '加入所選')`);
+  await sleep(600);
+  const equipAfter = await evaluate('window.__equipRowCount()');
+  assertEq(equipAfter, equipBefore + 1, '設備資料段多出一列');
+  // 保養單的組別已改為 assignees[]，從日曆點開時彈窗頂端的單選「組別」不會被帶值，
+  // 不補選就過不了 confirmScheduleModal 的第一條驗證。
+  await evaluate(`window.__openSelect(window.__modal(), '組別')`);
+  await sleep(250);
+  await evaluate(`window.__pickOptionStarting('A組')`);
+  await sleep(300);
+  await evaluate(`window.__clickText('確認', '.app-modal-overlay')`);
+  await sleep(700);
+  assertEq(await evaluate('window.__modal() === null'), true, '設備變更已儲存，彈窗關閉');
+  await evaluate(`window.__openCalendarEventByText(['[保養]', '台北信義店'])`);
+  await sleep(700);
+  assertEq(await evaluate('window.__equipRowCount()'), equipAfter, '重新開啟後設備清單筆數不變');
+  await evaluate(`window.__clickText('取消', '.app-modal-overlay')`);
+  await sleep(400);
+
+  console.log('\nSection 15｜門市「上次保養日期」同步更新');
   await evaluate(`window.__gotoStoreList()`);
   await sleep(600);
   await evaluate(`window.__openSelectLoose('客戶名稱')`);
