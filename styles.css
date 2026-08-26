@@ -573,7 +573,9 @@ input[type="number"] {
 .app-sidebar-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 40;
+  /* 抽屜是 top:0 的全高浮層且自備關閉鈕，要蓋過 header（z-index 60）；
+     遮罩夾在兩者之間，一併把 header 罩住。上限留給彈窗與浮層選單（100）。 */
+  z-index: 80;
   background-color: rgb(0 0 0 / 0.45);
   opacity: 0;
   visibility: hidden;
@@ -626,7 +628,7 @@ input[type="number"] {
     top: 0;
     bottom: 0;
     left: 0;
-    z-index: 50;
+    z-index: 85;
     width: min(15.5rem, 88vw);
     transform: translateX(-105%);
     transition: transform 0.25s ease;
