@@ -42,13 +42,15 @@ assertTrue(
   '編輯畫面用核取方塊切換完成狀態'
 );
 assertTrue(
-  /function projectStageDoneBadge/.test(formSrc) &&
-  /projectStageDoneBadge\(stagesData\[stage\]\.done\)/.test(formSrc),
+  /function projectStageDonePill/.test(formSrc) &&
+  /projectStageDonePill\(done\)/.test(formSrc),
   '唯讀畫面（查看案件／日曆詳細）顯示完成狀態徽章'
 );
 assertTrue(
-  /lg:grid-cols-5/.test(formSrc) && !/lg:grid-cols-4 gap-4/.test(formSrc),
-  '階段欄位由四欄擴為五欄'
+  /renderDone: function \(stage, done\)/.test(formSrc) &&
+  /lg:grid-cols-4 gap-4 text-sm/.test(formSrc) &&
+  !/lg:grid-cols-5/.test(formSrc),
+  '完成狀態移到階段標題列，欄位改為四欄不擁擠'
 );
 assertTrue(
   /done\s*\n?\s*\? 'bg-green-50 border-green-200'/.test(formSrc),
