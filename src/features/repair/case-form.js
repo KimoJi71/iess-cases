@@ -41,20 +41,6 @@
     formData.storeAddress = synced.storeAddress || '';
   }
 
-  function ReporterField(p) {
-    return h('div', null,
-      h(p.labelTag || 'label', { className: p.labelClassName || 'block text-sm mb-1' }, '叫修人員'),
-      h('input', {
-        type: 'text',
-        name: 'reporter',
-        value: p.value || '—',
-        disabled: true,
-        readOnly: true,
-        className: p.inputClassName || 'w-full p-2.5 border rounded-md bg-gray-50 text-gray-500 cursor-not-allowed'
-      })
-    );
-  }
-
   function CaseReadOnlyField(p) {
     return h('div', { className: p.fullWidth ? 'col-span-full' : '' },
       h('span', { className: p.labelClassName || 'text-gray-500 block mb-1' }, p.label),
@@ -201,6 +187,25 @@
         setView('list');
       }
 
+      var selectCls = "w-full p-2.5 border rounded-md outline-none";
+      var labelCls = "text-gray-500 block mb-1";
+
+      function renderSelectField(label, name, options, required) {
+        return h("div", null,
+          h("label", { className: labelCls }, label),
+          h("select", {
+            required: required,
+            name: name,
+            value: formData[name],
+            onChange: handleChange,
+            className: selectCls
+          },
+            required && h("option", { value: "", disabled: true }, "請選擇"),
+            options.map(function (opt) { return h("option", { key: opt, value: opt }, opt); })
+          )
+        );
+      }
+
       return h("div", {
         className: "max-w-5xl mx-auto bg-white rounded-lg shadow-sm border border-gray-100"
       }, PageHeader({
@@ -209,158 +214,98 @@
         wrapperClass: 'page-header-sticky flex justify-between items-center p-4 sm:p-6 border-b border-gray-200 sticky top-0 z-10 bg-white rounded-t-lg'
       }), h("form", {
         onSubmit: handleSubmit,
-        className: "p-4 sm:p-6"
-      }, h("div", {
-        className: "space-y-6"
-      }, h("div", {
-        className: "grid grid-cols-1 md:grid-cols-3 gap-6"
-      }, h("div", {
-        className: "col-span-full font-semibold text-lg text-blue-800 border-b pb-2 mb-2"
-      }, "基本資料"), h("div", null, h("label", {
-        className: "block text-sm mb-1"
-      }, "客戶名稱"), h("select", {
-        required: true,
-        name: "customerName",
-        value: formData.customerName,
-        onChange: handleChange,
-        className: "w-full p-2.5 border rounded-md outline-none"
-      }, h("option", {
-        value: "",
-        disabled: true
-      }, "請選擇"), customerOptions.map(function (opt) { return h("option", {
-        key: opt,
-        value: opt
-      }, opt); }))), h("div", null, h("label", {
-        className: "block text-sm mb-1"
-      }, "門市名稱"), h("select", {
-        required: true,
-        name: "storeName",
-        value: formData.storeName,
-        onChange: handleChange,
-        className: "w-full p-2.5 border rounded-md outline-none"
-      }, h("option", {
-        value: "",
-        disabled: true
-      }, "請選擇"), storeOptions.map(function (opt) { return h("option", {
-        key: opt,
-        value: opt
-      }, opt); }))), ReporterField({
-        value: formData.reporter
-      }), h("div", {
-        className: "col-span-full md:col-span-2"
-      }, h("label", {
-        className: "block text-sm font-medium text-gray-500 mb-1"
-      }, "門市地址 (根據門市自動帶入)"), h("input", {
-        type: "text",
-        disabled: true,
-        value: formData.storeAddress,
-        placeholder: "請先選擇客戶與門市",
-        className: "w-full p-2.5 bg-gray-50 border rounded-md text-gray-500 cursor-not-allowed"
-      })), h("div", null, h("label", {
-        className: "block text-sm font-medium text-gray-700 mb-1"
-      }, "服務等級"), h("input", {
-        type: "text",
-        disabled: true,
-        value: formData.serviceLevel || "—",
-        className: "w-full p-2.5 bg-gray-50 border rounded-md text-gray-500 cursor-not-allowed"
-      })), h("div", {
-        className: "col-span-full font-semibold text-lg text-blue-800 border-b pb-2 mt-4 mb-2"
-      }, "叫修內容"), h("div", null, h("label", {
-        className: "block text-sm mb-1"
-      }, "工項分類"), h("select", {
-        name: "workCategory",
-        value: formData.workCategory,
-        onChange: handleChange,
-        className: "w-full p-2.5 border rounded-md outline-none"
-      }, WORK_CATEGORY_OPTIONS.map(function (opt) { return h("option", {
-        key: opt,
-        value: opt
-      }, opt); }))), !isOther && h("div", null, h("label", {
-        className: "block text-sm mb-1"
-      }, "叫修項目"), h("select", {
-        name: "repairItem",
-        value: formData.repairItem,
-        onChange: handleChange,
-        className: "w-full p-2.5 border rounded-md outline-none"
-      }, REPAIR_ITEMS.map(function (opt) { return h("option", {
-        key: opt,
-        value: opt
-      }, opt); }))), !isOther && h("div", null, h("label", {
-        className: "block text-sm mb-1"
-      }, "叫修原因"), h("select", {
-        name: "repairReason",
-        value: formData.repairReason,
-        onChange: handleChange,
-        className: "w-full p-2.5 border rounded-md outline-none"
-      }, REPAIR_REASONS.map(function (opt) { return h("option", {
-        key: opt,
-        value: opt
-      }, opt); }))), h("div", {
-        className: "col-span-full"
-      }, h("label", {
-        className: "block text-sm mb-1"
-      }, isOther ? "工作描述" : "故障描述"), h("textarea", {
-        name: "faultDesc",
-        value: formData.faultDesc,
-        onChange: handleChange,
-        rows: "2",
-        className: "w-full p-2.5 border rounded-md outline-none"
-      })), h("div", {
-        className: "col-span-full font-semibold text-lg text-blue-800 border-b pb-2 mt-4 mb-2"
-      }, "排程"), h("div", null, h("label", {
-        className: "block text-sm mb-1"
-      }, "組別"), renderAssigneeMultiSelect(formData, function (next) {
-        formData.assignees = next;
-        formData.assigneeMemberIds = CaseAssigneeFields.syncMemberIds(next, formData.assigneeMemberIds);
-        rerender();
-      }, { id: 'add-case-assignees' })), h("div", null, h("label", {
-        className: "block text-sm mb-1"
-      }, "指派人員"), renderMemberMultiSelect(formData, function (next) {
-        formData.assigneeMemberIds = next;
-        rerender();
-      }, { id: 'add-case-assignee-members' })), h("div", null, h("label", {
-        className: "block text-sm mb-1"
-      }, "使用車輛"), renderVehicleSelect(
-        formData, vehicles, handleChange, "w-full p-2.5 border rounded-md outline-none"
-      )), h("div", null, h("label", {
-        className: "block text-sm mb-1"
-      }, "協力廠商"), renderPartnerVendorMultiSelect(formData, vendors, function (next) {
-        formData.partnerVendorIds = next;
-        rerender();
-      }, 'add-case-partner-vendors')), h("div", null, h("label", {
-        className: "block text-sm mb-1"
-      }, "預計日期"), h("input", {
-        type: "date",
-        name: "expectedDate",
-        value: formData.expectedDate,
-        onChange: handleChange,
-        className: "w-full p-2.5 border rounded-md outline-none"
-      })), h("div", null, h("label", {
-        className: "block text-sm mb-1"
-      }, "預計開始時間"), h(TimeInput24, {
-        name: "expectedTimeStart",
-        value: formData.expectedTimeStart,
-        onChange: handleChange,
-        className: "w-full"
-      })), h("div", null, h("label", {
-        className: "block text-sm mb-1"
-      }, "預計結束時間"), h(TimeInput24, {
-        name: "expectedTimeEnd",
-        value: formData.expectedTimeEnd,
-        onChange: handleChange,
-        className: "w-full"
-      })))), h("div", {
-        className: "mt-8 pt-6 border-t flex justify-end gap-4"
-      }, h("button", {
-        type: "button",
-        onClick: function () { setView('list'); },
-        className: "px-6 py-2.5 border rounded-md"
-      }, "取消"), h("button", {
-        type: "submit",
-        className: "px-6 py-2.5 bg-blue-600 text-white rounded-md flex items-center gap-2"
-      }, Icons.Save({
-        className: "h-4 w-4"
-      }), " 儲存"))));
+        className: "p-4 sm:p-6 space-y-6 sm:space-y-8 bg-gray-50"
+      },
+        h("section", { className: "bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-100" },
+          h("h3", { className: "text-lg font-bold text-blue-800 border-b pb-2 mb-4" }, "1. 基本資料"),
+          h("div", { className: "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-sm items-start" },
+            renderSelectField("客戶名稱", "customerName", customerOptions, true),
+            renderSelectField("門市名稱", "storeName", storeOptions, true),
+            CaseReadOnlyField({ label: '叫修人員', value: formData.reporter }),
+            CaseReadOnlyField({ label: '服務等級', value: formData.serviceLevel }),
+            CaseReadOnlyField({
+              label: '門市地址',
+              value: formData.storeAddress || '請先選擇客戶與門市',
+              fullWidth: true
+            })
+          )
+        ),
+        h("section", { className: "bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-100" },
+          h("h3", { className: "text-lg font-bold text-blue-800 border-b pb-2 mb-4" }, "2. 叫修內容"),
+          h("div", { className: "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-sm items-start" },
+            renderSelectField("工項分類", "workCategory", WORK_CATEGORY_OPTIONS),
+            !isOther && renderSelectField("叫修項目", "repairItem", REPAIR_ITEMS),
+            !isOther && renderSelectField("叫修原因", "repairReason", REPAIR_REASONS),
+            h("div", { className: "col-span-full" },
+              h("label", { className: labelCls }, isOther ? "工作描述" : "故障描述"),
+              h("textarea", {
+                name: "faultDesc",
+                value: formData.faultDesc,
+                onChange: handleChange,
+                rows: "2",
+                className: selectCls
+              })
+            )
+          )
+        ),
+        h("section", { className: "bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-100" },
+          h("h3", { className: "text-lg font-bold text-blue-800 border-b pb-2 mb-4" }, "3. 排程資料"),
+          h("div", { className: "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-sm items-start" },
+            h("div", null,
+              h("label", { className: labelCls }, "預計日期"),
+              h("input", {
+                type: "date",
+                name: "expectedDate",
+                value: formData.expectedDate,
+                onChange: handleChange,
+                className: "w-full h-[42px] px-2.5 border rounded-md outline-none"
+              })
+            ),
+            ExpectedTimeRangeFields({
+              labelClassName: labelCls,
+              startValue: formData.expectedTimeStart,
+              endValue: formData.expectedTimeEnd,
+              onChange: handleChange
+            }),
+            h("div", { className: "col-span-full md:col-span-2" },
+              h("label", { className: labelCls }, "組別"),
+              renderAssigneeMultiSelect(formData, function (next) {
+                formData.assignees = next;
+                formData.assigneeMemberIds = CaseAssigneeFields.syncMemberIds(next, formData.assigneeMemberIds);
+                rerender();
+              }, { id: 'add-case-assignees' })
+            ),
+            h("div", { className: "col-span-full md:col-span-2" },
+              h("label", { className: labelCls }, "指派人員"),
+              renderMemberMultiSelect(formData, function (next) {
+                formData.assigneeMemberIds = next;
+                rerender();
+              }, { id: 'add-case-assignee-members' })
+            ),
+            h("div", null,
+              h("label", { className: labelCls }, "使用車輛"),
+              renderVehicleSelect(formData, vehicles, handleChange, selectCls)
+            ),
+            h("div", { className: "col-span-full md:col-span-2" },
+              h("label", { className: labelCls }, "協力廠商"),
+              renderPartnerVendorMultiSelect(formData, vendors, function (next) {
+                formData.partnerVendorIds = next;
+                rerender();
+              }, 'add-case-partner-vendors')
+            )
+          )
+        ),
+        h("div", {
+          className: "mt-8 pt-6 border-t flex justify-end gap-4"
+        }, h("button", {
+          type: "button",
+          onClick: function () { setView('list'); },
+          className: "px-6 py-2.5 border rounded-md"
+        }, "取消"), h("button", {
+          type: "submit",
+          className: "px-8 py-2.5 bg-blue-600 text-white rounded-md flex items-center gap-2"
+        }, Icons.Save({ className: "h-5 w-5" }), " 儲存"))
+      ));
     });
   }
 

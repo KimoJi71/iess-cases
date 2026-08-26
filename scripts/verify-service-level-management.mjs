@@ -999,12 +999,16 @@ try {
 
   console.log('\nSection 8｜叫修單選客戶時自動帶入服務等級（含 D-fallback 已移除的驗證）');
   const autoFillCase = await evaluate(`(function(){
+    // 新增叫修單改為區塊卡片樣式後，服務等級是唯讀欄（span + 文字方塊），
+    // 這裡兩種呈現都讀得到，才不會被純樣式調整弄壞。
     function readServiceLevelDisplay(container) {
-      var labels = container.querySelectorAll('label');
+      var labels = container.querySelectorAll('label, span');
       for (var i = 0; i < labels.length; i++) {
-        if (labels[i].textContent.trim() === '服務等級') {
-          return labels[i].parentElement.querySelector('input').value;
-        }
+        if (labels[i].textContent.trim() !== '服務等級') continue;
+        var input = labels[i].parentElement.querySelector('input');
+        if (input) return input.value;
+        var box = labels[i].nextElementSibling;
+        if (box) return box.textContent.trim();
       }
       return null;
     }
