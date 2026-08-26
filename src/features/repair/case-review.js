@@ -215,7 +215,7 @@
                 h('th', { className: 'p-3 font-semibold' }, '案件編號'),
                 h('th', { className: 'p-3 font-semibold' }, '客戶名稱'),
                 h('th', { className: 'p-3 font-semibold' }, '門市名稱'),
-                h('th', { className: 'p-3 font-semibold' }, '公司區域'),
+                h('th', { className: 'p-3 font-semibold' }, '行政區域'),
                 h('th', { className: 'p-3 font-semibold' }, '服務等級'),
                 h('th', { className: 'p-3 font-semibold' }, '總積分'),
                 h('th', { className: 'p-3 font-semibold' }, '工項分類'),

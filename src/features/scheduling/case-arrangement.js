@@ -863,7 +863,7 @@
                   className: inputCls
                 })
               ),
-              renderScheduleReadOnly('公司區域', StoreUtils.getRecordArea(formData) || '—'),
+              renderScheduleReadOnly('行政區域', StoreUtils.getRecordArea(formData) || '—'),
               h('div', { className: 'col-span-full md:col-span-2' },
                 renderScheduleFieldLabel('門市地址'),
                 h('input', {
@@ -1105,7 +1105,7 @@
                   )
                 ),
                 h('div', null,
-                  h('label', { className: 'block text-xs text-gray-500 mb-1' }, '公司區域'),
+                  h('label', { className: 'block text-xs text-gray-500 mb-1' }, '行政區域'),
                   h('div', {
                     className: 'border border-gray-200 rounded-md bg-white p-2 max-h-36 overflow-y-auto space-y-1'
                   },
