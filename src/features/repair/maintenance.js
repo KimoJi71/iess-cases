@@ -229,8 +229,6 @@
         className: "p-3 font-semibold text-center"
       }, "保養狀態"), h("th", {
         className: "p-3 font-semibold"
-      }, "工項類別"), h("th", {
-        className: "p-3 font-semibold"
       }, "保養區間"), h("th", {
         className: "p-3 font-semibold"
       }, "保養日期"), h("th", {
@@ -246,7 +244,7 @@
       }, "退回原因"))), h("tbody", {
         className: "divide-y divide-gray-100"
       }, filteredCases.length === 0 ? h("tr", null, h("td", {
-        colspan: "14",
+        colspan: "13",
         className: "text-center p-8 text-gray-400"
       }, "無符合條件之保養資料")) : pageResult.items.map(function (c) {
         var canClose = canCloseMaintenanceCase(c);
@@ -300,8 +298,6 @@
         }, h("span", {
           className: "px-2 py-1 rounded-full text-xs font-medium " + getMaintenanceStatusBadgeClass(c.status)
         }, c.status)), h("td", {
-          className: "p-3"
-        }, c.workCategory || '保養'), h("td", {
           className: "p-3"
         }, ScheduleUtils.formatPeriodRange(getCasePeriod(c))), h("td", {
           className: "p-3"
