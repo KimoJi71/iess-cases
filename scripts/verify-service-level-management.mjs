@@ -661,9 +661,9 @@ try {
   const callSites = [
     ['src/features/repair/case-form.js', 1],
     ['src/features/project/project-form.js', 2],
-    // 保養區間搬到客戶後，renderMaintenanceScheduleDetails 直接以 customerName
-    // 取得區間，不再需要服務等級名稱，故呼叫點由 2 處回到 1 處。
-    ['src/features/scheduling/case-arrangement.js', 1]
+    // 排程彈窗的維修分支改用 RepairCaseDetailSections 後，客戶名稱在彈窗內是唯讀的，
+    // 不再有「換客戶 → 重查服務等級」的連動，故呼叫點歸零。
+    ['src/features/scheduling/case-arrangement.js', 0]
   ];
   for (const [rel, expectedCount] of callSites) {
     const src = readFileSync(join(ROOT, rel), 'utf8');
@@ -685,11 +685,6 @@ try {
     assertEq((src.match(/getServiceLevelByCustomerName\(customers, value\);/g) || []).length, expectedCount,
       `${rel} 的呼叫點賦值直接以呼叫結果結尾，無任何 || fallback`);
   }
-
-  console.log('\nSection 5｜case-arrangement.js 呼叫點保留查無則沿用原值');
-  const arrangementSrc = readFileSync(join(ROOT, 'src/features/scheduling/case-arrangement.js'), 'utf8');
-  assertEq((arrangementSrc.match(/getServiceLevelByCustomerName\(customers, value\)\s*\|\|\s*scheduleModal\.formData\.serviceLevel;/g) || []).length, 1,
-    'case-arrangement.js 查無客戶服務等級時仍 OR 回原有 scheduleModal.formData.serviceLevel');
 
   console.log('\nSection 6｜客戶不再有 maintenanceInterval');
   assertEq(await evaluate(`INITIAL_CUSTOMERS.some(function (c) { return 'maintenanceInterval' in c; })`),

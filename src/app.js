@@ -672,9 +672,14 @@
           setPersonnelStatus: setPersonnelStatus,
           customers: s.customers,
           stores: s.stores,
+          setStores: setStores,
           assignees: s.assignees,
           processMethods: s.processMethods,
           deviceCategories: s.deviceCategories,
+          // 排程彈窗改用編輯頁的共用區塊，設備／車輛／協力廠商資料需一併帶進來
+          vehicles: s.vehicles,
+          vendors: s.vendors,
+          equipments: s.equipments,
           showToast: showToast
         });
       case 'personnel-movement':

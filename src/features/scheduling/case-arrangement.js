@@ -5,7 +5,8 @@
  *   cases, setCases,
  *   projectCases, setProjectCases,
  *   personnelStatus, setPersonnelStatus,
- *   customers, stores, assignees,
+ *   customers, stores, setStores, assignees,
+ *   vehicles, vendors, equipments,
  *   showToast
  * }
  */
@@ -42,122 +43,6 @@
     };
   }
 
-  // 設備＋服務項目逐卡片渲染，供派工明細與其測試共用；抽成頂層函式是因為
-  // renderRepairScheduleDetails 原本被包在 CaseArrangement(props) 的閉包內，
-  // 無法單獨掛出測試用的 seam，改以 opts 帶入呼叫端閉包內原有的輔助函式。
-  function renderScheduleServiceItems(formData, opts) {
-    var h = opts.h;
-    var pmColumns = ProcessMethodUtils.CASE_DISPLAY_COLUMNS;
-    var items = RepairCaseServiceItems.getItems(formData);
-
-    function formatRecordPoints(r) {
-      var pts = ProcessMethodUtils.resolveCaseRecordPoints(r, opts.processMethods, opts.isClosed);
-      return pts === null ? '—' : String(pts);
-    }
-
-    if (!items.length) {
-      return h('div', {
-        className: 'text-center py-4 text-gray-400 bg-white rounded-md border border-dashed'
-      }, '無設備資料');
-    }
-
-    // 多筆設備一次只顯示一張卡片。目前是第幾張由呼叫端持有：派工明細任一欄位輸入
-    // 都會從外層重建整個彈窗，狀態放在這裡會在每次輸入後被重設回第一台。
-    var activeIndex = Math.min(Math.max(opts.activeIndex || 0, 0), items.length - 1);
-    function goTo(next) {
-      if (opts.onActiveIndexChange) opts.onActiveIndexChange(next);
-    }
-
-    return h('div', { className: 'space-y-4' },
-      h('div', { className: 'flex justify-end' },
-        h(RepairCaseServiceItemPager, {
-          h: h, index: activeIndex, total: items.length, onPrev: goTo, onNext: goTo
-        })
-      ),
-      [items[activeIndex]].map(function (item) {
-        var idx = activeIndex;
-        return h('div', { key: item.id, className: 'bg-white border rounded-md p-3' },
-          h('div', { className: 'font-semibold text-sm text-gray-700 mb-2' },
-            RepairCaseServiceItems.formatItemTitle(idx, item)),
-          h(RepairCaseEquipment.Panel, {
-            h: h,
-            equipment: item.equipment,
-            caseContext: formData,
-            deviceCategories: opts.deviceCategories,
-            FieldComponent: opts.ReadOnlyField,
-            // 設備欄位多，預設收成一行重點，需要時再展開
-            collapsible: true,
-            emptyText: '無設備資料'
-          }),
-          h('div', { className: 'mt-3' },
-            opts.renderScheduleFieldLabel('實際維修原因'),
-            h('textarea', {
-              name: 'serviceItemActualReason',
-              value: item.actualReason || '',
-              onChange: function (e) { opts.onReasonChange(item.id, e.target.value); },
-              rows: 2,
-              className: opts.inputCls
-            })
-          ),
-          h('div', { className: 'mt-3' },
-            opts.renderScheduleFieldLabel('處理方式'),
-            h('div', { className: 'border rounded-md overflow-x-auto bg-white table-scroll-hint' },
-              h('table', { className: 'w-full text-left text-sm whitespace-nowrap' },
-                h('thead', { className: 'bg-gray-100' },
-                  h('tr', null,
-                    pmColumns.map(function (col) {
-                      return h('th', { key: col.key, className: 'p-2 pl-4' }, col.label);
-                    }),
-                    h('th', { className: 'p-2' }, '狀態'),
-                    h('th', { className: 'p-2' }, '積分數'),
-                    h('th', { className: 'p-2' }, '數量')
-                  )
-                ),
-                h('tbody', { className: 'divide-y' },
-                  (!item.processRecords || !item.processRecords.length)
-                    ? h('tr', null,
-                        h('td', { colspan: String(pmColumns.length + 3), className: 'p-4 text-center text-gray-400' }, '無處理方式紀錄')
-                      )
-                    : ProcessMethodUtils.sortCaseProcessRecords(item.processRecords).map(function (r, ridx) {
-                        var isDone = ProcessMethodUtils.isCaseRecordDone(r);
-                        return h('tr', { key: r.id || ridx },
-                          pmColumns.map(function (col) {
-                            return h('td', { key: col.key, className: 'p-2 pl-4' }, r[col.key] || '—');
-                          }),
-                          h('td', { className: 'p-2' },
-                            h('span', { className: ProcessMethodUtils.getCaseRecordStatusBadgeClass(r) },
-                              ProcessMethodUtils.getCaseRecordStatus(r))
-                          ),
-                          h('td', { className: 'p-2 ' + (isDone ? '' : 'text-gray-400') },
-                            formatRecordPoints(r),
-                            isDone ? null : h('span', { className: 'text-xs text-gray-400 ml-1' }, '不計分')
-                          ),
-                          h('td', { className: 'p-2' },
-                            r.qty,
-                            r.unit ? h('span', { className: 'text-gray-500 ml-1' }, r.unit) : null
-                          )
-                        );
-                      })
-                )
-              )
-            )
-          ),
-          // 備註跟著設備走：一張卡片一個備註
-          h('div', { className: 'mt-3' },
-            opts.renderScheduleFieldLabel('備註'),
-            h('textarea', {
-              name: 'serviceItemRemarks',
-              value: item.remarks || '',
-              onChange: function (e) { opts.onRemarksChange(item.id, e.target.value); },
-              rows: 3,
-              className: opts.inputCls
-            })
-          )
-        );
-      })
-    );
-  }
-
   function CaseArrangement(props) {
     var maintenanceCases = props.maintenanceCases;
     var setMaintenanceCases = props.setMaintenanceCases;
@@ -169,7 +54,13 @@
     var setPersonnelStatus = props.setPersonnelStatus;
     var customers = props.customers;
     var stores = props.stores;
+    // 保養分支的共用區塊要在保養完成時回寫門市的上次保養日期（見 Task 4）
+    var setStores = props.setStores;
     var assignees = props.assignees || [];
+    // 排程彈窗的維修分支沿用編輯頁區塊，需要與編輯頁相同的參照資料
+    var vehicles = props.vehicles || [];
+    var vendors = props.vendors || [];
+    var equipments = props.equipments || [];
     var processMethods = props.processMethods || [];
     var deviceCategories = props.deviceCategories || [];
     var showToast = props.showToast;
@@ -470,7 +361,12 @@
           planDate: record.expectedDate || record.planDate || calDate,
           planTimeStart: record.expectedTimeStart || record.planTimeStart || '',
           planTimeEnd: record.expectedTimeEnd || record.planTimeEnd || '',
-          formData: Object.assign({}, record)
+          formData: Object.assign({}, record),
+          // 共用區塊的 UI 暫存狀態（分頁索引／設備挑選器／簽名板）掛在彈窗狀態上，
+          // 才撐得過每次輸入造成的整頁重繪
+          ui: sourceType === 'repair'
+            ? RepairCaseDetailSections.createUiState()
+            : null
         };
       }
 
@@ -535,7 +431,10 @@
           planDate: sched.planDate || calDate,
           planTimeStart: sched.planTimeStart || '',
           planTimeEnd: sched.planTimeEnd || '',
-          formData: Object.assign({}, record)
+          formData: Object.assign({}, record),
+          ui: sourceType === 'repair'
+            ? RepairCaseDetailSections.createUiState()
+            : null
         };
         rerender();
       }
@@ -576,47 +475,6 @@
             patch[name] = value;
             return patch;
           })())
-        });
-        if (name === 'customerName') {
-          scheduleModal.formData.storeName = '';
-          scheduleModal.formData.companyCity = '';
-          scheduleModal.formData.companyDistrict = '';
-          scheduleModal.formData.storeAddress = '';
-          // 排程 Modal 刻意維持「查無則保留原值」：此欄僅供本次排程參考用的顯示，
-          // 換客戶查無服務等級時清空反而會讓使用者誤以為原本的排程資訊被清掉，
-          // 與其他表單「查無即清空」的一致性取捨不同，非遺漏。
-          scheduleModal.formData.serviceLevel =
-            CustomerUtils.getServiceLevelByCustomerName(customers, value)
-            || scheduleModal.formData.serviceLevel;
-        }
-        if (name === 'storeName') {
-          var synced = ScheduleUtils.applyStoreSnapshot(scheduleModal.formData, stores);
-          scheduleModal.formData = Object.assign({}, scheduleModal.formData, {
-            companyCity: synced.companyCity || '',
-            companyDistrict: synced.companyDistrict || '',
-            serviceLevel: synced.serviceLevel || scheduleModal.formData.serviceLevel,
-            storeAddress: synced.storeAddress || ''
-          });
-        }
-        rerender();
-      }
-
-      // 一次只顯示一張設備卡片，目前是第幾張要跟著彈窗狀態走（見 renderScheduleServiceItems）
-      function setScheduleActiveItemIndex(index) {
-        if (!scheduleModal) return;
-        scheduleModal = Object.assign({}, scheduleModal, { activeItemIndex: index });
-        rerender();
-      }
-
-      // 服務項目掛在各自的設備卡片下，故派工明細也逐卡片寫回
-      function updateScheduleServiceItemField(itemId, name, value) {
-        if (!scheduleModal) return;
-        var patch = {};
-        patch[name] = value;
-        scheduleModal = Object.assign({}, scheduleModal, {
-          formData: Object.assign({}, scheduleModal.formData, {
-            serviceItems: RepairCaseServiceItems.updateItem(scheduleModal.formData, itemId, patch)
-          })
         });
         rerender();
       }
@@ -701,135 +559,6 @@
             ASSIGNEES.map(function (opt) {
               return CaseAssigneeFields.renderGroupOption(opt);
             })
-          )
-        );
-      }
-
-      function renderRepairScheduleDetails(formData) {
-        var isOther = formData.workCategory === '其他';
-        var customerOptions = CustomerUtils.getCustomerNameOptions(customers, formData.customerName);
-        var storeOptions = ScheduleUtils.getStoreNamesForCustomer(stores, formData.customerName, formData.storeName);
-        var inputCls = 'w-full p-2.5 border rounded-md outline-none text-sm';
-
-        function ReadOnlyField(p) {
-          return renderScheduleReadOnly(p.label, p.value, p.fullWidth);
-        }
-
-        return h('div', { className: 'space-y-4' },
-          h('section', { className: 'bg-gray-50 border border-gray-200 rounded-md p-4' },
-            h('h4', { className: 'text-sm font-bold text-blue-800 border-b pb-2 mb-3' }, '1. 案件資料'),
-            h('div', { className: 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4' },
-              h('div', null,
-                renderScheduleFieldLabel('客戶名稱'),
-                h('select', {
-                  value: formData.customerName,
-                  onChange: function (e) { updateScheduleFormField('customerName', e.target.value); },
-                  className: inputCls
-                },
-                  h('option', { value: '' }, '請選擇'),
-                  customerOptions.map(function (opt) {
-                    return h('option', { key: opt, value: opt }, opt);
-                  })
-                )
-              ),
-              h('div', null,
-                renderScheduleFieldLabel('門市名稱'),
-                h('select', {
-                  value: formData.storeName,
-                  onChange: function (e) { updateScheduleFormField('storeName', e.target.value); },
-                  className: inputCls
-                },
-                  h('option', { value: '' }, '請選擇'),
-                  storeOptions.map(function (opt) {
-                    return h('option', { key: opt, value: opt }, opt);
-                  })
-                )
-              ),
-              renderScheduleReadOnly('叫修人員', formData.reporter),
-              renderScheduleReadOnly('服務等級', formData.serviceLevel),
-              h('div', { className: 'col-span-full md:col-span-4' },
-                renderScheduleReadOnly('門市地址', formData.storeAddress)
-              ),
-              h('div', null,
-                renderScheduleFieldLabel('工項分類'),
-                h('select', {
-                  value: formData.workCategory,
-                  onChange: function (e) { updateScheduleFormField('workCategory', e.target.value); },
-                  className: inputCls
-                },
-                  WORK_CATEGORY_OPTIONS.map(function (opt) {
-                    return h('option', { key: opt, value: opt }, opt);
-                  })
-                )
-              ),
-              !isOther && h('div', null,
-                renderScheduleFieldLabel('叫修項目'),
-                h('select', {
-                  value: formData.repairItem,
-                  onChange: function (e) { updateScheduleFormField('repairItem', e.target.value); },
-                  className: inputCls
-                },
-                  REPAIR_ITEMS.map(function (opt) {
-                    return h('option', { key: opt, value: opt }, opt);
-                  })
-                )
-              ),
-              !isOther && h('div', null,
-                renderScheduleFieldLabel('叫修原因'),
-                h('select', {
-                  value: formData.repairReason,
-                  onChange: function (e) { updateScheduleFormField('repairReason', e.target.value); },
-                  className: inputCls
-                },
-                  REPAIR_REASONS.map(function (opt) {
-                    return h('option', { key: opt, value: opt }, opt);
-                  })
-                )
-              ),
-              renderScheduleReadOnly('組別', formatRepairModalAssignees(scheduleModal.assignees)),
-              h('div', { className: 'col-span-full' },
-                renderScheduleFieldLabel(isOther ? '工作描述' : '故障描述'),
-                h('textarea', {
-                  value: formData.faultDesc || '',
-                  onChange: function (e) { updateScheduleFormField('faultDesc', e.target.value); },
-                  rows: 3,
-                  className: inputCls
-                })
-              )
-            )
-          ),
-          h('section', { className: 'bg-gray-50 border border-gray-200 rounded-md p-4' },
-            h('h4', { className: 'text-sm font-bold text-blue-800 border-b pb-2 mb-3' },
-              isOther ? '2. 備註' : '2. 設備與服務項目'),
-            isOther
-              ? h('div', null,
-                  renderScheduleFieldLabel('備註'),
-                  h('textarea', {
-                    value: formData.remarks || '',
-                    onChange: function (e) { updateScheduleFormField('remarks', e.target.value); },
-                    rows: 3,
-                    className: inputCls
-                  })
-                )
-              : h('div', { className: 'space-y-4' },
-                  renderScheduleServiceItems(formData, {
-                    h: h,
-                    deviceCategories: deviceCategories,
-                    ReadOnlyField: ReadOnlyField,
-                    renderScheduleFieldLabel: renderScheduleFieldLabel,
-                    inputCls: inputCls,
-                    isClosed: formData.isClosed,
-                    processMethods: processMethods,
-                    onReasonChange: function (itemId, value) {
-                      updateScheduleServiceItemField(itemId, 'actualReason', value);
-                    },
-                    onRemarksChange: function (itemId, value) {
-                      updateScheduleServiceItemField(itemId, 'remarks', value);
-                    },
-                    activeIndex: scheduleModal.activeItemIndex || 0,
-                    onActiveIndexChange: setScheduleActiveItemIndex
-                  })
-                )
           )
         );
       }
@@ -934,7 +663,10 @@
       function renderScheduleModalDetails(item) {
         if (!scheduleModal || !scheduleModal.formData) return null;
         var formData = scheduleModal.formData;
-        if (item.sourceType === 'repair') return renderRepairScheduleDetails(formData);
+        if (item.sourceType === 'repair') {
+          return h('div', { className: 'space-y-6' },
+            RepairCaseDetailSections.renderSections(buildDetailCtx('repair')));
+        }
         if (item.sourceType === 'maintenance') return renderMaintenanceScheduleDetails(formData);
         if (item.sourceType === 'project') return renderProjectScheduleDetails(formData, item);
         return h('div', { className: 'space-y-2 bg-gray-50 border border-gray-200 rounded-md p-4 text-sm text-gray-500' },
@@ -942,68 +674,98 @@
         );
       }
 
+      // 排程彈窗與編輯頁共用同一份區塊實作；彈窗略過「排程資料」段，
+      // 因為頂端已有預計日期／時間／組別的主控欄位。
+      function buildDetailCtx(sourceType) {
+        if (sourceType === 'repair') {
+          return {
+            formData: scheduleModal.formData,
+            ui: scheduleModal.ui,
+            data: {
+              equipments: equipments,
+              deviceCategories: deviceCategories,
+              processMethods: processMethods,
+              vehicles: vehicles,
+              vendors: vendors,
+              stores: stores
+            },
+            rerender: rerender,
+            showToast: showToast,
+            include: ['case', 'equipment', 'result'],
+            idPrefix: 'schedule-modal'
+          };
+        }
+        return null;
+      }
+
       function renderScheduleModal() {
         if (!scheduleModal) return null;
         var isEdit = scheduleModal.mode === 'edit';
-        return h('div', { className: 'app-modal-overlay p-2 sm:p-4' },
-          // 頭尾 shrink-0、只讓中段捲動，按鈕才不會被長內容推出畫面
-          h('div', { className: 'bg-white rounded-lg shadow-xl w-full max-w-5xl max-h-[95vh] sm:max-h-[90vh] flex flex-col' },
-            h('div', { className: 'flex items-center justify-between p-4 sm:p-6 border-b border-gray-100 shrink-0' },
-              h('h3', { className: 'text-lg font-bold text-gray-800' },
-                isEdit ? '編輯排程' : '安排排程'),
-              h('button', {
-                type: 'button',
-                onClick: function () { scheduleModal = null; rerender(); },
-                title: '關閉',
-                className: 'text-gray-500 hover:bg-gray-100 p-1.5 rounded-full transition-colors'
-              }, Icons.X({ className: 'h-5 w-5' }))
-            ),
-            h('div', { className: 'flex-1 overflow-y-auto p-4 sm:p-6 space-y-6' },
-              h('div', { className: 'grid grid-cols-1 sm:grid-cols-3 gap-4' },
-                h('div', null,
-                  h('label', { className: 'block text-xs text-gray-500 mb-1' }, '預計日期'),
-                  h('input', {
-                    type: 'date',
-                    value: scheduleModal.planDate,
-                    onChange: function (e) { updateScheduleModalTime('planDate', e.target.value); },
-                    className: 'w-full p-2.5 border rounded-md outline-none'
-                  })
-                ),
-                h('div', null,
-                  h('label', { className: 'block text-xs text-gray-500 mb-1' }, '預計開始時間'),
-                  h(TimeInput24, {
-                    value: scheduleModal.planTimeStart,
-                    onChange: function (e) { updateScheduleModalTime('planTimeStart', e.target.value); },
-                    className: 'w-full'
-                  })
-                ),
-                h('div', null,
-                  h('label', { className: 'block text-xs text-gray-500 mb-1' }, '預計結束時間'),
-                  h(TimeInput24, {
-                    value: scheduleModal.planTimeEnd,
-                    onChange: function (e) { updateScheduleModalTime('planTimeEnd', e.target.value); },
-                    className: 'w-full'
-                  })
-                ),
-                renderScheduleAssigneeEditor()
+        var detailCtx = buildDetailCtx(scheduleModal.item.sourceType);
+        // 浮層（設備挑選器／簽名板）必須是彈窗的兄弟節點：彈窗中段是 overflow-y-auto，
+        // 掛在裡面會被裁掉。
+        return [
+          h('div', { className: 'app-modal-overlay p-2 sm:p-4' },
+            // 頭尾 shrink-0、只讓中段捲動，按鈕才不會被長內容推出畫面
+            h('div', { className: 'bg-white rounded-lg shadow-xl w-full max-w-5xl max-h-[95vh] sm:max-h-[90vh] flex flex-col' },
+              h('div', { className: 'flex items-center justify-between p-4 sm:p-6 border-b border-gray-100 shrink-0' },
+                h('h3', { className: 'text-lg font-bold text-gray-800' },
+                  isEdit ? '編輯排程' : '安排排程'),
+                h('button', {
+                  type: 'button',
+                  onClick: function () { scheduleModal = null; rerender(); },
+                  title: '關閉',
+                  className: 'text-gray-500 hover:bg-gray-100 p-1.5 rounded-full transition-colors'
+                }, Icons.X({ className: 'h-5 w-5' }))
               ),
-              h('div', null,
-                h('h4', { className: 'text-sm font-bold text-gray-700 mb-3' }, '案件詳細內容'),
-                renderScheduleModalDetails(scheduleModal.item)
+              h('div', { className: 'flex-1 overflow-y-auto p-4 sm:p-6 space-y-6' },
+                h('div', { className: 'grid grid-cols-1 sm:grid-cols-3 gap-4' },
+                  h('div', null,
+                    h('label', { className: 'block text-xs text-gray-500 mb-1' }, '預計日期'),
+                    h('input', {
+                      type: 'date',
+                      value: scheduleModal.planDate,
+                      onChange: function (e) { updateScheduleModalTime('planDate', e.target.value); },
+                      className: 'w-full p-2.5 border rounded-md outline-none'
+                    })
+                  ),
+                  h('div', null,
+                    h('label', { className: 'block text-xs text-gray-500 mb-1' }, '預計開始時間'),
+                    h(TimeInput24, {
+                      value: scheduleModal.planTimeStart,
+                      onChange: function (e) { updateScheduleModalTime('planTimeStart', e.target.value); },
+                      className: 'w-full'
+                    })
+                  ),
+                  h('div', null,
+                    h('label', { className: 'block text-xs text-gray-500 mb-1' }, '預計結束時間'),
+                    h(TimeInput24, {
+                      value: scheduleModal.planTimeEnd,
+                      onChange: function (e) { updateScheduleModalTime('planTimeEnd', e.target.value); },
+                      className: 'w-full'
+                    })
+                  ),
+                  renderScheduleAssigneeEditor()
+                ),
+                h('div', null,
+                  h('h4', { className: 'text-sm font-bold text-gray-700 mb-3' }, '案件詳細內容'),
+                  renderScheduleModalDetails(scheduleModal.item)
+                )
+              ),
+              h('div', { className: 'p-4 sm:p-6 border-t border-gray-100 flex justify-end gap-3 shrink-0 bg-white rounded-b-lg' },
+                h('button', {
+                  onClick: function () { scheduleModal = null; rerender(); },
+                  className: 'px-4 py-2 border rounded-md text-gray-600 hover:bg-gray-50'
+                }, '取消'),
+                h('button', {
+                  onClick: confirmScheduleModal,
+                  className: 'px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700'
+                }, '確認')
               )
-            ),
-            h('div', { className: 'p-4 sm:p-6 border-t border-gray-100 flex justify-end gap-3 shrink-0 bg-white rounded-b-lg' },
-              h('button', {
-                onClick: function () { scheduleModal = null; rerender(); },
-                className: 'px-4 py-2 border rounded-md text-gray-600 hover:bg-gray-50'
-              }, '取消'),
-              h('button', {
-                onClick: confirmScheduleModal,
-                className: 'px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700'
-              }, '確認')
             )
-          )
-        );
+          ),
+          detailCtx && RepairCaseDetailSections.renderOverlays(detailCtx)
+        ];
       }
 
       setTimeout(function () { refreshCalendar(); }, 0);
@@ -1180,6 +942,5 @@
     });
   }
 
-  CaseArrangement.renderScheduleServiceItems = renderScheduleServiceItems;
   window.CaseArrangement = CaseArrangement;
 })();

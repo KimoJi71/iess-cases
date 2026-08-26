@@ -347,22 +347,25 @@ try {
 
   console.log('\n派工明細一次一台');
   const arrangement = await evaluate(`(function () {
+    // 派工明細已改用與編輯頁共用的 RepairCaseDetailSections（只取「設備與服務項目」段）
     var c = window.__mkCase(3);
-    var h = IESS.h;
-    var calls = [];
+    var ui = RepairCaseDetailSections.createUiState();
     function render(activeIndex) {
-      return CaseArrangement.renderScheduleServiceItems(c, {
-        h: h, deviceCategories: [],
-        ReadOnlyField: function (p) {
-          return h('div', null, h('span', null, p.label), h('span', null, p.value));
+      ui.activeItemIndex = activeIndex;
+      var host = document.createElement('div');
+      RepairCaseDetailSections.renderSections({
+        formData: c,
+        ui: ui,
+        data: {
+          equipments: [], deviceCategories: [], processMethods: [],
+          vehicles: [], vendors: [], stores: []
         },
-        renderScheduleFieldLabel: function (label) { return h('label', null, label); },
-        inputCls: 'w-full', isClosed: false, processMethods: [],
-        onReasonChange: function () {},
-        onRemarksChange: function () {},
-        activeIndex: activeIndex,
-        onActiveIndexChange: function (i) { calls.push(i); }
-      });
+        rerender: function () {},
+        showToast: function () {},
+        include: ['equipment'],
+        idPrefix: 'test'
+      }).forEach(function (n) { host.appendChild(n); });
+      return host;
     }
     var node = render(0);
     document.body.appendChild(node);
@@ -371,20 +374,21 @@ try {
       firstPager: window.__pagerText(node)
     };
     window.__pagerBtn(node, 'next').click();
+    // 共用模組把新的 index 直接寫回呼叫端持有的 ui，不再透過回呼
+    out.uiIndexAfterNext = ui.activeItemIndex;
     node.remove();
     var node2 = render(1);
     document.body.appendChild(node2);
     out.secondRemarks = window.__cardRemarks(node2);
     out.secondPager = window.__pagerText(node2);
-    out.calls = calls;
     node2.remove();
     return out;
   })()`);
   assertEq(arrangement.firstRemarks, ['備註1'], '派工明細初始只顯示第一台');
   assertEq(arrangement.firstPager, '設備 1 / 3', '派工明細有切換列');
-  assertEq(arrangement.calls, [1], '切換時回呼帶新的 index 給呼叫端');
-  assertEq(arrangement.secondRemarks, ['備註2'], 'activeIndex 為 1 時顯示第二台');
-  assertEq(arrangement.secondPager, '設備 2 / 3', '派工明細切換列跟著 activeIndex');
+  assertEq(arrangement.uiIndexAfterNext, 1, '切換時把新的 index 寫回呼叫端持有的 ui');
+  assertEq(arrangement.secondRemarks, ['備註2'], 'activeItemIndex 為 1 時顯示第二台');
+  assertEq(arrangement.secondPager, '設備 2 / 3', '派工明細切換列跟著 activeItemIndex');
 
   console.log('\nPDF 仍輸出全部設備');
   const pdf = await evaluate(`(function () {

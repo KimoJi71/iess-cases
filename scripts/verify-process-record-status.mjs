@@ -138,8 +138,7 @@ assertTrue(/colCount = pmColumns\.length \+ \(readOnly \? 3 : 4\)/.test(cardSrc)
 // RepairCaseServiceItemCard（跟編輯案件同一份元件），故狀態欄／排序／badge／
 // colspan 的實際檢查已經涵蓋在「編輯案件」那組；這裡改驗證案件明細確實有委派過去。
 const surfaces = [
-  ['src/features/repair/case-service-item-card.js', '編輯案件'],
-  ['src/features/scheduling/case-arrangement.js', '案件安排']
+  ['src/features/repair/case-service-item-card.js', '編輯案件']
 ];
 surfaces.forEach(([rel, label]) => {
   const src = readFileSync(join(ROOT, rel), 'utf8');
@@ -152,8 +151,15 @@ surfaces.forEach(([rel, label]) => {
 const viewSrc = readFileSync(join(ROOT, 'src/features/repair/case-view.js'), 'utf8');
 assertTrue(/RepairCaseServiceItemCard[\s\S]{0,600}readOnly:\s*true/.test(viewSrc),
   '案件明細：以 readOnly 重用設備卡片元件（狀態欄／排序／badge／不計分皆隨之共用）');
+// Task 3 起，案件安排的排程彈窗也不再自己畫表格，改成透過 RepairCaseDetailSections
+// 重用同一份 RepairCaseServiceItemCard，故狀態欄／排序／badge／colspan 的實際檢查
+// 一樣涵蓋在「編輯案件」那組；這裡驗證委派鏈確實接上。
 const arrangeSrc = readFileSync(join(ROOT, 'src/features/scheduling/case-arrangement.js'), 'utf8');
-assertTrue(/colspan: String\(pmColumns\.length \+ 3\)/.test(arrangeSrc), '案件安排空列 colspan 已含狀態欄');
+assertTrue(/RepairCaseDetailSections\.renderSections\(/.test(arrangeSrc),
+  '案件安排：委派給共用區塊模組（狀態欄／排序／badge／不計分皆隨之共用）');
+const sectionsSrc = readFileSync(join(ROOT, 'src/features/repair/case-detail-sections.js'), 'utf8');
+assertTrue(/h\(RepairCaseServiceItemCard, \{/.test(sectionsSrc),
+  '共用區塊模組以 RepairCaseServiceItemCard 渲染服務項目');
 
 console.log(`\n${passed} passed, ${failed} failed`);
 process.exit(failed ? 1 : 0);

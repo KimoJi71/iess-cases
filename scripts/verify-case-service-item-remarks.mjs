@@ -318,28 +318,28 @@ try {
   assertEq(pdf.secondAfterSecondEquipment, true, '第二台備註排在第二台設備小節內');
 
   console.log('\n派工明細逐卡片備註');
+  // 派工明細已改用與編輯頁共用的 RepairCaseDetailSections（只取「設備與服務項目」段）
   const arrangement = await evaluate(`(function () {
     var c = window.__twoItemCase();
     var items = RepairCaseServiceItems.getItems(c);
-    var h = IESS.h;
-    var calls = [];
-    // 一次只顯示一張卡片，目前是第幾張由呼叫端以 activeIndex 帶入
+    var ui = RepairCaseDetailSections.createUiState();
+    // 一次只顯示一張卡片，目前是第幾張由呼叫端以 ui.activeItemIndex 帶入
     function render(activeIndex) {
-      return CaseArrangement.renderScheduleServiceItems(c, {
-        h: h,
-        deviceCategories: [],
-        ReadOnlyField: function (p) {
-          return h('div', null, h('span', null, p.label), h('span', null, p.value));
+      ui.activeItemIndex = activeIndex;
+      var host = document.createElement('div');
+      RepairCaseDetailSections.renderSections({
+        formData: c,
+        ui: ui,
+        data: {
+          equipments: [], deviceCategories: [], processMethods: [],
+          vehicles: [], vendors: [], stores: []
         },
-        renderScheduleFieldLabel: function (label) { return h('label', null, label); },
-        inputCls: 'w-full',
-        isClosed: false,
-        processMethods: [],
-        onReasonChange: function () {},
-        onRemarksChange: function (itemId, value) { calls.push({ itemId: itemId, value: value }); },
-        activeIndex: activeIndex,
-        onActiveIndexChange: function () {}
-      });
+        rerender: function () {},
+        showToast: function () {},
+        include: ['equipment'],
+        idPrefix: 'test'
+      }).forEach(function (n) { host.appendChild(n); });
+      return host;
     }
     function boxes(node) { return node.querySelectorAll('textarea[name="serviceItemRemarks"]'); }
     var first = render(0);
@@ -356,18 +356,19 @@ try {
     var box = boxes(second)[0];
     box.value = '派工改備註';
     box.dispatchEvent(new Event('input', { bubbles: true }));
-    out.callCount = calls.length;
-    out.lastItemId = calls.length ? calls[calls.length - 1].itemId : null;
-    out.lastValue = calls.length ? calls[calls.length - 1].value : null;
+    // 共用模組直接寫回 formData，不再透過回呼
+    out.written = RepairCaseServiceItems.getItems(c).map(function (it) { return it.remarks; });
     out.secondItemId = items[1].id;
+    out.writtenItemIds = RepairCaseServiceItems.getItems(c).map(function (it) { return it.id; });
     second.remove();
     return out;
   })()`);
   assertEq(arrangement.count, 1, '派工明細一次只渲染一張卡片的備註欄');
   assertEq(arrangement.values, ['第一台備註', '第二台備註'], '派工明細帶出各卡片自己的備註');
-  assertEq(arrangement.callCount, 1, '改第二張備註觸發一次 onRemarksChange');
-  assertEq(arrangement.lastItemId, arrangement.secondItemId, 'onRemarksChange 帶第二筆 item 的 id');
-  assertEq(arrangement.lastValue, '派工改備註', 'onRemarksChange 帶新的備註內容');
+  assertEq(arrangement.written, ['第一台備註', '派工改備註'],
+    '改第二張備註只寫回第二筆 item，第一筆不受影響');
+  assertEq(arrangement.writtenItemIds[1], arrangement.secondItemId,
+    '被改動的正是第二筆 item（id 不變）');
 
   assertEq(consoleErrors.length, 0, '全程無 JS 錯誤');
 } catch (e) {

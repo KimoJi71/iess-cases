@@ -96,31 +96,32 @@ try {
   assertTrue(seedCheck.itemCount >= 2, '該案件至少兩張卡片', String(seedCheck.itemCount));
   assertEq(seedCheck.allMigrated, true, 'seed 全部案件已遷移，無殘留舊欄位');
 
-  console.log('\nCaseArrangement.renderScheduleServiceItems 逐設備列出');
+  console.log('\n派工明細（RepairCaseDetailSections 的設備段）逐設備列出');
   const arrangement = await evaluate(`(function () {
-    var c = (INITIAL_CASES || []).filter(function (x) {
+    // 深拷貝一份，避免共用模組的直接寫回污染 seed
+    var c = JSON.parse(JSON.stringify((INITIAL_CASES || []).filter(function (x) {
       return RepairCaseServiceItems.getItems(x).length >= 2;
-    })[0];
+    })[0]));
     var items = RepairCaseServiceItems.getItems(c);
-    var h = IESS.h;
-    var calls = [];
-    // 一次只顯示一張卡片，目前是第幾張由呼叫端以 activeIndex 帶入
+    var ui = RepairCaseDetailSections.createUiState();
+    // 一次只顯示一張卡片，目前是第幾張由呼叫端以 ui.activeItemIndex 帶入
     function render(activeIndex) {
-      return CaseArrangement.renderScheduleServiceItems(c, {
-        h: h,
-        deviceCategories: [],
-        ReadOnlyField: function (p) {
-          return h('div', null, h('span', null, p.label), h('span', null, p.value));
+      ui.activeItemIndex = activeIndex;
+      var host = document.createElement('div');
+      RepairCaseDetailSections.renderSections({
+        formData: c,
+        ui: ui,
+        data: {
+          equipments: [], deviceCategories: [],
+          processMethods: (typeof INITIAL_PROCESS_METHODS !== 'undefined' ? INITIAL_PROCESS_METHODS : []),
+          vehicles: [], vendors: [], stores: []
         },
-        renderScheduleFieldLabel: function (label) { return h('label', null, label); },
-        inputCls: 'w-full',
-        isClosed: !!c.isClosed,
-        processMethods: (typeof INITIAL_PROCESS_METHODS !== 'undefined' ? INITIAL_PROCESS_METHODS : []),
-        onReasonChange: function (itemId, value) { calls.push({ itemId: itemId, value: value }); },
-        onRemarksChange: function () {},
-        activeIndex: activeIndex,
-        onActiveIndexChange: function () {}
-      });
+        rerender: function () {},
+        showToast: function () {},
+        include: ['equipment'],
+        idPrefix: 'test'
+      }).forEach(function (n) { host.appendChild(n); });
+      return host;
     }
     // 每張卡片有「實際維修原因」與「備註」兩個 textarea，這裡只驗前者
     function reasonBoxes(node) {
@@ -139,7 +140,7 @@ try {
       textareaValues.push(reasonBoxes(node)[0].value);
       node.remove();
     }
-    // 觸發第二張卡片的「實際維修原因」textarea input，驗證回呼帶的是第二筆 item 的 id
+    // 觸發第二張卡片的「實際維修原因」textarea input，驗證寫回的是第二筆 item
     var secondNode = render(1);
     document.body.appendChild(secondNode);
     var second = reasonBoxes(secondNode)[0];
@@ -151,8 +152,9 @@ try {
       textareaValues: textareaValues,
       text: text,
       perCardCounts: perCardCounts,
-      callCount: calls.length,
-      lastCallItemId: calls.length ? calls[calls.length - 1].itemId : null,
+      // 共用模組直接寫回 formData，不再透過回呼
+      writtenReasons: RepairCaseServiceItems.getItems(c).map(function (it) { return it.actualReason || ''; }),
+      writtenItemIds: RepairCaseServiceItems.getItems(c).map(function (it) { return it.id; }),
       secondItemId: items[1].id
     };
     secondNode.remove();
@@ -175,8 +177,9 @@ try {
     '一次只渲染一張卡片，且各有一個實際維修原因 textarea',
     arrangement.perCardCounts.join(' | ')
   );
-  assertEq(arrangement.callCount, 1, '第二張卡片觸發一次 onReasonChange');
-  assertEq(arrangement.lastCallItemId, arrangement.secondItemId, 'onReasonChange 帶的是第二筆 item 的 id');
+  assertEq(arrangement.writtenReasons[1], '改過的原因', '第二張卡片的輸入寫回第二筆 item 的 actualReason');
+  assertEq(arrangement.writtenReasons[0], arrangement.reasons[0], '第一筆 item 的實際維修原因不受影響');
+  assertEq(arrangement.writtenItemIds[1], arrangement.secondItemId, '被改動的正是第二筆 item（id 不變）');
 
   assertEq(consoleErrors.length, 0, '全程無 JS 錯誤');
 } catch (e) {
