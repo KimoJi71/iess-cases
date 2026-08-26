@@ -178,6 +178,28 @@ try {
     return s.querySelector('[name="processStatus"]').disabled;
   })()`), true, '未加入設備時處理狀態為 disabled');
 
+  // 控制官裁示：取消／儲存搬到 section 4 之外後不再被 resultLocked 鎖住是刻意行為（原本被鎖住是意外），
+  // 這裡把新行為釘住：鎖定範圍只涵蓋維修結果本身的內層 wrapper，取消／儲存必須維持可點擊。
+  assertEq(await evaluate(`(function () {
+    var s = window.__sectionByTitle('#edit-host', '4. 維修結果');
+    var wrapper = s.querySelector('div.space-y-6');
+    return wrapper ? getComputedStyle(wrapper).pointerEvents : 'wrapper-not-found';
+  })()`), 'none', '（新行為）未加入設備時維修結果內層 wrapper 仍是 pointer-events: none');
+  assertEq(await evaluate(`(function () {
+    var host = document.querySelector('#edit-host');
+    var btn = Array.prototype.slice.call(host.querySelectorAll('button'))
+      .filter(function (b) { return b.textContent.trim() === '取消'; })[0];
+    if (!btn) return 'button-not-found';
+    return getComputedStyle(btn).pointerEvents;
+  })()`), 'auto', '（新行為）取消按鈕在鎖定範圍之外，未加入設備時仍可點擊');
+  assertEq(await evaluate(`(function () {
+    var host = document.querySelector('#edit-host');
+    var btn = Array.prototype.slice.call(host.querySelectorAll('button'))
+      .filter(function (b) { return b.textContent.trim() === '儲存'; })[0];
+    if (!btn) return 'button-not-found';
+    return getComputedStyle(btn).pointerEvents;
+  })()`), 'auto', '（新行為）儲存按鈕在鎖定範圍之外，未加入設備時仍可點擊');
+
   console.log('\nSection 4｜加入設備後解除鎖定並顯示卡片');
   await evaluate(`window.__clickText('加入設備', '#edit-host')`);
   await sleep(200);

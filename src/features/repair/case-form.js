@@ -9,7 +9,6 @@
   'use strict';
   var h = IESS.h, Icons = IESS.Icons, stateful = IESS.stateful, TimeInput24 = IESS.TimeInput24;
   var caseDT = IESS.caseDateTime;
-  var caseStatus = IESS.caseStatus;
 
   function syncFormStoreFields(formData, stores) {
     var synced = ScheduleUtils.applyStoreSnapshot(formData, stores);
@@ -36,8 +35,6 @@
   // 「編輯案件」與「案件安排」共用的區塊實作都搬到 RepairCaseDetailSections，
   // 這裡只留別名，AddCaseForm 內文不必逐一改名。
   var Sections = window.RepairCaseDetailSections;
-  var ExpectedTimeRangeFields = window.ExpectedTimeRangeFields;
-  var CaseReadOnlyField = Sections.CaseReadOnlyField;
   var renderVehicleSelect = Sections.renderVehicleSelect;
   var renderPartnerVendorMultiSelect = Sections.renderPartnerVendorMultiSelect;
   var isOtherWorkCategory = Sections.isOtherWorkCategory;
