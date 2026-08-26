@@ -380,7 +380,7 @@
         eventDurationEditable: false,
         onEventClick: function (event) {
           var props = event.extendedProps || {};
-          if (props.isPreview || !props.sourceType || !props.sourceId) return;
+          if (!props.sourceType || !props.sourceId) return;
           openEditScheduleModalRef(props.sourceType, props.sourceId, props.stageKey);
         }
       });

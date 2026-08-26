@@ -39,13 +39,8 @@
 
   function createBridge(containerEl, options) {
     var calendar = null;
-    var draggableInstances = [];
 
     function destroy() {
-      draggableInstances.forEach(function (d) {
-        if (d && d.destroy) d.destroy();
-      });
-      draggableInstances = [];
       if (calendar) {
         calendar.destroy();
         calendar = null;
@@ -101,7 +96,6 @@
         editable: startEditable || durationEditable,
         eventStartEditable: startEditable,
         eventDurationEditable: durationEditable,
-        droppable: !options.readOnly && !!options.onDrop,
         eventContent: function (info) {
           var wrap = document.createElement('div');
           wrap.className = 'fc-schedule-event';
@@ -125,78 +119,11 @@
         eventResize: function (info) {
           if (!options.onEventChange) return;
           options.onEventChange(info.event);
-        },
-        drop: function (info) {
-          if (!options.onDrop) return;
-          var ds = info.draggedEl.dataset;
-          var dateStr = formatDate(info.date);
-          // 丟進「整天」列時不帶時間，交由後續流程視為整天案件
-          var timeStr = info.allDay
-            ? ''
-            : pad(info.date.getHours()) + ':' + pad(info.date.getMinutes());
-          options.onDrop({
-            sourceType: ds.sourceType,
-            sourceId: ds.sourceId,
-            customerName: ds.customerName,
-            storeName: ds.storeName,
-            workCategory: ds.workCategory,
-            assignee: ds.assignee
-          }, dateStr, timeStr);
-          calendar.getEvents().forEach(function (ev) {
-            var p = ev.extendedProps || {};
-            if (p.isPreview && p.sourceId === ds.sourceId) {
-              ev.remove();
-            }
-          });
         }
       });
       calendar.render();
       var initialDate = options.focusDate || options.rangeStart;
       if (initialDate) calendar.gotoDate(initialDate);
-    }
-
-    function buildPreviewTitle(ds) {
-      if (window.ScheduleUtils && ScheduleUtils.formatScheduleEventTitle) {
-        return ScheduleUtils.formatScheduleEventTitle(
-          ds.workCategory, ds.assignee, ds.customerName, ds.storeName
-        );
-      }
-      return '[' + (ds.workCategory || '其他') + ']\n' + (ds.assignee || '未指派') + '\n' +
-        ds.customerName + '\n' + ds.storeName;
-    }
-
-    function initExternalDrag(containerEl) {
-      draggableInstances.forEach(function (d) {
-        if (d && d.destroy) d.destroy();
-      });
-      draggableInstances = [];
-      if (typeof FullCalendar === 'undefined' || !FullCalendar.Draggable || !containerEl) return;
-
-      var draggable = new FullCalendar.Draggable(containerEl, {
-        itemSelector: '.pending-item',
-        eventData: function (eventEl) {
-          var ds = eventEl.dataset;
-          var color = window.ScheduleUtils && ScheduleUtils.getAssigneeColor
-            ? ScheduleUtils.getAssigneeColor(ds.assignee)
-            : undefined;
-          return {
-            title: buildPreviewTitle(ds),
-            duration: '02:00',
-            backgroundColor: color,
-            borderColor: color,
-            extendedProps: {
-              isPreview: true,
-              sourceType: ds.sourceType,
-              sourceId: ds.sourceId,
-              customerName: ds.customerName,
-              storeName: ds.storeName,
-              workCategory: ds.workCategory,
-              assignee: ds.assignee || ''
-            }
-          };
-        }
-      });
-      draggableInstances.push(draggable);
     }
 
     // focusDate：使用者實際查詢的那一天。日檢視要停在這一天，
@@ -212,7 +139,6 @@
     return {
       destroy: destroy,
       setEvents: setEvents,
-      initExternalDrag: initExternalDrag,
       gotoRange: gotoRange
     };
   }
