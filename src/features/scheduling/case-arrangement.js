@@ -225,6 +225,27 @@
       return merged;
     }
 
+    /* 這裡是彈窗 formData 與 store 記錄之間的隔離邊界：共用區塊會就地寫入 formData，
+     * 故除了複製頂層物件，還要把模組真的會動到的巢狀陣列（serviceItems／equipmentList）
+     * 各切一份出來，彈窗的編輯才不會反向改到 store 裡的原始案件。與 maintenance.js 的
+     * 作法一致——只保證「整包替換」安全：若之後改成就地改動陣列裡的物件（例如
+     * eq.qty = n），仍會寫進原始資料，務必整包 REPLACE。 */
+    function buildIsolatedFormData(record) {
+      var formData = Object.assign({}, record);
+      if (record.serviceItems) formData.serviceItems = record.serviceItems.slice();
+      if (record.equipmentList) formData.equipmentList = record.equipmentList.slice();
+      return formData;
+    }
+
+    /* 彈窗頂端的「組別」是這裡的唯一真相，但共用區塊的「指派人員」選單是依
+     * formData.assignees 列出可選成員的，因此組別一異動就同步回 formData，並比照
+     * 編輯頁用 syncMemberIds 濾掉已不屬於任何已選組別的成員。 */
+    function syncFormDataAssignees(formData, list) {
+      if (!formData) return;
+      formData.assignees = list.slice();
+      formData.assigneeMemberIds = CaseAssigneeFields.syncMemberIds(list, formData.assigneeMemberIds);
+    }
+
     function resolveCaseRecord(sourceType, sourceId) {
       if (sourceType === 'maintenance') {
         return maintenanceCases.find(function (c) { return c.id === sourceId; }) || null;
@@ -346,6 +367,17 @@
       var pendingStoreAreaOptions = StoreUtils.getAreaOptionsFromStores(stores);
       var pendingFiltersReady = isPendingFiltersReady();
 
+      // 建立彈窗 formData：走隔離邊界複製一份，再讓「組別」與共用區塊的指派人員對齊。
+      // 彈窗沒帶到組別時（例如從日曆點開的保養單）不覆寫，保留案件原本的組別。
+      function buildScheduleModalFormData(sourceType, record, repairAssignees, assignee) {
+        var formData = buildIsolatedFormData(record);
+        var list = sourceType === 'repair'
+          ? (repairAssignees || [])
+          : (assignee ? [assignee] : []);
+        if (list.length) syncFormDataAssignees(formData, list);
+        return formData;
+      }
+
       function buildScheduleModalState(sourceType, sourceId, assignee) {
         var record = resolveCaseRecord(sourceType, sourceId);
         if (!record) return null;
@@ -370,7 +402,7 @@
           planDate: record.expectedDate || record.planDate || calDate,
           planTimeStart: record.expectedTimeStart || record.planTimeStart || '',
           planTimeEnd: record.expectedTimeEnd || record.planTimeEnd || '',
-          formData: Object.assign({}, record),
+          formData: buildScheduleModalFormData(sourceType, record, repairAssignees, assignee),
           // 共用區塊的 UI 暫存狀態（分頁索引／設備挑選器／簽名板）掛在彈窗狀態上，
           // 才撐得過每次輸入造成的整頁重繪
           ui: sourceType === 'repair'
@@ -442,7 +474,9 @@
           planDate: sched.planDate || calDate,
           planTimeStart: sched.planTimeStart || '',
           planTimeEnd: sched.planTimeEnd || '',
-          formData: Object.assign({}, record),
+          formData: buildScheduleModalFormData(
+            sourceType, record, repairAssignees, sched.assignee || record.assignee || ''
+          ),
           ui: sourceType === 'repair'
             ? RepairCaseDetailSections.createUiState()
             : sourceType === 'maintenance'
@@ -466,6 +500,7 @@
 
       function updateScheduleModalAssignee(value) {
         if (!scheduleModal) return;
+        syncFormDataAssignees(scheduleModal.formData, value ? [value] : []);
         scheduleModal = Object.assign({}, scheduleModal, { assignee: value });
         rerender();
       }
@@ -473,6 +508,7 @@
       function setScheduleModalAssignees(next) {
         if (!scheduleModal) return;
         var list = (next || []).slice();
+        syncFormDataAssignees(scheduleModal.formData, list);
         scheduleModal = Object.assign({}, scheduleModal, {
           assignee: list[0] || '',
           assignees: list
@@ -549,6 +585,26 @@
             })
           )
         );
+      }
+
+      /* 指派人員／使用車輛／協力廠商與「組別」同屬派工設定，故畫在彈窗頂端的排程主控列，
+       * 而不是案件內容區塊——共用區塊的「排程資料」段會連預計日期／時間一起帶進來，
+       * 與頂端主控欄位重複控制同一組值。控制項本身仍沿用共用模組的同一份實作。 */
+      function renderScheduleResourceFields(detailCtx) {
+        if (!detailCtx) return null;
+        var opts = {
+          labelTag: 'label',
+          labelClassName: 'block text-xs text-gray-500 mb-1',
+          memberWrapClass: 'sm:col-span-3',
+          vendorWrapClass: 'sm:col-span-2'
+        };
+        if (scheduleModal.item.sourceType === 'repair') {
+          return RepairCaseDetailSections.renderDispatchResourceFields(detailCtx, opts);
+        }
+        if (scheduleModal.item.sourceType === 'maintenance') {
+          return MaintenanceDetailSections.renderDispatchResourceFields(detailCtx, opts);
+        }
+        return null;
       }
 
       /**
@@ -680,7 +736,8 @@
                       className: 'w-full'
                     })
                   ),
-                  renderScheduleAssigneeEditor()
+                  renderScheduleAssigneeEditor(),
+                  renderScheduleResourceFields(detailCtx)
                 ),
                 h('div', null,
                   h('h4', { className: 'text-sm font-bold text-gray-700 mb-3' }, '案件詳細內容'),

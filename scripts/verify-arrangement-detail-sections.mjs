@@ -27,6 +27,24 @@ function assertTrue(cond, name, detail) {
   if (cond) pass(name, detail); else fail(name, detail);
 }
 
+// MultiSelect 的選項是「切換」語意：案件本來就有指派人員／協力廠商時，第一下會是
+// 取消勾選。此處統一成「最後一定是選上的」，再回傳該選項的顯示文字。
+async function pickInMultiSelect(evaluateFn, sleepFn, label) {
+  await evaluateFn(`window.__openModalMultiSelect(${JSON.stringify(label)})`);
+  await sleepFn(300);
+  const text = await evaluateFn('window.__pickMultiSelectOption(0)');
+  await sleepFn(300);
+  let chips = await evaluateFn(`window.__modalChips(${JSON.stringify(label)})`);
+  if (!chips || chips.indexOf(text) === -1) {
+    await evaluateFn('window.__pickMultiSelectOption(0)');
+    await sleepFn(300);
+    chips = await evaluateFn(`window.__modalChips(${JSON.stringify(label)})`);
+  }
+  await evaluateFn('window.__closeMultiSelect()');
+  await sleepFn(200);
+  return { text: text, chips: chips };
+}
+
 const CHROME = process.env.CHROME_PATH
   || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 const PORT = Number(process.env.CDP_PORT || 9372);
@@ -336,6 +354,73 @@ const SETUP = String.raw`(function () {
     el.click();
     return true;
   };
+  // 彈窗頂端排程主控列的派工資源欄位：<label>標題</label> + 控制項（MultiSelect 或
+  // searchable-select），與區塊內的 <span> 標題不同，故另備一組定位器。
+  window.__modalTopFieldEl = function (label) {
+    var m = window.__modal();
+    if (!m) return null;
+    var lab = Array.prototype.slice.call(m.querySelectorAll('label'))
+      .filter(function (l) { return l.textContent.trim() === label; })[0];
+    return (lab && lab.nextElementSibling) || null;
+  };
+  window.__modalTopFieldKind = function (label) {
+    var el = window.__modalTopFieldEl(label);
+    if (!el) return 'missing';
+    if (el.classList.contains('multi-select')) {
+      return el.querySelector('.multi-select__control--disabled') ? 'multi-select-disabled' : 'multi-select';
+    }
+    if (el.classList.contains('searchable-select')) {
+      var input = el.querySelector('input');
+      return (input && input.disabled) ? 'select-disabled' : 'select';
+    }
+    return el.tagName.toLowerCase();
+  };
+  window.__modalChips = function (label) {
+    var el = window.__modalTopFieldEl(label);
+    if (!el) return null;
+    return Array.prototype.map.call(el.querySelectorAll('.multi-select__chip'),
+      function (c) { return c.textContent.replace('×', '').trim(); });
+  };
+  window.__openModalMultiSelect = function (label) {
+    var el = window.__modalTopFieldEl(label);
+    if (!el || !el.classList.contains('multi-select')) throw new Error('欄位不是多選：' + label);
+    el.querySelector('.multi-select__control').click();
+    return true;
+  };
+  // MultiSelect 的選單掛在 body 上，勾選後不會自動關閉，故選完再 closeAll
+  window.__pickMultiSelectOption = function (idx) {
+    var opts = document.querySelectorAll('.multi-select__menu .multi-select__option');
+    if (!opts.length) throw new Error('多選選單沒有選項');
+    var opt = opts[idx || 0];
+    var lab = opt.querySelector('.multi-select__option-label');
+    var text = (lab ? lab.textContent : opt.textContent).trim();
+    opt.click();
+    return text;
+  };
+  window.__closeMultiSelect = function () { IESS.MultiSelect.closeAll(); return true; };
+  window.__openModalTopSelect = function (label) {
+    var el = window.__modalTopFieldEl(label);
+    if (!el || !el.classList.contains('searchable-select')) throw new Error('欄位不是下拉：' + label);
+    var input = el.querySelector('input');
+    input.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+    input.focus();
+    return true;
+  };
+  // 車輛選項的文字取決於車輛主檔，測試不預設內容，取第 idx 個（0 是「請選擇」）
+  window.__pickOptionAt = function (idx) {
+    var opt = document.querySelectorAll('.searchable-select__option')[idx];
+    if (!opt) throw new Error('選單選項不足：' + idx);
+    var lab = opt.querySelector('.searchable-select__option-label');
+    var text = (lab ? lab.textContent : opt.textContent).trim();
+    opt.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+    return text;
+  };
+  window.__modalTopSelectValue = function (label) {
+    var el = window.__modalTopFieldEl(label);
+    var input = el && el.querySelector('input');
+    return input ? input.value : null;
+  };
+  window.__savedRepairStoreName = '';
   return true;
 })()`;
 
@@ -417,6 +502,30 @@ try {
   assertEq(await evaluate(`window.__modalEditableCount('1. 案件資料')`), 0,
     '客戶／門市／工項分類／叫修項目／叫修原因／故障描述皆為唯讀');
 
+  console.log('\nSection 2.5｜維修彈窗頂端補齊派工資源欄位（指派人員／使用車輛／協力廠商）');
+  assertDeep(await evaluate(`(function () {
+    return {
+      member: window.__modalTopFieldKind('指派人員'),
+      vehicle: window.__modalTopFieldKind('使用車輛'),
+      vendor: window.__modalTopFieldKind('協力廠商')
+    };
+  })()`), { member: 'multi-select', vehicle: 'select', vendor: 'multi-select' },
+    '三個欄位都在彈窗頂端（組別旁邊）且皆可編輯');
+  // 指派人員的選單只列「已選組別」底下的成員：組別由待安排面板帶入，故此處應有可選項
+  const repairMemberPick = await pickInMultiSelect(evaluate, sleep, '指派人員');
+  const repairMember = repairMemberPick.text;
+  assertDeep(repairMemberPick.chips, [repairMember],
+    '指派人員可勾選，且只列出已選組別的成員');
+  await evaluate(`window.__openModalTopSelect('使用車輛')`);
+  await sleep(300);
+  const repairVehicle = await evaluate(`window.__pickOptionAt(1)`);
+  await sleep(300);
+  assertEq(await evaluate(`window.__modalTopSelectValue('使用車輛')`), repairVehicle,
+    '使用車輛可選');
+  const repairVendorPick = await pickInMultiSelect(evaluate, sleep, '協力廠商');
+  const repairVendor = repairVendorPick.text;
+  assertDeep(repairVendorPick.chips, [repairVendor], '協力廠商可勾選');
+
   console.log('\nSection 3｜維修結果區塊存在且欄位齊全');
   // 沒有這道 gate 的話，區塊消失時 s.querySelector 會直接丟例外中斷整支腳本，
   // 後面的 Section 就再也不會回報——壞掉時反而看不出還壞了哪些。
@@ -486,6 +595,36 @@ try {
     return s.querySelector('[name="processStatus"]').disabled;
   })()`), false, '加入設備後維修結果解鎖');
 
+  console.log('\nSection 6.5｜派工資源欄位隨 確認 一起存回去，重新開啟仍在');
+  await evaluate(`(function () {
+    window.__savedRepairStoreName = window.__modalReadOnlyValue('1. 案件資料', '門市名稱');
+    return true;
+  })()`);
+  const repairStoreName = await evaluate('window.__savedRepairStoreName');
+  assertTrue(!!repairStoreName, '讀得到維修彈窗的門市名稱', repairStoreName);
+  // 確認需要完整時間區間，先補上開始與結束時間
+  for (const [label, hour] of [['預計開始時間', '13'], ['預計結束時間', '15']]) {
+    await evaluate(`window.__openModalTimeSelect(${JSON.stringify(label)}, 0)`);
+    await sleep(250);
+    await evaluate(`window.__pickOptionExact(${JSON.stringify(hour)})`);
+    await sleep(300);
+    await evaluate(`window.__openModalTimeSelect(${JSON.stringify(label)}, 1)`);
+    await sleep(250);
+    await evaluate(`window.__pickOptionExact('00')`);
+    await sleep(300);
+  }
+  await evaluate(`window.__clickText('確認', '.app-modal-overlay')`);
+  await sleep(700);
+  assertEq(await evaluate('window.__modal() === null'), true, '維修排程已儲存，彈窗關閉');
+  await evaluate(`window.__openCalendarEventByText(['[一般叫修]', window.__savedRepairStoreName])`);
+  await sleep(700);
+  assertDeep(await evaluate(`window.__modalChips('指派人員')`), [repairMember],
+    '重新開啟後指派人員仍在');
+  assertEq(await evaluate(`window.__modalTopSelectValue('使用車輛')`), repairVehicle,
+    '重新開啟後使用車輛仍在');
+  assertDeep(await evaluate(`window.__modalChips('協力廠商')`), [repairVendor],
+    '重新開啟後協力廠商仍在');
+
   // ---- 保養分支 ----
   // 先把維修彈窗收掉，再用同一組待安排篩選條件換成「保養」重新查一次
   await evaluate(`window.__clickText('取消', '.app-modal-overlay')`);
@@ -530,6 +669,23 @@ try {
   console.log('\nSection 8｜保養案件資料改為唯讀');
   assertEq(await evaluate(`window.__modalEditableCount('1. 案件資料')`), 0,
     '客戶／門市／行政區域／服務等級／門市地址皆為唯讀');
+
+  console.log('\nSection 8.5｜保養彈窗頂端補齊派工資源欄位（指派人員／協力廠商）');
+  assertDeep(await evaluate(`(function () {
+    return {
+      member: window.__modalTopFieldKind('指派人員'),
+      vendor: window.__modalTopFieldKind('協力廠商'),
+      // 保養明細頁的「排程資料」段本來就沒有使用車輛，彈窗也不該多出來
+      vehicle: window.__modalTopFieldKind('使用車輛')
+    };
+  })()`), { member: 'multi-select', vendor: 'multi-select', vehicle: 'missing' },
+    '指派人員與協力廠商都在彈窗頂端且可編輯，使用車輛維持不存在');
+  const maintMemberPick = await pickInMultiSelect(evaluate, sleep, '指派人員');
+  const maintMember = maintMemberPick.text;
+  assertDeep(maintMemberPick.chips, [maintMember], '保養彈窗的指派人員可勾選');
+  const maintVendorPick = await pickInMultiSelect(evaluate, sleep, '協力廠商');
+  const maintVendor = maintVendorPick.text;
+  assertDeep(maintVendorPick.chips, [maintVendor], '保養彈窗的協力廠商可勾選');
 
   console.log('\nSection 9｜保養結果可編輯');
   assertTrue(await evaluate(`window.__modalSectionByTitle('3. 保養結果') !== null`),
@@ -638,6 +794,10 @@ try {
     var s = window.__modalSectionByTitle('3. 保養結果');
     return !!(s && s.querySelector('img[alt="客戶簽名"]'));
   })()`), '重新開啟後客戶簽名仍在');
+  assertDeep(await evaluate(`window.__modalChips('指派人員')`), [maintMember],
+    '重新開啟後指派人員仍在');
+  assertDeep(await evaluate(`window.__modalChips('協力廠商')`), [maintVendor],
+    '重新開啟後協力廠商仍在');
 
   console.log('\nSection 14｜設備清單也跟著整包存回去');
   // 待安排的兩筆保養案件所在門市都沒有設備主檔，改從日曆點開一筆有設備的保養案件

@@ -142,7 +142,7 @@
   }
 
   function renderScheduleSection(ctx, include) {
-    var formData = ctx.formData, vendors = ctx.data.vendors;
+    var formData = ctx.formData;
     var isEdit = ctx.mode !== 'view';
     return sectionCard(sectionTitle(include, 'schedule'), null, h("div", {
       className: "grid grid-cols-1 md:grid-cols-3 gap-6"
@@ -170,12 +170,33 @@
       }, { id: fieldId(ctx, 'assignees') }) : h(ReadOnlyField, {
         value: CaseAssigneeUtils.formatMaintenanceAssignees(formData)
       })),
-      h("div", null, fieldLabel('指派人員'), isEdit ? renderMemberMultiSelect(formData, function (next) {
+      renderDispatchResourceFields(ctx)
+    ));
+  }
+
+  /* 派工資源欄位（指派人員／協力廠商）。
+   * 保養明細頁把它們畫在「排程資料」段裡，排程彈窗則畫在頂端的排程主控列（組別旁邊）——
+   * 版面位置不同，但控制項必須是同一份實作，否則兩處會各自漂移。opts 只調整外框與
+   * 標題的樣式／標籤標籤名。 */
+  function renderDispatchResourceFields(ctx, opts) {
+    var o = opts || {};
+    var formData = ctx.formData, vendors = ctx.data.vendors;
+    var isEdit = ctx.mode !== 'view';
+    var labelTag = o.labelTag || '';
+    function field(wrapClass, label, control) {
+      return h("div", wrapClass ? { className: wrapClass } : null,
+        labelTag
+          ? h(labelTag, { className: o.labelClassName || '' }, label)
+          : fieldLabel(label),
+        control);
+    }
+    return [
+      field(o.memberWrapClass || '', '指派人員', isEdit ? renderMemberMultiSelect(formData, function (next) {
         applyChange(ctx, { assigneeMemberIds: next });
       }, { id: fieldId(ctx, 'assignee-members') }) : h(ReadOnlyField, {
         value: CaseAssigneeUtils.formatAssigneeMembers(formData)
       })),
-      h("div", null, fieldLabel('協力廠商'), isEdit ? IESS.MultiSelect({
+      field(o.vendorWrapClass || '', '協力廠商', isEdit ? IESS.MultiSelect({
         id: fieldId(ctx, 'partner-vendors'),
         options: VendorUtils.getCooperatorSelectOptions(vendors, formData.partnerVendorIds),
         value: formData.partnerVendorIds || [],
@@ -184,7 +205,7 @@
       }) : h(ReadOnlyField, {
         value: VendorUtils.formatCooperatorLabels(vendors, formData.partnerVendorIds)
       }))
-    ));
+    ];
   }
 
   function renderCaseSection(ctx, include) {
@@ -340,6 +361,8 @@
     createUiState: createUiState,
     renderSections: renderSections,
     renderOverlays: renderOverlays,
+    // 排程彈窗把派工資源欄位畫在頂端的排程主控列，沿用同一份控制項
+    renderDispatchResourceFields: renderDispatchResourceFields,
     resolveProgressStatus: resolveProgressStatus,
     updateStoreLastMaintenanceDate: updateStoreLastMaintenanceDate,
     // closeMaintenanceCase（maintenance.js）也需要同一套完成日期回退規則，匯出以免各自留一份

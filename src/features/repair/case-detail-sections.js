@@ -302,8 +302,38 @@
     };
   }
 
+  /* 派工資源欄位（指派人員／使用車輛／協力廠商）。
+   * 編輯頁把它們畫在「排程資料」段裡，排程彈窗則畫在頂端的排程主控列（組別旁邊）——
+   * 版面位置不同，但控制項必須是同一份實作，否則兩處會各自漂移。opts 只調整外框與
+   * 標題的樣式／標籤標籤名，控制項本身兩處完全相同。 */
+  function renderDispatchResourceFields(ctx, opts) {
+    var o = opts || {};
+    var formData = ctx.formData, rerender = ctx.rerender;
+    var labelTag = o.labelTag || 'span';
+    var labelClassName = o.labelClassName || 'text-gray-500 block mb-1';
+    function field(wrapClass, label, control) {
+      return h('div', wrapClass ? { className: wrapClass } : null,
+        h(labelTag, { className: labelClassName }, label), control);
+    }
+    return [
+      field(o.memberWrapClass || 'col-span-full md:col-span-2', '指派人員',
+        renderMemberMultiSelect(formData, function (next) {
+          formData.assigneeMemberIds = next;
+          rerender();
+        }, { id: fieldId(ctx, 'assignee-members') })),
+      field(o.vehicleWrapClass || '', '使用車輛',
+        renderVehicleSelect(formData, ctx.data.vehicles, function (e) { handleChange(ctx, e); },
+          'w-full p-2.5 border rounded-md outline-none')),
+      field(o.vendorWrapClass || 'col-span-full md:col-span-2', '協力廠商',
+        renderPartnerVendorMultiSelect(formData, ctx.data.vendors, function (next) {
+          formData.partnerVendorIds = next;
+          rerender();
+        }, fieldId(ctx, 'partner-vendors')))
+    ];
+  }
+
   function renderScheduleSection(ctx, include) {
-    var formData = ctx.formData, vehicles = ctx.data.vehicles, vendors = ctx.data.vendors;
+    var formData = ctx.formData;
     var rerender = ctx.rerender;
     return h("section", { className: "bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-100" },
       h("h3", { className: "text-lg font-bold text-blue-800 border-b pb-2 mb-4" }, sectionTitle(include, 'schedule')),
@@ -333,24 +363,7 @@
             rerender();
           }, { id: fieldId(ctx, 'assignees') })
         ),
-        h("div", { className: "col-span-full md:col-span-2" },
-          h("span", { className: "text-gray-500 block mb-1" }, "指派人員"),
-          renderMemberMultiSelect(formData, function (next) {
-            formData.assigneeMemberIds = next;
-            rerender();
-          }, { id: fieldId(ctx, 'assignee-members') })
-        ),
-        h("div", null,
-          h("span", { className: "text-gray-500 block mb-1" }, "使用車輛"),
-          renderVehicleSelect(formData, vehicles, function (e) { handleChange(ctx, e); }, "w-full p-2.5 border rounded-md outline-none")
-        ),
-        h("div", { className: "col-span-full md:col-span-2" },
-          h("span", { className: "text-gray-500 block mb-1" }, "協力廠商"),
-          renderPartnerVendorMultiSelect(formData, vendors, function (next) {
-            formData.partnerVendorIds = next;
-            rerender();
-          }, fieldId(ctx, 'partner-vendors'))
-        )
+        renderDispatchResourceFields(ctx)
       )
     );
   }
@@ -585,6 +598,8 @@
     CaseReadOnlyField: CaseReadOnlyField,
     TimeRecordField: TimeRecordField,
     renderVehicleSelect: renderVehicleSelect,
+    // 排程彈窗把派工資源欄位畫在頂端的排程主控列，沿用同一份控制項
+    renderDispatchResourceFields: renderDispatchResourceFields,
     renderPartnerVendorMultiSelect: renderPartnerVendorMultiSelect,
     isOtherWorkCategory: isOtherWorkCategory
   };
