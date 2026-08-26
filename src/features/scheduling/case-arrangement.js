@@ -188,7 +188,12 @@
         merged.assignee = payload.assignee;
       }
       if (sourceType === 'maintenance') {
-        merged.status = ScheduleUtils.resolveMaintenanceStatus(merged.status, payload.planDate);
+        // 「已完成」是使用者在彈窗裡手動決定的終態，不因 planDate 而被推算回去；
+        // 其餘狀態仍依排程資料校正，與保養明細頁共用 resolveProgressStatus 同一套規則。
+        merged.status = MaintenanceDetailSections.resolveProgressStatus(merged);
+        if (merged.status === '已完成' && !merged.completionDate) {
+          merged.completionDate = IESS.caseDateTime.now();
+        }
         if (!merged.caseNumber && merged.planDate) {
           merged.caseNumber = merged.planDate.replace(/-/g, '') +
             String(Math.floor(Math.random() * 1000)).padStart(3, '0');
@@ -241,6 +246,10 @@
     function applySchedule(sourceType, sourceId, payload, formData) {
       var merged = buildScheduledRecord(sourceType, formData, payload);
       patchLocalCaseRecord(sourceType, sourceId, merged);
+      // 保養結案時門市的「上次保養日期」要跟著走，否則此入口與保養明細頁寫出的資料不一致
+      if (sourceType === 'maintenance' && merged.status === '已完成') {
+        MaintenanceDetailSections.updateStoreLastMaintenanceDate(stores, setStores, merged);
+      }
       calDate = payload.planDate;
       var week = CalendarBridge.getWeekRange(payload.planDate);
       appliedCal = {
@@ -366,6 +375,8 @@
           // 才撐得過每次輸入造成的整頁重繪
           ui: sourceType === 'repair'
             ? RepairCaseDetailSections.createUiState()
+            : sourceType === 'maintenance'
+            ? MaintenanceDetailSections.createUiState()
             : null
         };
       }
@@ -434,6 +445,8 @@
           formData: Object.assign({}, record),
           ui: sourceType === 'repair'
             ? RepairCaseDetailSections.createUiState()
+            : sourceType === 'maintenance'
+            ? MaintenanceDetailSections.createUiState()
             : null
         };
         rerender();
@@ -463,18 +476,6 @@
         scheduleModal = Object.assign({}, scheduleModal, {
           assignee: list[0] || '',
           assignees: list
-        });
-        rerender();
-      }
-
-      function updateScheduleFormField(name, value) {
-        if (!scheduleModal) return;
-        scheduleModal = Object.assign({}, scheduleModal, {
-          formData: Object.assign({}, scheduleModal.formData, (function () {
-            var patch = {};
-            patch[name] = value;
-            return patch;
-          })())
         });
         rerender();
       }
@@ -515,19 +516,6 @@
         applySchedule(item.sourceType, item.sourceId, payload, scheduleModal.formData);
       }
 
-      function renderScheduleFieldLabel(label) {
-        return h('span', { className: 'text-gray-500 block mb-1 text-xs' }, label);
-      }
-
-      function renderScheduleReadOnly(label, value, fullWidth) {
-        return h('div', { className: fullWidth ? 'col-span-full' : '' },
-          renderScheduleFieldLabel(label),
-          h('div', {
-            className: 'font-medium bg-gray-50 p-2.5 rounded-md border border-gray-100 min-h-[42px] flex items-center text-sm'
-          }, value || '—')
-        );
-      }
-
       function renderScheduleAssigneeEditor() {
         if (!scheduleModal) return null;
         if (scheduleModal.item.sourceType === 'repair') {
@@ -563,81 +551,6 @@
         );
       }
 
-      function renderMaintenanceScheduleDetails(formData) {
-        var store = ScheduleUtils.resolveStore(stores, formData.customerName, formData.storeName);
-        // 與保養列表／保養明細的「保養區間」同源同格式，避免各處對不上
-        var periodLabel = ScheduleUtils.formatPeriodRange(ScheduleUtils.resolveCasePeriod(formData, customers));
-        var inputCls = 'w-full p-2.5 border rounded-md outline-none text-sm';
-
-        return h('div', { className: 'space-y-4' },
-          h('section', { className: 'bg-gray-50 border border-gray-200 rounded-md p-4' },
-            h('h4', { className: 'text-sm font-bold text-blue-800 border-b pb-2 mb-3' }, '案件與門市資訊'),
-            h('div', { className: 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4' },
-              renderScheduleReadOnly('案件編號', formData.caseNumber || '(依保養日期自動產生)'),
-              h('div', null,
-                renderScheduleFieldLabel('客戶名稱'),
-                h('input', {
-                  type: 'text',
-                  value: formData.customerName || '',
-                  onChange: function (e) { updateScheduleFormField('customerName', e.target.value); },
-                  className: inputCls
-                })
-              ),
-              h('div', null,
-                renderScheduleFieldLabel('門市名稱'),
-                h('input', {
-                  type: 'text',
-                  value: formData.storeName || '',
-                  onChange: function (e) { updateScheduleFormField('storeName', e.target.value); },
-                  className: inputCls
-                })
-              ),
-              renderScheduleReadOnly('公司區域', StoreUtils.getRecordArea(formData) || '—'),
-              h('div', { className: 'col-span-full md:col-span-2' },
-                renderScheduleFieldLabel('門市地址'),
-                h('input', {
-                  type: 'text',
-                  value: (store && StoreUtils.buildFullAddress(store)) || formData.storeAddress || '',
-                  onChange: function (e) { updateScheduleFormField('storeAddress', e.target.value); },
-                  className: inputCls
-                })
-              ),
-              h('div', null,
-                renderScheduleFieldLabel('服務等級'),
-                h('input', {
-                  type: 'text',
-                  value: formData.serviceLevel || '',
-                  onChange: function (e) { updateScheduleFormField('serviceLevel', e.target.value); },
-                  className: inputCls
-                })
-              ),
-              renderScheduleReadOnly('保養區間', periodLabel),
-              renderScheduleReadOnly('室內機高度', (store && store.indoorHeight) || '—'),
-              renderScheduleReadOnly('室外機高度', (store && store.outdoorHeight) || '—')
-            )
-          ),
-          h('section', { className: 'bg-gray-50 border border-gray-200 rounded-md p-4' },
-            h('h4', { className: 'text-sm font-bold text-blue-800 border-b pb-2 mb-3' }, '保養作業狀態'),
-            h('div', { className: 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4' },
-              h('div', null,
-                renderScheduleFieldLabel('保養狀態'),
-                h('select', {
-                  value: formData.status,
-                  onChange: function (e) { updateScheduleFormField('status', e.target.value); },
-                  className: inputCls
-                },
-                  MAINTENANCE_STATUS_OPTIONS.map(function (opt) {
-                    return h('option', { key: opt, value: opt }, opt);
-                  })
-                )
-              ),
-              renderScheduleReadOnly('組別', scheduleModal.assignee),
-              renderScheduleReadOnly('完成時間', IESS.caseDateTime.format(formData.completionDate))
-            )
-          )
-        );
-      }
-
       /**
        * 工程立案單在日曆上點開時，直接沿用「編輯工程立案」頁的三段式排版
        * （ProjectDetailView.renderSections），案件內容一律唯讀——工程立案頁才是
@@ -660,14 +573,19 @@
         );
       }
 
-      function renderScheduleModalDetails(item) {
+      // detailCtx 由 renderScheduleModal 建好後傳進來：區塊與浮層必須共用同一個 ctx 物件，
+      // 否則浮層改到的是另一份 ui 狀態（與 EditCaseForm 的作法一致）。
+      function renderScheduleModalDetails(item, detailCtx) {
         if (!scheduleModal || !scheduleModal.formData) return null;
         var formData = scheduleModal.formData;
         if (item.sourceType === 'repair') {
           return h('div', { className: 'space-y-6' },
-            RepairCaseDetailSections.renderSections(buildDetailCtx('repair')));
+            RepairCaseDetailSections.renderSections(detailCtx));
         }
-        if (item.sourceType === 'maintenance') return renderMaintenanceScheduleDetails(formData);
+        if (item.sourceType === 'maintenance') {
+          return h('div', { className: 'space-y-6' },
+            MaintenanceDetailSections.renderSections(detailCtx));
+        }
         if (item.sourceType === 'project') return renderProjectScheduleDetails(formData, item);
         return h('div', { className: 'space-y-2 bg-gray-50 border border-gray-200 rounded-md p-4 text-sm text-gray-500' },
           '此案件類型暫不支援詳細編輯'
@@ -692,6 +610,23 @@
             rerender: rerender,
             showToast: showToast,
             include: ['case', 'equipment', 'result'],
+            idPrefix: 'schedule-modal'
+          };
+        }
+        if (sourceType === 'maintenance') {
+          return {
+            formData: scheduleModal.formData,
+            ui: scheduleModal.ui,
+            data: {
+              equipments: equipments,
+              vendors: vendors,
+              stores: stores,
+              customers: customers
+            },
+            rerender: rerender,
+            showToast: showToast,
+            include: ['case', 'equipment', 'result'],
+            mode: 'edit',
             idPrefix: 'schedule-modal'
           };
         }
@@ -749,7 +684,7 @@
                 ),
                 h('div', null,
                   h('h4', { className: 'text-sm font-bold text-gray-700 mb-3' }, '案件詳細內容'),
-                  renderScheduleModalDetails(scheduleModal.item)
+                  renderScheduleModalDetails(scheduleModal.item, detailCtx)
                 )
               ),
               h('div', { className: 'p-4 sm:p-6 border-t border-gray-100 flex justify-end gap-3 shrink-0 bg-white rounded-b-lg' },
@@ -764,7 +699,9 @@
               )
             )
           ),
-          detailCtx && RepairCaseDetailSections.renderOverlays(detailCtx)
+          detailCtx && (scheduleModal.item.sourceType === 'repair'
+            ? RepairCaseDetailSections.renderOverlays(detailCtx)
+            : MaintenanceDetailSections.renderOverlays(detailCtx))
         ];
       }
 
