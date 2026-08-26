@@ -477,12 +477,7 @@
                   ),
                   h('td', { className: 'p-3' }, c.customerName),
                   h('td', { className: 'p-3' }, c.storeName),
-                  h('td', { className: 'p-3' },
-                    h('span', {
-                      className: 'px-2 py-1 rounded text-xs ' +
-                        (c.workCategory === '緊急叫修' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700')
-                    }, c.workCategory)
-                  ),
+                  h('td', { className: 'p-3' }, c.workCategory || '—'),
                   h('td', { className: 'p-3 font-medium text-blue-700' }, c.caseNumber),
                   h('td', { className: 'p-3' }, formatCreatedAt(c)),
                   h('td', { className: 'p-3' }, StoreUtils.getRecordArea(c) || '—'),
