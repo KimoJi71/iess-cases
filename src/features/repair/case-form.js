@@ -367,6 +367,7 @@
   function EditCaseForm(props) {
     var editingCase = props.editingCase;
     var cases = props.cases;
+    var stores = props.stores || [];
     var setCases = props.setCases;
     var vehicles = props.vehicles || [];
     var vendors = props.vendors || [];
@@ -638,6 +639,11 @@
             CaseReadOnlyField({ label: '門市名稱', value: formData.storeName }),
             CaseReadOnlyField({ label: '服務等級', value: formData.serviceLevel }),
             CaseReadOnlyField({ label: '門市地址', value: formData.storeAddress, fullWidth: true }),
+            CaseReadOnlyField({
+              label: '門市備註',
+              value: StoreUtils.resolveStoreRemarks(stores, formData),
+              fullWidth: true
+            }),
             !isOther && CaseReadOnlyField({ label: '叫修項目', value: formData.repairItem }),
             !isOther && CaseReadOnlyField({ label: '叫修原因', value: formData.repairReason }),
             CaseReadOnlyField({

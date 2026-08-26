@@ -386,6 +386,7 @@
         return h(ViewCaseForm, {
           viewingCase: s.viewingCase, setView: setView, backView: 'list',
           notice: '此案件已結案，已轉為叫修案件紀錄，僅供檢視、不可編輯。',
+          stores: s.stores,
           processMethods: s.processMethods, deviceCategories: s.deviceCategories,
           vehicles: s.vehicles, vendors: s.vendors,
           cases: s.cases, openPrevCase: openPrevCase, currentView: 'case-view'
@@ -415,6 +416,7 @@
       case 'record-view':
         return h(ViewCaseForm, {
           viewingCase: s.viewingCase, setView: setView, backView: 'record-list',
+          stores: s.stores,
           processMethods: s.processMethods, deviceCategories: s.deviceCategories,
           vehicles: s.vehicles, vendors: s.vendors,
           cases: s.cases, openPrevCase: openPrevCase, currentView: 'record-view'
@@ -430,6 +432,7 @@
       case 'review-view':
         return h(ViewCaseForm, {
           viewingCase: s.viewingCase, setView: setView, backView: 'review-list',
+          stores: s.stores,
           processMethods: s.processMethods, deviceCategories: s.deviceCategories,
           vehicles: s.vehicles, vendors: s.vendors,
           cases: s.cases, openPrevCase: openPrevCase, currentView: 'review-view'
@@ -439,6 +442,7 @@
           viewingCase: s.viewingCase, setView: setView,
           onClose: closePrevCase,
           currentView: 'prev-case-view',
+          stores: s.stores,
           cases: s.cases, openPrevCase: openPrevCase,
           processMethods: s.processMethods, deviceCategories: s.deviceCategories,
           vehicles: s.vehicles, vendors: s.vendors
@@ -565,7 +569,7 @@
       case 'store-history-repair-view':
         return h(ViewCaseForm, {
           viewingCase: StoreUtils.withStoreHistoryContext(s.viewingCase, s.historyStore),
-          setView: setView, backView: 'store-history',
+          setView: setView, backView: 'store-history', stores: s.stores,
           processMethods: s.processMethods, deviceCategories: s.deviceCategories,
           vehicles: s.vehicles, vendors: s.vendors
         });

@@ -282,8 +282,19 @@
       customerName: record.customerName || store.customerName || '',
       storeName: record.storeName || store.storeName || '',
       storeAddress: record.storeAddress || buildFullAddress(store) || '',
-      serviceLevel: record.serviceLevel || store.serviceLevel || ''
+      serviceLevel: record.serviceLevel || store.serviceLevel || '',
+      storeRemarks: record.storeRemarks || store.remarks || ''
     });
+  }
+
+  /* 案件上的「門市備註」一律以門市建檔的備註說明為準，門市查不到時才退回案件既有快照。 */
+  function resolveStoreRemarks(stores, record) {
+    if (!record) return '';
+    var store = (stores || []).find(function (s) {
+      return s.customerName === record.customerName && s.storeName === record.storeName;
+    });
+    if (store && store.remarks) return store.remarks;
+    return record.storeRemarks || '';
   }
 
   /* --- 「撤店」工程立案單結案時的門市同步 ---
@@ -337,6 +348,7 @@
     buildProjectHistoryRows: buildProjectHistoryRows,
     formatHistoryDateTime: formatHistoryDateTime,
     withStoreHistoryContext: withStoreHistoryContext,
+    resolveStoreRemarks: resolveStoreRemarks,
     applyProjectCloseToStores: applyProjectCloseToStores
   };
 })();

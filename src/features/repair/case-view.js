@@ -1,6 +1,6 @@
 /*
  * features/repair/case-view.js — 共用元件：查看案件明細
- * props: { viewingCase, setView, backView, deviceCategories, notice }
+ * props: { viewingCase, setView, backView, deviceCategories, stores, notice }
  *
  * notice：可選的說明橫幅，用於告知使用者此頁為何唯讀（例：自案件處理列表點進已結案案件）。
  */
@@ -18,6 +18,7 @@
     var vehicles = props.vehicles || [];
     var vendors = props.vendors || [];
     var cases = props.cases || [];
+    var stores = props.stores || [];
     var openPrevCase = props.openPrevCase;
     var currentView = props.currentView || backView;
     var onClose = props.onClose;
@@ -147,6 +148,12 @@
             h(ReadOnlyField, { label: '服務等級', value: viewingCase && viewingCase.serviceLevel }),
             h('div', { className: 'col-span-full md:col-span-4' },
               h(ReadOnlyField, { label: '門市地址', value: viewingCase && viewingCase.storeAddress })
+            ),
+            h('div', { className: 'col-span-full md:col-span-4' },
+              h(ReadOnlyField, {
+                label: '門市備註',
+                value: StoreUtils.resolveStoreRemarks(stores, viewingCase)
+              })
             ),
             !isOther && h(ReadOnlyField, { label: '叫修項目', value: viewingCase && viewingCase.repairItem }),
             !isOther && h(ReadOnlyField, { label: '叫修原因', value: viewingCase && viewingCase.repairReason }),
