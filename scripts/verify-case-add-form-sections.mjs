@@ -84,7 +84,8 @@ try {
     window.__stores = [{
       id: 9001, customerName: '測試客戶', storeName: '測試門市',
       companyCity: '台北市', companyDistrict: '信義區', companyAddress: '松智路X號',
-      serviceLevel: 'B 保修(一年兩次)', storeStatus: '正常營業', remarks: ''
+      serviceLevel: 'B 保修(一年兩次)', storeStatus: '正常營業',
+      remarks: '一樓大廳需保持整潔，施工請走後門。'
     }];
     window.__saved = null;
     window.__mountAdd = function () {
@@ -144,9 +145,9 @@ try {
   assertEq(layout.allCards, true, '每個區塊都是白底卡片');
   assertEq(layout.legacyHeaders, 0, '不再有舊版共用表單的行內標題');
   assertEq(
-    layout.basicLabels.filter(t => ['客戶名稱', '門市名稱', '叫修人員', '服務等級', '門市地址'].indexOf(t) !== -1),
-    ['客戶名稱', '門市名稱', '叫修人員', '服務等級', '門市地址'],
-    '基本資料區欄位順序與編輯頁一致'
+    layout.basicLabels.filter(t => ['客戶名稱', '門市名稱', '叫修人員', '服務等級', '門市地址', '門市備註'].indexOf(t) !== -1),
+    ['客戶名稱', '門市名稱', '叫修人員', '服務等級', '門市地址', '門市備註'],
+    '基本資料區欄位順序與編輯頁一致（門市備註接在門市地址後方）'
   );
   assertEq(layout.contentHasCategory, true, '叫修內容區含工項分類');
   assertEq(layout.scheduleHasAssignee, true, '排程資料區含組別');
@@ -163,11 +164,16 @@ try {
       }
       return null;
     }
-    var out = { reporter: readOnlyValue('叫修人員'), addressBefore: readOnlyValue('門市地址') };
+    var out = {
+      reporter: readOnlyValue('叫修人員'),
+      addressBefore: readOnlyValue('門市地址'),
+      remarksBefore: readOnlyValue('門市備註')
+    };
     window.__pick(wrap, 'customerName', '測試客戶');
     window.__pick(wrap, 'storeName', '測試門市');
     out.serviceLevel = readOnlyValue('服務等級');
     out.addressAfter = readOnlyValue('門市地址');
+    out.storeRemarks = readOnlyValue('門市備註');
     wrap.querySelector('form').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
     out.savedCount = window.__saved ? window.__saved.length : 0;
     out.savedStore = window.__saved && window.__saved[0].storeName;
@@ -179,6 +185,8 @@ try {
   assertEq(flow.addressBefore, '請先選擇客戶與門市', '未選門市時顯示提示文字');
   assertEq(flow.serviceLevel, 'B 保修(一年兩次)', '選客戶後自動帶入服務等級');
   assertEq(flow.addressAfter, '台北市信義區松智路X號', '選門市後自動帶入門市地址');
+  assertEq(flow.remarksBefore, '—', '未選門市時門市備註為空');
+  assertEq(flow.storeRemarks, '一樓大廳需保持整潔，施工請走後門。', '選門市後帶入門市建檔的備註說明');
   assertEq(flow.savedCount, 1, '送出後建立一筆案件');
   assertEq(flow.savedStore, '測試門市', '新案件帶入門市名稱');
   assertEq(flow.savedAddress, '台北市信義區松智路X號', '新案件帶入門市地址');

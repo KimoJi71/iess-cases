@@ -227,6 +227,11 @@
               label: '門市地址',
               value: formData.storeAddress || '請先選擇客戶與門市',
               fullWidth: true
+            }),
+            CaseReadOnlyField({
+              label: '門市備註',
+              value: StoreUtils.resolveStoreRemarks(stores, formData),
+              fullWidth: true
             })
           )
         ),
