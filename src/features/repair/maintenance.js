@@ -7,7 +7,7 @@
 (function () {
   'use strict';
   var h = IESS.h, Fragment = IESS.Fragment, Icons = IESS.Icons,
-      stateful = IESS.stateful, TimeInput24 = IESS.TimeInput24;
+      stateful = IESS.stateful;
 
   function getMaintenanceStatusBadgeClass(status) {
     if (status === '已完成') return 'bg-green-100 text-green-700';
@@ -19,17 +19,14 @@
     if (status === '已完成') return 'bg-green-100 text-green-700';
     if (status === '已預約') return 'bg-blue-100 text-blue-700';
     return 'bg-gray-100 text-gray-600';
-  }
-
-  function resolveMaintenanceCompletionDate(maintenanceCase) {
-    return (maintenanceCase && maintenanceCase.planDate) || todayDate;
   }
 
   function closeMaintenanceCase(id, cases, setCases, stores, setStores, showToast) {
     var target = cases.find(function (c) { return c.id === id; });
     if (!target) return;
     var stamp = IESS.caseDateTime.now();
-    var completionDate = target.completionDate || resolveMaintenanceCompletionDate(target);
+    var completionDate = target.completionDate
+      || MaintenanceDetailSections.resolveMaintenanceCompletionDate(target);
     var closedCase = Object.assign({}, target, {
       isClosed: true,
       status: '已完成',
@@ -351,6 +348,10 @@
     var vendors = props.vendors || [];
     var equipments = props.equipments || [];
 
+    // 這一行是表單與 store 記錄之間的隔離邊界：normalizeMaintenanceCase 回傳全新的頂層物件、
+    // 且會重建 assignees / equipmentList 等陣列，因此下面 ctx.formData 的就地寫入不會反向影響
+    // targetCase。但這只保證「整包替換」安全——若之後改成直接改動它複製來的巢狀物件（例如
+    // eq.qty = n），還是會改到 store 內的原始資料，務必整包 REPLACE 而非就地 mutate。
     var formData = CaseAssigneeUtils.normalizeMaintenanceCase(targetCase);
     // 進頁時先依排程資料校正一次保養狀態，避免顯示與判斷規則對不上
     formData.status = MaintenanceDetailSections.resolveProgressStatus(formData);

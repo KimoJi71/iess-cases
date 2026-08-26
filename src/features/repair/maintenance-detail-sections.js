@@ -341,6 +341,8 @@
     renderSections: renderSections,
     renderOverlays: renderOverlays,
     resolveProgressStatus: resolveProgressStatus,
-    updateStoreLastMaintenanceDate: updateStoreLastMaintenanceDate
+    updateStoreLastMaintenanceDate: updateStoreLastMaintenanceDate,
+    // closeMaintenanceCase（maintenance.js）也需要同一套完成日期回退規則，匯出以免各自留一份
+    resolveMaintenanceCompletionDate: resolveMaintenanceCompletionDate
   };
 })();

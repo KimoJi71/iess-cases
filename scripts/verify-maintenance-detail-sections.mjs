@@ -73,6 +73,9 @@ const SETUP = `(function () {
       planDate: '', planTimeStart: '', planTimeEnd: '', dueMonth: '2026-08',
       companyCity: '台北市', companyDistrict: '大安區', isClosed: false
     }, overrides || {});
+    // 暴露掛載當下的來源記錄與快照，供測試驗證表單編輯不會反向 mutate 它
+    window.__target = target;
+    window.__targetSnapshot = JSON.stringify(target);
     host.appendChild(MaintenanceViewEditForm({
       targetCase: target,
       cases: [target],
@@ -215,6 +218,33 @@ try {
       return td.textContent.trim();
     }).slice(1, 4).join('/');
   })()`), '分離式冷氣/大金/一樓內機', '選取的設備以唯讀欄位列在設備資料');
+
+  console.log('\nSection 4b｜設備清單併入 formData：儲存前不動來源記錄，儲存後寫回');
+  // 儲存前：先改保養狀態，驗證表單編輯（改狀態＋已加入設備）不會反向影響掛載時傳入的 targetCase
+  // ——這正是就地寫入安全的前提：normalizeMaintenanceCase 回傳新物件，非同一參照
+  await evaluate(`(function () {
+    var input = document.querySelector('#detail-host section:nth-of-type(4) .searchable-select__input');
+    input.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+    input.focus();
+    return true;
+  })()`);
+  await sleep(200);
+  await evaluate(`(function () {
+    var opt = Array.prototype.slice.call(document.querySelectorAll('.searchable-select__option'))
+      .filter(function (b) { return b.textContent.trim() === '已完成'; })[0];
+    if (!opt) throw new Error('選單中找不到「已完成」');
+    opt.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+    return true;
+  })()`);
+  await sleep(200);
+  assertEq(await evaluate('JSON.stringify(window.__target) === window.__targetSnapshot'), true,
+    '儲存前，表單編輯（改狀態、加設備）不會反向影響來源記錄 targetCase');
+  await evaluate(`window.__clickText('儲存', '#detail-host')`);
+  await sleep(200);
+  assertEq(await evaluate('window.__written.cases[0].equipmentList.length'), 1,
+    '儲存後，先前加入的設備清單一併寫入儲存的案件');
+  assertEq(await evaluate('window.__written.cases[0].equipmentList[0].sourceEquipmentId'), 'E1',
+    '寫入的設備清單內容為先前挑選的設備');
 
   console.log('\nSection 5｜保養結果：狀態／備註／客戶簽收／完成時間');
   assertDeep(await evaluate('window.__labelsIn("4. 保養結果")'),
