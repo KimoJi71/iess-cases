@@ -185,6 +185,25 @@
     };
   }
 
+  /* 保養單的排程讀取入口（日曆點開編輯時共用）。
+   * 組別在正規化後只存在 assignees[]，這裡一律走 CaseAssigneeUtils，
+   * 不再讀舊的單值 assignee，否則彈窗的「組別」會空白、儲存還會把組別洗掉。 */
+  function getMaintenanceSchedule(c) {
+    if (!c) return { planDate: '', planTimeStart: '', planTimeEnd: '', assignee: '', assignees: [], partnerVendorIds: [], workCategory: '保養' };
+    var assignees = window.CaseAssigneeUtils
+      ? CaseAssigneeUtils.getFormalAssignees(c)
+      : (c.assignee ? [c.assignee] : []);
+    return {
+      planDate: c.planDate || '',
+      planTimeStart: c.planTimeStart || '',
+      planTimeEnd: c.planTimeEnd || '',
+      assignee: assignees.join('、'),
+      assignees: assignees,
+      partnerVendorIds: getPartnerVendorIds(c),
+      workCategory: getMaintenanceWorkCategory(c)
+    };
+  }
+
   function getProjectSchedule(c) {
     return {
       planDate: c.planDate || '',
@@ -840,6 +859,7 @@
     getPersonnelRows: getPersonnelRows,
     getPersonnelEvents: getPersonnelEvents,
     getRepairSchedule: getRepairSchedule,
+    getMaintenanceSchedule: getMaintenanceSchedule,
     getProjectStageSchedule: getProjectStageSchedule,
     resolveMaintenanceStatus: resolveMaintenanceStatus,
     resolveCasePeriod: resolveCasePeriod,

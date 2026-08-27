@@ -427,6 +427,14 @@
         rerender();
       }
 
+      /* 彈窗頂端的組別是單選字串：維修取多選的第一個，保養取 assignees[] 的第一組，
+       * 工程則沿用該階段排程的單值組別。 */
+      function resolveModalAssignee(sourceType, sched, repairAssignees) {
+        if (sourceType === 'repair') return (repairAssignees && repairAssignees[0]) || '';
+        if (sourceType === 'maintenance') return (sched.assignees && sched.assignees[0]) || '';
+        return sched.assignee || '';
+      }
+
       function openEditScheduleModal(sourceType, sourceId, stageKey) {
         var record = resolveCaseRecord(sourceType, sourceId);
         if (!record) {
@@ -440,12 +448,9 @@
           // 工程立案單以「點到的那一段階段排程」為準，而非案件層級欄位
           sched = ScheduleUtils.getProjectStageSchedule(record, stageKey);
         } else {
-          sched = {
-            planDate: record.planDate,
-            planTimeStart: record.planTimeStart,
-            planTimeEnd: record.planTimeEnd,
-            assignee: record.assignee
-          };
+          // 保養單的組別只存在 assignees[]，讀舊的單值 assignee 會拿到空字串，
+          // 彈窗「組別」變空白、儲存還會把原本的組別洗掉。
+          sched = ScheduleUtils.getMaintenanceSchedule(record);
         }
         var repairAssignees = sourceType === 'repair'
           ? ((sched.assignees && sched.assignees.length)
@@ -463,15 +468,14 @@
             storeName: record.storeName,
             workCategory: record.workCategory || '保養'
           },
-          assignee: sourceType === 'repair'
-            ? (repairAssignees[0] || '')
-            : (sched.assignee || record.assignee || ''),
+          // 彈窗的組別是單選：多組的保養單先帶第一組（存回去時同樣只留一組）。
+          assignee: resolveModalAssignee(sourceType, sched, repairAssignees),
           assignees: repairAssignees,
           planDate: sched.planDate || calDate,
           planTimeStart: sched.planTimeStart || '',
           planTimeEnd: sched.planTimeEnd || '',
           formData: buildScheduleModalFormData(
-            sourceType, record, repairAssignees, sched.assignee || record.assignee || ''
+            sourceType, record, repairAssignees, resolveModalAssignee(sourceType, sched, repairAssignees)
           ),
           ui: sourceType === 'repair'
             ? RepairCaseDetailSections.createUiState()
