@@ -178,12 +178,18 @@
     return caseItem.createdAt || caseItem.repairDate || '';
   }
 
-  function getMaintenanceFilingTime(caseItem) {
+  // 保養案件的立案時間＝所屬保養區間的開始月份（當季保養開始時間）。
+  // dueMonth 只是案件自帶的年月標記（可能落在區間中段），僅在解析不到區間時當退路。
+  function getMaintenanceFilingTime(caseItem, customers) {
     if (!caseItem) return '';
-    // planDate 才是使用者實際填的保養日期；dueMonth 只是區間標記
-    // （區間驅動後填的是區間起始月，不代表案件發生的時間），僅作為舊案件的退路。
-    if (caseItem.planDate) return caseItem.planDate + ' 00:00:00';
-    if (caseItem.dueMonth) return caseItem.dueMonth + '-01 00:00:00';
+    var period = window.ScheduleUtils
+      ? ScheduleUtils.resolveCasePeriod(caseItem, customers || [])
+      : null;
+    if (period) {
+      return period.year + '-' + String(period.startMonth).padStart(2, '0') + '-01 00:00:00';
+    }
+    if (caseItem.dueMonth) return String(caseItem.dueMonth).slice(0, 7) + '-01 00:00:00';
+    if (caseItem.planDate) return String(caseItem.planDate).slice(0, 7) + '-01 00:00:00';
     return '';
   }
 
@@ -197,7 +203,7 @@
     return '';
   }
 
-  function buildRepairMaintenanceHistoryRows(store, cases, maintenanceCases, equipments) {
+  function buildRepairMaintenanceHistoryRows(store, cases, maintenanceCases, equipments, customers) {
     var rows = [];
     (cases || []).forEach(function (c) {
       if (!c.isClosed || !matchesStoreRecord(c, store)) return;
@@ -226,7 +232,7 @@
     });
     (maintenanceCases || []).forEach(function (c) {
       if (!c.isClosed || !matchesStoreRecord(c, store)) return;
-      var filingTime = getMaintenanceFilingTime(c);
+      var filingTime = getMaintenanceFilingTime(c, customers);
       var finishTime = getCaseCloseDate(c);
       rows.push({
         id: 'maintenance-' + c.id,
@@ -345,6 +351,8 @@
     isStoreMaintenanceEnabled: isStoreMaintenanceEnabled,
     isMaintainableStore: isMaintainableStore,
     getStoreNameOptions: getStoreNameOptions,
+    getRepairFilingTime: getRepairFilingTime,
+    getMaintenanceFilingTime: getMaintenanceFilingTime,
     buildRepairMaintenanceHistoryRows: buildRepairMaintenanceHistoryRows,
     buildProjectHistoryRows: buildProjectHistoryRows,
     formatHistoryDateTime: formatHistoryDateTime,

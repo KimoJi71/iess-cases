@@ -1,6 +1,6 @@
 /*
  * features/customer/store-history.js — 客戶建檔（門市管理）：門市歷史紀錄（整頁）
- * props: { store, cases, maintenanceCases, projectCases, equipments, openStoreHistoryDetail, setHistoryStore, setView, backView, clearCustomerBackView }
+ * props: { store, cases, maintenanceCases, projectCases, equipments, customers, openStoreHistoryDetail, setHistoryStore, setView, backView, clearCustomerBackView }
  */
 (function () {
   'use strict';
@@ -13,6 +13,7 @@
     var maintenanceCases = props.maintenanceCases || [];
     var projectCases = props.projectCases || [];
     var equipments = props.equipments || [];
+    var customers = props.customers || [];
     var openStoreHistoryDetail = props.openStoreHistoryDetail;
     var setHistoryStore = props.setHistoryStore;
     var setView = props.setView;
@@ -31,7 +32,7 @@
       if (appliedFilter.caseType === 'project') {
         return StoreUtils.buildProjectHistoryRows(store, projectCases);
       }
-      return StoreUtils.buildRepairMaintenanceHistoryRows(store, cases, maintenanceCases, equipments);
+      return StoreUtils.buildRepairMaintenanceHistoryRows(store, cases, maintenanceCases, equipments, customers);
     }
 
     function getFilteredRows() {

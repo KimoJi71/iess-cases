@@ -427,6 +427,7 @@
           maintenanceCases: s.maintenanceCases, setMaintenanceCases: setMaintenanceCases,
           assignees: s.assignees,
           serviceLevels: s.serviceLevels,
+          customers: s.customers,
           setViewingCase: setViewingCase, setView: setView, showToast: showToast
         });
       case 'review-view':
@@ -560,6 +561,7 @@
           maintenanceCases: s.maintenanceCases,
           projectCases: s.projectCases,
           equipments: s.equipments,
+          customers: s.customers,
           openStoreHistoryDetail: openStoreHistoryDetail,
           setHistoryStore: setHistoryStore,
           setView: setView,
