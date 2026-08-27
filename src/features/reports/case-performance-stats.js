@@ -3,20 +3,32 @@
  * props: {
  *   cases, maintenanceCases, assignees,
  *   maintenanceAllocations, maintenanceAllocationYears,
- *   stores, performanceAreas, serviceLevels, customers, accounts
+ *   stores, performanceAreas, serviceLevels, customers, accounts,
+ *   openPerformanceCases
  * }
  */
 (function () {
   'use strict';
   var h = IESS.h;
+  var Icons = IESS.Icons;
   var SVG_NS = 'http://www.w3.org/2000/svg';
   var RING_R = 44;
   var RING_C = 2 * Math.PI * RING_R;
 
   var THEME = {
-    assignee: { stroke: '#0ea5e9', text: '#0369a1' },
-    region: { stroke: '#14b8a6', text: '#0f766e' },
-    customer: { stroke: '#93c5fd', text: '#1e40af' }
+    // viewBtn：查看按鈕的配色跟著卡片走，避免藍色小方塊突兀地黏在標題旁
+    assignee: {
+      stroke: '#0ea5e9', text: '#0369a1',
+      viewBtn: 'text-sky-700 bg-sky-100/70 hover:bg-sky-600 hover:text-white'
+    },
+    region: {
+      stroke: '#14b8a6', text: '#0f766e',
+      viewBtn: 'text-teal-700 bg-teal-100/70 hover:bg-teal-600 hover:text-white'
+    },
+    customer: {
+      stroke: '#93c5fd', text: '#1e40af',
+      viewBtn: 'text-blue-700 bg-blue-100/70 hover:bg-blue-600 hover:text-white'
+    }
   };
 
   function createRingSvg(rate, theme, idSuffix) {
@@ -94,7 +106,21 @@
           className: 'shrink-0 inline-flex items-center px-2 py-0.5 rounded-full ' +
             'text-xs font-medium text-teal-700 bg-teal-50 border border-teal-200',
           title: '當前保養區間'
-        }, props.periodLabel)
+        }, props.periodLabel),
+        props.onView && h('button', {
+          type: 'button',
+          onClick: props.onView,
+          className: 'group ml-auto shrink-0 inline-flex items-center gap-0.5 pl-3 pr-2 py-1 ' +
+            'rounded-full text-xs font-semibold transition-colors ' +
+            'focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 ' +
+            'focus-visible:ring-current ' + theme.viewBtn,
+          title: '查看當季案件'
+        },
+          '查看',
+          Icons.ChevronRight({
+            className: 'h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5'
+          })
+        )
       ),
       h('div', { className: 'px-5 pt-5 pb-4' },
         h('p', { className: 'text-slate-500 text-sm mb-2 text-center' },
@@ -148,6 +174,8 @@
     var allocationYears = props.maintenanceAllocationYears || [];
     var customers = props.customers || [];
     var accounts = props.accounts || [];
+    // 圖卡「查看」導頁；未傳入時（例如舊呼叫端）就不顯示查看按鈕
+    var openCases = props.openPerformanceCases;
     var now = new Date();
     var quarter = PerformanceUtils.getQuarterRange(now);
     var currentMonth = now.getMonth() + 1;
@@ -222,7 +250,14 @@
                   completed: row.completed,
                   bonusPoints: row.bonusPoints,
                   showBonus: true,
-                  variant: 'assignee'
+                  variant: 'assignee',
+                  onView: openCases && function () {
+                    openCases({
+                      type: 'assignee',
+                      assigneeId: row.id,
+                      assigneeName: row.name
+                    });
+                  }
                 });
               })
             )
@@ -263,7 +298,15 @@
                           target: cust.target,
                           completed: cust.completed,
                           showBonus: false,
-                          variant: 'customer'
+                          variant: 'customer',
+                          onView: openCases && function () {
+                            openCases({
+                              type: 'region-customer',
+                              areaId: region.id,
+                              areaName: region.name,
+                              customerName: cust.customerName
+                            });
+                          }
                         });
                       })
                     )

@@ -227,12 +227,12 @@
                 h('th', { className: 'p-3 font-semibold' }, '門市名稱'),
                 h('th', { className: 'p-3 font-semibold' }, '行政區域'),
                 h('th', { className: 'p-3 font-semibold' }, '服務等級'),
-                h('th', { className: 'p-3 font-semibold' }, '總積分'),
                 h('th', { className: 'p-3 font-semibold' }, '工項分類'),
                 h('th', { className: 'p-3 font-semibold' }, '叫修項目'),
                 h('th', { className: 'p-3 font-semibold' }, '叫修原因'),
                 h('th', { className: 'p-3 font-semibold max-w-[150px]' }, '實際原因'),
-                h('th', { className: 'p-3 font-semibold' }, '組別')
+                h('th', { className: 'p-3 font-semibold' }, '組別'),
+                h('th', { className: 'p-3 font-semibold' }, '總積分')
               )
             ),
             h('tbody', { className: 'divide-y divide-gray-100' },
@@ -278,12 +278,12 @@
                   h('td', { className: 'p-3' }, c.storeName),
                   h('td', { className: 'p-3' }, StoreUtils.getRecordArea(c) || '—'),
                   h('td', { className: 'p-3' }, c.serviceLevel),
-                  h('td', { className: 'p-3' }, formatBonusPoints(resolveReviewCaseBonusPoints(c, serviceLevels))),
                   h('td', { className: 'p-3' }, isMaintenance ? '例行保養' : c.workCategory),
                   h('td', { className: 'p-3' }, isMaintenance ? '' : c.repairItem),
                   h('td', { className: 'p-3' }, isMaintenance ? '' : c.repairReason),
                   h('td', { className: 'p-3 max-w-[150px] truncate', title: getActualReasonSummary(c) }, getActualReasonSummary(c) || '-'),
-                  h('td', { className: 'p-3' }, CaseAssigneeUtils.formatAssignees(c))
+                  h('td', { className: 'p-3' }, CaseAssigneeUtils.formatAssignees(c)),
+                  h('td', { className: 'p-3' }, formatBonusPoints(resolveReviewCaseBonusPoints(c, serviceLevels)))
                 );
               })
             )
