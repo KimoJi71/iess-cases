@@ -45,8 +45,7 @@
             .filter(Boolean)
             .some(function (v) { return String(v).toLowerCase().includes(kw); });
         }
-        return [rec.caseNumber, rec.storeName, rec.workCategory, rec.equipmentCategory, rec.equipmentName,
-          rec.equipmentArea, rec.repairItem, rec.repairReason, rec.assignee]
+        return [rec.caseNumber, rec.storeName, rec.workCategory, rec.repairItem, rec.repairReason, rec.assignee]
           .filter(Boolean)
           .some(function (v) { return String(v).toLowerCase().includes(kw); });
       });
@@ -206,9 +205,6 @@
                       h('th', { className: 'p-3 font-semibold' }, '案件編號'),
                       h('th', { className: 'p-3 font-semibold' }, '門市名稱'),
                       h('th', { className: 'p-3 font-semibold' }, '工項分類'),
-                      h('th', { className: 'p-3 font-semibold' }, '設備分類'),
-                      h('th', { className: 'p-3 font-semibold' }, '設備名稱'),
-                      h('th', { className: 'p-3 font-semibold' }, '設備區域'),
                       h('th', { className: 'p-3 font-semibold' }, '叫修項目'),
                       h('th', { className: 'p-3 font-semibold' }, '叫修原因'),
                       h('th', { className: 'p-3 font-semibold' }, '維修人員'),
@@ -219,7 +215,7 @@
               h('tbody', { className: 'divide-y divide-gray-100 whitespace-nowrap' },
                 rows.length === 0
                   ? h('tr', null, h('td', {
-                      colspan: isProject ? 7 : 12,
+                      colspan: isProject ? 7 : 9,
                       className: 'p-10 text-center text-gray-400 text-base'
                     }, '無資料'))
                   : pageResult.items.map(function (rec) {
@@ -239,9 +235,6 @@
                         cell(rec.caseNumber),
                         cell(rec.storeName),
                         cell(rec.workCategory),
-                        cell(rec.equipmentCategory),
-                        cell(rec.equipmentName, { title: rec.equipmentName }),
-                        cell(rec.equipmentArea),
                         cell(rec.repairItem, { blank: true }),
                         cell(rec.repairReason, { blank: true }),
                         cell(rec.assignee),
