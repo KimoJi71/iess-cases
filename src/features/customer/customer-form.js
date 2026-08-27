@@ -423,7 +423,7 @@
                       contacts.map(function (ct) {
                         return h('tr', { key: ct.id, className: 'hover:bg-blue-50/50' },
                           h('td', { className: 'p-3' }, ct.title || '—'),
-                          h('td', { className: 'p-3 font-medium text-gray-800' }, ct.name),
+                          h('td', { className: 'p-3' }, ct.name),
                           h('td', { className: 'p-3' }, ct.phone || '—'),
                           h('td', { className: 'p-3' }, ct.email || '—'),
                           h('td', { className: 'p-3' },

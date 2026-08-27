@@ -214,7 +214,7 @@
                         var val = pm[col.key];
                         if (col.key === 'points') val = val != null && val !== '' ? val : '—';
                         else val = val || '—';
-                        return h('td', { key: col.key, className: 'p-3 font-medium text-gray-800' }, val);
+                        return h('td', { key: col.key, className: 'p-3' }, val);
                       })
                     );
                   })

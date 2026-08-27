@@ -143,7 +143,7 @@
                         )
                       ),
                       COLUMNS.map(function (col) {
-                        return h('td', { key: col.key, className: 'p-3 font-medium text-gray-800' },
+                        return h('td', { key: col.key, className: 'p-3' },
                           renderCellText(sl, col.key));
                       })
                     );
