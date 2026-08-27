@@ -92,7 +92,7 @@
     function getEvents() {
       return ScheduleUtils.getScheduledEvents(
         maintenanceCases, cases, projectCases,
-        appliedCal.start, appliedCal.end, appliedCal.assignee
+        appliedCal.start, appliedCal.end, appliedCal.assignee, vendors
       );
     }
 

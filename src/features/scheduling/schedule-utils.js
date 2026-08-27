@@ -34,14 +34,42 @@
     return ASSIGNEE_COLORS[hash % ASSIGNEE_COLORS.length];
   }
 
+  var UNASSIGNED_ASSIGNEE_NAMES = ['', '案件待辦', '尚未指派'];
+
+  // 卡片上的組別是「、」串起來的字串，只要有一個正式組別就算有派組別。
+  function hasFormalAssigneeName(assignee) {
+    return String(assignee || '').split('、').some(function (name) {
+      var n = name.trim();
+      if (!n) return false;
+      return window.CaseAssigneeUtils
+        ? !CaseAssigneeUtils.isUnassignedValue(n)
+        : UNASSIGNED_ASSIGNEE_NAMES.indexOf(n) === -1;
+    });
+  }
+
+  function getPartnerVendorIds(record) {
+    if (window.CaseAssigneeUtils) return CaseAssigneeUtils.getPartnerVendorIds(record);
+    var ids = record && record.partnerVendorIds;
+    if (Array.isArray(ids)) return ids.filter(Boolean).map(String);
+    return ids ? [String(ids)] : [];
+  }
+
+  function formatPartnerVendorNames(vendors, ids) {
+    if (!ids || !ids.length) return '';
+    if (window.VendorUtils) return VendorUtils.formatCooperatorLabels(vendors, ids);
+    return ids.join('、');
+  }
+
   // 地址與設備仍保留在 extendedProps，只是不佔用日曆卡片版面
-  function formatScheduleEventTitle(workCategory, assignee, customerName, storeName) {
-    return [
+  // 協力廠商接在組別下方自成一行；沒有協力廠商時整行省略，不留空行。
+  function formatScheduleEventTitle(workCategory, assignee, customerName, storeName, partnerVendorName) {
+    var lines = [
       '[' + (workCategory || '其他') + ']',
-      assignee || '未指派',
-      customerName || '',
-      storeName || ''
-    ].join('\n');
+      assignee || '未指派'
+    ];
+    if (partnerVendorName) lines.push(partnerVendorName);
+    lines.push(customerName || '', storeName || '');
+    return lines.join('\n');
   }
 
   // 一筆叫修案件可能對到多台設備，日曆卡片仍只留一行文字，故串接顯示
@@ -152,6 +180,7 @@
         ? CaseAssigneeUtils.formatAssignees(c)
         : (c.assignee || ''),
       assignees: assignees,
+      partnerVendorIds: getPartnerVendorIds(c),
       workCategory: c.workCategory
     };
   }
@@ -557,6 +586,7 @@
         storeAddress: storeAddress || '',
         equipmentName: equipmentName || '',
         workCategory: sched.workCategory || '其他',
+        partnerVendorIds: sched.partnerVendorIds || [],
         // 工程案件一筆案子可能有多個階段排程，靠 stageKey 才知道點到的是哪一段
         stageKey: stageKey || ''
       });
@@ -568,6 +598,7 @@
         planTimeEnd: c.planTimeEnd,
         assignee: window.CaseAssigneeUtils ? CaseAssigneeUtils.formatAssignees(c) : (c.assignee || ''),
         assignees: window.CaseAssigneeUtils ? CaseAssigneeUtils.getAssignees(c) : (c.assignee ? [c.assignee] : []),
+        partnerVendorIds: getPartnerVendorIds(c),
         workCategory: getMaintenanceWorkCategory(c)
       }, c.customerName, c.storeName, c.storeAddress || '');
     });
@@ -582,6 +613,7 @@
           planTimeStart: entry.planTimeStart,
           planTimeEnd: entry.planTimeEnd,
           assignee: entry.assignee,
+          partnerVendorIds: getPartnerVendorIds(c),
           workCategory: entry.workCategory
         }, c.customerName, c.storeName, addr, '', 'project-' + c.id + '-' + entry.stageKey, entry.stageKey);
       });
@@ -612,9 +644,10 @@
     var timing = buildEventTiming(sched.planDate, sched.planTimeStart, sched.planTimeEnd);
     var wc = sched.workCategory || '其他';
     var assignee = sched.assignee || '';
+    var partnerVendorName = sched.partnerVendorName || '';
     return {
       id: eventId || (sourceType + '-' + sourceId),
-      title: formatScheduleEventTitle(wc, assignee, customerName, storeName),
+      title: formatScheduleEventTitle(wc, assignee, customerName, storeName, partnerVendorName),
       start: timing.start,
       end: timing.end,
       allDay: timing.allDay,
@@ -625,6 +658,7 @@
         sourceId: sourceId,
         workCategory: wc,
         assignee: assignee,
+        partnerVendorName: partnerVendorName,
         customerName: customerName,
         storeName: storeName,
         storeAddress: storeAddress || '',
@@ -634,14 +668,22 @@
     };
   }
 
-  function getScheduledEvents(maintenanceCases, cases, projectCases, rangeStart, rangeEnd, assigneeFilter) {
+  /* 日曆卡片：組別下方接一行協力廠商。
+   * 只掛協力廠商、沒有正式組別的案件不進日曆（日曆是看組別排程用的，
+   * 這種案件在卡片上只會顯示「未指派」，反而誤導）；兩者皆無的仍照舊顯示未指派。 */
+  function getScheduledEvents(maintenanceCases, cases, projectCases, rangeStart, rangeEnd, assigneeFilter, vendors) {
     return collectScheduledItems(maintenanceCases, cases, projectCases, rangeStart, rangeEnd, assigneeFilter)
+      .filter(function (item) {
+        if (hasFormalAssigneeName(item.assignee)) return true;
+        return !(item.partnerVendorIds && item.partnerVendorIds.length);
+      })
       .map(function (item) {
         return buildEvent(item.sourceType, item.sourceId, {
           planDate: item.date,
           planTimeStart: item.timeStart,
           planTimeEnd: item.timeEnd,
           assignee: item.assignee,
+          partnerVendorName: formatPartnerVendorNames(vendors, item.partnerVendorIds),
           workCategory: item.workCategory
         }, item.customerName, item.storeName, item.storeAddress, item.equipmentName, item.id, item.stageKey);
       })
