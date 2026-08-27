@@ -119,6 +119,8 @@
     editingCase: null,
     viewingCase: null,
     historyStore: null,
+    // 案件績效統計圖卡「查看」的來源（哪一組／哪個區域客戶）
+    performanceScope: null,
     customerBackView: '',
     prevCaseStack: [],
     statusFilter: '全部',
@@ -200,6 +202,25 @@
 
   function clearCustomerBackView() {
     setCustomerBackView('');
+  }
+
+  function openPerformanceCases(scope) {
+    store.set({
+      performanceScope: scope,
+      view: 'performance-case-list',
+      viewingCase: null,
+      editingCase: null
+    });
+  }
+
+  function openPerformanceCaseDetail(row) {
+    if (!row || !row.source) return;
+    store.set({
+      viewingCase: row.source,
+      view: row.sourceType === 'maintenance'
+        ? 'performance-maintenance-view'
+        : 'performance-repair-view'
+    });
   }
 
   function openStoreHistoryDetail(view, record) {
@@ -427,6 +448,7 @@
           maintenanceCases: s.maintenanceCases, setMaintenanceCases: setMaintenanceCases,
           assignees: s.assignees,
           serviceLevels: s.serviceLevels,
+          customers: s.customers,
           setViewingCase: setViewingCase, setView: setView, showToast: showToast
         });
       case 'review-view':
@@ -560,6 +582,7 @@
           maintenanceCases: s.maintenanceCases,
           projectCases: s.projectCases,
           equipments: s.equipments,
+          customers: s.customers,
           openStoreHistoryDetail: openStoreHistoryDetail,
           setHistoryStore: setHistoryStore,
           setView: setView,
@@ -691,6 +714,9 @@
           maintenanceCases: s.maintenanceCases,
           cases: s.cases,
           projectCases: s.projectCases,
+          jobSchedules: s.jobSchedules,
+          vendors: s.vendors,
+          accounts: s.accounts,
           showToast: showToast
         });
       default:
@@ -711,7 +737,35 @@
           performanceAreas: s.performanceAreas,
           serviceLevels: s.serviceLevels,
           customers: s.customers,
-          accounts: s.accounts
+          accounts: s.accounts,
+          openPerformanceCases: openPerformanceCases
+        });
+      case 'performance-case-list':
+        return h(PerformanceCaseList, {
+          scope: s.performanceScope,
+          cases: s.cases,
+          maintenanceCases: s.maintenanceCases,
+          assignees: s.assignees,
+          stores: s.stores,
+          serviceLevels: s.serviceLevels,
+          accounts: s.accounts,
+          maintenanceAllocations: s.maintenanceAllocations,
+          performanceAreas: s.performanceAreas,
+          onBack: function () { setView('case-performance'); },
+          onView: openPerformanceCaseDetail
+        });
+      case 'performance-repair-view':
+        return h(ViewCaseForm, {
+          viewingCase: s.viewingCase,
+          setView: setView, backView: 'performance-case-list', stores: s.stores,
+          processMethods: s.processMethods, deviceCategories: s.deviceCategories,
+          vehicles: s.vehicles, vendors: s.vendors
+        });
+      case 'performance-maintenance-view':
+        return h(MaintenanceViewEditForm, {
+          targetCase: s.viewingCase,
+          stores: s.stores, customers: s.customers, vendors: s.vendors, equipments: s.equipments,
+          setView: setView, mode: 'view', showToast: showToast, backView: 'performance-case-list'
         });
       case 'data-retrieval':
         return h(DataRetrieval, {

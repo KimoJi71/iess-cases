@@ -258,6 +258,130 @@
     });
   }
 
+
+  // --- 圖卡「查看」用：把統計數字還原成一列一案件的明細 ---
+
+  // 卡片上的數字與這裡的列表必須同源，否則點進去會對不起來：
+  // 保養沿用「完成店數」的條件，增額沿用「增額積分」的條件（分到本組 > 0 才算）。
+  function buildPerformanceCaseRow(record, sourceType, stores) {
+    var isMaintenance = sourceType === 'maintenance';
+    return {
+      id: record.id,
+      sourceType: sourceType,
+      source: record,
+      // 保養單沒有案件編號，欄位留空（規格）
+      caseNumber: isMaintenance ? '' : (record.caseNumber || ''),
+      customerName: record.customerName || '',
+      storeName: record.storeName || '',
+      serviceLevel: record.serviceLevel || '',
+      area: getCaseArea(record, stores),
+      workCategory: isMaintenance ? '例行保養' : (record.workCategory || ''),
+      repairItem: isMaintenance ? '' : (record.repairItem || ''),
+      repairReason: isMaintenance ? '' : (record.repairReason || ''),
+      actualReason: window.RepairCaseServiceItems
+        ? RepairCaseServiceItems.formatActualReasonSummary(record)
+        : '',
+      assigneeText: AssigneeUtils.getPerformanceAssigneeNames(record).join('、'),
+      // 叫修案件才有處理方式積分；保養單沒有服務項目卡片，欄位留空
+      points: isMaintenance ? null : sumProcessPoints(record),
+      closeDate: isMaintenance ? getMaintenanceCaseDate(record) : getRepairCaseDate(record)
+    };
+  }
+
+  function sortRowsByCloseDateDesc(rows) {
+    return rows.sort(function (a, b) {
+      return String(b.closeDate || '').localeCompare(String(a.closeDate || ''));
+    });
+  }
+
+  /**
+   * 某組別當季的完成案件明細（保養案件 + 有分到本組積分的增額案件）。
+   * input 與 computeAssigneePerformance 相同，另加 stores、assigneeName。
+   */
+  function collectAssigneeQuarterCases(input) {
+    var cases = input.cases || [];
+    var maintenanceCases = input.maintenanceCases || [];
+    var serviceLevels = input.serviceLevels || [];
+    var accounts = input.accounts || [];
+    var stores = input.stores || [];
+    var quarter = input.quarter;
+    var assigneeName = input.assigneeName;
+    var bonusContext = accounts.length
+      ? { accounts: accounts, assignees: input.assigneeProfiles || [] }
+      : null;
+    var rows = [];
+
+    maintenanceCases.forEach(function (c) {
+      if (!c.isPerformanceIncluded) return;
+      if (!isDateInRange(getMaintenanceCaseDate(c), quarter.start, quarter.end)) return;
+      if (AssigneeUtils.getPerformanceAssignee(c) !== assigneeName) return;
+      rows.push(buildPerformanceCaseRow(c, 'maintenance', stores));
+    });
+
+    cases.forEach(function (c) {
+      if (!c.isPerformanceIncluded) return;
+      if (!isDateInRange(getRepairCaseDate(c), quarter.start, quarter.end)) return;
+      if (!isBonusEligible(c, serviceLevels)) return;
+      if (CaseAssigneeUtils.computeBonusPointsForAssignee(c, assigneeName, bonusContext) <= 0) return;
+      rows.push(buildPerformanceCaseRow(c, 'repair', stores));
+    });
+
+    return sortRowsByCloseDateDesc(rows);
+  }
+
+  /**
+   * 績效區域內某客戶當季「已完成」的保養案件明細。
+   * 條件與卡片的完成店數一致（isPerformanceIncluded），點進來的筆數才對得上。
+   */
+  function collectRegionCustomerQuarterCases(input) {
+    var maintenanceCases = input.maintenanceCases || [];
+    var stores = input.stores || [];
+    var quarter = input.quarter;
+    var customerName = input.customerName;
+    var set = {};
+    (input.areaDistricts || []).forEach(function (d) { set[d] = true; });
+
+    var rows = maintenanceCases.filter(function (c) {
+      if (!c.isPerformanceIncluded) return false;
+      if (c.customerName !== customerName) return false;
+      if (!isDateInRange(getMaintenanceCaseDate(c), quarter.start, quarter.end)) return false;
+      return !!set[getCaseArea(c, stores)];
+    }).map(function (c) {
+      return buildPerformanceCaseRow(c, 'maintenance', stores);
+    });
+
+    return sortRowsByCloseDateDesc(rows);
+  }
+
+  /**
+   * 當季保養目標店數的客戶明細（總店數 100，星巴克 50 / 萊爾富 20…）。
+   * opts 同 sumAllocationTargets。
+   */
+  function getAllocationTargetBreakdown(allocations, opts) {
+    opts = opts || {};
+    var months = opts.months || [];
+    var monthSet = {};
+    months.forEach(function (m) { monthSet[m] = true; });
+    var byCustomer = {};
+    var total = 0;
+    (allocations || []).forEach(function (row) {
+      if (!monthSet[row.month]) return;
+      if (opts.year != null && Number(row.year) !== Number(opts.year)) return;
+      if (opts.assigneeId && row.assigneeId !== opts.assigneeId) return;
+      if (opts.customerName && row.customerName !== opts.customerName) return;
+      var count = Number(row.targetCount) || 0;
+      if (!count) return;
+      byCustomer[row.customerName] = (byCustomer[row.customerName] || 0) + count;
+      total += count;
+    });
+    var items = Object.keys(byCustomer).sort(function (a, b) {
+      return a.localeCompare(b, 'zh-Hant');
+    }).map(function (name) {
+      return { customerName: name, target: byCustomer[name] };
+    });
+    return { total: total, items: items };
+  }
+
   window.PerformanceUtils = {
     getQuarterRange: getQuarterRange,
     getQuarterMonths: getQuarterMonths,
@@ -272,6 +396,9 @@
     getCaseArea: getCaseArea,
     sumProcessPoints: sumProcessPoints,
     computeAssigneePerformance: computeAssigneePerformance,
-    computeRegionPerformance: computeRegionPerformance
+    computeRegionPerformance: computeRegionPerformance,
+    collectAssigneeQuarterCases: collectAssigneeQuarterCases,
+    collectRegionCustomerQuarterCases: collectRegionCustomerQuarterCases,
+    getAllocationTargetBreakdown: getAllocationTargetBreakdown
   };
 })();

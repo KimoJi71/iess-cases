@@ -1,6 +1,6 @@
 /*
  * features/repair/case-review.js — 案件銷案審核列表（列入績效）
- * props: { cases, setCases, maintenanceCases, setMaintenanceCases, assignees, serviceLevels, setViewingCase, setView, showToast }
+ * props: { cases, setCases, maintenanceCases, setMaintenanceCases, assignees, serviceLevels, customers, setViewingCase, setView, showToast }
  */
 (function () {
   'use strict';
@@ -58,6 +58,15 @@
     return '';
   }
 
+  // 立案時間：叫修案件＝叫修單建立時間；保養案件＝所屬保養區間的開始月份（當季保養開始時間）。
+  // 與門市歷史紀錄共用 StoreUtils 的立案時間口徑。
+  function getReviewCaseCreatedAt(c, customers) {
+    if (!c) return '';
+    return isMaintenancePlanCase(c)
+      ? StoreUtils.getMaintenanceFilingTime(c, customers)
+      : StoreUtils.getRepairFilingTime(c);
+  }
+
   function CaseReviewList(props) {
     var cases = props.cases;
     var setCases = props.setCases;
@@ -65,6 +74,7 @@
     var setMaintenanceCases = props.setMaintenanceCases;
     var assignees = props.assignees || [];
     var serviceLevels = props.serviceLevels || [];
+    var customers = props.customers || [];
     var setViewingCase = props.setViewingCase;
     var setView = props.setView;
     var showToast = props.showToast;
@@ -211,18 +221,18 @@
             h('thead', { className: 'bg-gray-50 text-gray-700 border-b' },
               h('tr', null,
                 h('th', { className: 'p-3 w-24 text-center' }, '操作'),
-                h('th', { className: 'p-3 font-semibold' }, '叫修時間'),
+                h('th', { className: 'p-3 font-semibold' }, '立案時間'),
                 h('th', { className: 'p-3 font-semibold' }, '案件編號'),
                 h('th', { className: 'p-3 font-semibold' }, '客戶名稱'),
                 h('th', { className: 'p-3 font-semibold' }, '門市名稱'),
                 h('th', { className: 'p-3 font-semibold' }, '行政區域'),
                 h('th', { className: 'p-3 font-semibold' }, '服務等級'),
-                h('th', { className: 'p-3 font-semibold' }, '總積分'),
                 h('th', { className: 'p-3 font-semibold' }, '工項分類'),
                 h('th', { className: 'p-3 font-semibold' }, '叫修項目'),
                 h('th', { className: 'p-3 font-semibold' }, '叫修原因'),
                 h('th', { className: 'p-3 font-semibold max-w-[150px]' }, '實際原因'),
-                h('th', { className: 'p-3 font-semibold' }, '組別')
+                h('th', { className: 'p-3 font-semibold' }, '組別'),
+                h('th', { className: 'p-3 font-semibold' }, '總積分')
               )
             ),
             h('tbody', { className: 'divide-y divide-gray-100' },
@@ -262,18 +272,18 @@
                         className: 'p-1.5 text-red-600 hover:bg-red-100 rounded', icon: Icons.Undo({ className: 'h-4 w-4' }) })
                     )
                   ),
-                  h('td', { className: 'p-3' }, IESS.caseDateTime.format(getReviewCaseDate(c))),
+                  h('td', { className: 'p-3' }, IESS.caseDateTime.format(getReviewCaseCreatedAt(c, customers))),
                   h('td', { className: 'p-3 font-medium text-blue-700' }, isMaintenance ? '—' : c.caseNumber),
                   h('td', { className: 'p-3' }, c.customerName),
                   h('td', { className: 'p-3' }, c.storeName),
                   h('td', { className: 'p-3' }, StoreUtils.getRecordArea(c) || '—'),
                   h('td', { className: 'p-3' }, c.serviceLevel),
-                  h('td', { className: 'p-3' }, formatBonusPoints(resolveReviewCaseBonusPoints(c, serviceLevels))),
                   h('td', { className: 'p-3' }, isMaintenance ? '例行保養' : c.workCategory),
                   h('td', { className: 'p-3' }, isMaintenance ? '' : c.repairItem),
                   h('td', { className: 'p-3' }, isMaintenance ? '' : c.repairReason),
                   h('td', { className: 'p-3 max-w-[150px] truncate', title: getActualReasonSummary(c) }, getActualReasonSummary(c) || '-'),
-                  h('td', { className: 'p-3' }, CaseAssigneeUtils.formatAssignees(c))
+                  h('td', { className: 'p-3' }, CaseAssigneeUtils.formatAssignees(c)),
+                  h('td', { className: 'p-3' }, formatBonusPoints(resolveReviewCaseBonusPoints(c, serviceLevels)))
                 );
               })
             )

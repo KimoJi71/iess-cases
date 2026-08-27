@@ -120,7 +120,7 @@
                           }, Icons.Trash2({ className: 'h-4 w-4 ' + (a.username === 'admin' ? 'opacity-30' : '') }))
                         )
                       ),
-                      h('td', { className: 'p-3 font-medium text-gray-800' }, a.name),
+                      h('td', { className: 'p-3' }, a.name),
                       h('td', { className: 'p-3' }, a.username),
                       h('td', { className: 'p-3' }, a.email || '—'),
                       h('td', { className: 'p-3' }, a.role || '—'),
