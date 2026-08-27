@@ -2196,6 +2196,24 @@ const INITIAL_JOB_SCHEDULES = [{
   estimatedTime: '',
   assigneeName: '系統管理員',
   createdDate: twoDaysAgoDate
+}, {
+  id: 'JS4',
+  name: '教育訓練',
+  description: '新進人員安全講習',
+  remarks: '會議室 A',
+  estimatedDate: todayDate,
+  estimatedTime: '14:00',
+  assigneeName: '王小明',
+  createdDate: yesterdayDate
+}, {
+  id: 'JS5',
+  name: '倉庫備料',
+  description: '',
+  remarks: '下週工程用料',
+  estimatedDate: yesterdayDate,
+  estimatedTime: '08:00',
+  assigneeName: '李美華',
+  createdDate: twoDaysAgoDate
 }];
 
 function syncRecordStoreFields(record, stores) {

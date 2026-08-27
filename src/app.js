@@ -691,6 +691,9 @@
           maintenanceCases: s.maintenanceCases,
           cases: s.cases,
           projectCases: s.projectCases,
+          jobSchedules: s.jobSchedules,
+          vendors: s.vendors,
+          accounts: s.accounts,
           showToast: showToast
         });
       default:
